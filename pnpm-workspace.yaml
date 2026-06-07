@@ -1,0 +1,4 @@
+# OutfitKit es un paquete suelto (no un workspace), pero pnpm 11 lee aquí los settings.
+# Permite el build script de esbuild (lo usa Vite para compilar).
+allowBuilds:
+  esbuild: true
