@@ -101,11 +101,12 @@ export class OkDataTable extends LitElement {
       position: relative;
       display: flex;
       flex-direction: column;
-      border: 1px solid var(--border-color);
+      /* Flat: sin borde ni elevación (directiva 2026-06-09). */
+      border: 0;
       border-radius: var(--border-radius);
       overflow: hidden;
       background: var(--background);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+      box-shadow: none;
     }
 
     /* Panel lateral derecho (drawer) DENTRO de la tabla: filtros / alta-edición. No empuja contenido. */
@@ -217,9 +218,10 @@ export class OkDataTable extends LitElement {
 
     /* ── Vista tarjetas ──────────────────────────────────────────────────────────────────── */
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; }
-    .rcard { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--background); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; }
-    .rcard:hover { border-color: color-mix(in srgb, var(--primary) 60%, var(--border-color)); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transform: translateY(-2px); }
-    .rcard.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+    /* Flat: sin borde ni elevación — las tarjetas se delimitan por la superficie (no por sombra). */
+    .rcard { display: flex; flex-direction: column; border: 0; border-radius: 12px; overflow: hidden; background: var(--header-background); box-shadow: none; transition: background 0.12s; }
+    .rcard:hover { background: var(--row-hover); }
+    .rcard.selected { background: color-mix(in srgb, var(--primary) 12%, var(--header-background)); }
     .rcard-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
     .rcard-head .rc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -812,13 +814,13 @@ export class OkDataTable extends LitElement {
         </ion-select>
       `;
     }
-    // date / daterange → pastilla compacta con icono calendario y dos inputs nativos.
+    // date / daterange → pastilla compacta con icono calendario y dos ion-input (type=date).
     return html`
       <span class="tk-daterange" role="group" aria-label=${col.header}>
         <ion-icon name="calendar-outline"></ion-icon>
-        <input type="date" aria-label=${`${col.header} desde`} .value=${f?.from ?? ''} @change=${(e: Event) => this.onInlineRange(col, 'from', e)} />
+        <ion-input type="date" aria-label=${`${col.header} desde`} .value=${f?.from ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'from', e)}></ion-input>
         <span class="arr">→</span>
-        <input type="date" aria-label=${`${col.header} hasta`} .value=${f?.to ?? ''} @change=${(e: Event) => this.onInlineRange(col, 'to', e)} />
+        <ion-input type="date" aria-label=${`${col.header} hasta`} .value=${f?.to ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'to', e)}></ion-input>
       </span>
     `;
   }

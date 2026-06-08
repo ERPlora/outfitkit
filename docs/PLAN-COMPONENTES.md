@@ -64,9 +64,10 @@ Fuente de inspiración: catálogo **`ERPlora/ux`** (https://erplora.github.io/ux
 - [ ] `ok-sparkline` — mini-gráfico en línea
 
 ### Tier 3 — visualización / multimedia
-- [ ] `ok-chart` — line / bar (propio SVG o envolver lib)
-- [ ] `ok-donut` — gráfico donut
-- [ ] `ok-gauge` — medidor
+- ~~`ok-chart` / `ok-donut` / `ok-gauge`~~ — **DESCARTADO**: para gráficos se usa una librería
+  externa (Chart.js / ApexCharts / uPlot…); no se reinventan como WC. (`ok-sparkline`, ya hecho,
+  cubre el mini-gráfico ligero en SVG.)
+- [ ] `ok-chat` — hilo de mensajes ⭐ (importante)
 - [ ] `ok-qr` — generador de QR
 - [ ] `ok-carousel` — carrusel (Ionic recomienda Swiper aparte)
 - [ ] `ok-signature` — firma en canvas

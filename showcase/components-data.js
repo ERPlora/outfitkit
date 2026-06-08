@@ -63,7 +63,12 @@ const COMPONENTS = [
     setup: (root, { h }) => {
       const eur = (n) => (n < 0 ? '−' : '') + '€' + Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2 });
       const ESTADO = { 'Pagado': 'success', 'Procesando': 'warning', 'Reembolso': 'danger', 'Pendiente envío': 'medium' };
-      const estadoBadge = (s) => h`<ion-badge color=${ESTADO[s] ?? 'medium'}>${s}</ion-badge>`;
+      // OJO: `color="success"` NO funciona dentro del Shadow DOM del data-table (las clases globales
+      // .ion-color-* no penetran). Se colorea con CSS vars inline (sí heredan): tinte suave + texto.
+      const estadoBadge = (s) => {
+        const c = ESTADO[s] ?? 'medium';
+        return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${s}</ion-badge>`;
+      };
       const canalChip = (c) => h`<ion-chip style="--background:var(--ion-color-step-100);height:24px;font-size:12px;margin:0">${c}</ion-chip>`;
       const avatar = (r) => h`<span style="display:inline-flex;align-items:center;gap:.55rem;min-width:0">
         <span style="flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:var(--ion-color-step-150);font-size:12px;font-weight:700">${r.initials}</span>
@@ -397,6 +402,41 @@ kanban.addEventListener('ok-card-click', (e) => …); // { id, card }`,
       { kind: 'prop', name: '.columns', type: 'OkKanbanColumn[]', detail: '{id, title, color?, cards:[{id, title, subtitle?, tags?}]}' },
       { kind: 'event', name: 'ok-card-move', type: '{cardId, fromColumn, toColumn, toIndex}', detail: 'Tarjeta movida' },
       { kind: 'event', name: 'ok-card-click', type: '{id, card}', detail: 'Click en tarjeta' },
+    ],
+  },
+  {
+    id: 'ok-chat',
+    name: 'ok-chat',
+    category: 'flujo',
+    desc: 'Hilo de mensajes (chat): burbujas self/ajeno, avatar, hora y compositor con enviar. Para soporte/mensajería.',
+    importPath: "@outfitkit/core/ok-chat",
+    example: '<ok-chat id="chat" title="Soporte" style="display:block;height:420px;max-width:480px;width:100%"></ok-chat>',
+    setup: (root) => {
+      const chat = root.querySelector('#chat');
+      chat.messages = [
+        { id: '1', text: '¡Hola! ¿En qué puedo ayudarte?', author: 'Ana', time: '14:30', avatar: 'AN' },
+        { id: '2', text: 'Quería consultar mi pedido #1042.', time: '14:31', self: true },
+        { id: '3', text: 'Claro, lo reviso ahora mismo.', author: 'Ana', time: '14:31', avatar: 'AN' },
+      ];
+      chat.addEventListener('ok-send', (e) => {
+        chat.messages = [...chat.messages, {
+          id: String(Date.now()), text: e.detail.text, self: true,
+          time: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+        }];
+      });
+    },
+    code: `chat.messages = [
+  { id: '1', text: '¡Hola!', author: 'Ana', time: '14:30', avatar: 'AN' },
+  { id: '2', text: 'Quería consultar mi pedido.', self: true, time: '14:31' },
+];
+chat.addEventListener('ok-send', (e) => {
+  chat.messages = [...chat.messages,
+    { id: crypto.randomUUID(), text: e.detail.text, self: true }];
+});`,
+    api: [
+      { kind: 'prop', name: '.messages', type: 'OkChatMessage[]', detail: '{id, text, author?, time?, self?, avatar?}' },
+      { kind: 'prop', name: 'title · placeholder · readonly', type: '', detail: 'cabecera · placeholder · sin compositor' },
+      { kind: 'event', name: 'ok-send', type: '{text}', detail: 'Texto enviado (Enter); el consumidor añade el mensaje' },
     ],
   },
 

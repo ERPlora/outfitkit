@@ -30,6 +30,7 @@ import './components/ok-currency/ok-currency.js';
 import './components/ok-phone/ok-phone.js';
 import './components/ok-dropzone/ok-dropzone.js';
 import './components/ok-sparkline/ok-sparkline.js';
+import './components/ok-chat/ok-chat.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';

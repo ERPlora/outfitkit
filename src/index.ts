@@ -49,6 +49,8 @@ export { OkPhone } from './components/ok-phone/ok-phone.js';
 export type { OkPhoneCountry } from './components/ok-phone/ok-phone.js';
 export { OkDropzone } from './components/ok-dropzone/ok-dropzone.js';
 export { OkSparkline } from './components/ok-sparkline/ok-sparkline.js';
+export { OkChat } from './components/ok-chat/ok-chat.js';
+export type { OkChatMessage } from './components/ok-chat/ok-chat.js';
 
 // ── Chrome web / marketing ──────────────────────────────────────────────────────────────────
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';

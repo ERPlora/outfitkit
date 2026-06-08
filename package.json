@@ -50,6 +50,7 @@
     "./ok-phone": "./dist/ok-phone.js",
     "./ok-dropzone": "./dist/ok-dropzone.js",
     "./ok-sparkline": "./dist/ok-sparkline.js",
+    "./ok-chat": "./dist/ok-chat.js",
     "./ok-navbar": "./dist/ok-navbar.js",
     "./ok-footer": "./dist/ok-footer.js",
     "./ok-hero": "./dist/ok-hero.js",

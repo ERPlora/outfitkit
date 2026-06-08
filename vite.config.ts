@@ -61,6 +61,7 @@ export default defineConfig({
         'ok-phone': resolve(__dirname, 'src/components/ok-phone/ok-phone.ts'),
         'ok-dropzone': resolve(__dirname, 'src/components/ok-dropzone/ok-dropzone.ts'),
         'ok-sparkline': resolve(__dirname, 'src/components/ok-sparkline/ok-sparkline.ts'),
+        'ok-chat': resolve(__dirname, 'src/components/ok-chat/ok-chat.ts'),
         // Chrome web / marketing (Ionic no cubre la web pública)
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),
