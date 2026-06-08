@@ -1,3 +1,7 @@
-dist/
 node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
 *.tsbuildinfo
+.playwright-mcp/

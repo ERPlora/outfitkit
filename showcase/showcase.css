@@ -1,0 +1,248 @@
+/* Showcase de @outfitkit/core — estilos del propio sitio de documentación (NO de la librería).
+ * Usa los mismos tokens --ok-* para que el chrome del showcase y los componentes combinen. */
+
+:root {
+  /* Tokens --ok-* heredando de Ionic (igual que theme.example.css). El showcase los define
+   * aquí para que la página se vea coherente aunque el host (esta web) no sea una app Ionic. */
+  --ok-primary: var(--ion-color-primary, #3880ff);
+  --ok-primary-contrast: var(--ion-color-primary-contrast, #fff);
+  --ok-bg: var(--ion-background-color, #f6f7f9);
+  --ok-surface: var(--ion-card-background, #ffffff);
+  --ok-surface-2: var(--ion-color-step-100, #f1f1f4);
+  --ok-text: var(--ion-text-color, #1c1b17);
+  --ok-muted: var(--ion-color-medium, #6b7280);
+  --ok-border: rgba(0, 0, 0, 0.1);
+  --ok-radius: 12px;
+  --ok-spacing: 1rem;
+  --ok-container-max: 1140px;
+  --ok-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  font-family: var(--ok-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Barra de navegación del propio showcase ──────────────────────────────── */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--ok-surface);
+  border-bottom: 1px solid var(--ok-border);
+}
+.site-nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  margin-right: auto;
+}
+.site-nav .brand .dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--ok-primary), #7c5cff);
+}
+.site-nav a {
+  color: var(--ok-muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.35rem 0.1rem;
+}
+.site-nav a:hover { color: var(--ok-text); }
+.site-nav a.active { color: var(--ok-primary); }
+.site-nav .gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--ok-muted);
+  border: 1px solid var(--ok-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+
+/* ── Layout de documentación (gallery / guide) ────────────────────────────── */
+.doc {
+  max-width: var(--ok-container-max);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 5rem;
+}
+.doc h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+.doc .lead {
+  color: var(--ok-muted);
+  font-size: 1.05rem;
+  max-width: 60ch;
+  margin: 0 0 2rem;
+}
+.doc h2 {
+  font-size: 1.5rem;
+  margin: 3rem 0 0.25rem;
+  scroll-margin-top: 80px;
+}
+.doc h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+.doc p { line-height: 1.6; }
+
+/* Tarjeta de componente */
+.comp {
+  background: var(--ok-surface);
+  border: 1px solid var(--ok-border);
+  border-radius: var(--ok-radius);
+  padding: 1.25rem 1.25rem 0.5rem;
+  margin: 1rem 0 0;
+  overflow: hidden;
+}
+.comp > .tag {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ok-primary);
+  background: var(--ok-surface-2);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
+.comp > .desc { color: var(--ok-muted); margin: 0.5rem 0 1rem; font-size: 0.95rem; }
+
+/* Demo viva */
+.live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--ok-bg);
+  border: 1px dashed var(--ok-border);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+/* Snippet de código */
+pre.code {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre;
+  tab-size: 2;
+}
+pre.code .t { color: #7dd3fc; }   /* tag */
+pre.code .a { color: #fca5a5; }   /* attr */
+pre.code .c { color: #94a3b8; }   /* comment */
+
+/* Tabla de API (props/eventos/slots) */
+table.api {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  margin-bottom: 1rem;
+}
+table.api th,
+table.api td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--ok-border);
+  vertical-align: top;
+}
+table.api th {
+  color: var(--ok-muted);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+table.api code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  background: var(--ok-surface-2);
+  border-radius: 5px;
+  padding: 0.05rem 0.35rem;
+}
+table.api .kind {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 0.05rem 0.4rem;
+}
+.kind.prop { background: #dbeafe; color: #1e40af; }
+.kind.event { background: #fef3c7; color: #92400e; }
+.kind.slot { background: #dcfce7; color: #166534; }
+
+/* Índice lateral de la galería */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 2rem;
+  max-width: var(--ok-container-max);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+.toc strong {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ok-muted);
+  margin: 1rem 0 0.4rem;
+}
+.toc a {
+  display: block;
+  color: var(--ok-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+}
+.toc a:hover { color: var(--ok-primary); }
+.layout .doc { padding: 0; max-width: none; margin: 0; }
+
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { display: none; }
+  .site-nav { gap: 0.75rem; padding: 0.6rem 0.9rem; }
+  .site-nav a { font-size: 0.8rem; }
+  .site-nav .gh { display: none; }
+}
+
+/* Estado del callout en la guía */
+.note {
+  border-left: 3px solid var(--ok-primary);
+  background: var(--ok-surface);
+  border-radius: 0 10px 10px 0;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.92rem;
+}
+.note strong { color: var(--ok-primary); }

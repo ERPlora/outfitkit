@@ -1,9 +1,14 @@
 {
-  "name": "@erplora/outfitkit",
-  "version": "0.0.0",
-  "description": "OutfitKit — Web Components (Lit) que EXTIENDEN Ionic con lo que falta para UIs de admin densas y landings (data-table, navbar, footer, containers). Standalone: npm + CDN, imports individuales, CSP-safe. Tema vía tokens --ok-* (fallback a --ion-*).",
+  "name": "@outfitkit/core",
+  "version": "0.1.0",
+  "description": "OutfitKit — librería de Web Components (Lit) que envuelve Ionic con un set ok-* consistente: shell de dashboard (app-shell, sidebar, topbar, tabs), data-table, primitivos de formulario y chrome de landing. Usable igual en templates Django y en apps Lit/Vue. npm + CDN, imports individuales, CSP-safe. Tema vía tokens --ok-* (fallback a --ion-*).",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://erplora.github.io/outfitkit/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ERPlora/outfitkit.git"
+  },
   "sideEffects": [
     "**/*.css",
     "./dist/*.js"
@@ -13,7 +18,25 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./define": "./dist/define.js",
     "./ok-data-table": "./dist/ok-data-table.js",
+    "./ok-app-shell": "./dist/ok-app-shell.js",
+    "./ok-sidebar": "./dist/ok-sidebar.js",
+    "./ok-topbar": "./dist/ok-topbar.js",
+    "./ok-page": "./dist/ok-page.js",
+    "./ok-segment": "./dist/ok-segment.js",
+    "./ok-button": "./dist/ok-button.js",
+    "./ok-icon": "./dist/ok-icon.js",
+    "./ok-input": "./dist/ok-input.js",
+    "./ok-select": "./dist/ok-select.js",
+    "./ok-searchbar": "./dist/ok-searchbar.js",
+    "./ok-badge": "./dist/ok-badge.js",
+    "./ok-card": "./dist/ok-card.js",
+    "./ok-item": "./dist/ok-item.js",
+    "./ok-spinner": "./dist/ok-spinner.js",
+    "./ok-toggle": "./dist/ok-toggle.js",
+    "./ok-checkbox": "./dist/ok-checkbox.js",
+    "./ok-chip": "./dist/ok-chip.js",
     "./ok-navbar": "./dist/ok-navbar.js",
     "./ok-footer": "./dist/ok-footer.js",
     "./ok-container": "./dist/ok-container.js",

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OutfitKit — Dashboard demo</title>
+    <meta
+      name="description"
+      content="@outfitkit/core — wrapper completo de Web Components sobre Ionic. Demo del shell de dashboard."
+    />
+
+    <!-- ── Carga CSP-safe (script-src 'self', sin eval) ─────────────────────
+         1) Ionic Core (registra los ion-* que envuelven los ok-*) + su tema.
+         2) lit como external vía import-map (una sola copia compartida).
+         3) OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../dist/theme.example.css" />
+    <script type="module" src="../dist/outfitkit.js"></script>
+
+    <link rel="stylesheet" href="showcase.css" />
+    <style>
+      /* Esta página es full-bleed: el shell ocupa todo el viewport bajo la nav del showcase. */
+      html, body { height: 100%; }
+      .stage { height: calc(100vh - 49px); } /* alto de .site-nav */
+      ok-app-shell { height: 100%; }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      .stat .n { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; }
+      .stat .delta { color: var(--ok-muted); font-size: 0.85rem; }
+      .stat .delta.up { color: #16a34a; }
+      ok-segment { margin: 0.25rem 0 1.25rem; }
+    </style>
+  </head>
+  <body>
+    <!-- Nav del propio showcase (no es parte de la librería) -->
+    <nav class="site-nav">
+      <span class="brand"><span class="dot"></span> OutfitKit</span>
+      <a href="index.html" class="active">Dashboard</a>
+      <a href="components.html">Componentes</a>
+      <a href="guide.html">Guía</a>
+      <a class="gh" href="https://github.com/ERPlora/outfitkit">GitHub</a>
+    </nav>
+
+    <div class="stage">
+      <!-- ── Shell del dashboard (mismo patrón que el Hub) ──────────────────── -->
+      <ok-app-shell id="shell">
+        <!-- Sidebar: marca + switcher Hub/Cloud + secciones de nav + usuario -->
+        <ok-sidebar id="sidebar" slot="sidebar" active-path="/dashboard">
+          <strong slot="brand" style="font-size:1.1rem;letter-spacing:-0.01em;">ERPlora</strong>
+          <ok-segment id="switcher" slot="switcher"></ok-segment>
+        </ok-sidebar>
+
+        <!-- Contenido: topbar + página con stats, tabs y data-table -->
+        <ok-page>
+          <ok-topbar id="topbar" slot="header" heading="Panel"></ok-topbar>
+
+          <div class="stats">
+            <ok-card class="stat">
+              <ok-card-content>
+                <ok-card-subtitle>Ventas hoy</ok-card-subtitle>
+                <div class="n">€2.480</div>
+                <div class="delta up">▲ 12% vs ayer</div>
+              </ok-card-content>
+            </ok-card>
+            <ok-card class="stat">
+              <ok-card-content>
+                <ok-card-subtitle>Tickets</ok-card-subtitle>
+                <div class="n">137</div>
+                <div class="delta up">▲ 4%</div>
+              </ok-card-content>
+            </ok-card>
+            <ok-card class="stat">
+              <ok-card-content>
+                <ok-card-subtitle>Ticket medio</ok-card-subtitle>
+                <div class="n">€18,10</div>
+                <div class="delta">— estable</div>
+              </ok-card-content>
+            </ok-card>
+            <ok-card class="stat">
+              <ok-card-content>
+                <ok-card-subtitle>Stock bajo</ok-card-subtitle>
+                <div class="n">3</div>
+                <div class="delta">artículos</div>
+              </ok-card-content>
+            </ok-card>
+          </div>
+
+          <ok-segment id="tabs"></ok-segment>
+
+          <ok-data-table id="dt"></ok-data-table>
+        </ok-page>
+      </ok-app-shell>
+    </div>
+
+    <script type="module">
+      // ── Sidebar: switcher Hub/Cloud + secciones de navegación ─────────────
+      const switcher = document.getElementById('switcher');
+      switcher.items = [
+        { value: 'hub', label: 'Hub', icon: 'storefront-outline' },
+        { value: 'cloud', label: 'Cloud', icon: 'cloud-outline' },
+      ];
+      switcher.value = 'hub';
+
+      const sidebar = document.getElementById('sidebar');
+      sidebar.sections = [
+        {
+          label: 'General',
+          items: [
+            { path: '/dashboard', label: 'Panel', icon: 'grid-outline' },
+            { path: '/sales', label: 'Ventas', icon: 'cart-outline' },
+            { path: '/products', label: 'Productos', icon: 'pricetags-outline' },
+          ],
+        },
+        {
+          label: 'Gestión',
+          items: [
+            { path: '/customers', label: 'Clientes', icon: 'people-outline' },
+            { path: '/employees', label: 'Empleados', icon: 'id-card-outline' },
+            { path: '/settings', label: 'Ajustes', icon: 'settings-outline' },
+          ],
+        },
+      ];
+      sidebar.user = { name: 'Ana Soler', email: 'ana@cafe-luna.com' };
+      sidebar.addEventListener('ok-account', () => alert('Abrir menú de cuenta'));
+
+      // ── Topbar: acciones (notificaciones / apps / tema / asistente) ───────
+      const topbar = document.getElementById('topbar');
+      topbar.actions = [
+        { id: 'notifications', label: 'Notificaciones', icon: 'notifications-outline', pinned: true },
+        { id: 'apps', label: 'Aplicaciones', icon: 'apps-outline' },
+        { id: 'theme', label: 'Tema', icon: 'contrast-outline' },
+        { id: 'assistant', label: 'Asistente', icon: 'sparkles-outline', pinned: true },
+      ];
+      topbar.addEventListener('ok-action', (e) => {
+        if (e.detail.id === 'theme') {
+          document.documentElement.classList.toggle('ion-palette-dark');
+        } else {
+          console.log('Acción topbar:', e.detail.id);
+        }
+      });
+
+      // ── Navegación: ok-nav cambia active-path + heading del topbar ────────
+      const titles = {
+        '/dashboard': 'Panel',
+        '/sales': 'Ventas',
+        '/products': 'Productos',
+        '/customers': 'Clientes',
+        '/employees': 'Empleados',
+        '/settings': 'Ajustes',
+      };
+      // El evento ok-nav burbujea hasta el shell; lo escuchamos aquí para enrutar.
+      // (el shell ya cierra el drawer móvil al recibir ok-nav; el ok-menu-toggle lo maneja solo.)
+      document.getElementById('shell').addEventListener('ok-nav', (e) => {
+        const path = e.detail.path;
+        sidebar.activePath = path;
+        topbar.heading = titles[path] ?? path;
+      });
+
+      // ── Tabs de la página (ok-segment) ────────────────────────────────────
+      const tabs = document.getElementById('tabs');
+      tabs.items = [
+        { value: 'all', label: 'Todos' },
+        { value: 'low', label: 'Stock bajo' },
+        { value: 'top', label: 'Más vendidos' },
+      ];
+      tabs.value = 'all';
+
+      // ── Data-table con datos de ejemplo (property binding) ────────────────
+      const allRows = [
+        { id: 1, name: 'Café solo', cat: 'Bebidas', stock: 120, price: 1.2, sku: 'CAF-001' },
+        { id: 2, name: 'Café con leche', cat: 'Bebidas', stock: 95, price: 1.6, sku: 'CAF-002' },
+        { id: 3, name: 'Croissant', cat: 'Bollería', stock: 4, price: 1.9, sku: 'BOL-010' },
+        { id: 4, name: 'Tostada', cat: 'Cocina', stock: 60, price: 2.4, sku: 'COC-101' },
+        { id: 5, name: 'Zumo naranja', cat: 'Bebidas', stock: 3, price: 2.8, sku: 'BEB-200' },
+        { id: 6, name: 'Bocadillo jamón', cat: 'Cocina', stock: 22, price: 3.5, sku: 'COC-130' },
+        { id: 7, name: 'Magdalena', cat: 'Bollería', stock: 2, price: 1.1, sku: 'BOL-014' },
+      ];
+      const dt = document.getElementById('dt');
+      dt.columns = [
+        { key: 'name', header: 'Producto', sortable: true, filterable: true },
+        { key: 'cat', header: 'Categoría', sortable: true, filterable: true },
+        { key: 'stock', header: 'Stock', align: 'right', sortable: true },
+        { key: 'price', header: 'Precio', align: 'right', sortable: true, format: (r) => `€${r.price.toFixed(2)}` },
+        { key: 'sku', header: 'SKU', hidden: true },
+      ];
+      dt.rows = allRows;
+      dt.searchKeys = ['name', 'sku', 'cat'];
+      dt.pageSize = 5;
+      dt.pageSizes = [5, 10, 25];
+      dt.columnSelector = true;
+      dt.views = ['table', 'card'];
+      dt.exportable = true;
+      dt.actions = [
+        { id: 'edit', label: 'Editar', icon: 'create-outline' },
+        { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
+      ];
+      dt.addEventListener('rowAction', (e) => alert(`${e.detail.actionId} → ${e.detail.row.name}`));
+
+      // Filtrar por el tab activo de la página.
+      tabs.addEventListener('ok-change', (e) => {
+        const v = e.detail.value;
+        if (v === 'low') dt.rows = allRows.filter((r) => r.stock <= 5);
+        else if (v === 'top') dt.rows = [...allRows].sort((a, b) => b.stock - a.stock).slice(0, 3);
+        else dt.rows = allRows;
+      });
+    </script>
+  </body>
+</html>

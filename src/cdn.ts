@@ -1,8 +1,30 @@
-// Entry para el bundle único de CDN (`@erplora/outfitkit/cdn` → dist/outfitkit.js).
-// Importar este fichero auto-registra todos los componentes ok-*. Pensado para cargarlo
-// de una vez en una página (Django/landing) con un solo <script type="module">.
+// Entry del bundle único de CDN (`@outfitkit/core/cdn` → dist/outfitkit.js). Importar este
+// fichero auto-registra TODOS los componentes ok-*. Pensado para cargarlo de una vez en una
+// página (Django/landing/showcase) con un solo <script type="module">.
 // `lit` queda external → en CDN sirve un import-map que apunte "lit" a su CDN.
+
+// Compuestos / dashboard
 import './components/ok-data-table/ok-data-table.js';
+// Shell / layout
+import './components/ok-app-shell/ok-app-shell.js';
+import './components/ok-sidebar/ok-sidebar.js';
+import './components/ok-topbar/ok-topbar.js';
+import './components/ok-page/ok-page.js';
+import './components/ok-segment/ok-segment.js';
+// Primitivos (wrap de Ionic)
+import './components/ok-button/ok-button.js';
+import './components/ok-icon/ok-icon.js';
+import './components/ok-input/ok-input.js';
+import './components/ok-select/ok-select.js';
+import './components/ok-searchbar/ok-searchbar.js';
+import './components/ok-badge/ok-badge.js';
+import './components/ok-card/ok-card.js';
+import './components/ok-item/ok-item.js';
+import './components/ok-spinner/ok-spinner.js';
+import './components/ok-toggle/ok-toggle.js';
+import './components/ok-checkbox/ok-checkbox.js';
+import './components/ok-chip/ok-chip.js';
+// Landing chrome
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';
 import './components/ok-container/ok-container.js';

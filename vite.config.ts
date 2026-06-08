@@ -32,7 +32,30 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         outfitkit: resolve(__dirname, 'src/cdn.ts'),
+        // Helper de registro idempotente (lo usan los módulos para registrar su propio WC).
+        define: resolve(__dirname, 'src/base/define.ts'),
+        // Compuestos / dashboard
         'ok-data-table': resolve(__dirname, 'src/components/ok-data-table/ok-data-table.ts'),
+        // Shell / layout
+        'ok-app-shell': resolve(__dirname, 'src/components/ok-app-shell/ok-app-shell.ts'),
+        'ok-sidebar': resolve(__dirname, 'src/components/ok-sidebar/ok-sidebar.ts'),
+        'ok-topbar': resolve(__dirname, 'src/components/ok-topbar/ok-topbar.ts'),
+        'ok-page': resolve(__dirname, 'src/components/ok-page/ok-page.ts'),
+        'ok-segment': resolve(__dirname, 'src/components/ok-segment/ok-segment.ts'),
+        // Primitivos (wrap de Ionic)
+        'ok-button': resolve(__dirname, 'src/components/ok-button/ok-button.ts'),
+        'ok-icon': resolve(__dirname, 'src/components/ok-icon/ok-icon.ts'),
+        'ok-input': resolve(__dirname, 'src/components/ok-input/ok-input.ts'),
+        'ok-select': resolve(__dirname, 'src/components/ok-select/ok-select.ts'),
+        'ok-searchbar': resolve(__dirname, 'src/components/ok-searchbar/ok-searchbar.ts'),
+        'ok-badge': resolve(__dirname, 'src/components/ok-badge/ok-badge.ts'),
+        'ok-card': resolve(__dirname, 'src/components/ok-card/ok-card.ts'),
+        'ok-item': resolve(__dirname, 'src/components/ok-item/ok-item.ts'),
+        'ok-spinner': resolve(__dirname, 'src/components/ok-spinner/ok-spinner.ts'),
+        'ok-toggle': resolve(__dirname, 'src/components/ok-toggle/ok-toggle.ts'),
+        'ok-checkbox': resolve(__dirname, 'src/components/ok-checkbox/ok-checkbox.ts'),
+        'ok-chip': resolve(__dirname, 'src/components/ok-chip/ok-chip.ts'),
+        // Landing chrome
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),
         'ok-container': resolve(__dirname, 'src/components/ok-container/ok-container.ts'),

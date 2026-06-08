@@ -1,0 +1,70 @@
+name: Deploy showcase to GitHub Pages
+
+# Publica el showcase estático en GitHub Pages en cada push a main.
+#
+# El showcase carga la librería desde "../dist/outfitkit.js" (relativo a showcase/).
+# Para que esa MISMA ruta funcione en local Y en Pages, preservamos el layout del repo:
+#   _site/showcase/     ← showcase/*  (las páginas reales viven aquí)
+#   _site/dist/         ← dist/*      (build; "../dist" desde showcase resuelve)
+#   _site/index.html    ← redirección a ./showcase/
+# Así no hay que tocar el showcase (su "../dist" sigue siendo correcto en ambos contextos).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un solo deploy concurrente; no canceles uno en curso.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build library (dist/)
+        run: npm run build
+
+      - name: Assemble site (showcase + dist + redirect)
+        run: |
+          rm -rf _site
+          mkdir -p _site/showcase _site/dist
+          cp -R showcase/. _site/showcase/
+          cp -R dist/. _site/dist/
+          printf '<!doctype html><meta charset="utf-8"><title>OutfitKit</title><meta http-equiv="refresh" content="0; url=./showcase/">\n' > _site/index.html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
