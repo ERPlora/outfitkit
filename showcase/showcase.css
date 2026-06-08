@@ -162,6 +162,10 @@ table.api .kind {
 .comp { margin: 1rem 0 0; }
 .comp:first-of-type { margin-top: 0.5rem; }
 
+/* Tarjeta de introducción (index.html) */
+.intro { display: block; margin-bottom: 1.5rem; }
+.intro p { margin: 0 0 0.75rem; }
+
 /* ── Dashboard demo (index.html), dentro del ok-page ──────────────────────── */
 .stats {
   display: grid;

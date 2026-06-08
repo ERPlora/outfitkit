@@ -49,6 +49,11 @@ export default defineConfig({
         'ok-content': resolve(__dirname, 'src/components/ok-content/ok-content.ts'),
         'ok-segment': resolve(__dirname, 'src/components/ok-segment/ok-segment.ts'),
         'ok-tabbar': resolve(__dirname, 'src/components/ok-tabbar/ok-tabbar.ts'),
+        // Overlays (wrappers finos sobre Ionic nativo)
+        'ok-modal': resolve(__dirname, 'src/components/ok-modal/ok-modal.ts'),
+        'ok-alert': resolve(__dirname, 'src/components/ok-alert/ok-alert.ts'),
+        'ok-toast': resolve(__dirname, 'src/components/ok-toast/ok-toast.ts'),
+        'ok-action-sheet': resolve(__dirname, 'src/components/ok-action-sheet/ok-action-sheet.ts'),
         // Primitivos (wrap de Ionic)
         'ok-button': resolve(__dirname, 'src/components/ok-button/ok-button.ts'),
         'ok-icon': resolve(__dirname, 'src/components/ok-icon/ok-icon.ts'),

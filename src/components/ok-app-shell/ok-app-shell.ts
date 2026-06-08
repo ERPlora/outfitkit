@@ -38,6 +38,7 @@ export class OkAppShell extends HTMLElement {
     const menu = document.createElement('ion-menu');
     menu.setAttribute('content-id', id);
     const menuContent = document.createElement('ion-content');
+    menuContent.classList.add('ion-padding'); // padding nativo de Ionic para que la nav respire
     if (sidebar) {
       sidebar.removeAttribute('slot');
       menuContent.appendChild(sidebar);

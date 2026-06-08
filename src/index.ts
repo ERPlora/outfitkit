@@ -35,6 +35,14 @@ export type { OkSegmentItem } from './components/ok-segment/ok-segment.js';
 export { OkTabbar } from './components/ok-tabbar/ok-tabbar.js';
 export type { OkTabbarItem } from './components/ok-tabbar/ok-tabbar.js';
 
+// ── Overlays (wrappers finos sobre Ionic nativo) ──────────────────────────────────────────
+export { OkModal } from './components/ok-modal/ok-modal.js';
+export { OkAlert } from './components/ok-alert/ok-alert.js';
+export type { OkAlertButton } from './components/ok-alert/ok-alert.js';
+export { OkToast } from './components/ok-toast/ok-toast.js';
+export { OkActionSheet } from './components/ok-action-sheet/ok-action-sheet.js';
+export type { OkActionSheetButton } from './components/ok-action-sheet/ok-action-sheet.js';
+
 // ── Primitivos (wrap de Ionic) ──────────────────────────────────────────────────────────
 export { OkButton } from './components/ok-button/ok-button.js';
 export { OkIcon } from './components/ok-icon/ok-icon.js';

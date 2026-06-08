@@ -15,6 +15,11 @@ import './components/ok-page/ok-page.js';
 import './components/ok-content/ok-content.js';
 import './components/ok-segment/ok-segment.js';
 import './components/ok-tabbar/ok-tabbar.js';
+// Overlays (wrappers finos sobre Ionic nativo)
+import './components/ok-modal/ok-modal.js';
+import './components/ok-alert/ok-alert.js';
+import './components/ok-toast/ok-toast.js';
+import './components/ok-action-sheet/ok-action-sheet.js';
 // Primitivos (wrap de Ionic)
 import './components/ok-button/ok-button.js';
 import './components/ok-icon/ok-icon.js';

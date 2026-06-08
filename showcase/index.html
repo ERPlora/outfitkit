@@ -49,9 +49,40 @@
 
       <!-- Contenido de la página (va dentro del ion-content principal) -->
       <div class="doc">
+        <!-- Intro: qué es OutfitKit (wrapper sobre Ionic) -->
+        <ok-card class="intro">
+          <ok-card-header>
+            <ok-card-subtitle>¿Qué es OutfitKit?</ok-card-subtitle>
+            <ok-card-title>Un wrapper fino sobre Ionic</ok-card-title>
+          </ok-card-header>
+          <ok-card-content>
+            <p>
+              <strong>OutfitKit</strong> es una librería de Web Components (Lit) que envuelve
+              <strong>Ionic</strong> con un set <code>ok-*</code> consistente. <strong>La mayoría
+              de los componentes son componentes de Ionic</strong> expuestos como <code>ok-*</code>
+              <em>sin cambiar su estilo</em>: <code>ok-button</code> es un <code>ion-button</code>,
+              <code>ok-modal</code> es un <code>ion-modal</code>, etc. Tu código usa
+              <strong>solo <code>ok-*</code></strong>, nunca <code>ion-*</code> directo.
+            </p>
+            <p>
+              Los pocos que <strong>no</strong> son de Ionic los añadimos nosotros para la web
+              (marketing/landing), como <code>ok-navbar</code> (barra responsive con burger),
+              <code>ok-hero</code> o <code>ok-footer</code> — el hueco que Ionic, pensado para apps,
+              no cubre.
+            </p>
+            <div class="live" style="border:0;padding:0;background:transparent;">
+              <ok-chip color="primary"><ok-icon slot="start" name="cube-outline"></ok-icon>wrapper de Ionic</ok-chip>
+              <ok-chip color="success"><ok-icon slot="start" name="shield-checkmark-outline"></ok-icon>CSP-safe</ok-chip>
+              <ok-chip><ok-icon slot="start" name="logo-web-component"></ok-icon>Web Components (Lit)</ok-chip>
+              <ok-button size="small" fill="outline" href="components.html">Ver componentes</ok-button>
+            </div>
+          </ok-card-content>
+        </ok-card>
+
         <p class="lead">
-          Estructura <strong>nativa de Ionic</strong> (split-pane + menu + toolbar) en un único
-          <code>ok-app-shell</code>, sin estilos propios. El contenido es solo <code>ok-*</code>.
+          Y este mismo panel es la prueba: estructura <strong>nativa de Ionic</strong>
+          (split-pane + menu + toolbar) en un único <code>ok-app-shell</code>, sin estilos propios.
+          El contenido es solo <code>ok-*</code>.
         </p>
 
         <div class="stats">
