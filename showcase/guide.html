@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OutfitKit — Guía de uso</title>
-    <meta name="description" content="Cómo instalar y usar @outfitkit/core: npm, CDN, theming con tokens --ok-*, Django y Lit." />
+    <title>OutfitKit — Guía</title>
+    <link rel="icon" href="logo.png" />
+    <meta name="description" content="Guía de OutfitKit: instalación (npm/CDN), theming por tokens --ok-* y la relación con Ionic." />
 
-    <!-- Carga CSP-safe (para los ejemplos vivos de la propia guía) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
@@ -19,104 +19,92 @@
     <link rel="stylesheet" href="showcase.css" />
   </head>
   <body>
-    <!-- Shell Ionic nativo (un solo ok-app-shell, un solo toolbar). -->
-    <ok-app-shell id="shell" heading="Guía" when="md">
-      <ok-sidebar id="sidebar" slot="sidebar" active-path="guide.html">
-        <div class="logo-brand" slot="brand">
-          <img src="logo.png" alt="OutfitKit" />
-          <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
-        </div>
-      </ok-sidebar>
+    <ion-app>
+      <ion-split-pane content-id="main" when="md">
+        <ion-menu content-id="main">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <ion-list>
+              <ion-item href="index.html" detail="false">
+                <ion-icon slot="start" name="home-outline"></ion-icon>
+                <ion-label>Inicio</ion-label>
+              </ion-item>
+              <ion-item href="components.html" detail="false">
+                <ion-icon slot="start" name="cube-outline"></ion-icon>
+                <ion-label>Componentes</ion-label>
+              </ion-item>
+              <ion-item href="guide.html" detail="false" color="primary">
+                <ion-icon slot="start" name="book-outline"></ion-icon>
+                <ion-label>Guía</ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-content>
+        </ion-menu>
 
-      <ok-button slot="actions" id="btn-github" icon="logo-github" fill="clear" aria-label="GitHub"></ok-button>
-      <ok-button slot="actions" id="btn-theme" icon="contrast-outline" fill="clear" aria-label="Tema"></ok-button>
+        <div class="ion-page" id="main">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
+              <ion-title>Guía</ion-title>
+              <ion-buttons slot="end">
+                <ion-button id="btn-github" aria-label="GitHub"><ion-icon slot="icon-only" name="logo-github"></ion-icon></ion-button>
+                <ion-button id="btn-theme" aria-label="Tema"><ion-icon slot="icon-only" name="contrast-outline"></ion-icon></ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
 
-      <div class="doc">
-        <h1>Guía de uso</h1>
-          <p class="lead">
-            <code>@outfitkit/core</code> es una librería de Web Components (Lit) que envuelve Ionic por
-            completo: tu código usa solo <code>ok-*</code> y nunca <code>ion-*</code> directamente. Se
-            distribuye standalone por npm y CDN, con imports individuales o bundle.
-          </p>
-
-          <div class="note">
-            <strong>Requisito común:</strong> OutfitKit asume que el <em>host</em> registra
-            <code>@ionic/core</code> una sola vez (los <code>ok-*</code> esconden <code>ion-*</code> por
-            dentro) y que <code>lit</code> está disponible (bundler o import-map). OutfitKit deja
-            <code>lit</code> como <em>external</em> para que haya una sola copia.
-          </div>
-
-          <!-- Instalación con npm -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Instalación con npm</ok-card-title>
-              <ok-card-subtitle>Para apps con bundler (Vite, webpack, Ionic React, etc.).</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <pre class="code">npm i @outfitkit/core @ionic/core lit</pre>
-
-              <h3>Import individual por componente (recomendado, tree-shake)</h3>
-              <pre class="code"><span class="c">// registra solo lo que usas</span>
-import '@outfitkit/core/ok-button';
-import '@outfitkit/core/ok-data-table';
-import '@outfitkit/core/ok-app-shell';
-
-<span class="c">// los tipos también se exportan desde el barrel</span>
-import type { OkNavSection, OkHeaderAction } from '@outfitkit/core';</pre>
-
-              <h3>Bundle completo (registra todos los ok-*)</h3>
-              <pre class="code"><span class="c">// un solo import auto-registra TODA la librería</span>
-import '@outfitkit/core/cdn';</pre>
-
-              <h3>El tema (tokens) por separado</h3>
-              <pre class="code"><span class="c">// plantilla de tokens --ok-* (cópiala/ajústala a tu marca)</span>
-import '@outfitkit/core/theme.css';</pre>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Uso por CDN -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Uso por CDN (sin build)</ok-card-title>
-              <ok-card-subtitle>Para landings, prototipos o plantillas Django sueltas. Es exactamente lo que hace este showcase.</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <pre class="code"><span class="t">&lt;!-- Ionic Core (registra los ion-* internos) + tema --&gt;</span>
-<span class="t">&lt;script</span> <span class="a">type</span>="module" <span class="a">src</span>="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"<span class="t">&gt;&lt;/script&gt;</span>
-<span class="t">&lt;link</span> <span class="a">rel</span>="stylesheet" <span class="a">href</span>="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" <span class="t">/&gt;</span>
-<span class="t">&lt;script</span> <span class="a">type</span>="module" <span class="a">src</span>="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"<span class="t">&gt;&lt;/script&gt;</span>
-
-<span class="t">&lt;!-- lit como external vía import-map --&gt;</span>
-<span class="t">&lt;script</span> <span class="a">type</span>="importmap"<span class="t">&gt;</span>
-  { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-<span class="t">&lt;/script&gt;</span>
-
-<span class="t">&lt;!-- OutfitKit: tokens + bundle (servido p.ej. desde unpkg/jsdelivr o tu propio CDN) --&gt;</span>
-<span class="t">&lt;link</span> <span class="a">rel</span>="stylesheet" <span class="a">href</span>="https://cdn.jsdelivr.net/npm/@outfitkit/core/dist/theme.example.css" <span class="t">/&gt;</span>
-<span class="t">&lt;script</span> <span class="a">type</span>="module" <span class="a">src</span>="https://cdn.jsdelivr.net/npm/@outfitkit/core/dist/outfitkit.js"<span class="t">&gt;&lt;/script&gt;</span></pre>
-              <div class="note">
-                <strong>CSP estricta:</strong> la salida no contiene <code>eval</code>/<code>new
-                Function</code>, así que funciona bajo <code>script-src 'self'</code> (Lit usa tagged
-                templates + adoptedStyleSheets). Para un CDN propio bajo CSP, sírvelo desde tu mismo
-                origen o añade el host del CDN a la directiva.
-              </div>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Theming -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Tematizar con tokens --ok-*</ok-card-title>
-              <ok-card-subtitle>Theming en dos capas, estilo Ionic.</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <p>
-                Capa 1: <strong>tokens globales</strong> <code>--ok-*</code> en tu <code>:root</code>
-                (espejo de <code>--ion-*</code>). Si hay Ionic cargado, lo más cómodo es heredarlos
-                para que el tema claro/oscuro se aplique solo:
+          <ion-content class="ion-padding">
+            <div class="doc">
+              <h1>Guía</h1>
+              <p class="lead">
+                Cómo instalar OutfitKit, tematizarlo con tokens y cómo se relaciona con Ionic.
               </p>
-              <pre class="code"><span class="a">:root</span> {
+
+              <div class="note">
+                <strong>Ionic es la base.</strong> OutfitKit cubre los huecos que Ionic no trae
+                (tabla rica, árbol, kpi/stat, stepper/wizard, feedback inline, estados vacíos,
+                chrome web). Para botones, inputs, listas, modales, toolbars y layout de app:
+                <strong>usa Ionic directo</strong> — este mismo showcase está construido así.
+              </div>
+
+              <h2>Instalación</h2>
+              <p>Instala el paquete y sus <em>peers</em> (Ionic y Lit los aporta el host una sola vez):</p>
+              <pre class="code">npm i @outfitkit/core
+# peers
+npm i @ionic/core lit</pre>
+
+              <h3>Carga de Ionic (lo registra el host)</h3>
+              <p>OutfitKit asume que <code>@ionic/core</code> ya está registrado; no lo importa por componente. Cárgalo una vez en tu app:</p>
+              <pre class="code">import '@ionic/core';
+import '@ionic/core/css/ionic.bundle.css';</pre>
+
+              <h3>Imports individuales (recomendado)</h3>
+              <p>Importa solo los componentes que uses (mejor tree-shaking). El import tiene efecto secundario: registra el custom element.</p>
+              <pre class="code">import '@outfitkit/core/ok-data-table';
+import '@outfitkit/core/ok-tree';
+import '@outfitkit/core/ok-kpi';
+
+// También puedes importar las clases/tipos desde el barrel:
+import { OkDataTable } from '@outfitkit/core';</pre>
+
+              <h3>Bundle completo (CDN / prototipos)</h3>
+              <p>Un único import que auto-registra todos los <code>ok-*</code>:</p>
+              <pre class="code">import '@outfitkit/core/cdn';</pre>
+
+              <h2>Theming por tokens <code>--ok-*</code></h2>
+              <p>
+                OutfitKit no define valores por defecto: tú decides de dónde salen. Lo más cómodo es
+                <strong>heredarlos de Ionic</strong> (<code>--ion-*</code>), con lo que el tema
+                claro/oscuro se aplica solo. Copia <code>@outfitkit/core/theme.css</code> a tu CSS y
+                ajusta lo que quieras:
+              </p>
+              <pre class="code">:root {
   --ok-primary: var(--ion-color-primary);
+  --ok-primary-contrast: var(--ion-color-primary-contrast);
   --ok-bg: var(--ion-background-color);
   --ok-surface: var(--ion-card-background);
   --ok-text: var(--ion-text-color);
@@ -124,190 +112,35 @@ import '@outfitkit/core/theme.css';</pre>
   --ok-radius: 12px;
   --ok-spacing: 1rem;
   --ok-container-max: 1140px;
-  --ok-font: system-ui, sans-serif;
-}</pre>
-              <p>Sin Ionic (p.ej. una landing Django sin app Ionic), pon valores propios de marca:</p>
-              <pre class="code"><span class="a">:root</span> {
-  --ok-primary: #1496d6;
-  --ok-bg: #ffffff;
-  --ok-surface: #ffffff;
-  --ok-text: #18181b;
-  --ok-border: rgba(24, 24, 27, 0.12);
+  --ok-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }</pre>
               <p>
-                Capa 2: <strong>vars por componente</strong>, estilo Ionic y sin guion bajo
-                (<code>--background</code>, <code>--color</code>, <code>--border-radius</code>,
-                <code>--padding</code>…). Cada una cae en cadena <code>--ok-*</code> →
-                <code>--ion-*</code> → hex. Así puedes ajustar un componente concreto igual que
-                <code>ion-button</code>:
+                Cada componente también expone <strong>vars propias estilo Ionic</strong> (sin guion
+                bajo: <code>--background</code>, <code>--color</code>, <code>--border-radius</code>…)
+                que degradan en cadena <code>--ok-*</code> → <code>--ion-*</code> → hex, así que puedes
+                ajustar uno a uno sin tocar los tokens globales.
               </p>
-              <pre class="code"><span class="a">ok-button</span> { --background: #7c5cff; --border-radius: 999px; }
-<span class="a">ok-input</span>  { --border-radius: 6px; }</pre>
+              <p>Sin Ionic (p.ej. una landing Django sin Ionic) pon valores propios en los tokens <code>--ok-*</code>.</p>
 
-              <p>Lista de tokens globales:</p>
-              <table class="api">
-                <tr><th>Token</th><th>Para</th></tr>
-                <tr><td><code>--ok-primary</code> / <code>--ok-primary-contrast</code></td><td>color de marca</td></tr>
-                <tr><td><code>--ok-bg</code></td><td>fondo de página</td></tr>
-                <tr><td><code>--ok-surface</code> / <code>--ok-surface-2</code></td><td>superficies (tarjetas, controles)</td></tr>
-                <tr><td><code>--ok-text</code> / <code>--ok-muted</code></td><td>texto / texto secundario</td></tr>
-                <tr><td><code>--ok-border</code></td><td>bordes/divisores</td></tr>
-                <tr><td><code>--ok-radius</code> / <code>--ok-spacing</code></td><td>geometría</td></tr>
-                <tr><td><code>--ok-container-max</code> / <code>--ok-font</code></td><td>ancho landing / tipografía</td></tr>
-              </table>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Uso en Django -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Uso en Django</ok-card-title>
-              <ok-card-subtitle>Carga las dependencias con <code>&lt;script type="module"&gt;</code> y, bajo CSP estricta, añade el <code>nonce</code> a tus scripts inline.</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <p>
-                El bundle de OutfitKit es un fichero externo (no necesita nonce). El property binding
-                (p.ej. <code>.rows</code> de <code>ok-data-table</code>) va en un script con nonce:
-              </p>
-              <pre class="code"><span class="t">&lt;link</span> <span class="a">rel</span>="stylesheet" <span class="a">href</span>="{% static 'vendor/outfitkit/theme.css' %}" <span class="t">/&gt;</span>
-<span class="t">&lt;script</span> <span class="a">type</span>="module" <span class="a">src</span>="{% static 'vendor/outfitkit/outfitkit.js' %}"<span class="t">&gt;&lt;/script&gt;</span>
-
-<span class="t">&lt;ok-data-table</span> <span class="a">id</span>="tabla"<span class="t">&gt;&lt;/ok-data-table&gt;</span>
-
-<span class="t">&lt;script</span> <span class="a">type</span>="module" <span class="a">nonce</span>="{{ request.csp_nonce }}"<span class="t">&gt;</span>
-  const dt = document.getElementById('tabla');
-  dt.columns = {{ columns_json|safe }};
-  dt.rows = {{ rows_json|safe }};
-  dt.addEventListener('rowAction', (e) =&gt; {
-    <span class="c">// POST al servidor con el id de la fila</span>
-  });
-<span class="t">&lt;/script&gt;</span></pre>
-              <div class="note">
-                Sirve los assets desde tu propio origen (<code>static/</code>) para cumplir
-                <code>script-src 'self'</code>. El import-map de <code>lit</code> también debe apuntar
-                a un origen permitido por tu CSP (o vendoriza <code>lit</code> en <code>static/</code>).
-              </div>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Uso en Lit / Hub -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Uso en Lit / Hub</ok-card-title>
-              <ok-card-subtitle>Importa los <code>ok-*</code> que uses y cablea props/eventos con la sintaxis declarativa de Lit (<code>.prop</code> y <code>@evento</code>).</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <pre class="code"><span class="c">import</span> { LitElement, html } <span class="c">from</span> 'lit';
-<span class="c">import</span> '@outfitkit/core/ok-data-table';
-<span class="c">import</span> '@outfitkit/core/ok-button';
-
-class Productos extends LitElement {
-  rows = [{ id: 1, name: 'Café', price: 1.2 }];
-  render() {
-    return html`
-      <span class="t">&lt;ok-data-table</span>
-        .columns=${[{ key: 'name', header: 'Producto' }]}
-        .rows=${this.rows}
-        @rowAction=${(e) =&gt; this.onRow(e.detail)}<span class="t">&gt;&lt;/ok-data-table&gt;</span>
-    `;
-  }
-}</pre>
-              <div class="note">
-                Property binding con <code>.columns</code>/<code>.rows</code> (no atributos): son datos
-                JS, no strings. Los eventos llegan ya normalizados como <code>ok-*</code> (p.ej.
-                <code>@ok-change</code>, <code>@rowAction</code>); nunca escuches <code>ionChange</code>.
-              </div>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Estado con store + IndexedDB -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Estado: store con IndexedDB</ok-card-title>
-              <ok-card-subtitle>Estado reactivo que PERSISTE entre recargas. Pulsa +1 y recarga la página: el contador sigue ahí.</ok-card-subtitle>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <p style="display:flex;align-items:center;gap:1rem;">
-                <ok-button id="store-inc"><ok-icon slot="start" name="add-outline"></ok-icon>+1</ok-button>
-                <ok-button id="store-reset" fill="outline">Reset</ok-button>
-                <span>Contador persistente: <strong id="store-out" style="font-size:1.25rem;">0</strong></span>
-              </p>
-              <pre class="code"><span class="c">import { store } from '@outfitkit/core/store';</span>
-await store.ready;                              <span class="c">// hidrata la caché desde IndexedDB</span>
-const out = document.getElementById('out');
-out.textContent = store.get('count') ?? 0;
-store.subscribe('count', (v) =&gt; { out.textContent = v; });   <span class="c">// reactivo</span>
-inc.addEventListener('click', () =&gt; store.update('count', (n = 0) =&gt; n + 1));</pre>
-            </ok-card-content>
-          </ok-card>
-
-          <!-- Reglas de oro -->
-          <ok-card class="comp">
-            <ok-card-header>
-              <ok-card-title>Reglas de oro</ok-card-title>
-            </ok-card-header>
-            <ok-card-content class="comp-body">
-              <ul style="line-height:1.8;margin:0;">
-                <li>Usa <strong>solo <code>ok-*</code></strong>; nunca <code>ion-*</code> directamente.</li>
-                <li>Datos por <strong>property binding</strong> (<code>.columns</code>, <code>.rows</code>, <code>sidebar.sections</code>, <code>topbar.actions</code>, <code>segment.items</code>, <code>select.options</code>), no atributos.</li>
-                <li>Escucha siempre eventos <strong><code>ok-*</code></strong>; los de Ionic se re-emiten con nombre propio.</li>
-                <li>Navegación sin router: <code>ok-sidebar</code> emite <code>ok-nav { path }</code>; tú actualizas <code>active-path</code> y enrutas (este showcase navega con <code>location.href</code>).</li>
+              <h2>Reglas</h2>
+              <ul>
+                <li>Solo Web Components (Lit, Shadow DOM). <strong>CSP estricta</strong>: sin <code>eval</code> / <code>new Function</code> (<code>script-src 'self'</code>).</li>
+                <li>Prefijo de tags <code>ok-*</code>; eventos propios normalizados a <code>ok-*</code>.</li>
+                <li>Para arrays/objetos/funciones (columns, rows, nodes, steps…) usa <strong>property binding por JS</strong> (<code>el.columns = […]</code>), no atributos.</li>
+                <li>El resto de UI (botones, inputs, listas, layout de app) es <strong>Ionic directo</strong>.</li>
               </ul>
-            </ok-card-content>
-          </ok-card>
-
-          <p style="margin-top:2rem;">
-            <ok-button href="components.html"><ok-icon slot="start" name="cube-outline"></ok-icon>Ver galería de componentes</ok-button>
-            <ok-button fill="outline" href="index.html"><ok-icon slot="start" name="grid-outline"></ok-icon>Ver demo de dashboard</ok-button>
-          </p>
+            </div>
+          </ion-content>
         </div>
-    </ok-app-shell>
+      </ion-split-pane>
+    </ion-app>
 
     <script type="module">
-      // ── Chrome del showcase: sidebar (navegación) + acciones (GitHub/tema) ────────────────
-      const sidebar = document.getElementById('sidebar');
-      sidebar.sections = [
-        {
-          label: 'Showcase',
-          items: [
-            { path: 'index.html', label: 'Inicio', icon: 'home-outline' },
-            { path: 'components.html', label: 'Componentes', icon: 'cube-outline' },
-            { path: 'guide.html', label: 'Guía', icon: 'book-outline' },
-          ],
-        },
-      ];
-      sidebar.user = { name: 'OutfitKit', email: '@outfitkit/core' };
-      sidebar.addEventListener('ok-account', () => {
-        window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
-
       document.getElementById('btn-github').addEventListener('click', () => {
         window.location.href = 'https://github.com/ERPlora/outfitkit';
       });
       document.getElementById('btn-theme').addEventListener('click', () => {
         document.documentElement.classList.toggle('ion-palette-dark');
-      });
-
-      // Navegación sin router: ok-nav → location (el path es el nombre del fichero).
-      document.getElementById('shell').addEventListener('ok-nav', (e) => {
-        const path = e.detail.path;
-        if (path && path !== 'guide.html') window.location.href = path;
-      });
-
-      // ── Demo del store (persistente vía IndexedDB) ────────────────────────────────────────
-      import('../dist/store.js').then(async ({ store }) => {
-        // expone el singleton en window para poder probarlo desde la consola / Playwright.
-        window.store = store;
-        await store.ready;
-        const out = document.getElementById('store-out');
-        out.textContent = store.get('count') ?? 0;
-        store.subscribe('count', (v) => { out.textContent = v ?? 0; });
-        document.getElementById('store-inc').addEventListener('click', () => {
-          store.update('count', (n = 0) => n + 1);
-        });
-        document.getElementById('store-reset').addEventListener('click', () => {
-          store.set('count', 0);
-        });
       });
     </script>
   </body>

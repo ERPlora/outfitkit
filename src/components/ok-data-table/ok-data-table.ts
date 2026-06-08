@@ -1,12 +1,18 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../../base/define.js';
-import '../ok-button/ok-button.js'; // botones de la tabla = ok-button (wrapper de ion-button)
+// Internamente usa ion-button / ion-checkbox / ion-icon NATIVOS (los registra el host). OutfitKit
+// construye SOBRE Ionic; no envolvemos lo que Ionic ya da.
 
 // ok-data-table — DataTable reutilizable de ERPlora (Lit), construido con elementos Ionic
 // (ion-searchbar/ion-button/ion-icon, registrados por el host). Port 1:1 del antiguo
-// <data-table> de @erplora/module-ui: MISMA API (props/eventos/tipos). El WC nunca toca la BD.
+// <data-table> de @erplora/module-ui + el look del DataTable React del Hub. El WC nunca toca la BD.
+//
+// COMPONENTE COMPUESTO: SÍ tiene su propio CSS (a diferencia de los wrappers finos), todo con
+// tokens --ion-*/--ok-*. La superficie pública (props/eventos/tipos) está CONGELADA (la consumen
+// ~180 vistas): SOLO se AÑADEN props opcionales nuevas; nada se quita ni renombra.
 //
 // DOS MODOS:
 //  • Cliente (por defecto): recibe TODAS las filas en `rows`; filtra (searchKeys) y pagina en
@@ -39,6 +45,9 @@ export interface DataTableColumn {
   render?: (row: Record<string, unknown>) => unknown;
   /** Oculta la columna por defecto (el usuario la reactiva en el selector de columnas). */
   hidden?: boolean;
+  /** (opcional) Ancho CSS de la columna en la vista lista en grid (p.ej. '8rem', '20%', 'minmax(8rem,1fr)').
+   *  Si se omite, la columna ocupa `minmax(8rem,1fr)`. Sin efecto en el fallback con <table>. */
+  width?: string;
 }
 
 /** Vista de presentación de las filas (lista/tarjetas). */
@@ -55,24 +64,50 @@ export interface DataTableAction {
   color?: string;
 }
 
+/** Acción primaria de la topbar (botón destacado). Emite el evento `primaryAction`. */
+export interface DataTablePrimaryAction {
+  /** Texto / aria-label del botón. */
+  label: string;
+  /** Nombre de un ion-icon opcional (por defecto 'add'). */
+  icon?: string;
+}
+
+/** Clave estable de fila: nombre de campo o función que la devuelve. */
+export type DataTableRowKey = string | ((row: Record<string, unknown>) => string);
+
 export class OkDataTable extends LitElement {
   static styles = css`
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
-      --background: var(--ok-surface, var(--ion-card-background, #ffffff));
+      --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #ffffff)));
       --color: var(--ok-text, var(--ion-text-color, #1c1b17));
-      --color-muted: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.55));
-      --border-color: var(--ok-border, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.12));
-      --border-color-soft: var(--ok-border-soft, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07));
-      --header-background: var(--ok-surface-2, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.04));
-      --border-radius: var(--ok-radius, 12px);
+      --color-muted: var(--ok-muted, var(--ion-color-medium, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.55)));
+      --border-color: var(--ok-border, var(--ion-color-step-150, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.12)));
+      --border-color-soft: var(--ok-border-soft, var(--ion-color-step-100, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07)));
+      /* Relieve de cabecera/pie: step-100 (definido en claro y oscuro) → contraste con el lienzo. */
+      --header-background: var(--ok-surface-2, var(--ion-color-step-100, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.04)));
+      --row-hover: var(--ok-row-hover, var(--ion-color-step-50, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.03)));
+      --primary: var(--ok-primary, var(--ion-color-primary, #3880ff));
+      --primary-contrast: var(--ok-primary-contrast, var(--ion-color-primary-contrast, #ffffff));
+      --border-radius: var(--ok-radius, 16px);
       --font: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 
       display: block;
       color: var(--color);
       font-family: var(--font);
     }
-    .card { position: relative; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: var(--background); }
+    * { box-sizing: border-box; }
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      background: var(--background);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
     /* Panel lateral derecho (drawer) DENTRO de la tabla: filtros / alta-edición. No empuja contenido. */
     .tk-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.18); z-index: 19; }
     .drawer { position: absolute; top: 0; right: 0; height: 100%; width: 340px; max-width: 88%;
@@ -86,59 +121,99 @@ export class OkDataTable extends LitElement {
     .fblock { display: flex; flex-direction: column; gap: 0.25rem; }
     .flabel { font-size: 12px; color: var(--color-muted); }
     .frange { display: flex; gap: 0.5rem; }
+
     /* Modo fill: la tabla ocupa el alto del contenedor; filas con scroll interno; pager fijo. */
     :host([fill]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-    :host([fill]) .card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    :host([fill]) .card { flex: 1 1 auto; min-height: 0; }
     :host([fill]) .bar, :host([fill]) .panel, :host([fill]) .pager { flex: 0 0 auto; }
     :host([fill]) .scroll, :host([fill]) .cards-grid { flex: 1 1 auto; min-height: 0; overflow: auto; }
-    :host([fill]) thead th {
-      position: sticky; top: 0; z-index: 2;
-      background-color: var(--background);
-      background-image: linear-gradient(var(--header-background), var(--header-background));
-    }
-    .bar { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-    @media (min-width: 640px) { .bar { flex-direction: row; align-items: center; justify-content: space-between; } }
-    .bar-end { display: flex; align-items: center; gap: 0.25rem; }
-    .bar-end ok-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
+
+    /* ── Topbar / cabecera (relieve) ─────────────────────────────────────────────────────── */
+    .bar { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
+    .bar-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+    .title-wrap { display: flex; align-items: baseline; gap: 0.5rem; margin-right: auto; }
+    .title { font-size: 15px; font-weight: 600; line-height: 1; margin: 0; }
+    .title-count { font-size: 12px; font-weight: 500; color: var(--color-muted); }
+    .bar-end { display: flex; align-items: center; gap: 0.4rem; }
+    .bar-end ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
+
+    /* Buscador (caja con icono + limpiar), look del Hub */
+    .search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
+    ion-searchbar { --background: var(--background); --border-radius: 10px; --box-shadow: none; padding: 0; min-height: 36px; }
+    ion-searchbar::part(native) { border: 1px solid var(--border-color); }
+
+    /* Toggle de vista lista/tarjetas (segmento) */
+    .viewseg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); }
+    .viewseg ion-button { --border-radius: 7px; }
+
+    /* Botón primario (primaryAction) */
+    .primary-btn { --background: var(--primary); --color: var(--primary-contrast); }
+
     .tk-cols { min-width: 6.5rem; max-width: 9rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.3rem; --padding-bottom: 0.3rem; }
     .vsep { width: 1px; align-self: stretch; background: var(--border-color); margin: 0.3rem 0.25rem; }
+
+    /* Barra contextual de selección */
+    .selbar { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.7rem; border-radius: 10px;
+      font-size: 13px; color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .selbar .sel-clear { margin-left: auto; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer; font-weight: 500; color: inherit; background: none; border: 0; font: inherit; }
+    .selbar .sel-clear:hover { text-decoration: underline; }
+
     /* Acordeones (alta / filtros en modo tarjetas) */
     .panel { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
     .filters-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; }
-    .filters-panel .fp { display: flex; flex-direction: column; gap: 0.2rem; font-size: 12px; color: var(--color-muted); }
-    .filters-panel input, .filters-panel select { font: inherit; font-size: 13px; padding: 0.3rem 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
-    /* Vista tarjetas */
+
+    /* ── Vista lista en CSS GRID (no <table>): permite ancho por columna ──────────────────── */
+    .scroll { overflow-x: auto; }
+    .grid { min-width: max-content; font-size: 14px; }
+    .grow { display: grid; align-items: center; gap: 0.5rem; padding: 0 1rem; }
+    .ghead { position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);
+      background: var(--header-background); padding-top: 0.55rem; padding-bottom: 0.55rem; }
+    .gcell { display: flex; align-items: center; min-width: 0; }
+    .gcell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gcell.right { justify-content: flex-end; text-align: right; }
+    .gcell.center { justify-content: center; text-align: center; }
+    .gh { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
+    .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    .gh.sortable:hover { color: var(--color); }
+    .caret { font-size: 10px; opacity: 0.4; margin-left: 0.25rem; }
+    .caret.on { opacity: 1; color: var(--primary); }
+    .grow-data { border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background 0.12s; }
+    .grow-data:last-child { border-bottom: 0; }
+    .grow-data:hover { background: var(--row-hover); }
+    .grow-data.selected { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .selcb { display: flex; align-items: center; justify-content: center; }
+    .filters-grow { padding-top: 0.4rem; padding-bottom: 0.6rem; }
+    .filters-grow input, .filters-grow select { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 0.3rem 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
+    .range { display: flex; gap: 0.25rem; }
+
+    /* ── Vista tarjetas ──────────────────────────────────────────────────────────────────── */
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; }
-    .rcard { border: 1px solid var(--border-color); border-radius: 10px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; background: var(--background); }
+    .rcard { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--background); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); transition: border-color 0.12s, box-shadow 0.12s; }
+    .rcard.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+    .rcard-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
+    .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
+    .rcard-head .rc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .rcard-body { flex: 1; padding: 0.6rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .rrow { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 13px; }
     .rrow .rk { color: var(--color-muted); }
     .rrow .rv { font-weight: 500; text-align: right; }
-    .ractions { display: flex; justify-content: flex-end; gap: 0.25rem; margin-top: 0.35rem; border-top: 1px solid var(--border-color-soft); padding-top: 0.4rem; }
-    /* Pager + selector de tamaño de página */
-    .pager .left { display: flex; align-items: center; gap: 0.6rem; }
-    .psize { font: inherit; font-size: 12.5px; padding: 0.2rem 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
-    .search { flex: 1; max-width: 20rem; }
-    ion-searchbar { --background: var(--header-background); --border-radius: 10px; padding: 0; }
-    .scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    thead tr { background: var(--header-background); }
-    th { text-align: left; padding: 0.75rem 1rem; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-muted); }
-    th.right, td.right { text-align: right; }
-    th.center, td.center { text-align: center; }
-    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
-    th.sortable:hover { color: var(--color); }
-    .caret { font-size: 10px; opacity: 0.5; margin-left: 0.25rem; }
-    .caret.on { opacity: 1; }
-    tr.filters th { padding: 0.4rem 1rem 0.6rem; text-transform: none; font-weight: 400; }
-    tr.filters input, tr.filters select { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 0.3rem 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
-    .range { display: flex; gap: 0.25rem; }
-    td { padding: 0.7rem 1rem; border-top: 1px solid var(--border-color-soft); color: var(--color); }
-    tbody tr:hover { background: var(--header-background); }
-    .empty { padding: 4rem 1rem; text-align: center; color: var(--color-muted); }
+    .ractions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0.25rem 0.5rem; border-top: 1px solid var(--border-color-soft); background: var(--header-background); }
+
+    /* ── Estado vacío ────────────────────────────────────────────────────────────────────── */
+    .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
+    .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
+
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
-    .pager { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; border-top: 1px solid var(--border-color); font-size: 13px; color: var(--color-muted); }
-    .pager .nav { display: flex; align-items: center; gap: 0.25rem; }
-    ok-button { --box-shadow: none; }
+
+    /* ── Pie: contador + paginación ──────────────────────────────────────────────────────── */
+    .pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 1rem; border-top: 1px solid var(--border-color); background: var(--header-background); font-size: 12.5px; color: var(--color-muted); }
+    .pager .left { display: flex; align-items: center; gap: 0.6rem; }
+    .pager .strong { font-weight: 600; color: var(--color); }
+    .psize { font: inherit; font-size: 12.5px; padding: 0.2rem 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
+    .pager .nav { display: flex; align-items: center; gap: 0.35rem; }
+    .pager .nav .pp { font-weight: 600; color: var(--color); padding: 0 0.25rem; }
+    ion-button { --box-shadow: none; }
   `;
 
   /** Columnas a renderizar. */
@@ -149,6 +224,9 @@ export class OkDataTable extends LitElement {
   @property({ attribute: false }) searchKeys: string[] = [];
   /** Campo usado como key estable de fila. */
   @property({ attribute: 'row-key-field' }) rowKeyField = 'id';
+  /** (NUEVO, opcional) Clave estable de fila: nombre de campo o función. Tiene prioridad sobre
+   *  `rowKeyField`; por defecto usa `row.id` (vía `rowKeyField`). Se usa para selección y `repeat`. */
+  @property({ attribute: false }) rowKey?: DataTableRowKey;
   /** Filas por página. */
   @property({ type: Number, attribute: 'page-size' }) pageSize = 10;
   /** Mensaje cuando no hay filas. */
@@ -159,8 +237,6 @@ export class OkDataTable extends LitElement {
   @property({ attribute: false }) actions: DataTableAction[] = [];
   /** Muestra el botón "+" que despliega un acordeón con el slot `create` (formulario de alta). */
   @property({ type: Boolean }) addable = false;
-  /** Muestra el conmutador de vista lista/tarjetas. */
-  @property({ type: Boolean }) views = false;
   /** Opciones del selector de "filas por página". Vacío = sin selector. */
   @property({ attribute: false }) pageSizeOptions: number[] = [10, 25, 50, 100];
   /** Modo "llenar el contenedor": la tabla ocupa el alto disponible, las filas hacen scroll DENTRO
@@ -187,6 +263,39 @@ export class OkDataTable extends LitElement {
   /** (server) Dirección del orden activo. */
   @property({ attribute: 'sort-dir' }) sortDir: 'asc' | 'desc' = 'asc';
 
+  // ── NUEVO (todo opcional, retrocompatible) ────────────────────────────────────────────────
+  /** (NUEVO) Título de la cabecera (a la izquierda, junto al contador de registros).
+   *  Tipo `string` (no opcional) para no chocar con `HTMLElement.title`; '' = sin título. */
+  @property() title = '';
+  /** (NUEVO) Conmutador de vista lista/tarjetas. Acepta `true` (= ['table','cards']) o un array de
+   *  vistas. La presencia de 'cards' (o 'card') habilita la vista tarjetas. Compatibilidad: el
+   *  antiguo valor booleano sigue funcionando. */
+  @property({ attribute: false }) views: boolean | string[] = false;
+  /** (NUEVO, alias documentado) Habilita import/export CSV (equivalente a `exportable`+`importable`
+   *  / `csv`). Mostrar el botón de Exportar. */
+  @property({ type: Boolean }) exportable = false;
+  /** (NUEVO) Mostrar el botón de Importar CSV. */
+  @property({ type: Boolean }) importable = false;
+  /** (NUEVO, alias) Selector de columnas (equivalente a `columnPicker`). */
+  @property({ type: Boolean }) columnSelector = false;
+  /** (NUEVO, alias) Opciones del selector de "filas por página" (equivalente a `pageSizeOptions`). */
+  @property({ attribute: false }) pageSizes?: number[];
+
+  /** (NUEVO) Selección de filas con checkbox por fila + seleccionar-todo + barra contextual. */
+  @property({ type: Boolean }) selectable = false;
+  /** (NUEVO) Conjunto de keys seleccionadas (controlado por el padre o interno). */
+  @property({ attribute: false }) selectedKeys?: Set<string>;
+
+  /** (NUEVO) Acción primaria de la topbar (botón destacado). Emite `primaryAction`. */
+  @property({ attribute: false }) primaryAction?: DataTablePrimaryAction;
+
+  /** (NUEVO) Cabecera de la tarjeta: título (string/HTML). Si se omite, no hay cabecera de título. */
+  @property({ attribute: false }) cardTitle?: (row: Record<string, unknown>) => unknown;
+  /** (NUEVO) Cabecera de la tarjeta: nombre de un ion-icon o TemplateResult. */
+  @property({ attribute: false }) cardIcon?: (row: Record<string, unknown>) => unknown;
+  /** (NUEVO) Cuerpo a medida de la tarjeta (string/HTML). Si se omite, se listan los campos. */
+  @property({ attribute: false }) renderCard?: (row: Record<string, unknown>) => unknown;
+
   // Estado interno SOLO del modo cliente.
   @state() private q = '';
   @state() private clientPage = 0;
@@ -197,6 +306,32 @@ export class OkDataTable extends LitElement {
   @state() private viewMode: 'table' | 'cards' = 'table';
   // Columnas ocultas por el usuario (column chooser). Vacío = todas visibles.
   @state() private hiddenKeys = new Set<string>();
+  // Selección interna (cuando el padre no controla `selectedKeys`).
+  @state() private internalSelection = new Set<string>();
+
+  // ── Resolución de alias (compat + documentados) ──────────────────────────────────────────
+  private get effPageSizes(): number[] {
+    return this.pageSizes ?? this.pageSizeOptions;
+  }
+  private get effColumnPicker(): boolean {
+    return this.columnPicker || this.columnSelector;
+  }
+  private get effExport(): boolean {
+    return this.csv || this.exportable;
+  }
+  private get effImport(): boolean {
+    return this.csv || this.importable;
+  }
+  /** ¿Está habilitado el conmutador de vista lista/tarjetas? */
+  private get viewToggle(): boolean {
+    if (Array.isArray(this.views)) return this.views.length > 1;
+    return this.views === true;
+  }
+  /** ¿Está disponible la vista tarjetas? (presente en `views` o `views === true`). */
+  private get cardViewEnabled(): boolean {
+    if (Array.isArray(this.views)) return this.views.some((v) => v === 'cards' || v === 'card');
+    return this.views === true;
+  }
 
   /** Columnas actualmente visibles (respeta el column chooser). */
   private get visibleColumns(): DataTableColumn[] {
@@ -205,6 +340,36 @@ export class OkDataTable extends LitElement {
   private setVisibleColumns(keys: string[]): void {
     const visible = new Set(keys);
     this.hiddenKeys = new Set(this.columns.map((c) => c.key).filter((k) => !visible.has(k)));
+    this.emit('columnsChange', { visible: keys });
+  }
+
+  // ── Selección ─────────────────────────────────────────────────────────────────────────────
+  private keyOf(row: Record<string, unknown>): string {
+    if (typeof this.rowKey === 'function') return String(this.rowKey(row) ?? '');
+    if (typeof this.rowKey === 'string') return String(row[this.rowKey] ?? '');
+    return String(row[this.rowKeyField] ?? '');
+  }
+  private get selection(): Set<string> {
+    return this.selectedKeys ?? this.internalSelection;
+  }
+  private setSelection(next: Set<string>): void {
+    if (!this.selectedKeys) this.internalSelection = next; // no controlado → estado propio
+    this.emit('selectionChange', { keys: [...next] });
+    this.requestUpdate();
+  }
+  private toggleRow(key: string): void {
+    const next = new Set(this.selection);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.setSelection(next);
+  }
+  private toggleAll(visible: Record<string, unknown>[]): void {
+    const keys = visible.map((r) => this.keyOf(r));
+    const allOn = keys.length > 0 && keys.every((k) => this.selection.has(k));
+    const next = new Set(this.selection);
+    if (allOn) keys.forEach((k) => next.delete(k));
+    else keys.forEach((k) => next.add(k));
+    this.setSelection(next);
   }
 
   // ── CSV ─────────────────────────────────────────────────────────────────────────────────────
@@ -226,6 +391,7 @@ export class OkDataTable extends LitElement {
     a.click();
     URL.revokeObjectURL(url);
     this.emit('csvExport', { rows: this.rows.length });
+    this.emit('export', { rows: this.rows.length });
   }
   private parseCsv(text: string): { headers: string[]; rows: Record<string, string>[] } {
     const out: string[][] = [];
@@ -259,6 +425,7 @@ export class OkDataTable extends LitElement {
     const text = await file.text();
     const { headers, rows } = this.parseCsv(text);
     this.emit('csvImport', { headers, rows });
+    this.emit('import', { headers, rows });
     input.value = '';
   }
 
@@ -334,6 +501,12 @@ export class OkDataTable extends LitElement {
     this.emit('filterChange', { col: col.key, value: { [edge]: v } });
   }
 
+  private setViewMode(mode: 'table' | 'cards'): void {
+    if (this.viewMode === mode) return;
+    this.viewMode = mode;
+    this.emit('viewChange', mode);
+  }
+
   // Control de filtro de una columna, con componentes Ionic (mismos inputs que el form de alta).
   private renderFilterControl(col: DataTableColumn): unknown {
     if (!col.filterable) return nothing;
@@ -388,16 +561,14 @@ export class OkDataTable extends LitElement {
       <div class="actions">
         ${this.actions.map(
           (a) => html`
-            <ok-button
+            <ion-button
               size="small"
               fill="clear"
               color=${a.color ?? 'medium'}
-              icon=${a.icon ?? nothing}
-              style=${a.color ? `--color: var(--ion-color-${a.color})` : nothing}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
-              ${a.icon ? nothing : a.label}
-            </ok-button>
+              ${a.icon ? html`<ion-icon slot="icon-only" name=${a.icon}></ion-icon>` : a.label}
+            </ion-button>
           `,
         )}
       </div>
@@ -407,8 +578,17 @@ export class OkDataTable extends LitElement {
   // Botón de barra icon-only (filtros / alta / conmutador de vista). `on` = estado activo.
   private toolButton(icon: string, on: boolean, onClick: () => void, label: string): unknown {
     return html`
-      <ok-button size="small" fill=${on ? 'solid' : 'clear'} icon=${icon} title=${label} aria-label=${label} @click=${onClick}></ok-button>
+      <ion-button size="small" fill=${on ? 'solid' : 'clear'} title=${label} aria-label=${label} @click=${onClick}><ion-icon slot="icon-only" name=${icon}></ion-icon></ion-button>
     `;
+  }
+
+  /** Plantilla de columnas del grid de la vista lista: [checkbox] [columnas…] [acciones]. */
+  private gridTemplate(): string {
+    return [
+      this.selectable ? '2.75rem' : null,
+      ...this.visibleColumns.map((c) => c.width ?? 'minmax(8rem,1fr)'),
+      this.actions.length ? 'auto' : null,
+    ].filter(Boolean).join(' ');
   }
 
   render(): unknown {
@@ -429,7 +609,6 @@ export class OkDataTable extends LitElement {
       current = Math.min(this.clientPage, pages - 1);
       visible = filtered.slice(current * ps, current * ps + ps);
     }
-    const colSpan = this.visibleColumns.length + (this.actions.length ? 1 : 0);
 
     const goTo = (p: number): void => {
       if (this.serverSide) this.emit('pageChange', p);
@@ -447,58 +626,100 @@ export class OkDataTable extends LitElement {
       ? html`<ion-searchbar placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
       : html`<ion-searchbar .value=${this.q} placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
 
+    const selCount = this.selection.size;
+    const showTopbar =
+      !!this.title || this.hasSearch || this.viewToggle || this.effColumnPicker ||
+      this.effExport || this.effImport || this.hasFilterRow || this.addable ||
+      !!this.primaryAction;
+
     return html`
       <div class="card">
-        <div class="bar">
-          <div class="search">${this.hasSearch ? searchbar : html`<span></span>`}</div>
-          <div class="bar-end">
-            ${this.views
-              ? html`
-                  ${this.toolButton('list-outline', this.viewMode === 'table', () => (this.viewMode = 'table'), 'Ver como lista')}
-                  ${this.toolButton('grid-outline', this.viewMode === 'cards', () => (this.viewMode = 'cards'), 'Ver como tarjetas')}
-                  <span class="vsep"></span>
-                `
-              : nothing}
-            ${this.columnPicker
-              ? html`
-                  <ion-select
-                    class="tk-cols"
-                    multiple
-                    interface="popover"
-                    aria-label="Columnas visibles"
-                    .value=${this.visibleColumns.map((c) => c.key)}
-                    .selectedText=${'Columnas'}
-                    @ionChange=${(e: CustomEvent) => this.setVisibleColumns((e.detail as { value: string[] }).value)}
-                  >
-                    ${this.columns.map((c) => html`<ion-select-option value=${c.key}>${c.header}</ion-select-option>`)}
-                  </ion-select>
-                `
-              : nothing}
-            ${this.csv
-              ? html`
-                  ${this.toolButton('download-outline', false, () => this.exportCsv(), 'Exportar CSV')}
-                  ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), 'Importar CSV')}
-                  <input class="tk-file" type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
-                `
-              : nothing}
-            ${this.hasFilterRow ? this.toolButton('funnel-outline', this.panel === 'filters', () => this.toggle('filters'), 'Filtros') : nothing}
-            ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), 'Añadir') : nothing}
-            <!-- El módulo proyecta aquí acciones globales adicionales. -->
-            <slot name="toolbar"></slot>
-          </div>
-        </div>
+        ${showTopbar
+          ? html`
+              <div class="bar">
+                <div class="bar-main">
+                  ${this.title
+                    ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2><span class="title-count">${count}</span></div>`
+                    : nothing}
+                  ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : (this.title ? nothing : html`<span style="margin-right:auto"></span>`)}
+                  <div class="bar-end">
+                    ${this.viewToggle
+                      ? html`
+                          <span class="viewseg">
+                            ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), 'Ver como lista')}
+                            ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), 'Ver como tarjetas')}
+                          </span>
+                        `
+                      : nothing}
+                    ${this.effColumnPicker
+                      ? html`
+                          <ion-select
+                            class="tk-cols"
+                            multiple
+                            interface="popover"
+                            aria-label="Columnas visibles"
+                            .value=${this.visibleColumns.map((c) => c.key)}
+                            .selectedText=${'Columnas'}
+                            @ionChange=${(e: CustomEvent) => this.setVisibleColumns((e.detail as { value: string[] }).value)}
+                          >
+                            ${this.columns.map((c) => html`<ion-select-option value=${c.key}>${c.header}</ion-select-option>`)}
+                          </ion-select>
+                        `
+                      : nothing}
+                    ${this.hasFilterRow ? this.toolButton('funnel-outline', this.panel === 'filters', () => this.toggle('filters'), 'Filtros') : nothing}
+                    ${this.effImport
+                      ? html`
+                          ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), 'Importar CSV')}
+                          <input class="tk-file" type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
+                        `
+                      : nothing}
+                    ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), 'Exportar CSV') : nothing}
+                    ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), 'Añadir') : nothing}
+                    ${this.primaryAction
+                      ? html`
+                          <ion-button
+                            class="primary-btn"
+                            size="small"
+                            title=${this.primaryAction.label}
+                            aria-label=${this.primaryAction.label}
+                            @click=${() => this.emit('primaryAction', {})}
+                          ><ion-icon slot="icon-only" name=${this.primaryAction.icon ?? 'add'}></ion-icon></ion-button>
+                        `
+                      : nothing}
+                    <!-- El módulo proyecta aquí acciones globales adicionales. -->
+                    <slot name="toolbar"></slot>
+                  </div>
+                </div>
+                ${this.selectable && selCount > 0
+                  ? html`
+                      <div class="selbar">
+                        <strong>${selCount} seleccionados</strong>
+                        <button class="sel-clear" @click=${() => this.setSelection(new Set())}>
+                          <ion-icon name="close" style="font-size:14px"></ion-icon> Limpiar
+                        </button>
+                      </div>
+                    `
+                  : nothing}
+              </div>
+            `
+          : nothing}
 
-        ${this.viewMode === 'cards' ? this.renderCards(visible) : this.renderTable(visible, colSpan)}
+        ${this.viewMode === 'cards' && this.cardViewEnabled ? this.renderCards(visible) : this.renderTable(visible)}
 
-        ${pages > 1 || this.pageSizeOptions.length
+        ${pages > 1 || this.effPageSizes.length
           ? html`
               <div class="pager">
                 <div class="left">
-                  <span>${count} resultados</span>
-                  ${this.pageSizeOptions.length
+                  <span>
+                    ${pages > 1
+                      ? html`Mostrando ${current * ps + 1}–${Math.min((current + 1) * ps, count)} de `
+                      : nothing}
+                    <span class="strong">${count}</span> ${count === 1 ? 'registro' : 'registros'}
+                  </span>
+                  ${this.effPageSizes.length
                     ? html`
                         <select class="psize" @change=${(e: Event) => setPageSize(Number((e.target as HTMLSelectElement).value))}>
-                          ${this.pageSizeOptions.map((n) => html`<option value=${n} ?selected=${n === ps}>${n} / pág.</option>`)}
+                          ${this.effPageSizes.map((n) => html`<option value=${n} ?selected=${n === ps}>${n} / pág.</option>`)}
                         </select>
                       `
                     : nothing}
@@ -506,9 +727,9 @@ export class OkDataTable extends LitElement {
                 ${pages > 1
                   ? html`
                       <div class="nav">
-                        <ok-button size="small" fill="clear" icon="chevron-back" ?disabled=${current === 0} @click=${() => goTo(current - 1)}></ok-button>
-                        <span>${current + 1} / ${pages}</span>
-                        <ok-button size="small" fill="clear" icon="chevron-forward" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}></ok-button>
+                        <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" name="chevron-back"></ion-icon></ion-button>
+                        <span class="pp">${current + 1} / ${pages}</span>
+                        <ion-button size="small" fill="clear" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" name="chevron-forward"></ion-icon></ion-button>
                       </div>
                     `
                   : nothing}
@@ -529,7 +750,7 @@ export class OkDataTable extends LitElement {
       <aside class="drawer" role="dialog" aria-label=${isFilters ? 'Filtros' : 'Formulario'}>
         <header class="dh">
           <strong>${isFilters ? 'Filtros' : 'Nuevo'}</strong>
-          <ok-button fill="clear" size="small" icon="close" aria-label="Cerrar" @click=${() => this.close()}></ok-button>
+          <ion-button fill="clear" size="small" aria-label="Cerrar" @click=${() => this.close()}><ion-icon slot="icon-only" name="close"></ion-icon></ion-button>
         </header>
         <div class="db">
           ${isFilters
@@ -540,61 +761,113 @@ export class OkDataTable extends LitElement {
     `;
   }
 
-  private renderTable(visible: Record<string, unknown>[], colSpan: number): unknown {
+  private emptyState(): unknown {
+    return html`
+      <div class="empty">
+        <span class="empty-ic"><ion-icon name="file-tray-outline"></ion-icon></span>
+        <span>${this.emptyMessage}</span>
+      </div>
+    `;
+  }
+
+  // Vista LISTA en CSS GRID (no <table>): permite ancho por columna y cabecera sticky.
+  private renderTable(visible: Record<string, unknown>[]): unknown {
+    if (visible.length === 0) return this.emptyState();
+    const cols = this.visibleColumns;
+    const tpl = { gridTemplateColumns: this.gridTemplate() };
+    const allOn = this.selectable && visible.length > 0 && visible.every((r) => this.selection.has(this.keyOf(r)));
+    const alignCls = (a?: string): string => (a === 'right' ? 'right' : a === 'center' ? 'center' : 'left');
+
     return html`
       <div class="scroll">
-        <table>
-          <thead>
-            <tr>
-              ${this.visibleColumns.map((c) => {
-                const active = this.serverSide && c.sortable && this.sort === c.key;
-                const cls = `${c.align ?? 'left'}${this.serverSide && c.sortable ? ' sortable' : ''}`;
-                return html`
-                  <th class=${cls} @click=${() => this.onHeaderClick(c)}>
-                    ${c.header}
-                    ${this.serverSide && c.sortable
-                      ? html`<span class=${`caret${active ? ' on' : ''}`}>${active && this.sortDir === 'desc' ? '▼' : '▲'}</span>`
-                      : nothing}
-                  </th>
-                `;
-              })}
-              ${this.actions.length ? html`<th class="right"></th>` : nothing}
-            </tr>
-          </thead>
-          <tbody>
-            ${visible.length === 0
-              ? html`<tr><td class="empty" colspan=${colSpan}>${this.emptyMessage}</td></tr>`
-              : repeat(
-                  visible,
-                  (row) => String(row[this.rowKeyField] ?? ''),
-                  (row) => html`
-                    <tr>
-                      ${this.visibleColumns.map((c) => html`<td class=${c.align ?? 'left'}>${c.render ? c.render(row) : this.cell(c, row)}</td>`)}
-                      ${this.actions.length ? html`<td class="right">${this.actionButtons(row)}</td>` : nothing}
-                    </tr>
-                  `,
-                )}
-          </tbody>
-        </table>
+        <div class="grid" role="table">
+          <!-- Cabecera -->
+          <div class="grow ghead" role="row" style=${styleMap(tpl)}>
+            ${this.selectable
+              ? html`<span class="selcb"><ion-checkbox .checked=${allOn} aria-label="Seleccionar todo" @ionChange=${() => this.toggleAll(visible)}></ion-checkbox></span>`
+              : nothing}
+            ${cols.map((c) => {
+              const active = this.serverSide && c.sortable && this.sort === c.key;
+              const sortable = this.serverSide && c.sortable;
+              return html`
+                <div
+                  class=${`gcell gh ${alignCls(c.align)}${sortable ? ' sortable' : ''}`}
+                  role="columnheader"
+                  @click=${() => this.onHeaderClick(c)}
+                >
+                  <span>${c.header}</span>
+                  ${sortable
+                    ? html`<span class=${`caret${active ? ' on' : ''}`}>${active && this.sortDir === 'desc' ? '▼' : '▲'}</span>`
+                    : nothing}
+                </div>
+              `;
+            })}
+            ${this.actions.length ? html`<div class="gcell gh right" role="columnheader">Acciones</div>` : nothing}
+          </div>
+
+          <!-- Filas -->
+          ${repeat(
+            visible,
+            (row) => this.keyOf(row),
+            (row) => {
+              const key = this.keyOf(row);
+              const selected = this.selectable && this.selection.has(key);
+              return html`
+                <div class=${`grow grow-data${selected ? ' selected' : ''}`} role="row" style=${styleMap(tpl)}>
+                  ${this.selectable
+                    ? html`<span class="selcb"><ion-checkbox .checked=${selected} aria-label="Seleccionar fila" @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
+                    : nothing}
+                  ${cols.map(
+                    (c) => html`<div class=${`gcell ${alignCls(c.align)}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
+                  )}
+                  ${this.actions.length ? html`<div class="gcell right" role="cell">${this.actionButtons(row)}</div>` : nothing}
+                </div>
+              `;
+            },
+          )}
+        </div>
       </div>
     `;
   }
 
   private renderCards(visible: Record<string, unknown>[]): unknown {
-    if (visible.length === 0) return html`<div class="empty">${this.emptyMessage}</div>`;
+    if (visible.length === 0) return this.emptyState();
+    const hasHead = !!this.cardTitle || !!this.cardIcon || this.selectable;
     return html`
       <div class="cards-grid">
         ${repeat(
           visible,
-          (row) => String(row[this.rowKeyField] ?? ''),
-          (row) => html`
-            <div class="rcard">
-              ${this.visibleColumns.map(
-                (c) => html`<div class="rrow"><span class="rk">${c.header}</span><span class="rv">${c.render ? c.render(row) : this.cell(c, row)}</span></div>`,
-              )}
-              ${this.actions.length ? html`<div class="ractions">${this.actionButtons(row)}</div>` : nothing}
-            </div>
-          `,
+          (row) => this.keyOf(row),
+          (row) => {
+            const key = this.keyOf(row);
+            const selected = this.selectable && this.selection.has(key);
+            const icon = this.cardIcon?.(row);
+            return html`
+              <div class=${`rcard${selected ? ' selected' : ''}`}>
+                ${hasHead
+                  ? html`
+                      <header class="rcard-head">
+                        ${icon != null && icon !== ''
+                          ? html`<span class="rc-icon">${typeof icon === 'string' ? html`<ion-icon name=${icon}></ion-icon>` : icon}</span>`
+                          : nothing}
+                        <span class="rc-title">${this.cardTitle ? this.cardTitle(row) : nothing}</span>
+                        ${this.selectable
+                          ? html`<ion-checkbox .checked=${selected} aria-label="Seleccionar" @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
+                          : nothing}
+                      </header>
+                    `
+                  : nothing}
+                <div class="rcard-body">
+                  ${this.renderCard
+                    ? this.renderCard(row)
+                    : this.visibleColumns.map(
+                        (c) => html`<div class="rrow"><span class="rk">${c.header}</span><span class="rv">${c.render ? c.render(row) : this.cell(c, row)}</span></div>`,
+                      )}
+                </div>
+                ${this.actions.length ? html`<div class="ractions">${this.actionButtons(row)}</div>` : nothing}
+              </div>
+            `;
+          },
         )}
       </div>
     `;

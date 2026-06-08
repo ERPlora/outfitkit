@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OutfitKit — Dashboard demo</title>
+    <title>OutfitKit — Inicio</title>
     <link rel="icon" href="logo.png" />
     <meta
       name="description"
-      content="@outfitkit/core — wrappers finos ok-* sobre Ionic. Demo con la estructura nativa de Ionic (split-pane + menu + toolbar), sin estilos custom."
+      content="@outfitkit/core — Web Components (Lit) que CONSTRUYEN lo que Ionic no tiene (data-table rica, tree, kpi/stat, stepper/wizard, inline-feedback…) sobre Ionic. Ionic es la base."
     />
 
-    <!-- ── Carga CSP-safe (script-src 'self', sin eval) ─────────────────────
-         Ionic Core (registra los ion-* que envuelven los ok-*) + su tema, lit como external vía
-         import-map, y OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
+    <!-- ── Carga CSP-safe (script-src 'self', sin eval) ──────────────────────────
+         Ionic Core (registra los ion-* del chrome) + su tema, lit external vía import-map,
+         ionicons, y OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
@@ -23,121 +23,86 @@
     <script type="module" src="../dist/outfitkit.js"></script>
 
     <link rel="stylesheet" href="showcase.css" />
-    <style>
-      html, body { margin: 0; height: 100%; }
-      .logo-brand { display: flex; align-items: center; gap: 0.5rem; padding: 14px 16px 4px; }
-      .logo-brand img { height: 22px; width: auto; display: block; }
-    </style>
   </head>
   <body>
-    <!-- ── Shell Ionic nativo en un solo ok-* (ok-app-shell construye ion-app + ion-split-pane +
-         ion-menu + .ion-page con ion-header/ion-content reales). Sin estilos custom: Ionic
-         posiciona todo. El ion-menu-button del toolbar abre el menú en móvil. ─────────────────── -->
-    <ok-app-shell id="shell" heading="Dashboard demo" when="md">
-      <!-- Menú lateral (navegación del showcase) -->
-      <ok-sidebar id="sidebar" slot="sidebar" active-path="index.html">
-        <div class="logo-brand" slot="brand">
-          <img src="logo.png" alt="OutfitKit" />
-          <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
-        </div>
-        <ok-segment id="switcher" slot="switcher"></ok-segment>
-      </ok-sidebar>
+    <!-- ── Chrome: Ionic DIRECTO (ion-app + ion-split-pane + ion-menu + toolbar + content) ── -->
+    <ion-app>
+      <ion-split-pane content-id="main" when="md">
+        <ion-menu content-id="main">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <ion-list>
+              <ion-item href="index.html" detail="false" color="primary">
+                <ion-icon slot="start" name="home-outline"></ion-icon>
+                <ion-label>Inicio</ion-label>
+              </ion-item>
+              <ion-item href="components.html" detail="false">
+                <ion-icon slot="start" name="cube-outline"></ion-icon>
+                <ion-label>Componentes</ion-label>
+              </ion-item>
+              <ion-item href="guide.html" detail="false">
+                <ion-icon slot="start" name="book-outline"></ion-icon>
+                <ion-label>Guía</ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-content>
+        </ion-menu>
 
-      <!-- Acciones del toolbar (ok-button icon-only) -->
-      <ok-button slot="actions" id="btn-github" icon="logo-github" fill="clear" aria-label="GitHub"></ok-button>
-      <ok-button slot="actions" id="btn-theme" icon="contrast-outline" fill="clear" aria-label="Tema"></ok-button>
+        <div class="ion-page" id="main">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
+              <ion-title>Inicio</ion-title>
+              <ion-buttons slot="end">
+                <ion-button id="btn-github" aria-label="GitHub"><ion-icon slot="icon-only" name="logo-github"></ion-icon></ion-button>
+                <ion-button id="btn-theme" aria-label="Tema"><ion-icon slot="icon-only" name="contrast-outline"></ion-icon></ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
 
-      <!-- Contenido de la página (va dentro del ion-content principal) -->
-      <div class="doc">
-        <!-- Intro: qué es OutfitKit (wrapper sobre Ionic) -->
-        <ok-card class="intro">
-          <ok-card-header>
-            <ok-card-subtitle>¿Qué es OutfitKit?</ok-card-subtitle>
-            <ok-card-title>Un wrapper fino sobre Ionic</ok-card-title>
-          </ok-card-header>
-          <ok-card-content>
-            <p>
-              <strong>OutfitKit</strong> es una librería de Web Components (Lit) que envuelve
-              <strong>Ionic</strong> con un set <code>ok-*</code> consistente. <strong>La mayoría
-              de los componentes son componentes de Ionic</strong> expuestos como <code>ok-*</code>
-              <em>sin cambiar su estilo</em>: <code>ok-button</code> es un <code>ion-button</code>,
-              <code>ok-modal</code> es un <code>ion-modal</code>, etc. Tu código usa
-              <strong>solo <code>ok-*</code></strong>, nunca <code>ion-*</code> directo.
-            </p>
-            <p>
-              Los pocos que <strong>no</strong> son de Ionic los añadimos nosotros para la web
-              (marketing/landing), como <code>ok-navbar</code> (barra responsive con burger),
-              <code>ok-hero</code> o <code>ok-footer</code> — el hueco que Ionic, pensado para apps,
-              no cubre.
-            </p>
-            <div class="live" style="border:0;padding:0;background:transparent;">
-              <ok-chip color="primary"><ok-icon slot="start" name="cube-outline"></ok-icon>wrapper de Ionic</ok-chip>
-              <ok-chip color="success"><ok-icon slot="start" name="shield-checkmark-outline"></ok-icon>CSP-safe</ok-chip>
-              <ok-chip><ok-icon slot="start" name="logo-web-component"></ok-icon>Web Components (Lit)</ok-chip>
-              <ok-button size="small" fill="outline" href="components.html">Ver componentes</ok-button>
+          <ion-content class="ion-padding">
+            <div class="doc">
+              <h1>¿Qué es OutfitKit?</h1>
+              <p class="lead">
+                <strong>OutfitKit</strong> es una librería de <strong>Web Components (Lit)</strong> que
+                <strong>construye lo que Ionic NO tiene</strong> —tabla de datos rica, árbol, KPIs y
+                métricas, stepper/wizard, feedback inline, estados vacíos, formulario de contacto y
+                chrome web (navbar/footer/hero)— <strong>sobre Ionic</strong>. Ionic es la base: para
+                botones, inputs, listas y layout usas Ionic directo (como este propio panel). OutfitKit
+                cubre los huecos con un set <code>ok-*</code> tematizado por tokens <code>--ok-*</code>.
+              </p>
+
+              <!-- Highlights en vivo -->
+              <h2>KPIs</h2>
+              <div class="kpis">
+                <ok-kpi label="Ventas hoy" value="€2.480" delta="+12% vs ayer" trend="up" icon="cash-outline"></ok-kpi>
+                <ok-kpi label="Tickets" value="137" delta="+4%" trend="up" icon="receipt-outline"></ok-kpi>
+                <ok-kpi label="Ticket medio" value="€18,10" delta="estable" trend="flat" icon="pricetag-outline"></ok-kpi>
+                <ok-kpi label="Stock bajo" value="3" delta="-1 vs ayer" trend="down" icon="alert-circle-outline"></ok-kpi>
+              </div>
+
+              <h2>Aviso inline</h2>
+              <ok-inline-feedback tone="success" heading="Sincronización completa" dismissible>
+                Los 6 empleados se sincronizaron con el Hub correctamente.
+              </ok-inline-feedback>
+
+              <h2>Tabla de datos</h2>
+              <ok-data-table id="dt" style="display:block;" fill></ok-data-table>
+
+              <h2>Árbol</h2>
+              <ok-tree id="tree" selectable active-id="pos"></ok-tree>
             </div>
-          </ok-card-content>
-        </ok-card>
-
-        <p class="lead">
-          Y este mismo panel es la prueba: estructura <strong>nativa de Ionic</strong>
-          (split-pane + menu + toolbar) en un único <code>ok-app-shell</code>, sin estilos propios.
-          El contenido es solo <code>ok-*</code>.
-        </p>
-
-        <div class="stats">
-          <ok-card class="stat"><ok-card-content>
-            <ok-card-subtitle>Ventas hoy</ok-card-subtitle>
-            <div class="n">€2.480</div><div class="delta up">▲ 12% vs ayer</div>
-          </ok-card-content></ok-card>
-          <ok-card class="stat"><ok-card-content>
-            <ok-card-subtitle>Tickets</ok-card-subtitle>
-            <div class="n">137</div><div class="delta up">▲ 4%</div>
-          </ok-card-content></ok-card>
-          <ok-card class="stat"><ok-card-content>
-            <ok-card-subtitle>Ticket medio</ok-card-subtitle>
-            <div class="n">€18,10</div><div class="delta">— estable</div>
-          </ok-card-content></ok-card>
-          <ok-card class="stat"><ok-card-content>
-            <ok-card-subtitle>Stock bajo</ok-card-subtitle>
-            <div class="n">3</div><div class="delta">artículos</div>
-          </ok-card-content></ok-card>
+          </ion-content>
         </div>
-
-        <ok-segment id="tabs" class="dash-segment"></ok-segment>
-        <ok-data-table id="dt"></ok-data-table>
-      </div>
-    </ok-app-shell>
+      </ion-split-pane>
+    </ion-app>
 
     <script type="module">
-      // Switcher Hub/Cloud (demo) en el slot del sidebar
-      const switcher = document.getElementById('switcher');
-      switcher.items = [
-        { value: 'hub', label: 'Hub', icon: 'storefront-outline' },
-        { value: 'cloud', label: 'Cloud', icon: 'cloud-outline' },
-      ];
-      switcher.value = 'hub';
-
-      // Navegación del showcase (sidebar emite ok-nav { path })
-      const sidebar = document.getElementById('sidebar');
-      sidebar.sections = [
-        {
-          label: 'Showcase',
-          items: [
-            { path: 'index.html', label: 'Dashboard', icon: 'grid-outline' },
-            { path: 'components.html', label: 'Componentes', icon: 'cube-outline' },
-            { path: 'guide.html', label: 'Guía', icon: 'book-outline' },
-          ],
-        },
-      ];
-      sidebar.user = { name: 'OutfitKit', email: '@outfitkit/core' };
-      document.getElementById('shell').addEventListener('ok-nav', (e) => {
-        const path = e.detail.path;
-        if (path && path !== 'index.html') window.location.href = path;
-      });
-      sidebar.addEventListener('ok-account', () => {
-        window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
+      const { html: h } = await import('lit');
 
       // Acciones del toolbar
       document.getElementById('btn-github').addEventListener('click', () => {
@@ -147,51 +112,75 @@
         document.documentElement.classList.toggle('ion-palette-dark');
       });
 
-      // Tabs (ok-segment) que filtran la tabla
-      const tabs = document.getElementById('tabs');
-      tabs.items = [
-        { value: 'all', label: 'Todos' },
-        { value: 'low', label: 'Stock bajo' },
-        { value: 'top', label: 'Más vendidos' },
-      ];
-      tabs.value = 'all';
+      // ── ok-data-table «Staff» (estilo /employees del Hub) ─────────────────────
+      const fmtDate = (iso) =>
+        new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      const statusBadge = (s) =>
+        h`<ion-badge color=${s === 'Activo' ? 'success' : 'medium'}>${s}</ion-badge>`;
 
-      // Data-table (property binding)
-      const allRows = [
-        { id: 1, name: 'Café solo', cat: 'Bebidas', stock: 120, price: 1.2, sku: 'CAF-001' },
-        { id: 2, name: 'Café con leche', cat: 'Bebidas', stock: 95, price: 1.6, sku: 'CAF-002' },
-        { id: 3, name: 'Croissant', cat: 'Bollería', stock: 4, price: 1.9, sku: 'BOL-010' },
-        { id: 4, name: 'Tostada', cat: 'Cocina', stock: 60, price: 2.4, sku: 'COC-101' },
-        { id: 5, name: 'Zumo naranja', cat: 'Bebidas', stock: 3, price: 2.8, sku: 'BEB-200' },
-        { id: 6, name: 'Bocadillo jamón', cat: 'Cocina', stock: 22, price: 3.5, sku: 'COC-130' },
-        { id: 7, name: 'Magdalena', cat: 'Bollería', stock: 2, price: 1.1, sku: 'BOL-014' },
+      const ALL = [
+        { id: '1', name: 'Demo Admin', email: 'demo@erplora.com', role: 'Administrador', status: 'Activo', createdAt: '2025-01-12' },
+        { id: '2', name: 'María López', email: 'maria@erplora.com', role: 'Encargado', status: 'Activo', createdAt: '2025-02-03' },
+        { id: '3', name: 'Juan Pérez', email: 'juan@erplora.com', role: 'Cajero', status: 'Activo', createdAt: '2025-02-20' },
+        { id: '4', name: 'Ana Ruiz', email: 'ana@erplora.com', role: 'Almacén', status: 'Inactivo', createdAt: '2025-03-15' },
+        { id: '5', name: 'Luis Gómez', email: 'luis@erplora.com', role: 'Camarero', status: 'Activo', createdAt: '2025-04-09' },
+        { id: '6', name: 'Sara Díaz', email: 'sara@erplora.com', role: 'Cocina', status: 'Activo', createdAt: '2025-05-01' },
       ];
+
       const dt = document.getElementById('dt');
+      dt.title = 'Staff';
+      dt.rowKey = (r) => r.id;
+      dt.selectable = true;
       dt.columns = [
-        { key: 'name', header: 'Producto', sortable: true, filterable: true },
-        { key: 'cat', header: 'Categoría', sortable: true, filterable: true },
-        { key: 'stock', header: 'Stock', align: 'right', sortable: true },
-        { key: 'price', header: 'Precio', align: 'right', sortable: true, format: (r) => `€${r.price.toFixed(2)}` },
-        { key: 'sku', header: 'SKU', hidden: true },
+        { key: 'name', header: 'Empleado', width: 'minmax(11rem,1.3fr)' },
+        { key: 'email', header: 'Email', width: 'minmax(9rem,1fr)' },
+        { key: 'role', header: 'Rol', width: '9rem' },
+        { key: 'status', header: 'Estado', width: '7rem', render: (r) => statusBadge(r.status) },
+        { key: 'createdAt', header: 'Alta', width: '8rem', format: (r) => fmtDate(r.createdAt) },
       ];
-      dt.rows = allRows;
-      dt.searchKeys = ['name', 'sku', 'cat'];
-      dt.pageSize = 5;
-      dt.pageSizes = [5, 10, 25];
-      dt.columnSelector = true;
-      dt.views = ['table', 'card'];
+      dt.rows = ALL;
+      dt.searchKeys = ['name', 'email', 'role'];
+      dt.pageSize = 12;
       dt.exportable = true;
+      dt.views = ['table', 'cards'];
+      dt.primaryAction = { label: 'Nuevo empleado', icon: 'add' };
       dt.actions = [
         { id: 'edit', label: 'Editar', icon: 'create-outline' },
         { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
       ];
+      dt.cardIcon = () => 'person-outline';
+      dt.cardTitle = (r) => r.name;
+      dt.renderCard = (r) => h`
+        <div style="display:flex;flex-direction:column;gap:.5rem;">
+          <span style="color:var(--ion-color-medium);font-size:.85rem;">${r.email}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
+            <ion-badge>${r.role}</ion-badge>${statusBadge(r.status)}
+          </div>
+          <span style="color:var(--ion-color-medium);font-size:.75rem;">Alta ${fmtDate(r.createdAt)}</span>
+        </div>`;
       dt.addEventListener('rowAction', (e) => alert(`${e.detail.actionId} → ${e.detail.row.name}`));
-      tabs.addEventListener('ok-change', (e) => {
-        const v = e.detail.value;
-        if (v === 'low') dt.rows = allRows.filter((r) => r.stock <= 5);
-        else if (v === 'top') dt.rows = [...allRows].sort((a, b) => b.stock - a.stock).slice(0, 3);
-        else dt.rows = allRows;
-      });
+      dt.addEventListener('primaryAction', () => alert('Nuevo empleado'));
+
+      // ── ok-tree ───────────────────────────────────────────────────────────────
+      const tree = document.getElementById('tree');
+      tree.nodes = [
+        {
+          id: 'pos', label: 'Punto de venta', icon: 'storefront-outline', expanded: true,
+          children: [
+            { id: 'sales', label: 'Ventas', icon: 'cart-outline' },
+            { id: 'cash', label: 'Caja', icon: 'cash-outline' },
+          ],
+        },
+        {
+          id: 'inv', label: 'Inventario', icon: 'cube-outline',
+          children: [
+            { id: 'products', label: 'Productos' },
+            { id: 'stock', label: 'Stock' },
+          ],
+        },
+        { id: 'staff', label: 'Empleados', icon: 'people-outline' },
+      ];
+      tree.addEventListener('ok-select', (e) => { tree.activeId = e.detail.id; });
     </script>
   </body>
 </html>
