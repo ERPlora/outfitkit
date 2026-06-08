@@ -459,6 +459,375 @@ form.addEventListener('ok-submit', (e) =&gt; …); // { name, email, subject, me
                 </ion-card>
               </div>
 
+              <h2 class="section">Workflow</h2>
+
+              <!-- ══════════════════ ok-calendar ══════════════════ -->
+              <div class="comp" id="ok-calendar">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-calendar&gt;</span></div>
+                    <ion-card-title>Calendario</ion-card-title>
+                    <p class="desc">Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. Ionic no trae calendario.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-calendar id="g-calendar" view="month" max-per-day="3"></ok-calendar></div>
+                    <pre class="code">cal.events = [{ id, date: '2026-06-12', title: 'Inventario', color: 'success' }];
+cal.value = '2026-06-12';
+cal.view = 'month'; // 'month' | 'agenda'
+cal.maxPerDay = 3;
+cal.addEventListener('ok-date-select', (e) =&gt; …); // { date }
+cal.addEventListener('ok-event-click', (e) =&gt; …); // { id, event }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.events</code></td><td>OkCalendarEvent[]</td><td>{id, date:'YYYY-MM-DD', title, color?}</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code></td><td>string</td><td>Fecha seleccionada (YYYY-MM-DD)</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>view</code></td><td>month|agenda</td><td>Modo de vista</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>max-per-day</code></td><td>number</td><td>Máx. eventos visibles por celda</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-date-select</code></td><td>{date}</td><td>Selección de día</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-event-click</code></td><td>{id, event}</td><td>Click en un evento</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-view-change</code> · <code>ok-nav</code></td><td>{view} · {year, month}</td><td>Cambio de vista · navegación de mes</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-kanban ══════════════════ -->
+              <div class="comp" id="ok-kanban">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-kanban&gt;</span></div>
+                    <ion-card-title>Kanban</ion-card-title>
+                    <p class="desc">Tablero de columnas con tarjetas arrastrables entre columnas (drag &amp; drop). Útil para pipelines y estados.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-kanban id="g-kanban" style="height:420px"></ok-kanban></div>
+                    <pre class="code">kanban.columns = [
+  { id: 'todo', title: 'Por hacer', color: 'medium', cards: [
+    { id: '1', title: 'Pedir stock', subtitle: 'Almacén', tags: ['urgente'] },
+  ]},
+  { id: 'doing', title: 'En curso', cards: [] },
+];
+kanban.addEventListener('ok-card-move', (e) =&gt; …); // { cardId, fromColumn, toColumn, toIndex }
+kanban.addEventListener('ok-card-click', (e) =&gt; …); // { id, card }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.columns</code></td><td>OkKanbanColumn[]</td><td>{id, title, color?, cards:[{id, title, subtitle?, tags?}]}</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-card-move</code></td><td>{cardId, fromColumn, toColumn, toIndex}</td><td>Tarjeta movida</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-card-click</code></td><td>{id, card}</td><td>Click en tarjeta</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <h2 class="section">Acciones</h2>
+
+              <!-- ══════════════════ ok-app-launcher ══════════════════ -->
+              <div class="comp" id="ok-app-launcher">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-app-launcher&gt;</span></div>
+                    <ion-card-title>App launcher</ion-card-title>
+                    <p class="desc">Botón de icono (rejilla 3×3) que despliega una cuadrícula de apps/atajos, estilo lanzador.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-app-launcher id="g-launcher"></ok-app-launcher></div>
+                    <pre class="code">launcher.apps = [
+  { id: 'pos', label: 'TPV', icon: 'cart-outline', color: 'primary' },
+  { id: 'stock', label: 'Almacén', icon: 'cube-outline', href: '/stock' },
+];
+launcher.addEventListener('ok-app-select', (e) =&gt; …); // { id, app }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.apps</code></td><td>OkApp[]</td><td>{id, label, icon?, href?, color?}</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-app-select</code></td><td>{id, app}</td><td>App pulsada</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-split-button ══════════════════ -->
+              <div class="comp" id="ok-split-button">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-split-button&gt;</span></div>
+                    <ion-card-title>Split button</ion-card-title>
+                    <p class="desc">Botón con acción principal + menú desplegable de acciones secundarias.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-split-button id="g-split" label="Guardar" color="primary"></ok-split-button></div>
+                    <pre class="code">split.label = 'Guardar';
+split.items = [
+  { id: 'draft', label: 'Guardar borrador', icon: 'document-outline' },
+  { id: 'copy', label: 'Guardar y copiar', icon: 'copy-outline' },
+];
+split.addEventListener('ok-main', () =&gt; …);      // acción principal
+split.addEventListener('ok-select', (e) =&gt; …);   // { id, item }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>label</code> · <code>color</code> · <code>fill</code></td><td>string</td><td>Texto, color e estilo del botón</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>.items</code></td><td>OkSplitItem[]</td><td>{id, label, icon?}</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-main</code></td><td>—</td><td>Acción principal pulsada</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-select</code></td><td>{id, item}</td><td>Acción secundaria pulsada</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <h2 class="section">Inputs</h2>
+
+              <!-- ══════════════════ ok-combo ══════════════════ -->
+              <div class="comp" id="ok-combo">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-combo&gt;</span></div>
+                    <ion-card-title>Combobox</ion-card-title>
+                    <p class="desc">Selector con búsqueda (autocomplete): escribe para filtrar opciones y elige una.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-combo id="g-combo" label="País" placeholder="Escribe para buscar…"></ok-combo></div>
+                    <pre class="code">combo.options = [{ value: 'es', label: 'España' }, { value: 'fr', label: 'Francia' }];
+combo.value = 'es';
+combo.addEventListener('ok-input', (e) =&gt; …);   // { query }
+combo.addEventListener('ok-change', (e) =&gt; …);  // { value, label }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.options</code></td><td>{value, label}[]</td><td>Opciones disponibles</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code> · <code>placeholder</code> · <code>label</code></td><td>string</td><td>Valor, placeholder, etiqueta</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-input</code></td><td>{query}</td><td>Texto del filtro</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{value, label}</td><td>Opción elegida</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-tag-input ══════════════════ -->
+              <div class="comp" id="ok-tag-input">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-tag-input&gt;</span></div>
+                    <ion-card-title>Tag input</ion-card-title>
+                    <p class="desc">Entrada de múltiples etiquetas (chips), con autocompletado opcional por sugerencias.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-tag-input id="g-taginput" placeholder="Añade etiquetas…"></ok-tag-input></div>
+                    <pre class="code">tags.value = ['urgente', 'cocina'];
+tags.suggestions = ['urgente', 'cocina', 'sala', 'caja'];
+tags.addEventListener('ok-change', (e) =&gt; …); // { tags }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.value</code></td><td>string[]</td><td>Etiquetas actuales</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>placeholder</code></td><td>string</td><td>Placeholder del campo</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>.suggestions</code></td><td>string[]</td><td>Sugerencias de autocompletado</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{tags}</td><td>Cambio de etiquetas</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-rating ══════════════════ -->
+              <div class="comp" id="ok-rating">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-rating&gt;</span></div>
+                    <ion-card-title>Rating</ion-card-title>
+                    <p class="desc">Valoración por estrellas, con soporte de medias estrellas y modo solo-lectura.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block" style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start;">
+                      <ok-rating id="g-rating" value="3" max="5" allow-half></ok-rating>
+                      <ok-rating value="4.5" max="5" allow-half readonly></ok-rating>
+                    </div>
+                    <pre class="code">&lt;ok-rating value="3" max="5" allow-half&gt;&lt;/ok-rating&gt;
+rating.addEventListener('ok-change', (e) =&gt; …); // { value }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code> · <code>max</code></td><td>number</td><td>Valor y número de estrellas</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>readonly</code> · <code>allow-half</code></td><td>bool</td><td>Solo lectura · medias estrellas</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{value}</td><td>Nueva valoración</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-otp ══════════════════ -->
+              <div class="comp" id="ok-otp">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-otp&gt;</span></div>
+                    <ion-card-title>OTP</ion-card-title>
+                    <p class="desc">Entrada de código de un solo uso: una casilla por dígito, auto-avance y pegado.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-otp id="g-otp" length="6"></ok-otp></div>
+                    <pre class="code">&lt;ok-otp length="6"&gt;&lt;/ok-otp&gt;
+otp.addEventListener('ok-change', (e) =&gt; …);   // { value }
+otp.addEventListener('ok-complete', (e) =&gt; …); // { value } al completar</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>length</code></td><td>number</td><td>Número de dígitos</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code></td><td>string</td><td>Valor actual</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{value}</td><td>Cada cambio</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-complete</code></td><td>{value}</td><td>Todos los dígitos rellenos</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-pinpad ══════════════════ -->
+              <div class="comp" id="ok-pinpad">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-pinpad&gt;</span></div>
+                    <ion-card-title>Pinpad</ion-card-title>
+                    <p class="desc">Teclado numérico (TPV / login por PIN) con dígitos ocultables.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-pinpad id="g-pinpad" length="4" masked></ok-pinpad></div>
+                    <pre class="code">&lt;ok-pinpad length="4" masked&gt;&lt;/ok-pinpad&gt;
+pinpad.addEventListener('ok-input', (e) =&gt; …);    // { value }
+pinpad.addEventListener('ok-complete', (e) =&gt; …); // { value }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code> · <code>length</code></td><td>string · number</td><td>Valor actual · dígitos esperados</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>masked</code></td><td>bool</td><td>Oculta los dígitos</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-input</code></td><td>{value}</td><td>Cada pulsación</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-complete</code></td><td>{value}</td><td>Al alcanzar la longitud</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-currency ══════════════════ -->
+              <div class="comp" id="ok-currency">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-currency&gt;</span></div>
+                    <ion-card-title>Currency</ion-card-title>
+                    <p class="desc">Campo de importe con formato de moneda según locale (separadores, símbolo) y valor numérico limpio.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-currency id="g-currency" label="Precio" currency="EUR" locale="es-ES" placeholder="0,00"></ok-currency></div>
+                    <pre class="code">cur.value = 1234.5;
+cur.currency = 'EUR';
+cur.locale = 'es-ES';
+cur.addEventListener('ok-change', (e) =&gt; …); // { value }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code></td><td>number</td><td>Importe numérico</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>currency</code> · <code>locale</code></td><td>string</td><td>ISO 4217 · BCP-47</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>placeholder</code> · <code>label</code></td><td>string</td><td>Placeholder y etiqueta</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{value}</td><td>Nuevo importe</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-phone ══════════════════ -->
+              <div class="comp" id="ok-phone">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-phone&gt;</span></div>
+                    <ion-card-title>Phone</ion-card-title>
+                    <p class="desc">Campo de teléfono con selector de país (prefijo) y salida E.164 normalizada.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-phone id="g-phone" label="Teléfono" country="ES" placeholder="600 000 000"></ok-phone></div>
+                    <pre class="code">phone.country = 'ES';
+phone.value = '600000000';
+phone.addEventListener('ok-change', (e) =&gt; …); // { value, country, dial, e164 }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>value</code></td><td>string</td><td>Número nacional</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>country</code></td><td>string (ISO2)</td><td>País seleccionado</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>.countries</code></td><td>string[]</td><td>Países disponibles (opcional)</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>placeholder</code> · <code>label</code></td><td>string</td><td>Placeholder y etiqueta</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{value, country, dial, e164}</td><td>Cambio normalizado</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- ══════════════════ ok-dropzone ══════════════════ -->
+              <div class="comp" id="ok-dropzone">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-dropzone&gt;</span></div>
+                    <ion-card-title>Dropzone</ion-card-title>
+                    <p class="desc">Zona de subida de archivos por arrastrar-y-soltar o click, con filtro de tipo y tamaño máximo.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block"><ok-dropzone id="g-dropzone" accept="image/*" multiple max-size="5242880" hint="PNG/JPG hasta 5 MB"></ok-dropzone></div>
+                    <pre class="code">&lt;ok-dropzone accept="image/*" multiple max-size="5242880" hint="PNG/JPG hasta 5 MB"&gt;&lt;/ok-dropzone&gt;
+dz.addEventListener('ok-change', (e) =&gt; …); // { files }
+dz.addEventListener('ok-error', (e) =&gt; …);  // { message }</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>accept</code></td><td>string</td><td>Filtro MIME (como input file)</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>multiple</code></td><td>bool</td><td>Permite varios archivos</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>max-size</code></td><td>number</td><td>Tamaño máximo en bytes</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>hint</code></td><td>string</td><td>Texto de ayuda</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-change</code></td><td>{files}</td><td>Archivos aceptados</td></tr>
+                        <tr><td><span class="kind event">evt</span> <code>ok-error</code></td><td>{message}</td><td>Tipo o tamaño no válido</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <h2 class="section">Datos</h2>
+
+              <!-- ══════════════════ ok-sparkline ══════════════════ -->
+              <div class="comp" id="ok-sparkline">
+                <ion-card>
+                  <ion-card-header>
+                    <div class="tags"><span class="tag">&lt;ok-sparkline&gt;</span></div>
+                    <ion-card-title>Sparkline</ion-card-title>
+                    <p class="desc">Mini-gráfico inline (línea o barras) sin ejes, para tendencias junto a un KPI. Sin eventos.</p>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div class="live block" style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
+                      <ok-sparkline id="g-spark-line" type="line" color="primary" width="120" height="36" filled></ok-sparkline>
+                      <ok-sparkline id="g-spark-bar" type="bar" color="success" width="120" height="36"></ok-sparkline>
+                    </div>
+                    <pre class="code">spark.values = [3, 5, 4, 8, 6, 9, 7];
+spark.type = 'line'; // 'line' | 'bar'
+&lt;ok-sparkline type="line" color="primary" width="120" height="36" filled&gt;&lt;/ok-sparkline&gt;</pre>
+                    <table class="api">
+                      <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th></tr></thead>
+                      <tbody>
+                        <tr><td><span class="kind prop">prop</span> <code>.values</code></td><td>number[]</td><td>Serie de datos</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>type</code></td><td>line|bar</td><td>Forma del gráfico</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>color</code></td><td>string</td><td>Color (token Ionic o CSS)</td></tr>
+                        <tr><td><span class="kind prop">prop</span> <code>width</code> · <code>height</code> · <code>filled</code></td><td>number · number · bool</td><td>Tamaño · relleno bajo la línea</td></tr>
+                      </tbody>
+                    </table>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
               <ok-empty-state id="no-results" icon="search-outline" heading="Sin resultados" message="Ningún componente coincide con la búsqueda." style="display:none;"></ok-empty-state>
             </div>
           </ion-content>
@@ -547,6 +916,73 @@ form.addEventListener('ok-submit', (e) =&gt; …); // { name, email, subject, me
       document.getElementById('g-contact').addEventListener('ok-submit', (e) => {
         console.info('contacto', e.detail);
       });
+
+      // ── ok-calendar ─────────────────────────────────────────────────────────────
+      const calendar = document.getElementById('g-calendar');
+      const today = new Date();
+      const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dayOf = (n) => ymd(new Date(today.getFullYear(), today.getMonth(), n));
+      calendar.events = [
+        { id: 'e1', date: dayOf(4), title: 'Inventario', color: 'primary' },
+        { id: 'e2', date: dayOf(12), title: 'Cierre caja', color: 'success' },
+        { id: 'e3', date: dayOf(12), title: 'Reunión equipo', color: 'warning' },
+        { id: 'e4', date: dayOf(20), title: 'Pedido proveedor', color: 'tertiary' },
+      ];
+      calendar.value = dayOf(12);
+
+      // ── ok-kanban ───────────────────────────────────────────────────────────────
+      const kanban = document.getElementById('g-kanban');
+      kanban.columns = [
+        { id: 'todo', title: 'Por hacer', color: 'medium', cards: [
+          { id: 'c1', title: 'Pedir stock', subtitle: 'Almacén', tags: ['urgente'] },
+          { id: 'c2', title: 'Actualizar precios', subtitle: 'Catálogo' },
+        ]},
+        { id: 'doing', title: 'En curso', color: 'primary', cards: [
+          { id: 'c3', title: 'Inventario mensual', subtitle: 'Tienda', tags: ['mes'] },
+        ]},
+        { id: 'done', title: 'Hecho', color: 'success', cards: [
+          { id: 'c4', title: 'Cierre de caja', subtitle: 'Lunes' },
+        ]},
+      ];
+
+      // ── ok-app-launcher ─────────────────────────────────────────────────────────
+      document.getElementById('g-launcher').apps = [
+        { id: 'pos', label: 'TPV', icon: 'cart-outline', color: 'primary' },
+        { id: 'stock', label: 'Almacén', icon: 'cube-outline' },
+        { id: 'customers', label: 'Clientes', icon: 'people-outline' },
+        { id: 'reports', label: 'Informes', icon: 'bar-chart-outline' },
+        { id: 'settings', label: 'Ajustes', icon: 'settings-outline' },
+        { id: 'staff', label: 'Empleados', icon: 'person-outline' },
+      ];
+
+      // ── ok-split-button ─────────────────────────────────────────────────────────
+      document.getElementById('g-split').items = [
+        { id: 'draft', label: 'Guardar borrador', icon: 'document-outline' },
+        { id: 'copy', label: 'Guardar y duplicar', icon: 'copy-outline' },
+        { id: 'close', label: 'Guardar y cerrar', icon: 'checkmark-done-outline' },
+      ];
+
+      // ── ok-combo ────────────────────────────────────────────────────────────────
+      const combo = document.getElementById('g-combo');
+      combo.options = [
+        { value: 'es', label: 'España' },
+        { value: 'fr', label: 'Francia' },
+        { value: 'pt', label: 'Portugal' },
+        { value: 'it', label: 'Italia' },
+        { value: 'de', label: 'Alemania' },
+      ];
+
+      // ── ok-tag-input ────────────────────────────────────────────────────────────
+      const taginput = document.getElementById('g-taginput');
+      taginput.value = ['urgente', 'cocina'];
+      taginput.suggestions = ['urgente', 'cocina', 'sala', 'caja', 'almacén', 'delivery'];
+
+      // ── ok-sparkline ────────────────────────────────────────────────────────────
+      document.getElementById('g-spark-line').values = [3, 5, 4, 8, 6, 9, 7, 11, 9];
+      document.getElementById('g-spark-bar').values = [4, 8, 6, 9, 5, 11, 7, 10];
+
+      // ── ok-currency ─────────────────────────────────────────────────────────────
+      document.getElementById('g-currency').value = 1234.5;
     </script>
   </body>
 </html>

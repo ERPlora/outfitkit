@@ -95,6 +95,21 @@
 
               <h2>Árbol</h2>
               <ok-tree id="tree" selectable active-id="pos"></ok-tree>
+
+              <h2>Tendencias</h2>
+              <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center;">
+                <div style="display:flex;flex-direction:column;gap:.25rem;">
+                  <span style="color:var(--ion-color-medium);font-size:.85rem;">Ventas (7 días)</span>
+                  <ok-sparkline id="spark-sales" type="line" color="success" width="160" height="44" filled></ok-sparkline>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:.25rem;">
+                  <span style="color:var(--ion-color-medium);font-size:.85rem;">Tickets/día</span>
+                  <ok-sparkline id="spark-tickets" type="bar" color="primary" width="160" height="44"></ok-sparkline>
+                </div>
+              </div>
+
+              <h2>Calendario</h2>
+              <ok-calendar id="cal" view="month" max-per-day="3"></ok-calendar>
             </div>
           </ion-content>
         </div>
@@ -181,6 +196,25 @@
         { id: 'staff', label: 'Empleados', icon: 'people-outline' },
       ];
       tree.addEventListener('ok-select', (e) => { tree.activeId = e.detail.id; });
+
+      // ── ok-sparkline ────────────────────────────────────────────────────────────
+      document.getElementById('spark-sales').values = [1820, 2110, 1990, 2480, 2200, 2650, 2480];
+      document.getElementById('spark-tickets').values = [98, 121, 110, 137, 119, 142, 137];
+
+      // ── ok-calendar ─────────────────────────────────────────────────────────────
+      const cal = document.getElementById('cal');
+      const _now = new Date();
+      const _ymd = (n) => {
+        const d = new Date(_now.getFullYear(), _now.getMonth(), n);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+      cal.events = [
+        { id: 'e1', date: _ymd(4), title: 'Inventario', color: 'primary' },
+        { id: 'e2', date: _ymd(12), title: 'Cierre de caja', color: 'success' },
+        { id: 'e3', date: _ymd(12), title: 'Reunión equipo', color: 'warning' },
+        { id: 'e4', date: _ymd(20), title: 'Pedido proveedor', color: 'tertiary' },
+      ];
+      cal.value = _ymd(12);
     </script>
   </body>
 </html>

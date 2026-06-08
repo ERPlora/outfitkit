@@ -118,9 +118,22 @@ export class OkDataTable extends LitElement {
     .drawer .dh { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
       padding: 0.6rem 0.5rem 0.6rem 1rem; border-bottom: 1px solid var(--border-color); font-size: 1rem; }
     .drawer .db { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
-    .fblock { display: flex; flex-direction: column; gap: 0.25rem; }
-    .flabel { font-size: 12px; color: var(--color-muted); }
+    .fblock { display: flex; flex-direction: column; gap: 0.45rem; }
+    .flabel { font-size: 13px; font-weight: 500; color: var(--color); }
     .frange { display: flex; gap: 0.5rem; }
+    /* Filtros cliente: chips multi-select (estilo Hub) + rango de fechas. */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.6rem; border: 1px solid var(--border-color); border-radius: 999px; background: var(--background); color: var(--color-muted); font-size: 12px; cursor: pointer; transition: color 0.12s, background 0.12s, border-color 0.12s; }
+    .chip:hover { color: var(--color); }
+    .chip.on { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 15%, transparent); }
+    .chip ion-icon { font-size: 12px; }
+    .chip-empty { font-size: 12px; color: var(--color-muted); }
+    .daterange { display: flex; gap: 0.6rem; }
+    .daterange label { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; font-size: 12px; color: var(--color-muted); }
+    .daterange input { font: inherit; font-size: 13px; padding: 0.35rem 0.4rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--background); color: var(--color); }
+    /* Pie del drawer de filtros: Limpiar / Aplicar. */
+    .df { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; padding: 0.6rem 0.85rem; border-top: 1px solid var(--border-color); }
+    .df .df-clear { margin-right: auto; }
 
     /* Modo fill: la tabla ocupa el alto del contenedor; filas con scroll interno; pager fijo. */
     :host([fill]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -137,6 +150,10 @@ export class OkDataTable extends LitElement {
     .bar-end { display: flex; align-items: center; gap: 0.4rem; }
     .bar-end ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
 
+    /* Botón de herramienta cuadrado (filtros/import/export), look del Hub: 36×36, badge contador. */
+    .toolbtn { position: relative; --padding-start: 0; --padding-end: 0; --border-radius: 10px; width: 36px; height: 36px; margin: 0; }
+    .toolbtn .badge { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 999px; background: var(--primary); color: var(--primary-contrast); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; pointer-events: none; }
+
     /* Buscador (caja con icono + limpiar), look del Hub */
     .search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
     ion-searchbar { --background: var(--background); --border-radius: 10px; --box-shadow: none; padding: 0; min-height: 36px; }
@@ -151,6 +168,16 @@ export class OkDataTable extends LitElement {
 
     .tk-cols { min-width: 6.5rem; max-width: 9rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.3rem; --padding-bottom: 0.3rem; }
     .vsep { width: 1px; align-self: stretch; background: var(--border-color); margin: 0.3rem 0.25rem; }
+
+    /* Selector de filas/página en la toolbar (consolidado) */
+    .tk-psize { min-width: 4.25rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
+
+    /* Filtros EN LÍNEA en la toolbar (select / rango de fechas) */
+    .tk-filter { min-width: 8.5rem; max-width: 13rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 10px; --padding-start: 0.7rem; --padding-end: 0.5rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
+    .tk-daterange { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.6rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); color: var(--color-muted); font-size: 13px; }
+    .tk-daterange ion-icon { font-size: 15px; flex: 0 0 auto; }
+    .tk-daterange input { font: inherit; font-size: 13px; color: var(--color); background: none; border: 0; outline: none; min-width: 0; width: 6.5rem; padding: 0; color-scheme: light dark; }
+    .tk-daterange .arr { color: var(--color-muted); }
 
     /* Barra contextual de selección */
     .selbar { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.7rem; border-radius: 10px;
@@ -176,7 +203,8 @@ export class OkDataTable extends LitElement {
     .gh { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
     .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
     .gh.sortable:hover { color: var(--color); }
-    .caret { font-size: 10px; opacity: 0.4; margin-left: 0.25rem; }
+    /* Caret de orden (3 estados, icono Ionic): neutral atenuado / activo en color primario. */
+    .caret { display: inline-flex; align-items: center; margin-left: 0.25rem; flex: 0 0 auto; font-size: 13px; opacity: 0.3; }
     .caret.on { opacity: 1; color: var(--primary); }
     .grow-data { border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background 0.12s; }
     .grow-data:last-child { border-bottom: 0; }
@@ -189,7 +217,8 @@ export class OkDataTable extends LitElement {
 
     /* ── Vista tarjetas ──────────────────────────────────────────────────────────────────── */
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; }
-    .rcard { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--background); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); transition: border-color 0.12s, box-shadow 0.12s; }
+    .rcard { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--background); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; }
+    .rcard:hover { border-color: color-mix(in srgb, var(--primary) 60%, var(--border-color)); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transform: translateY(-2px); }
     .rcard.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
     .rcard-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
@@ -211,8 +240,13 @@ export class OkDataTable extends LitElement {
     .pager .left { display: flex; align-items: center; gap: 0.6rem; }
     .pager .strong { font-weight: 600; color: var(--color); }
     .psize { font: inherit; font-size: 12.5px; padding: 0.2rem 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
-    .pager .nav { display: flex; align-items: center; gap: 0.35rem; }
+    .pager .nav { display: flex; align-items: center; gap: 0.2rem; }
     .pager .nav .pp { font-weight: 600; color: var(--color); padding: 0 0.25rem; }
+    /* Pager numerado: botón por página + «…» en los saltos (look del Hub). */
+    .pnum { min-width: 1.75rem; height: 1.75rem; padding: 0 0.4rem; border: 1px solid transparent; border-radius: 8px; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--color); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+    .pnum:hover { background: var(--row-hover); }
+    .pnum.on { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
+    .pgap { padding: 0 0.15rem; color: var(--color-muted); }
     ion-button { --box-shadow: none; }
   `;
 
@@ -289,6 +323,14 @@ export class OkDataTable extends LitElement {
   /** (NUEVO) Acción primaria de la topbar (botón destacado). Emite `primaryAction`. */
   @property({ attribute: false }) primaryAction?: DataTablePrimaryAction;
 
+  /** (NUEVO) Filtros EN LÍNEA en la toolbar (selects/daterange/text compactos) en vez del botón
+   *  funnel + drawer. Opt-in (por defecto `false` → se conserva el drawer). Look del screenshot:
+   *  «Todos los Estados» · «Todos los tipos» · rango de fechas, todo en una línea con el buscador.
+   *  Emite `filterChange` igual que el drawer. */
+  @property({ type: Boolean }) inlineFilters = false;
+  /** (NUEVO) Acciones del menú overflow (botón «⋮»). Emite `menuAction` con `{ actionId }`. */
+  @property({ attribute: false }) menuActions: DataTableAction[] = [];
+
   /** (NUEVO) Cabecera de la tarjeta: título (string/HTML). Si se omite, no hay cabecera de título. */
   @property({ attribute: false }) cardTitle?: (row: Record<string, unknown>) => unknown;
   /** (NUEVO) Cabecera de la tarjeta: nombre de un ion-icon o TemplateResult. */
@@ -300,6 +342,13 @@ export class OkDataTable extends LitElement {
   @state() private q = '';
   @state() private clientPage = 0;
   @state() private clientPageSize = 0; // 0 = usa `pageSize`
+  // Orden en memoria (modo cliente): columna activa + dirección. Vacío = sin orden.
+  @state() private clientSort = '';
+  @state() private clientSortDir: 'asc' | 'desc' = 'asc';
+  // Filtros en memoria (modo cliente): por columna, multi-select (Set de valores) o rango de fechas.
+  @state() private clientFilters: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
+  // Borrador del panel de filtros (se aplica con "Aplicar"; replica el modal del Hub).
+  @state() private filterDraft: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
   // Panel lateral derecho (drawer) DENTRO de la tabla: filtros o alta/edición. No empuja la tabla;
   // funciona igual en vista lista y tarjetas. Inspirado en el Filters Tool Panel de AG Grid.
   @state() private panel: 'none' | 'filters' | 'create' = 'none';
@@ -308,6 +357,10 @@ export class OkDataTable extends LitElement {
   @state() private hiddenKeys = new Set<string>();
   // Selección interna (cuando el padre no controla `selectedKeys`).
   @state() private internalSelection = new Set<string>();
+  // Menú overflow («⋮»): abierto/cerrado + evento de anclaje del ion-popover (sin trigger-by-id, que
+  // no resuelve dentro de Shadow DOM → se ancla con `.event`).
+  @state() private menuOpen = false;
+  private menuEv?: Event;
 
   // ── Resolución de alias (compat + documentados) ──────────────────────────────────────────
   private get effPageSizes(): number[] {
@@ -430,7 +483,55 @@ export class OkDataTable extends LitElement {
   }
 
   private toggle(p: 'filters' | 'create'): void {
+    if (p === 'filters' && this.panel !== 'filters') {
+      // Al abrir el panel de filtros (modo cliente) clonamos el estado aplicado como borrador.
+      this.filterDraft = this.cloneFilters(this.clientFilters);
+    }
     this.panel = this.panel === p ? 'none' : p;
+  }
+
+  // ── Filtros en memoria (modo cliente): borrador → aplicar. ───────────────────────────────────
+  private cloneFilters(src: Record<string, { values?: Set<string>; from?: string; to?: string }>) {
+    const out: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
+    for (const [k, f] of Object.entries(src)) {
+      out[k] = { values: f.values ? new Set(f.values) : undefined, from: f.from, to: f.to };
+    }
+    return out;
+  }
+  private toggleFilterValue(key: string, value: string): void {
+    const next = this.cloneFilters(this.filterDraft);
+    const values = new Set(next[key]?.values ?? []);
+    if (values.has(value)) values.delete(value);
+    else values.add(value);
+    next[key] = { ...next[key], values };
+    this.filterDraft = next;
+  }
+  private setFilterRange(key: string, edge: 'from' | 'to', value: string): void {
+    const next = this.cloneFilters(this.filterDraft);
+    next[key] = { ...next[key], [edge]: value };
+    this.filterDraft = next;
+  }
+  private applyFilters(): void {
+    // Descarta entradas vacías para que `activeFilterCount` sea fiel.
+    const clean: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
+    for (const [k, f] of Object.entries(this.filterDraft)) {
+      if ((f.values && f.values.size > 0) || f.from || f.to) clean[k] = f;
+    }
+    this.clientFilters = clean;
+    this.clientPage = 0;
+    this.panel = 'none';
+    this.emit('filterChange', { filters: this.serializeFilters(clean) });
+  }
+  private clearFilters(): void {
+    this.filterDraft = {};
+  }
+  private serializeFilters(src: Record<string, { values?: Set<string>; from?: string; to?: string }>) {
+    const out: Record<string, unknown> = {};
+    for (const [k, f] of Object.entries(src)) {
+      if (f.values && f.values.size > 0) out[k] = [...f.values];
+      else if (f.from || f.to) out[k] = { from: f.from ?? '', to: f.to ?? '' };
+    }
+    return out;
   }
   /** Abre el panel lateral (API pública para el módulo, p.ej. "editar" abre el form pre-rellenado). */
   open(panel: 'filters' | 'create' = 'create'): void {
@@ -449,16 +550,92 @@ export class OkDataTable extends LitElement {
     return this.searchable || this.searchKeys.length > 0;
   }
 
-  private get hasFilterRow(): boolean {
-    return this.serverSide && this.columns.some((c) => c.filterable);
+  /** Columnas filtrables (con control en el panel de filtros). En cliente y en servidor. */
+  private get filterColumns(): DataTableColumn[] {
+    return this.columns.filter((c) => c.filterable);
   }
 
+  /** ¿Hay que mostrar el botón de Filtros? (cualquier columna filtrable). */
+  private get hasFilterRow(): boolean {
+    return this.filterColumns.length > 0;
+  }
+
+  /** Nº de filtros activos (modo cliente) → badge del botón Filtros. */
+  private get activeFilterCount(): number {
+    return Object.values(this.clientFilters).filter(
+      (f) => (f.values && f.values.size > 0) || f.from || f.to,
+    ).length;
+  }
+
+  /** Valor crudo de una columna para ordenar/filtrar (usa format si lo hay, si no row[key]). */
+  private rawValue(col: DataTableColumn, row: Record<string, unknown>): unknown {
+    if (col.format) return col.format(row);
+    return row[col.key];
+  }
+
+  /** Valores distintos de una columna (para los chips del filtro multi-select). */
+  private distinctValues(col: DataTableColumn): string[] {
+    const set = new Set<string>();
+    for (const row of this.rows) {
+      const v = this.rawValue(col, row);
+      if (v != null && v !== '') set.add(String(v));
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }
+
+  /** Filas tras buscar + filtrar + ordenar EN MEMORIA (solo modo cliente). */
   private get clientFiltered(): Record<string, unknown>[] {
+    let result: Record<string, unknown>[] = this.rows;
+
+    // 1) Búsqueda global por searchKeys.
     const needle = this.q.trim().toLowerCase();
-    if (!needle || !this.searchKeys.length) return this.rows;
-    return this.rows.filter((r) =>
-      this.searchKeys.some((k) => String(r[k] ?? '').toLowerCase().includes(needle)),
-    );
+    if (needle && this.searchKeys.length) {
+      result = result.filter((r) =>
+        this.searchKeys.some((k) => String(r[k] ?? '').toLowerCase().includes(needle)),
+      );
+    }
+
+    // 2) Filtros por columna (multi-select por valores + rango de fechas).
+    const fkeys = Object.keys(this.clientFilters);
+    if (fkeys.length) {
+      result = result.filter((row) =>
+        fkeys.every((key) => {
+          const f = this.clientFilters[key];
+          const col = this.columns.find((c) => c.key === key);
+          if (!col) return true;
+          if (f.values && f.values.size > 0) {
+            return f.values.has(String(this.rawValue(col, row) ?? ''));
+          }
+          if (f.from || f.to) {
+            const raw = this.rawValue(col, row);
+            const t = raw == null ? NaN : new Date(raw as string).getTime();
+            const from = f.from ? new Date(f.from).getTime() : -Infinity;
+            const to = f.to ? new Date(f.to).getTime() + 86_400_000 - 1 : Infinity;
+            return !Number.isNaN(t) && t >= from && t <= to;
+          }
+          return true;
+        }),
+      );
+    }
+
+    // 3) Orden por columna (solo si hay una activa; no muta `this.rows`).
+    if (this.clientSort) {
+      const col = this.columns.find((c) => c.key === this.clientSort);
+      if (col) {
+        const dir = this.clientSortDir === 'asc' ? 1 : -1;
+        result = [...result].sort((a, b) => {
+          const va = this.rawValue(col, a);
+          const vb = this.rawValue(col, b);
+          if (va == null) return 1;
+          if (vb == null) return -1;
+          if (va < vb) return -1 * dir;
+          if (va > vb) return 1 * dir;
+          return 0;
+        });
+      }
+    }
+
+    return result;
   }
 
   private cell(col: DataTableColumn, row: Record<string, unknown>): string {
@@ -477,10 +654,26 @@ export class OkDataTable extends LitElement {
     }
   };
 
+  /** ¿Es ordenable la columna? Servidor: opt-in (`sortable`). Cliente: por defecto SÍ (como el Hub),
+   *  salvo `sortable: false` explícito. */
+  private isSortable(col: DataTableColumn): boolean {
+    return this.serverSide ? !!col.sortable : col.sortable !== false;
+  }
+
   private onHeaderClick(col: DataTableColumn): void {
-    if (!this.serverSide || !col.sortable) return;
-    const dir = this.sort === col.key && this.sortDir === 'asc' ? 'desc' : 'asc';
-    this.emit('sortChange', { sort: col.key, dir });
+    if (!this.isSortable(col)) return;
+    if (this.serverSide) {
+      const dir = this.sort === col.key && this.sortDir === 'asc' ? 'desc' : 'asc';
+      this.emit('sortChange', { sort: col.key, dir });
+      return;
+    }
+    // Cliente: alterna asc/desc en memoria.
+    if (this.clientSort === col.key) {
+      this.clientSortDir = this.clientSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.clientSort = col.key;
+      this.clientSortDir = 'asc';
+    }
   }
 
   private onFilterInput(col: DataTableColumn, ev: Event): void {
@@ -499,6 +692,40 @@ export class OkDataTable extends LitElement {
     // Rango de fechas: emite el string ISO (YYYY-MM-DD); el runtime compara texto (cronológico).
     const v = (ev.target as HTMLInputElement).value ?? '';
     this.emit('filterChange', { col: col.key, value: { [edge]: v } });
+  }
+
+  // ── Filtros EN LÍNEA (toolbar) ────────────────────────────────────────────────────────────
+  // En modo cliente escriben directamente `clientFilters` (filtran en memoria); en servidor solo
+  // emiten `filterChange`. Reutilizan la misma forma de filtro que el drawer (values / from / to).
+  private setClientFilter(key: string, patch: { values?: Set<string>; from?: string; to?: string }): void {
+    const next = { ...this.clientFilters };
+    const merged = { ...next[key], ...patch };
+    const empty = (!merged.values || merged.values.size === 0) && !merged.from && !merged.to;
+    if (empty) delete next[key];
+    else next[key] = merged;
+    this.clientFilters = next;
+    this.clientPage = 0;
+  }
+  private onInlineSelect(col: DataTableColumn, value: string): void {
+    if (this.serverSide) {
+      this.emit('filterChange', { col: col.key, value });
+      return;
+    }
+    this.setClientFilter(col.key, { values: value ? new Set([value]) : undefined });
+  }
+  private onInlineRange(col: DataTableColumn, edge: 'from' | 'to', ev: Event): void {
+    const v = (ev.target as HTMLInputElement).value ?? '';
+    if (this.serverSide) {
+      this.emit('filterChange', { col: col.key, value: { [edge]: v } });
+      return;
+    }
+    this.setClientFilter(col.key, { [edge]: v || undefined });
+  }
+
+  // Menú overflow: ancla el popover al botón vía el evento de click (compatible con Shadow DOM).
+  private openMenu(ev: Event): void {
+    this.menuEv = ev;
+    this.menuOpen = true;
   }
 
   private setViewMode(mode: 'table' | 'cards'): void {
@@ -554,6 +781,77 @@ export class OkDataTable extends LitElement {
     `;
   }
 
+  // Controles de filtro COMPACTOS para la toolbar (modo `inlineFilters`). Solo select y rango de
+  // fechas (los del screenshot); el resto de tipos siguen disponibles vía el drawer si no se activa
+  // `inlineFilters`. Look: «Todos los Estados» (placeholder) / «01/10/25 → 18/10/25».
+  private renderInlineFilters(): unknown {
+    const cols = this.filterColumns.filter((c) => {
+      const t = c.filterType ?? 'text';
+      return t === 'select' || t === 'date' || t === 'daterange';
+    });
+    if (!cols.length) return nothing;
+    return html`${cols.map((c) => this.renderInlineFilter(c))}`;
+  }
+  private renderInlineFilter(col: DataTableColumn): unknown {
+    const type = col.filterType ?? 'text';
+    const f = this.clientFilters[col.key];
+    if (type === 'select') {
+      const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
+      const current = f?.values && f.values.size ? [...f.values][0] : '';
+      return html`
+        <ion-select
+          class="tk-filter"
+          interface="popover"
+          aria-label=${col.header}
+          placeholder=${col.header}
+          .value=${current}
+          @ionChange=${(e: CustomEvent) => this.onInlineSelect(col, String((e.detail as { value: unknown }).value ?? ''))}
+        >
+          <ion-select-option value="">${col.header}</ion-select-option>
+          ${opts.map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
+        </ion-select>
+      `;
+    }
+    // date / daterange → pastilla compacta con icono calendario y dos inputs nativos.
+    return html`
+      <span class="tk-daterange" role="group" aria-label=${col.header}>
+        <ion-icon name="calendar-outline"></ion-icon>
+        <input type="date" aria-label=${`${col.header} desde`} .value=${f?.from ?? ''} @change=${(e: Event) => this.onInlineRange(col, 'from', e)} />
+        <span class="arr">→</span>
+        <input type="date" aria-label=${`${col.header} hasta`} .value=${f?.to ?? ''} @change=${(e: Event) => this.onInlineRange(col, 'to', e)} />
+      </span>
+    `;
+  }
+
+  // Menú overflow («⋮») con ion-popover anclado por evento (Shadow-DOM-safe).
+  private renderOverflowMenu(): unknown {
+    if (!this.menuActions.length) return nothing;
+    return html`
+      <ion-button class="toolbtn" fill="clear" aria-label="Más acciones" @click=${(e: Event) => this.openMenu(e)}>
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+      <ion-popover
+        .isOpen=${this.menuOpen}
+        .event=${this.menuEv}
+        dismiss-on-select="true"
+        @didDismiss=${() => (this.menuOpen = false)}
+      >
+        <ion-content>
+          <ion-list lines="none">
+            ${this.menuActions.map(
+              (a) => html`
+                <ion-item button .detail=${false} @click=${() => { this.menuOpen = false; this.emit('menuAction', { actionId: a.id }); }}>
+                  ${a.icon ? html`<ion-icon slot="start" name=${a.icon} color=${a.color ?? nothing}></ion-icon>` : nothing}
+                  <ion-label color=${a.color ?? nothing}>${a.label}</ion-label>
+                </ion-item>
+              `,
+            )}
+          </ion-list>
+        </ion-content>
+      </ion-popover>
+    `;
+  }
+
   // Botones de acción de una fila (compartido por vista tabla y tarjetas).
   private actionButtons(row: Record<string, unknown>): unknown {
     if (!this.actions.length) return nothing;
@@ -576,9 +874,13 @@ export class OkDataTable extends LitElement {
   }
 
   // Botón de barra icon-only (filtros / alta / conmutador de vista). `on` = estado activo.
-  private toolButton(icon: string, on: boolean, onClick: () => void, label: string): unknown {
+  // `badge` opcional → contador (p.ej. nº de filtros activos), look del Hub.
+  private toolButton(icon: string, on: boolean, onClick: () => void, label: string, badge?: number): unknown {
     return html`
-      <ion-button size="small" fill=${on ? 'solid' : 'clear'} title=${label} aria-label=${label} @click=${onClick}><ion-icon slot="icon-only" name=${icon}></ion-icon></ion-button>
+      <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} title=${label} aria-label=${label} @click=${onClick}>
+        <ion-icon slot="icon-only" name=${icon}></ion-icon>
+        ${badge && badge > 0 ? html`<span class="badge">${badge}</span>` : nothing}
+      </ion-button>
     `;
   }
 
@@ -589,6 +891,24 @@ export class OkDataTable extends LitElement {
       ...this.visibleColumns.map((c) => c.width ?? 'minmax(8rem,1fr)'),
       this.actions.length ? 'auto' : null,
     ].filter(Boolean).join(' ');
+  }
+
+  /** Lista de páginas a mostrar en el pager numerado (1-based): primera, última, vecinas de la
+   *  actual y «…» donde haya saltos. P.ej. en página 1 de 52 → [1,2,3,'…',52]. */
+  private pageList(cur1: number, total: number): (number | '…')[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const want = new Set<number>([1, total, cur1, cur1 - 1, cur1 + 1]);
+    if (cur1 <= 3) [2, 3].forEach((p) => want.add(p)); // arranque: 1 2 3 … N
+    if (cur1 >= total - 2) [total - 1, total - 2].forEach((p) => want.add(p)); // final: 1 … N-2 N-1 N
+    const sorted = [...want].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+    const out: (number | '…')[] = [];
+    let prev = 0;
+    for (const p of sorted) {
+      if (p - prev > 1) out.push('…');
+      out.push(p);
+      prev = p;
+    }
+    return out;
   }
 
   render(): unknown {
@@ -642,7 +962,21 @@ export class OkDataTable extends LitElement {
                     ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2><span class="title-count">${count}</span></div>`
                     : nothing}
                   ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : (this.title ? nothing : html`<span style="margin-right:auto"></span>`)}
+                  ${this.inlineFilters ? this.renderInlineFilters() : nothing}
                   <div class="bar-end">
+                    ${this.effPageSizes.length
+                      ? html`
+                          <ion-select
+                            class="tk-psize"
+                            interface="popover"
+                            aria-label="Filas por página"
+                            .value=${ps}
+                            @ionChange=${(e: CustomEvent) => setPageSize(Number((e.detail as { value: unknown }).value))}
+                          >
+                            ${this.effPageSizes.map((n) => html`<ion-select-option .value=${n}>${n}</ion-select-option>`)}
+                          </ion-select>
+                        `
+                      : nothing}
                     ${this.viewToggle
                       ? html`
                           <span class="viewseg">
@@ -666,7 +1000,7 @@ export class OkDataTable extends LitElement {
                           </ion-select>
                         `
                       : nothing}
-                    ${this.hasFilterRow ? this.toolButton('funnel-outline', this.panel === 'filters', () => this.toggle('filters'), 'Filtros') : nothing}
+                    ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), 'Filtros', this.serverSide ? undefined : this.activeFilterCount) : nothing}
                     ${this.effImport
                       ? html`
                           ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), 'Importar CSV')}
@@ -675,6 +1009,7 @@ export class OkDataTable extends LitElement {
                       : nothing}
                     ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), 'Exportar CSV') : nothing}
                     ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), 'Añadir') : nothing}
+                    ${this.renderOverflowMenu()}
                     ${this.primaryAction
                       ? html`
                           <ion-button
@@ -728,7 +1063,11 @@ export class OkDataTable extends LitElement {
                   ? html`
                       <div class="nav">
                         <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" name="chevron-back"></ion-icon></ion-button>
-                        <span class="pp">${current + 1} / ${pages}</span>
+                        ${this.pageList(current + 1, pages).map((p) =>
+                          p === '…'
+                            ? html`<span class="pgap">…</span>`
+                            : html`<button class=${`pnum${p === current + 1 ? ' on' : ''}`} @click=${() => goTo(p - 1)}>${p}</button>`,
+                        )}
                         <ion-button size="small" fill="clear" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" name="chevron-forward"></ion-icon></ion-button>
                       </div>
                     `
@@ -745,6 +1084,10 @@ export class OkDataTable extends LitElement {
   // Panel lateral derecho DENTRO de la tabla (no empuja contenido; igual en lista y tarjetas).
   private renderDrawer(): unknown {
     const isFilters = this.panel === 'filters';
+    // En modo cliente el panel de filtros usa chips multi-select + rango de fechas con borrador
+    // y botones Aplicar/Limpiar (1:1 con el modal de filtros del Hub). En servidor, controles que
+    // emiten `filterChange` en vivo (sin botón Aplicar).
+    const clientFilters = isFilters && !this.serverSide;
     return html`
       <div class="tk-scrim" @click=${() => this.close()}></div>
       <aside class="drawer" role="dialog" aria-label=${isFilters ? 'Filtros' : 'Formulario'}>
@@ -754,10 +1097,61 @@ export class OkDataTable extends LitElement {
         </header>
         <div class="db">
           ${isFilters
-            ? this.visibleColumns.filter((c) => c.filterable).map((c) => html`<div class="fblock">${this.renderFilterControl(c)}</div>`)
+            ? clientFilters
+              ? this.filterColumns.map((c) => this.renderClientFilter(c))
+              : this.filterColumns.map((c) => html`<div class="fblock">${this.renderFilterControl(c)}</div>`)
             : html`<slot name="create"></slot>`}
         </div>
+        ${clientFilters
+          ? html`
+              <footer class="df">
+                <button class="sel-clear df-clear" ?disabled=${Object.keys(this.filterDraft).length === 0} @click=${() => this.clearFilters()}>Limpiar</button>
+                <ion-button class="primary-btn" size="small" @click=${() => this.applyFilters()}>Aplicar</ion-button>
+              </footer>
+            `
+          : nothing}
       </aside>
+    `;
+  }
+
+  // Control de filtro CLIENTE de una columna: chips multi-select (select) o rango de fechas.
+  private renderClientFilter(col: DataTableColumn): unknown {
+    const label = col.header;
+    if (col.filterType === 'daterange' || col.filterType === 'date') {
+      const f = this.filterDraft[col.key] ?? {};
+      return html`
+        <div class="fblock">
+          <span class="flabel">${label}</span>
+          <div class="daterange">
+            <label>Desde
+              <input type="date" .value=${f.from ?? ''} @change=${(e: Event) => this.setFilterRange(col.key, 'from', (e.target as HTMLInputElement).value)} />
+            </label>
+            <label>Hasta
+              <input type="date" .value=${f.to ?? ''} @change=${(e: Event) => this.setFilterRange(col.key, 'to', (e.target as HTMLInputElement).value)} />
+            </label>
+          </div>
+        </div>
+      `;
+    }
+    // Por defecto: multi-select por chips con los valores distintos de la columna.
+    const distinct = this.distinctValues(col);
+    const selected = this.filterDraft[col.key]?.values ?? new Set<string>();
+    return html`
+      <div class="fblock">
+        <span class="flabel">${label}</span>
+        <div class="chips">
+          ${distinct.length === 0
+            ? html`<span class="chip-empty">Sin valores</span>`
+            : distinct.map((v) => {
+                const on = selected.has(v);
+                return html`
+                  <button class=${`chip${on ? ' on' : ''}`} @click=${() => this.toggleFilterValue(col.key, v)}>
+                    ${on ? html`<ion-icon name="checkmark-outline"></ion-icon>` : nothing}${v}
+                  </button>
+                `;
+              })}
+        </div>
+      </div>
     `;
   }
 
@@ -787,8 +1181,11 @@ export class OkDataTable extends LitElement {
               ? html`<span class="selcb"><ion-checkbox .checked=${allOn} aria-label="Seleccionar todo" @ionChange=${() => this.toggleAll(visible)}></ion-checkbox></span>`
               : nothing}
             ${cols.map((c) => {
-              const active = this.serverSide && c.sortable && this.sort === c.key;
-              const sortable = this.serverSide && c.sortable;
+              const sortable = this.isSortable(c);
+              const active = sortable && (this.serverSide ? this.sort === c.key : this.clientSort === c.key);
+              const dir = this.serverSide ? this.sortDir : this.clientSortDir;
+              // Icono 3-estados (como el Hub): neutral / asc / desc, con Ionicons.
+              const caretIcon = !active ? 'swap-vertical-outline' : dir === 'asc' ? 'chevron-up-outline' : 'chevron-down-outline';
               return html`
                 <div
                   class=${`gcell gh ${alignCls(c.align)}${sortable ? ' sortable' : ''}`}
@@ -797,7 +1194,7 @@ export class OkDataTable extends LitElement {
                 >
                   <span>${c.header}</span>
                   ${sortable
-                    ? html`<span class=${`caret${active ? ' on' : ''}`}>${active && this.sortDir === 'desc' ? '▼' : '▲'}</span>`
+                    ? html`<span class=${`caret${active ? ' on' : ''}`}><ion-icon name=${caretIcon}></ion-icon></span>`
                     : nothing}
                 </div>
               `;
