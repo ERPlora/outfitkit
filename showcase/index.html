@@ -7,13 +7,12 @@
     <link rel="icon" href="logo.png" />
     <meta
       name="description"
-      content="@outfitkit/core — wrappers finos ok-* sobre Ionic. Demo con ion-split-pane, ion-menu e ion-toolbar nativos."
+      content="@outfitkit/core — wrappers finos ok-* sobre Ionic. Demo con la estructura nativa de Ionic (split-pane + menu + toolbar), sin estilos custom."
     />
 
     <!-- ── Carga CSP-safe (script-src 'self', sin eval) ─────────────────────
-         1) Ionic Core (registra los ion-* que envuelven los ok-*) + su tema.
-         2) lit como external vía import-map (una sola copia compartida).
-         3) OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
+         Ionic Core (registra los ion-* que envuelven los ok-*) + su tema, lit como external vía
+         import-map, y OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
@@ -25,75 +24,62 @@
 
     <link rel="stylesheet" href="showcase.css" />
     <style>
-      /* Layout de la PÁGINA (no estilos de componentes): el panel principal llena el alto del
-         split-pane en columna; el toolbar (ion-header, vía ok-topbar display:contents) queda
-         arriba y ok-content rellena y scrollea nativo. */
       html, body { margin: 0; height: 100%; }
-      #main { display: flex; flex-direction: column; height: 100%; }
       .logo-brand { display: flex; align-items: center; gap: 0.5rem; padding: 14px 16px 4px; }
       .logo-brand img { height: 22px; width: auto; display: block; }
     </style>
   </head>
   <body>
-    <!-- ── Shell Ionic-NATIVO: ion-split-pane (vía ok-split-pane) con content-id + ids por panel.
-         El menú (ok-menu = ion-menu) es panel lateral en desktop y drawer en móvil; el
-         ion-menu-button del ok-topbar lo abre/cierra de forma nativa. ───────────────────────── -->
-    <ok-split-pane id="shell" content-id="main">
-      <!-- Panel lateral: ok-menu (ion-menu) con ok-content + navegación (ok-sidebar) -->
-      <ok-menu content-id="main">
-        <ok-content>
-          <ok-sidebar id="sidebar" active-path="index.html">
-            <div class="logo-brand" slot="brand">
-              <img src="logo.png" alt="OutfitKit" />
-              <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
-            </div>
-            <ok-segment id="switcher" slot="switcher"></ok-segment>
-          </ok-sidebar>
-        </ok-content>
-      </ok-menu>
+    <!-- ── Shell Ionic nativo en un solo ok-* (ok-app-shell construye ion-app + ion-split-pane +
+         ion-menu + .ion-page con ion-header/ion-content reales). Sin estilos custom: Ionic
+         posiciona todo. El ion-menu-button del toolbar abre el menú en móvil. ─────────────────── -->
+    <ok-app-shell id="shell" heading="Dashboard demo" when="md">
+      <!-- Menú lateral (navegación del showcase) -->
+      <ok-sidebar id="sidebar" slot="sidebar" active-path="index.html">
+        <div class="logo-brand" slot="brand">
+          <img src="logo.png" alt="OutfitKit" />
+          <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
+        </div>
+        <ok-segment id="switcher" slot="switcher"></ok-segment>
+      </ok-sidebar>
 
-      <!-- Panel principal (id = content-id) -->
-      <div id="main">
-        <ok-topbar id="topbar" heading="Dashboard demo"></ok-topbar>
-        <ok-content padding>
-          <div class="doc">
-            <p class="lead">
-              Shell <strong>nativo de Ionic</strong>: <code>ion-split-pane</code> +
-              <code>ion-menu</code> + <code>ion-toolbar</code>, envueltos en <code>ok-*</code> sin
-              re-estilar. El <code>ion-menu-button</code> abre el menú en móvil.
-            </p>
+      <!-- Acciones del toolbar (ok-button icon-only) -->
+      <ok-button slot="actions" id="btn-github" icon="logo-github" fill="clear" aria-label="GitHub"></ok-button>
+      <ok-button slot="actions" id="btn-theme" icon="contrast-outline" fill="clear" aria-label="Tema"></ok-button>
 
-            <div class="stats">
-              <ok-card class="stat"><ok-card-content>
-                <ok-card-subtitle>Ventas hoy</ok-card-subtitle>
-                <div class="n">€2.480</div><div class="delta up">▲ 12% vs ayer</div>
-              </ok-card-content></ok-card>
-              <ok-card class="stat"><ok-card-content>
-                <ok-card-subtitle>Tickets</ok-card-subtitle>
-                <div class="n">137</div><div class="delta up">▲ 4%</div>
-              </ok-card-content></ok-card>
-              <ok-card class="stat"><ok-card-content>
-                <ok-card-subtitle>Ticket medio</ok-card-subtitle>
-                <div class="n">€18,10</div><div class="delta">— estable</div>
-              </ok-card-content></ok-card>
-              <ok-card class="stat"><ok-card-content>
-                <ok-card-subtitle>Stock bajo</ok-card-subtitle>
-                <div class="n">3</div><div class="delta">artículos</div>
-              </ok-card-content></ok-card>
-            </div>
+      <!-- Contenido de la página (va dentro del ion-content principal) -->
+      <div class="doc">
+        <p class="lead">
+          Estructura <strong>nativa de Ionic</strong> (split-pane + menu + toolbar) en un único
+          <code>ok-app-shell</code>, sin estilos propios. El contenido es solo <code>ok-*</code>.
+        </p>
 
-            <ok-segment id="tabs" class="dash-segment"></ok-segment>
-            <ok-data-table id="dt"></ok-data-table>
-          </div>
-        </ok-content>
+        <div class="stats">
+          <ok-card class="stat"><ok-card-content>
+            <ok-card-subtitle>Ventas hoy</ok-card-subtitle>
+            <div class="n">€2.480</div><div class="delta up">▲ 12% vs ayer</div>
+          </ok-card-content></ok-card>
+          <ok-card class="stat"><ok-card-content>
+            <ok-card-subtitle>Tickets</ok-card-subtitle>
+            <div class="n">137</div><div class="delta up">▲ 4%</div>
+          </ok-card-content></ok-card>
+          <ok-card class="stat"><ok-card-content>
+            <ok-card-subtitle>Ticket medio</ok-card-subtitle>
+            <div class="n">€18,10</div><div class="delta">— estable</div>
+          </ok-card-content></ok-card>
+          <ok-card class="stat"><ok-card-content>
+            <ok-card-subtitle>Stock bajo</ok-card-subtitle>
+            <div class="n">3</div><div class="delta">artículos</div>
+          </ok-card-content></ok-card>
+        </div>
 
-        <!-- Barra de pestañas inferior NATIVA (ion-tab-bar) vía ok-tabbar -->
-        <ok-tabbar id="tabbar"></ok-tabbar>
+        <ok-segment id="tabs" class="dash-segment"></ok-segment>
+        <ok-data-table id="dt"></ok-data-table>
       </div>
-    </ok-split-pane>
+    </ok-app-shell>
 
     <script type="module">
-      // ── Sidebar: switcher Hub/Cloud (demo) + secciones = navegación del showcase ──────────
+      // Switcher Hub/Cloud (demo) en el slot del sidebar
       const switcher = document.getElementById('switcher');
       switcher.items = [
         { value: 'hub', label: 'Hub', icon: 'storefront-outline' },
@@ -101,6 +87,7 @@
       ];
       switcher.value = 'hub';
 
+      // Navegación del showcase (sidebar emite ok-nav { path })
       const sidebar = document.getElementById('sidebar');
       sidebar.sections = [
         {
@@ -113,28 +100,23 @@
         },
       ];
       sidebar.user = { name: 'OutfitKit', email: '@outfitkit/core' };
-      sidebar.addEventListener('ok-account', () => {
-        window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
-
-      // ── Topbar: GitHub + tema (toggle ion-palette-dark) ───────────────────────────────────
-      const topbar = document.getElementById('topbar');
-      topbar.actions = [
-        { id: 'github', label: 'GitHub', icon: 'logo-github' },
-        { id: 'theme', label: 'Tema', icon: 'contrast-outline' },
-      ];
-      topbar.addEventListener('ok-action', (e) => {
-        if (e.detail.id === 'theme') document.documentElement.classList.toggle('ion-palette-dark');
-        else if (e.detail.id === 'github') window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
-
-      // ── Navegación: ok-sidebar emite ok-nav { path }; navegamos a la página (sin router) ──
       document.getElementById('shell').addEventListener('ok-nav', (e) => {
         const path = e.detail.path;
         if (path && path !== 'index.html') window.location.href = path;
       });
+      sidebar.addEventListener('ok-account', () => {
+        window.location.href = 'https://github.com/ERPlora/outfitkit';
+      });
 
-      // ── Tabs del dashboard (ok-segment) ───────────────────────────────────────────────────
+      // Acciones del toolbar
+      document.getElementById('btn-github').addEventListener('click', () => {
+        window.location.href = 'https://github.com/ERPlora/outfitkit';
+      });
+      document.getElementById('btn-theme').addEventListener('click', () => {
+        document.documentElement.classList.toggle('ion-palette-dark');
+      });
+
+      // Tabs (ok-segment) que filtran la tabla
       const tabs = document.getElementById('tabs');
       tabs.items = [
         { value: 'all', label: 'Todos' },
@@ -143,16 +125,7 @@
       ];
       tabs.value = 'all';
 
-      // ── Tab bar inferior (ok-tabbar) ──────────────────────────────────────────────────────
-      const tabbar = document.getElementById('tabbar');
-      tabbar.items = [
-        { value: 'panel', label: 'Panel', icon: 'grid-outline' },
-        { value: 'ventas', label: 'Ventas', icon: 'cart-outline' },
-        { value: 'ajustes', label: 'Ajustes', icon: 'settings-outline' },
-      ];
-      tabbar.value = 'panel';
-
-      // ── Data-table con datos de ejemplo (property binding) ────────────────────────────────
+      // Data-table (property binding)
       const allRows = [
         { id: 1, name: 'Café solo', cat: 'Bebidas', stock: 120, price: 1.2, sku: 'CAF-001' },
         { id: 2, name: 'Café con leche', cat: 'Bebidas', stock: 95, price: 1.6, sku: 'CAF-002' },
@@ -182,7 +155,6 @@
         { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
       ];
       dt.addEventListener('rowAction', (e) => alert(`${e.detail.actionId} → ${e.detail.row.name}`));
-
       tabs.addEventListener('ok-change', (e) => {
         const v = e.detail.value;
         if (v === 'low') dt.rows = allRows.filter((r) => r.stock <= 5);

@@ -1,105 +1,82 @@
-import { LitElement, html, css } from 'lit';
-import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 
-// ok-app-shell — layout de dashboard AUTOCONTENIDO (no usa ion-split-pane/ion-menu, que dependen
-// del contexto de app Ionic y del acoplamiento por id en el documento → se rompen entre shadow DOM
-// y en templates Django sueltos). Implementa el patrón sidebar+contenido con CSS grid y, en móvil,
-// un drawer off-canvas con scrim. Así el MISMO shell sirve idéntico en Django y en el Hub (Lit).
+// ok-app-shell — shell de dashboard. Emite en LIGHT DOM la estructura NATIVA y CANÓNICA de Ionic,
+// con CERO estilos propios: Ionic la posiciona entera (cabecera fija + contenido con scroll + menú
+// lateral/drawer responsive). La clave es que el ion-header y el ion-content son hijos DIRECTOS de
+// `.ion-page` (requisito de la CSS de Ionic), por eso el shell los crea él mismo en vez de envolver.
 //
-// Slots:  slot="sidebar" → el menú lateral (p. ej. <ok-sidebar>);  default → el contenido.
-// Estado: atributo `menu-open` (reflejado) abre el drawer en móvil. Escucha el evento
-//         `ok-menu-toggle` (lo emite <ok-topbar>) y cierra al pulsar el scrim o navegar (`ok-nav`).
-export class OkAppShell extends LitElement {
-  static styles = css`
-    :host {
-      --sidebar-width: var(--ok-sidebar-width, 256px);
-      --background: var(--ok-bg, var(--ion-background-color, #f4f4f5));
-      --breakpoint: 992px;
-      display: block;
-      block-size: 100%;
-      background: var(--background);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: var(--sidebar-width) 1fr;
-      block-size: 100%;
-      min-block-size: 100vh;
-    }
-    .aside {
-      grid-column: 1;
-      block-size: 100%;
-      min-block-size: 0;
-      border-inline-end: 1px solid var(--ok-border, rgba(0, 0, 0, 0.08));
-      background: var(--ok-surface, var(--ion-item-background, #fff));
-      overflow: hidden;
-    }
-    .main {
-      grid-column: 2;
-      min-inline-size: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .scrim { display: none; }
+//   <ok-app-shell heading="Panel" when="md">
+//     <ok-sidebar slot="sidebar">…navegación…</ok-sidebar>   <!-- va al ion-content del ion-menu -->
+//     <ok-button slot="actions" icon="…"></ok-button>          <!-- va al final del toolbar -->
+//     …contenido de la página…                                  <!-- va al ion-content principal -->
+//   </ok-app-shell>
+//
+// El ion-menu-button del toolbar abre/cierra el menú en móvil (nativo). Navegación: el host
+// escucha `ok-nav`/`ok-action` (este último lo emiten tus ok-button de acciones, no el shell).
+let counter = 0;
 
-    /* ── Móvil: sidebar como drawer off-canvas ───────────────────────────── */
-    @media (max-width: 991.98px) {
-      .grid { grid-template-columns: 1fr; }
-      .aside {
-        position: fixed;
-        inset-block: 0;
-        inset-inline-start: 0;
-        inline-size: var(--sidebar-width);
-        max-inline-size: 80vw;
-        transform: translateX(-100%);
-        transition: transform 0.25s ease;
-        z-index: 1000;
-        box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
-      }
-      .main { grid-column: 1; }
-      :host([menu-open]) .aside { transform: translateX(0); }
-      :host([menu-open]) .scrim {
-        display: block;
-        position: fixed;
-        inset: 0;
-        z-index: 999;
-        background: rgba(0, 0, 0, 0.4);
-      }
-    }
-  `;
-
-  /** Drawer abierto (solo aplica en el breakpoint móvil). */
-  @property({ type: Boolean, reflect: true, attribute: 'menu-open' }) menuOpen = false;
+export class OkAppShell extends HTMLElement {
+  private built = false;
 
   connectedCallback(): void {
-    super.connectedCallback();
-    // El topbar emite ok-menu-toggle; navegar (ok-nav) cierra el drawer en móvil.
-    this.addEventListener('ok-menu-toggle', this.toggle as EventListener);
-    this.addEventListener('ok-nav', this.close as EventListener);
-  }
+    if (this.built) return;
+    this.built = true;
 
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.removeEventListener('ok-menu-toggle', this.toggle as EventListener);
-    this.removeEventListener('ok-nav', this.close as EventListener);
-  }
+    const id = `ok-main-${++counter}`;
+    const sidebar = this.querySelector(':scope > [slot="sidebar"]');
+    const actions = Array.from(this.querySelectorAll(':scope > [slot="actions"]'));
+    const body = Array.from(this.children).filter(
+      (el) => el !== sidebar && !actions.includes(el),
+    );
 
-  private toggle = (): void => {
-    this.menuOpen = !this.menuOpen;
-  };
+    const app = document.createElement('ion-app');
+    const split = document.createElement('ion-split-pane');
+    split.setAttribute('content-id', id);
+    split.setAttribute('when', this.getAttribute('when') ?? 'lg');
 
-  private close = (): void => {
-    this.menuOpen = false;
-  };
+    // Panel lateral: ion-menu (hijo directo del split) con su ion-content.
+    const menu = document.createElement('ion-menu');
+    menu.setAttribute('content-id', id);
+    const menuContent = document.createElement('ion-content');
+    if (sidebar) {
+      sidebar.removeAttribute('slot');
+      menuContent.appendChild(sidebar);
+    }
+    menu.appendChild(menuContent);
 
-  render(): unknown {
-    return html`
-      <div class="grid">
-        <aside class="aside"><slot name="sidebar"></slot></aside>
-        <div class="main"><slot></slot></div>
-      </div>
-      <div class="scrim" @click=${this.close}></div>
-    `;
+    // Panel principal: .ion-page con ion-header + ion-content como hijos DIRECTOS (layout Ionic).
+    const page = document.createElement('div');
+    page.className = 'ion-page';
+    page.id = id;
+
+    const header = document.createElement('ion-header');
+    const toolbar = document.createElement('ion-toolbar');
+    const startBtns = document.createElement('ion-buttons');
+    startBtns.setAttribute('slot', 'start');
+    startBtns.appendChild(document.createElement('ion-menu-button'));
+    toolbar.appendChild(startBtns);
+    const title = document.createElement('ion-title');
+    title.textContent = this.getAttribute('heading') ?? '';
+    toolbar.appendChild(title);
+    if (actions.length) {
+      const endBtns = document.createElement('ion-buttons');
+      endBtns.setAttribute('slot', 'end');
+      actions.forEach((el) => {
+        el.removeAttribute('slot');
+        endBtns.appendChild(el);
+      });
+      toolbar.appendChild(endBtns);
+    }
+    header.appendChild(toolbar);
+
+    const content = document.createElement('ion-content');
+    content.classList.add('ion-padding');
+    body.forEach((el) => content.appendChild(el));
+
+    page.append(header, content);
+    split.append(menu, page);
+    app.appendChild(split);
+    this.appendChild(app);
   }
 }
 

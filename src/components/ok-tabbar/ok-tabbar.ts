@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 
@@ -13,6 +13,11 @@ export interface OkTabbarItem {
 // estilos propios: usa el aspecto nativo de Ionic. Los botones llegan por la prop de datos `items`
 // (hijos tipados → prop, ver docs/CONVENTIONS.md). Evento `ok-change` { value } al pulsar.
 export class OkTabbar extends LitElement {
+  // Item flex de altura fija cuando va al fondo de un panel; sin estilos cosméticos.
+  static styles = css`
+    :host { display: block; flex: 0 0 auto; }
+  `;
+
   /** Botones de la barra. */
   @property({ attribute: false }) items: OkTabbarItem[] = [];
   /** Valor seleccionado. */
