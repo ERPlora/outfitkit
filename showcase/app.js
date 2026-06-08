@@ -392,7 +392,7 @@ function buildChrome() {
     <ion-app>
       <ion-split-pane content-id="main" when="lg">
         <ion-menu content-id="main">
-          <ion-header>
+          <ion-header class="ion-no-border">
             <ion-toolbar>
               <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
             </ion-toolbar>
@@ -406,7 +406,7 @@ function buildChrome() {
         </ion-menu>
 
         <div class="ion-page" id="main">
-          <ion-header>
+          <ion-header class="ion-no-border">
             <ion-toolbar>
               <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
               <ion-title id="topbar-title">Inicio</ion-title>

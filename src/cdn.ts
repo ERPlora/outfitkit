@@ -31,6 +31,14 @@ import './components/ok-phone/ok-phone.js';
 import './components/ok-dropzone/ok-dropzone.js';
 import './components/ok-sparkline/ok-sparkline.js';
 import './components/ok-chat/ok-chat.js';
+import './components/ok-scheduler/ok-scheduler.js';
+import './components/ok-menubar/ok-menubar.js';
+import './components/ok-carousel/ok-carousel.js';
+import './components/ok-signature/ok-signature.js';
+import './components/ok-qr/ok-qr.js';
+import './components/ok-audio/ok-audio.js';
+import './components/ok-video/ok-video.js';
+import './components/ok-pdf/ok-pdf.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';

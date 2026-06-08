@@ -130,8 +130,7 @@ export class OkDataTable extends LitElement {
     .chip ion-icon { font-size: 12px; }
     .chip-empty { font-size: 12px; color: var(--color-muted); }
     .daterange { display: flex; gap: 0.6rem; }
-    .daterange label { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; font-size: 12px; color: var(--color-muted); }
-    .daterange input { font: inherit; font-size: 13px; padding: 0.35rem 0.4rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--background); color: var(--color); }
+    .daterange ion-input { flex: 1; }
     /* Pie del drawer de filtros: Limpiar / Aplicar. */
     .df { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; padding: 0.6rem 0.85rem; border-top: 1px solid var(--border-color); }
     .df .df-clear { margin-right: auto; }
@@ -177,7 +176,7 @@ export class OkDataTable extends LitElement {
     .tk-filter { min-width: 8.5rem; max-width: 13rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 10px; --padding-start: 0.7rem; --padding-end: 0.5rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
     .tk-daterange { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.6rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); color: var(--color-muted); font-size: 13px; }
     .tk-daterange ion-icon { font-size: 15px; flex: 0 0 auto; }
-    .tk-daterange input { font: inherit; font-size: 13px; color: var(--color); background: none; border: 0; outline: none; min-width: 0; width: 6.5rem; padding: 0; color-scheme: light dark; }
+    .tk-daterange ion-input { --background: transparent; --padding-start: 0; --padding-end: 0; --padding-top: 2px; --padding-bottom: 2px; --color: var(--color); min-height: 26px; width: 6.8rem; font-size: 13px; }
     .tk-daterange .arr { color: var(--color-muted); }
 
     /* Barra contextual de selección */
@@ -1053,7 +1052,7 @@ export class OkDataTable extends LitElement {
                       : nothing}
                     <span class="strong">${count}</span> ${count === 1 ? 'registro' : 'registros'}
                   </span>
-                  ${this.effPageSizes.length
+                  ${!showTopbar && this.effPageSizes.length
                     ? html`
                         <select class="psize" @change=${(e: Event) => setPageSize(Number((e.target as HTMLSelectElement).value))}>
                           ${this.effPageSizes.map((n) => html`<option value=${n} ?selected=${n === ps}>${n} / pág.</option>`)}
@@ -1125,12 +1124,8 @@ export class OkDataTable extends LitElement {
         <div class="fblock">
           <span class="flabel">${label}</span>
           <div class="daterange">
-            <label>Desde
-              <input type="date" .value=${f.from ?? ''} @change=${(e: Event) => this.setFilterRange(col.key, 'from', (e.target as HTMLInputElement).value)} />
-            </label>
-            <label>Hasta
-              <input type="date" .value=${f.to ?? ''} @change=${(e: Event) => this.setFilterRange(col.key, 'to', (e.target as HTMLInputElement).value)} />
-            </label>
+            <ion-input type="date" label="Desde" label-placement="stacked" fill="outline" .value=${f.from ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'from', (e as CustomEvent).detail.value ?? '')}></ion-input>
+            <ion-input type="date" label="Hasta" label-placement="stacked" fill="outline" .value=${f.to ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'to', (e as CustomEvent).detail.value ?? '')}></ion-input>
           </div>
         </div>
       `;

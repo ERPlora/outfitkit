@@ -51,6 +51,16 @@ export { OkDropzone } from './components/ok-dropzone/ok-dropzone.js';
 export { OkSparkline } from './components/ok-sparkline/ok-sparkline.js';
 export { OkChat } from './components/ok-chat/ok-chat.js';
 export type { OkChatMessage } from './components/ok-chat/ok-chat.js';
+export { OkScheduler } from './components/ok-scheduler/ok-scheduler.js';
+export type { OkSchedulerResource, OkSchedulerEvent } from './components/ok-scheduler/ok-scheduler.js';
+export { OkMenubar } from './components/ok-menubar/ok-menubar.js';
+export type { OkMenu, OkMenuItem } from './components/ok-menubar/ok-menubar.js';
+export { OkCarousel } from './components/ok-carousel/ok-carousel.js';
+export { OkSignature } from './components/ok-signature/ok-signature.js';
+export { OkQr } from './components/ok-qr/ok-qr.js';
+export { OkAudio } from './components/ok-audio/ok-audio.js';
+export { OkVideo } from './components/ok-video/ok-video.js';
+export { OkPdf } from './components/ok-pdf/ok-pdf.js';
 
 // ── Chrome web / marketing ──────────────────────────────────────────────────────────────────
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';

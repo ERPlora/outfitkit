@@ -11,15 +11,17 @@
 
 :root {
   /* Tokens --ok-* heredando de Ionic (espejo de theme.example.css). El showcase los define aquí
-   * para que los componentes ok-* tomen el tema de Ionic (claro/oscuro) automáticamente. */
-  --ok-primary: var(--ion-color-primary, #3880ff);
-  --ok-primary-contrast: var(--ion-color-primary-contrast, #fff);
-  --ok-bg: var(--ion-background-color, #f6f7f9);
-  --ok-surface: var(--ion-card-background, #ffffff);
-  --ok-surface-2: var(--ion-color-step-100, #f1f1f4);
-  --ok-text: var(--ion-text-color, #1c1b17);
-  --ok-muted: var(--ion-color-medium, #6b7280);
-  --ok-border: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.1);
+   * para que los componentes ok-* tomen el tema de Ionic (claro/oscuro) automáticamente.
+   * SIN colores "mock" (hex fijos): las superficies se derivan con color-mix sobre bg/text para
+   * que el dark theme funcione aunque la paleta escalonada (--ion-color-step-*) no esté definida. */
+  --ok-primary: var(--ion-color-primary);
+  --ok-primary-contrast: var(--ion-color-primary-contrast);
+  --ok-bg: var(--ion-background-color);
+  --ok-surface: var(--ion-card-background, var(--ion-background-color));
+  --ok-surface-2: color-mix(in srgb, var(--ion-text-color) 6%, var(--ion-background-color));
+  --ok-text: var(--ion-text-color);
+  --ok-muted: var(--ion-color-medium, color-mix(in srgb, var(--ion-text-color) 50%, var(--ion-background-color)));
+  --ok-border: color-mix(in srgb, var(--ion-text-color) 12%, transparent);
   --ok-radius: 12px;
   --ok-spacing: 1rem;
   --ok-container-max: 1140px;

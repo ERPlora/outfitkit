@@ -69,9 +69,11 @@ const COMPONENTS = [
         const c = ESTADO[s] ?? 'medium';
         return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${s}</ion-badge>`;
       };
-      const canalChip = (c) => h`<ion-chip style="--background:var(--ion-color-step-100);height:24px;font-size:12px;margin:0">${c}</ion-chip>`;
+      // Superficies derivadas con color-mix sobre el texto del tema (adapta a claro/oscuro); NO usar
+      // --ion-color-step-* directo: puede no estar definido en algunos temas y romper el dark.
+      const canalChip = (c) => h`<ion-chip style="--background:color-mix(in srgb, var(--ion-text-color) 8%, transparent);height:24px;font-size:12px;margin:0">${c}</ion-chip>`;
       const avatar = (r) => h`<span style="display:inline-flex;align-items:center;gap:.55rem;min-width:0">
-        <span style="flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:var(--ion-color-step-150);font-size:12px;font-weight:700">${r.initials}</span>
+        <span style="flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:color-mix(in srgb, var(--ion-text-color) 14%, transparent);font-size:12px;font-weight:700">${r.initials}</span>
         <span style="min-width:0"><span style="display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.customer}</span>
         <span style="display:block;font-size:12px;color:var(--ion-color-medium)">${r.sub}</span></span></span>`;
       const trend = (r) => h`<ok-sparkline .values=${r.trend} filled width="92" height="28" color=${r.trend.at(-1) < r.trend[0] ? 'var(--ion-color-danger)' : 'var(--ion-color-success)'}></ok-sparkline>`;
