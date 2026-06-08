@@ -24,6 +24,10 @@ import './components/ok-spinner/ok-spinner.js';
 import './components/ok-toggle/ok-toggle.js';
 import './components/ok-checkbox/ok-checkbox.js';
 import './components/ok-chip/ok-chip.js';
+// Estado declarativo (registra <ok-store>; el módulo store no es un elemento pero importarlo
+// asegura que el singleton `store` exista al cargar el bundle).
+import './components/ok-store/ok-store.js';
+import './store/store.js';
 // Landing chrome
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';

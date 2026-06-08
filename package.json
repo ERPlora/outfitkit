@@ -19,6 +19,15 @@
       "import": "./dist/index.js"
     },
     "./define": "./dist/define.js",
+    "./store": {
+      "types": "./dist/store/store.d.ts",
+      "import": "./dist/store.js"
+    },
+    "./store-controller": {
+      "types": "./dist/store/controller.d.ts",
+      "import": "./dist/store-controller.js"
+    },
+    "./ok-store": "./dist/ok-store.js",
     "./ok-data-table": "./dist/ok-data-table.js",
     "./ok-app-shell": "./dist/ok-app-shell.js",
     "./ok-sidebar": "./dist/ok-sidebar.js",

@@ -2,6 +2,12 @@
 // re-exporta sus clases y tipos. Para tree-shake real, importa el componente concreto:
 //   import '@outfitkit/core/ok-button';
 
+// ── Estado (store reactivo + IndexedDB) ───────────────────────────────────────────────────
+export { createStore, store } from './store/store.js';
+export type { Store, StoreOptions, StoreSubscriber } from './store/store.js';
+export { StoreController } from './store/controller.js';
+export { OkStore } from './components/ok-store/ok-store.js';
+
 // ── Compuestos / dashboard ──────────────────────────────────────────────────────────────
 export { OkDataTable } from './components/ok-data-table/ok-data-table.js';
 export type {

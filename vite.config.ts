@@ -34,6 +34,9 @@ export default defineConfig({
         outfitkit: resolve(__dirname, 'src/cdn.ts'),
         // Helper de registro idempotente (lo usan los módulos para registrar su propio WC).
         define: resolve(__dirname, 'src/base/define.ts'),
+        // Store de estado reactivo (IndexedDB) + su ReactiveController de Lit.
+        store: resolve(__dirname, 'src/store/store.ts'),
+        'store-controller': resolve(__dirname, 'src/store/controller.ts'),
         // Compuestos / dashboard
         'ok-data-table': resolve(__dirname, 'src/components/ok-data-table/ok-data-table.ts'),
         // Shell / layout
@@ -55,6 +58,8 @@ export default defineConfig({
         'ok-toggle': resolve(__dirname, 'src/components/ok-toggle/ok-toggle.ts'),
         'ok-checkbox': resolve(__dirname, 'src/components/ok-checkbox/ok-checkbox.ts'),
         'ok-chip': resolve(__dirname, 'src/components/ok-chip/ok-chip.ts'),
+        // Estado declarativo (sin JS)
+        'ok-store': resolve(__dirname, 'src/components/ok-store/ok-store.ts'),
         // Landing chrome
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),

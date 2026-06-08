@@ -133,6 +133,92 @@ Contenido por **slots** (light DOM) → crawlable para SEO; no dependen de `ion-
 
 ---
 
+## Estado (store con IndexedDB)
+
+OutfitKit incluye en su CORE un **store de estado reactivo** respaldado por **IndexedDB**,
+reutilizable por cualquier componente. CERO dependencias externas y CSP-safe (sin `eval`/`new
+Function`). La **fuente de verdad síncrona** es una caché en memoria; IndexedDB solo **persiste** en
+segundo plano, así que `get()` es síncrono y `set()` notifica al instante.
+
+API:
+
+| Miembro | Descripción |
+|---|---|
+| `createStore({ name?, storeName? })` | Crea un store (defaults DB `outfitkit` / store `kv`). |
+| `store` | Singleton por defecto, listo para usar. |
+| `ready: Promise<void>` | Resuelve cuando la caché se hidrató desde IndexedDB. |
+| `get(key)` | Lee de la caché (SÍNCRONO). |
+| `set(key, value)` | Escribe, notifica suscriptores y persiste (fire-and-forget). |
+| `update(key, fn)` | `fn(prev) => next`. |
+| `delete(key)` / `remove(key)` | Borra una clave. |
+| `clear()` | Vacía el store. |
+| `has(key)` / `keys()` / `entries()` | Introspección. |
+| `subscribe(key, cb)` / `subscribe(cb)` | Suscripción a una clave o a todo. `cb(value, key)`. Devuelve `unsubscribe`. |
+| `flush(): Promise<void>` | Resuelve cuando se han escrito a IndexedDB las operaciones pendientes. |
+
+### En JS suelto
+
+```js
+import { store, createStore } from '@outfitkit/core/store';
+
+await store.ready;                 // hidrata la caché desde IndexedDB
+store.set('theme', 'dark');        // notifica + persiste
+store.get('theme');                // 'dark' (síncrono)
+const off = store.subscribe('theme', (v) => console.log('tema:', v));
+await store.flush();               // espera a que se escriba en disco (opcional)
+off();                             // desuscribirse
+
+// Store propio (otra DB):
+const prefs = createStore({ name: 'mi-app', storeName: 'prefs' });
+```
+
+### En Lit (`StoreController`)
+
+`StoreController` implementa el `ReactiveController` de Lit: se suscribe al store y llama a
+`requestUpdate()` en cada cambio.
+
+```js
+import { LitElement, html } from 'lit';
+import { store } from '@outfitkit/core/store';
+import { StoreController } from '@outfitkit/core/store-controller';
+
+class ThemeToggle extends LitElement {
+  #theme = new StoreController(this, store, 'theme');
+  render() {
+    return html`<ok-toggle
+      .checked=${this.#theme.value === 'dark'}
+      @ok-change=${(e) => this.#theme.set(e.detail.checked ? 'dark' : 'light')}
+    >Modo oscuro</ok-toggle>`;
+  }
+}
+```
+
+### En Django (elemento `<ok-store>`, sin escribir JS de wiring)
+
+`<ok-store>` posee un store (atributo `name` = DB), no renderiza UI (pasa su contenido por slot) y
+emite `ok-store-change` `{ key, value }` en cada cambio y `ok-store-ready` cuando hidrata. Expone
+`.store` y los proxies `get/set/updateValue/delete` (es `updateValue` porque `update` lo reserva
+LitElement).
+
+```html
+<ok-store name="prefs" id="prefs"></ok-store>
+<output id="count">0</output>
+<ok-button id="inc">+1</ok-button>
+
+<script type="module" nonce="{{ request.csp_nonce }}">
+  const prefs = document.getElementById('prefs');
+  const out = document.getElementById('count');
+  prefs.addEventListener('ok-store-ready', () => { out.textContent = prefs.get('count') ?? 0; });
+  prefs.addEventListener('ok-store-change', (e) => { if (e.detail.key === 'count') out.textContent = e.detail.value; });
+  document.getElementById('inc').addEventListener('click', () => prefs.updateValue('count', (n = 0) => n + 1));
+</script>
+```
+
+> Si el entorno no soporta IndexedDB (SSR, tests), la persistencia se desactiva en silencio y el
+> store funciona solo en memoria; nunca lanza al consumidor.
+
+---
+
 ## Theming
 
 OutfitKit se tematiza en **dos capas**:

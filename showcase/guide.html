@@ -217,6 +217,27 @@ class Productos extends LitElement {
             </ok-card-content>
           </ok-card>
 
+          <!-- Estado con store + IndexedDB -->
+          <ok-card class="comp">
+            <ok-card-header>
+              <ok-card-title>Estado: store con IndexedDB</ok-card-title>
+              <ok-card-subtitle>Estado reactivo que PERSISTE entre recargas. Pulsa +1 y recarga la página: el contador sigue ahí.</ok-card-subtitle>
+            </ok-card-header>
+            <ok-card-content class="comp-body">
+              <p style="display:flex;align-items:center;gap:1rem;">
+                <ok-button id="store-inc"><ok-icon slot="start" name="add-outline"></ok-icon>+1</ok-button>
+                <ok-button id="store-reset" fill="outline">Reset</ok-button>
+                <span>Contador persistente: <strong id="store-out" style="font-size:1.25rem;">0</strong></span>
+              </p>
+              <pre class="code"><span class="c">import { store } from '@outfitkit/core/store';</span>
+await store.ready;                              <span class="c">// hidrata la caché desde IndexedDB</span>
+const out = document.getElementById('out');
+out.textContent = store.get('count') ?? 0;
+store.subscribe('count', (v) =&gt; { out.textContent = v; });   <span class="c">// reactivo</span>
+inc.addEventListener('click', () =&gt; store.update('count', (n = 0) =&gt; n + 1));</pre>
+            </ok-card-content>
+          </ok-card>
+
           <!-- Reglas de oro -->
           <ok-card class="comp">
             <ok-card-header>
@@ -272,6 +293,22 @@ class Productos extends LitElement {
       document.getElementById('shell').addEventListener('ok-nav', (e) => {
         const path = e.detail.path;
         if (path && path !== 'guide.html') window.location.href = path;
+      });
+
+      // ── Demo del store (persistente vía IndexedDB) ────────────────────────────────────────
+      import('../dist/store.js').then(async ({ store }) => {
+        // expone el singleton en window para poder probarlo desde la consola / Playwright.
+        window.store = store;
+        await store.ready;
+        const out = document.getElementById('store-out');
+        out.textContent = store.get('count') ?? 0;
+        store.subscribe('count', (v) => { out.textContent = v ?? 0; });
+        document.getElementById('store-inc').addEventListener('click', () => {
+          store.update('count', (n = 0) => n + 1);
+        });
+        document.getElementById('store-reset').addEventListener('click', () => {
+          store.set('count', 0);
+        });
       });
     </script>
   </body>

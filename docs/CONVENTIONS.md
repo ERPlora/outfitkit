@@ -60,3 +60,23 @@ define('ok-input', OkInput);
 
 `ok-select` (`options`), `ok-segment` (`items`). El consumidor pasa un array `{ value, label }`
 en lugar de componer `ion-select-option`/`ion-segment-button`.
+
+## Estado: store reactivo (IndexedDB)
+
+El CORE incluye un **store** (`src/store/`) reutilizable, con CERO dependencias y CSP-safe:
+
+- `src/store/idb.ts` — adaptador IndexedDB mínimo (promesas). Si no hay `indexedDB`, degrada a NO-OP
+  (memoria-solo); los errores se tragan y nunca se lanzan al consumidor.
+- `src/store/store.ts` — `createStore()` + singleton `store`. Caché en memoria como fuente síncrona;
+  IndexedDB solo persiste (fire-and-forget, `flush()` para esperar). API: `get/set/update/delete/
+  remove/clear/has/keys/entries/subscribe/ready/flush`.
+- `src/store/controller.ts` — `StoreController` (`ReactiveController` de Lit): suscribe en
+  `hostConnected`, `requestUpdate()` en cada cambio, desuscribe en `hostDisconnected`.
+- `src/components/ok-store/ok-store.ts` — elemento declarativo `<ok-store name>` para Django (sin
+  JS de wiring): emite `ok-store-change`/`ok-store-ready`, expone `.store` y proxies
+  `get/set/updateValue/delete`. **Ojo**: el proxy se llama `updateValue` (no `update`) porque
+  `update` es un método reservado del ciclo de vida de LitElement.
+
+Wiring de un módulo del store nuevo: entry en `vite.config.ts`, export en `package.json`
+(`exports`) + `src/index.ts`; los entries de elemento (`<ok-store>`) además en `src/cdn.ts`. Los
+módulos `store`/`store-controller` NO son elementos: no se registran, solo se exportan.
