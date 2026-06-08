@@ -30,6 +30,25 @@ export { OkStepper } from './components/ok-stepper/ok-stepper.js';
 export type { OkStep } from './components/ok-stepper/ok-stepper.js';
 export { OkWizard } from './components/ok-wizard/ok-wizard.js';
 export { OkContactForm } from './components/ok-contact-form/ok-contact-form.js';
+export { OkCalendar } from './components/ok-calendar/ok-calendar.js';
+export type { OkCalendarEvent, OkCalendarView } from './components/ok-calendar/ok-calendar.js';
+export { OkKanban } from './components/ok-kanban/ok-kanban.js';
+export type { OkKanbanColumn, OkKanbanCard } from './components/ok-kanban/ok-kanban.js';
+export { OkAppLauncher } from './components/ok-app-launcher/ok-app-launcher.js';
+export type { OkLauncherApp } from './components/ok-app-launcher/ok-app-launcher.js';
+export { OkSplitButton } from './components/ok-split-button/ok-split-button.js';
+export type { OkSplitButtonItem } from './components/ok-split-button/ok-split-button.js';
+export { OkCombo } from './components/ok-combo/ok-combo.js';
+export type { OkComboOption } from './components/ok-combo/ok-combo.js';
+export { OkTagInput } from './components/ok-tag-input/ok-tag-input.js';
+export { OkRating } from './components/ok-rating/ok-rating.js';
+export { OkOtp } from './components/ok-otp/ok-otp.js';
+export { OkPinpad } from './components/ok-pinpad/ok-pinpad.js';
+export { OkCurrency } from './components/ok-currency/ok-currency.js';
+export { OkPhone } from './components/ok-phone/ok-phone.js';
+export type { OkPhoneCountry } from './components/ok-phone/ok-phone.js';
+export { OkDropzone } from './components/ok-dropzone/ok-dropzone.js';
+export { OkSparkline } from './components/ok-sparkline/ok-sparkline.js';
 
 // ── Chrome web / marketing ──────────────────────────────────────────────────────────────────
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';

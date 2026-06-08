@@ -16,6 +16,20 @@ import './components/ok-stat/ok-stat.js';
 import './components/ok-stepper/ok-stepper.js';
 import './components/ok-wizard/ok-wizard.js';
 import './components/ok-contact-form/ok-contact-form.js';
+// Tier 1/2 (2ª oleada)
+import './components/ok-calendar/ok-calendar.js';
+import './components/ok-kanban/ok-kanban.js';
+import './components/ok-app-launcher/ok-app-launcher.js';
+import './components/ok-split-button/ok-split-button.js';
+import './components/ok-combo/ok-combo.js';
+import './components/ok-tag-input/ok-tag-input.js';
+import './components/ok-rating/ok-rating.js';
+import './components/ok-otp/ok-otp.js';
+import './components/ok-pinpad/ok-pinpad.js';
+import './components/ok-currency/ok-currency.js';
+import './components/ok-phone/ok-phone.js';
+import './components/ok-dropzone/ok-dropzone.js';
+import './components/ok-sparkline/ok-sparkline.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';
