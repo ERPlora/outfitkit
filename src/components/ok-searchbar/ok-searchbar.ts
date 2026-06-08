@@ -6,18 +6,9 @@ import { relay } from '../../base/relay.js';
 // ok-searchbar — wrapper de ion-searchbar. Eventos: ionInput→ok-input, ionChange→ok-change
 // (detail `{ value }`).
 export class OkSearchbar extends LitElement {
+  // Sin estilos propios: usa el aspecto nativo de ion-searchbar.
   static styles = css`
-    :host {
-      --background: var(--ok-surface-2, var(--ion-color-step-50, #f4f4f5));
-      --border-radius: var(--ok-radius, 10px);
-      display: block;
-    }
-    ion-searchbar {
-      --background: var(--background);
-      --border-radius: var(--border-radius);
-      --box-shadow: none;
-      padding: 0;
-    }
+    :host { display: block; }
   `;
 
   @property() value = '';

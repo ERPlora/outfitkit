@@ -5,12 +5,15 @@
 
 // Compuestos / dashboard
 import './components/ok-data-table/ok-data-table.js';
-// Shell / layout
+// Shell / layout (wrappers finos sobre Ionic nativo)
+import './components/ok-split-pane/ok-split-pane.js';
+import './components/ok-menu/ok-menu.js';
 import './components/ok-app-shell/ok-app-shell.js';
 import './components/ok-sidebar/ok-sidebar.js';
 import './components/ok-topbar/ok-topbar.js';
 import './components/ok-page/ok-page.js';
 import './components/ok-segment/ok-segment.js';
+import './components/ok-tabbar/ok-tabbar.js';
 // Primitivos (wrap de Ionic)
 import './components/ok-button/ok-button.js';
 import './components/ok-icon/ok-icon.js';

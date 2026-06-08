@@ -39,12 +39,15 @@ export default defineConfig({
         'store-controller': resolve(__dirname, 'src/store/controller.ts'),
         // Compuestos / dashboard
         'ok-data-table': resolve(__dirname, 'src/components/ok-data-table/ok-data-table.ts'),
-        // Shell / layout
+        // Shell / layout (wrappers finos sobre Ionic nativo)
+        'ok-split-pane': resolve(__dirname, 'src/components/ok-split-pane/ok-split-pane.ts'),
+        'ok-menu': resolve(__dirname, 'src/components/ok-menu/ok-menu.ts'),
         'ok-app-shell': resolve(__dirname, 'src/components/ok-app-shell/ok-app-shell.ts'),
         'ok-sidebar': resolve(__dirname, 'src/components/ok-sidebar/ok-sidebar.ts'),
         'ok-topbar': resolve(__dirname, 'src/components/ok-topbar/ok-topbar.ts'),
         'ok-page': resolve(__dirname, 'src/components/ok-page/ok-page.ts'),
         'ok-segment': resolve(__dirname, 'src/components/ok-segment/ok-segment.ts'),
+        'ok-tabbar': resolve(__dirname, 'src/components/ok-tabbar/ok-tabbar.ts'),
         // Primitivos (wrap de Ionic)
         'ok-button': resolve(__dirname, 'src/components/ok-button/ok-button.ts'),
         'ok-icon': resolve(__dirname, 'src/components/ok-icon/ok-icon.ts'),

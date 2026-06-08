@@ -6,18 +6,9 @@ import { relay } from '../../base/relay.js';
 // ok-input — wrapper de ion-input. Eventos normalizados: ionInput→ok-input, ionChange→ok-change
 // (detail `{ value }`), ionBlur→ok-blur, ionFocus→ok-focus.
 export class OkInput extends LitElement {
+  // Sin estilos propios: usa el aspecto nativo de ion-input.
   static styles = css`
-    :host {
-      --background: var(--ok-surface-2, var(--ion-color-step-50, #f4f4f5));
-      --border-radius: var(--ok-radius, 10px);
-      display: block;
-    }
-    ion-input {
-      --background: var(--background);
-      --border-radius: var(--border-radius);
-      --padding-start: 12px;
-      --padding-end: 12px;
-    }
+    :host { display: block; }
   `;
 
   @property() value = '';

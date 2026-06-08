@@ -16,7 +16,9 @@ export type {
   DataTableView,
 } from './components/ok-data-table/ok-data-table.js';
 
-// ── Shell / layout ──────────────────────────────────────────────────────────────────────
+// ── Shell / layout (wrappers finos sobre Ionic nativo) ────────────────────────────────────
+export { OkSplitPane } from './components/ok-split-pane/ok-split-pane.js';
+export { OkMenu } from './components/ok-menu/ok-menu.js';
 export { OkAppShell } from './components/ok-app-shell/ok-app-shell.js';
 export { OkSidebar } from './components/ok-sidebar/ok-sidebar.js';
 export type {
@@ -29,6 +31,8 @@ export type { OkHeaderAction } from './components/ok-topbar/ok-topbar.js';
 export { OkPage } from './components/ok-page/ok-page.js';
 export { OkSegment } from './components/ok-segment/ok-segment.js';
 export type { OkSegmentItem } from './components/ok-segment/ok-segment.js';
+export { OkTabbar } from './components/ok-tabbar/ok-tabbar.js';
+export type { OkTabbarItem } from './components/ok-tabbar/ok-tabbar.js';
 
 // ── Primitivos (wrap de Ionic) ──────────────────────────────────────────────────────────
 export { OkButton } from './components/ok-button/ok-button.js';

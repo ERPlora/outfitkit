@@ -11,19 +11,9 @@ export interface OkSelectOption {
 // ok-select — wrapper de ion-select. Las opciones llegan por la prop `options` (NO por hijos
 // tipados ion-select-option: ver docs/CONVENTIONS.md §5). Evento: ionChange→ok-change `{ value }`.
 export class OkSelect extends LitElement {
+  // Sin estilos propios: usa el aspecto nativo de ion-select.
   static styles = css`
-    :host {
-      --background: var(--ok-surface-2, var(--ion-color-step-50, #f4f4f5));
-      --border-radius: var(--ok-radius, 10px);
-      display: block;
-    }
-    ion-select {
-      --background: var(--background);
-      border-radius: var(--border-radius);
-      --padding-start: 12px;
-      --padding-end: 12px;
-      min-height: 44px;
-    }
+    :host { display: block; }
   `;
 
   /** Opciones { value, label }. */
