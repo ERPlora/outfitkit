@@ -2,11 +2,14 @@ import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 
-// ok-navbar — barra de navegación web responsive con BURGER en móvil (el hueco que Ionic
-// no cubre: ion-menu es un drawer de app, no una navbar de landing). Slots:
-//   • slot="brand"   → logo / nombre (izquierda)
-//   • slot (default) → enlaces de navegación (centro/derecha; se colapsan en móvil)
-//   • slot="actions" → CTAs (login, "Empezar"); visibles siempre
+// ok-navbar — barra de navegación web responsive (el hueco que Ionic no cubre: ion-menu es un
+// drawer de app que exige ion-app + content-id; esto es una navbar de landing autocontenida).
+// En MÓVIL el burger abre un PANEL OFFCANVAS deslizante desde la DERECHA con scrim (estilo
+// Bootstrap / ion-menu side="end"), sin header ni footer: solo los enlaces. Cierra al pulsar el
+// scrim, un enlace o Esc. Slots:
+//   • slot="brand"   → logo / nombre (izquierda, siempre visible)
+//   • slot (default) → enlaces de navegación (en línea en desktop; dentro del offcanvas en móvil)
+//   • slot="actions" → CTAs (login, "Empezar"); visibles siempre en la barra
 // Contenido por slot (light DOM) → SEO crawlable. Atributos: `sticky`, `open`.
 export class OkNavbar extends LitElement {
   static styles = css`
@@ -19,6 +22,7 @@ export class OkNavbar extends LitElement {
       --primary-color: var(--ok-primary, var(--ion-color-primary, #3880ff));
       --max-width: var(--ok-container-max, 1140px);
       --padding: var(--ok-spacing, var(--ion-padding, 16px));
+      --panel-width: var(--ok-navbar-panel-width, min(320px, 86vw));
       --font: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 
       display: block;
@@ -44,6 +48,10 @@ export class OkNavbar extends LitElement {
     .actions { display: flex; align-items: center; gap: 0.5rem; }
     ::slotted(a) { color: var(--color); text-decoration: none; font-size: 0.95rem; }
     ::slotted(a:hover) { color: var(--primary-color); }
+
+    /* Scrim del offcanvas (solo móvil). */
+    .scrim { display: none; }
+
     .burger {
       display: none;
       background: none;
@@ -56,48 +64,76 @@ export class OkNavbar extends LitElement {
     .burger span::before, .burger span::after { content: ''; position: absolute; left: 0; width: 22px; height: 2px; background: currentColor; border-radius: 2px; transition: transform 0.2s ease, top 0.2s ease; }
     .burger span::before { top: -7px; }
     .burger span::after { top: 7px; }
-    /* Burger → X cuando el panel está abierto (accesible: el estado se anuncia por aria-expanded). */
+    /* Burger → X cuando el panel está abierto (estado anunciado por aria-expanded). */
     :host([open]) .burger span { background: transparent; }
     :host([open]) .burger span::before { top: 0; transform: rotate(45deg); }
     :host([open]) .burger span::after { top: 0; transform: rotate(-45deg); }
+
+    /* ── Móvil: el burger abre el panel offcanvas a la derecha ──────────────── */
     @media (max-width: 800px) {
-      .burger { display: block; }
+      .burger { display: block; position: relative; z-index: 61; }
+
+      .scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.42);
+        z-index: 55;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      :host([open]) .scrim { opacity: 1; pointer-events: auto; }
+
       .links {
-        position: absolute;
-        left: 0;
+        position: fixed;
+        top: 0;
         right: 0;
-        top: 100%;
+        bottom: 0;
+        width: var(--panel-width);
         background: var(--background);
-        border-bottom: 1px solid var(--border-color);
-        padding: 0 var(--padding);
-        /* Desplegable animado (Bootstrap/Tailwind-like) vía grid-rows 0fr→1fr, sin medir alturas. */
-        display: grid;
-        grid-template-rows: 0fr;
-        transition: grid-template-rows 0.22s ease;
+        border-left: 1px solid var(--border-color);
+        box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        z-index: 60;
+        padding: 4.25rem var(--padding) var(--padding);
+        overflow-y: auto;
       }
-      .links-inner {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0;
-        overflow: hidden;
-        min-height: 0;
-      }
-      :host([open]) .links { grid-template-rows: 1fr; }
-      ::slotted(a) { display: block; padding: 0.7rem 0; border-top: 1px solid var(--border-color-soft); }
+      :host([open]) .links { transform: translateX(0); }
+      .links-inner { flex-direction: column; align-items: stretch; gap: 0; }
+      ::slotted(a) { display: block; padding: 0.85rem 0; border-top: 1px solid var(--border-color-soft); }
       ::slotted(a:first-child) { border-top: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .links, .scrim { transition: none; }
     }
   `;
 
   /** Fija la navbar arriba al hacer scroll. */
   @property({ type: Boolean, reflect: true }) sticky = false;
-  /** Estado del panel móvil (reflejado para el selector :host([open])). */
+  /** Estado del panel offcanvas móvil (reflejado para el selector :host([open])). */
   @property({ type: Boolean, reflect: true }) open = false;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    document.addEventListener('keydown', this.onKeydown);
+  }
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.removeEventListener('keydown', this.onKeydown);
+  }
 
   private toggle(): void {
     this.open = !this.open;
   }
-
-  // Cierra el panel móvil al pulsar un enlace de navegación (UX Bootstrap/Tailwind).
+  private close = (): void => {
+    this.open = false;
+  };
+  private onKeydown = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && this.open) this.open = false;
+  };
+  // Cierra el panel al pulsar un enlace (UX offcanvas).
   private onLinkClick = (e: Event): void => {
     if (this.open && (e.target as Element)?.closest('a')) this.open = false;
   };
@@ -121,6 +157,7 @@ export class OkNavbar extends LitElement {
           <span></span>
         </button>
       </nav>
+      <div class="scrim" @click=${this.close}></div>
     `;
   }
 }
