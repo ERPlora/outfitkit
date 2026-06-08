@@ -12,6 +12,7 @@ import './components/ok-app-shell/ok-app-shell.js';
 import './components/ok-sidebar/ok-sidebar.js';
 import './components/ok-topbar/ok-topbar.js';
 import './components/ok-page/ok-page.js';
+import './components/ok-content/ok-content.js';
 import './components/ok-segment/ok-segment.js';
 import './components/ok-tabbar/ok-tabbar.js';
 // Primitivos (wrap de Ionic)

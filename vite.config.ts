@@ -46,6 +46,7 @@ export default defineConfig({
         'ok-sidebar': resolve(__dirname, 'src/components/ok-sidebar/ok-sidebar.ts'),
         'ok-topbar': resolve(__dirname, 'src/components/ok-topbar/ok-topbar.ts'),
         'ok-page': resolve(__dirname, 'src/components/ok-page/ok-page.ts'),
+        'ok-content': resolve(__dirname, 'src/components/ok-content/ok-content.ts'),
         'ok-segment': resolve(__dirname, 'src/components/ok-segment/ok-segment.ts'),
         'ok-tabbar': resolve(__dirname, 'src/components/ok-tabbar/ok-tabbar.ts'),
         // Primitivos (wrap de Ionic)

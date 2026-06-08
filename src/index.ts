@@ -29,6 +29,7 @@ export type {
 export { OkTopbar } from './components/ok-topbar/ok-topbar.js';
 export type { OkHeaderAction } from './components/ok-topbar/ok-topbar.js';
 export { OkPage } from './components/ok-page/ok-page.js';
+export { OkContent } from './components/ok-content/ok-content.js';
 export { OkSegment } from './components/ok-segment/ok-segment.js';
 export type { OkSegmentItem } from './components/ok-segment/ok-segment.js';
 export { OkTabbar } from './components/ok-tabbar/ok-tabbar.js';

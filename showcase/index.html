@@ -25,13 +25,11 @@
 
     <link rel="stylesheet" href="showcase.css" />
     <style>
-      /* Layout de la página: el panel principal (#main) llena el alto del split-pane;
-         el ion-toolbar queda fijo arriba y el ion-content scrollea nativo. (Esto es layout
-         de la PÁGINA, no estilos de los componentes.) */
+      /* Layout de la PÁGINA (no estilos de componentes): el panel principal llena el alto del
+         split-pane en columna; el toolbar (ion-header, vía ok-topbar display:contents) queda
+         arriba y ok-content rellena y scrollea nativo. */
       html, body { margin: 0; height: 100%; }
       #main { display: flex; flex-direction: column; height: 100%; }
-      #main > ok-topbar { flex: 0 0 auto; }
-      #main > ion-content { flex: 1 1 auto; min-height: 0; }
       .logo-brand { display: flex; align-items: center; gap: 0.5rem; padding: 14px 16px 4px; }
       .logo-brand img { height: 22px; width: auto; display: block; }
     </style>
@@ -41,9 +39,9 @@
          El menú (ok-menu = ion-menu) es panel lateral en desktop y drawer en móvil; el
          ion-menu-button del ok-topbar lo abre/cierra de forma nativa. ───────────────────────── -->
     <ok-split-pane id="shell" content-id="main">
-      <!-- Panel lateral: ion-menu con ion-content + navegación (ok-sidebar) -->
+      <!-- Panel lateral: ok-menu (ion-menu) con ok-content + navegación (ok-sidebar) -->
       <ok-menu content-id="main">
-        <ion-content>
+        <ok-content>
           <ok-sidebar id="sidebar" active-path="index.html">
             <div class="logo-brand" slot="brand">
               <img src="logo.png" alt="OutfitKit" />
@@ -51,13 +49,13 @@
             </div>
             <ok-segment id="switcher" slot="switcher"></ok-segment>
           </ok-sidebar>
-        </ion-content>
+        </ok-content>
       </ok-menu>
 
       <!-- Panel principal (id = content-id) -->
       <div id="main">
         <ok-topbar id="topbar" heading="Dashboard demo"></ok-topbar>
-        <ion-content class="ion-padding">
+        <ok-content padding>
           <div class="doc">
             <p class="lead">
               Shell <strong>nativo de Ionic</strong>: <code>ion-split-pane</code> +
@@ -87,7 +85,7 @@
             <ok-segment id="tabs" class="dash-segment"></ok-segment>
             <ok-data-table id="dt"></ok-data-table>
           </div>
-        </ion-content>
+        </ok-content>
 
         <!-- Barra de pestañas inferior NATIVA (ion-tab-bar) vía ok-tabbar -->
         <ok-tabbar id="tabbar"></ok-tabbar>

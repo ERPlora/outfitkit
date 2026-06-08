@@ -35,6 +35,7 @@
     "./ok-sidebar": "./dist/ok-sidebar.js",
     "./ok-topbar": "./dist/ok-topbar.js",
     "./ok-page": "./dist/ok-page.js",
+    "./ok-content": "./dist/ok-content.js",
     "./ok-segment": "./dist/ok-segment.js",
     "./ok-tabbar": "./dist/ok-tabbar.js",
     "./ok-button": "./dist/ok-button.js",

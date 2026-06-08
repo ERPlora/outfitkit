@@ -21,6 +21,13 @@ export class OkTopbar extends LitElement {
     return this;
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    // display:contents → el ion-header interno es el item flex directo del panel (layout Ionic
+    // nativo: cabecera fija arriba + contenido debajo), sin que ok-topbar añada una caja extra.
+    this.style.display = 'contents';
+  }
+
   @property() heading = '';
   /** Si se da, muestra el botón atrás (ion-back-button) en lugar del de menú. */
   @property({ attribute: 'back-href' }) backHref?: string;
