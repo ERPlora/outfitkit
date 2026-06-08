@@ -6,7 +6,7 @@
     <title>OutfitKit — Dashboard demo</title>
     <meta
       name="description"
-      content="@outfitkit/core — wrapper completo de Web Components sobre Ionic. Demo del shell de dashboard."
+      content="@outfitkit/core — wrapper completo de Web Components sobre Ionic. El showcase usa los propios ok-* (dogfooding)."
     />
 
     <!-- ── Carga CSP-safe (script-src 'self', sin eval) ─────────────────────
@@ -23,45 +23,28 @@
     <script type="module" src="../dist/outfitkit.js"></script>
 
     <link rel="stylesheet" href="showcase.css" />
-    <style>
-      /* Esta página es full-bleed: el shell ocupa todo el viewport bajo la nav del showcase. */
-      html, body { height: 100%; }
-      .stage { height: calc(100vh - 49px); } /* alto de .site-nav */
-      ok-app-shell { height: 100%; }
-      .stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.25rem;
-      }
-      .stat .n { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; }
-      .stat .delta { color: var(--ok-muted); font-size: 0.85rem; }
-      .stat .delta.up { color: #16a34a; }
-      ok-segment { margin: 0.25rem 0 1.25rem; }
-    </style>
   </head>
   <body>
-    <!-- Nav del propio showcase (no es parte de la librería) -->
-    <nav class="site-nav">
-      <span class="brand"><span class="dot"></span> OutfitKit</span>
-      <a href="index.html" class="active">Dashboard</a>
-      <a href="components.html">Componentes</a>
-      <a href="guide.html">Guía</a>
-      <a class="gh" href="https://github.com/ERPlora/outfitkit">GitHub</a>
-    </nav>
+    <!-- ── El showcase ENTERO es un ok-app-shell de la propia librería (dogfooding). El scroll
+         vive dentro del ok-page (.content con overflow-y:auto), así el body-lock de Ionic no
+         afecta. ──────────────────────────────────────────────────────────────────────────── -->
+    <ok-app-shell id="shell">
+      <!-- Sidebar = navegación del propio showcase (3 ítems entre páginas) -->
+      <ok-sidebar id="sidebar" slot="sidebar" active-path="index.html">
+        <span slot="brand"><strong style="font-size:1.1rem;letter-spacing:-0.01em;">OutfitKit</strong></span>
+        <ok-segment id="switcher" slot="switcher"></ok-segment>
+      </ok-sidebar>
 
-    <div class="stage">
-      <!-- ── Shell del dashboard (mismo patrón que el Hub) ──────────────────── -->
-      <ok-app-shell id="shell">
-        <!-- Sidebar: marca + switcher Hub/Cloud + secciones de nav + usuario -->
-        <ok-sidebar id="sidebar" slot="sidebar" active-path="/dashboard">
-          <strong slot="brand" style="font-size:1.1rem;letter-spacing:-0.01em;">ERPlora</strong>
-          <ok-segment id="switcher" slot="switcher"></ok-segment>
-        </ok-sidebar>
+      <!-- Contenido: topbar + dashboard demo (stats, tabs y data-table) -->
+      <ok-page>
+        <ok-topbar id="topbar" slot="header" heading="Dashboard demo"></ok-topbar>
 
-        <!-- Contenido: topbar + página con stats, tabs y data-table -->
-        <ok-page>
-          <ok-topbar id="topbar" slot="header" heading="Panel"></ok-topbar>
+        <div class="doc">
+          <p class="lead">
+            Esta página es un <code>ok-app-shell</code> real, con la sidebar, el topbar y un
+            <code>ok-page</code> de la propia librería. El dashboard de abajo es el contenido del
+            <code>ok-page</code>.
+          </p>
 
           <div class="stats">
             <ok-card class="stat">
@@ -94,15 +77,15 @@
             </ok-card>
           </div>
 
-          <ok-segment id="tabs"></ok-segment>
+          <ok-segment id="tabs" class="dash-segment"></ok-segment>
 
           <ok-data-table id="dt"></ok-data-table>
-        </ok-page>
-      </ok-app-shell>
-    </div>
+        </div>
+      </ok-page>
+    </ok-app-shell>
 
     <script type="module">
-      // ── Sidebar: switcher Hub/Cloud + secciones de navegación ─────────────
+      // ── Sidebar: switcher Hub/Cloud (demo) + secciones = navegación del showcase ──────────
       const switcher = document.getElementById('switcher');
       switcher.items = [
         { value: 'hub', label: 'Hub', icon: 'storefront-outline' },
@@ -111,61 +94,41 @@
       switcher.value = 'hub';
 
       const sidebar = document.getElementById('sidebar');
+      // Navegación del propio showcase: el `path` es el nombre del fichero.
       sidebar.sections = [
         {
-          label: 'General',
+          label: 'Showcase',
           items: [
-            { path: '/dashboard', label: 'Panel', icon: 'grid-outline' },
-            { path: '/sales', label: 'Ventas', icon: 'cart-outline' },
-            { path: '/products', label: 'Productos', icon: 'pricetags-outline' },
-          ],
-        },
-        {
-          label: 'Gestión',
-          items: [
-            { path: '/customers', label: 'Clientes', icon: 'people-outline' },
-            { path: '/employees', label: 'Empleados', icon: 'id-card-outline' },
-            { path: '/settings', label: 'Ajustes', icon: 'settings-outline' },
+            { path: 'index.html', label: 'Dashboard', icon: 'grid-outline' },
+            { path: 'components.html', label: 'Componentes', icon: 'cube-outline' },
+            { path: 'guide.html', label: 'Guía', icon: 'book-outline' },
           ],
         },
       ];
-      sidebar.user = { name: 'Ana Soler', email: 'ana@cafe-luna.com' };
-      sidebar.addEventListener('ok-account', () => alert('Abrir menú de cuenta'));
+      sidebar.user = { name: 'OutfitKit', email: '@outfitkit/core' };
+      sidebar.addEventListener('ok-account', () => {
+        window.location.href = 'https://github.com/ERPlora/outfitkit';
+      });
 
-      // ── Topbar: acciones (notificaciones / apps / tema / asistente) ───────
+      // ── Topbar: GitHub + tema (toggle ion-palette-dark) ───────────────────────────────────
       const topbar = document.getElementById('topbar');
       topbar.actions = [
-        { id: 'notifications', label: 'Notificaciones', icon: 'notifications-outline', pinned: true },
-        { id: 'apps', label: 'Aplicaciones', icon: 'apps-outline' },
-        { id: 'theme', label: 'Tema', icon: 'contrast-outline' },
-        { id: 'assistant', label: 'Asistente', icon: 'sparkles-outline', pinned: true },
+        { id: 'github', label: 'GitHub', icon: 'logo-github', pinned: true },
+        { id: 'theme', label: 'Tema', icon: 'contrast-outline', pinned: true },
       ];
       topbar.addEventListener('ok-action', (e) => {
-        if (e.detail.id === 'theme') {
-          document.documentElement.classList.toggle('ion-palette-dark');
-        } else {
-          console.log('Acción topbar:', e.detail.id);
-        }
+        if (e.detail.id === 'theme') document.documentElement.classList.toggle('ion-palette-dark');
+        else if (e.detail.id === 'github') window.location.href = 'https://github.com/ERPlora/outfitkit';
       });
 
-      // ── Navegación: ok-nav cambia active-path + heading del topbar ────────
-      const titles = {
-        '/dashboard': 'Panel',
-        '/sales': 'Ventas',
-        '/products': 'Productos',
-        '/customers': 'Clientes',
-        '/employees': 'Empleados',
-        '/settings': 'Ajustes',
-      };
-      // El evento ok-nav burbujea hasta el shell; lo escuchamos aquí para enrutar.
-      // (el shell ya cierra el drawer móvil al recibir ok-nav; el ok-menu-toggle lo maneja solo.)
+      // ── Navegación: ok-sidebar emite ok-nav { path }; navegamos a la página (sin router). ──
+      // El shell ya cierra el drawer móvil al recibir ok-nav; aquí enrutamos por location.
       document.getElementById('shell').addEventListener('ok-nav', (e) => {
         const path = e.detail.path;
-        sidebar.activePath = path;
-        topbar.heading = titles[path] ?? path;
+        if (path && path !== 'index.html') window.location.href = path;
       });
 
-      // ── Tabs de la página (ok-segment) ────────────────────────────────────
+      // ── Tabs del dashboard (ok-segment) ───────────────────────────────────────────────────
       const tabs = document.getElementById('tabs');
       tabs.items = [
         { value: 'all', label: 'Todos' },
@@ -174,7 +137,7 @@
       ];
       tabs.value = 'all';
 
-      // ── Data-table con datos de ejemplo (property binding) ────────────────
+      // ── Data-table con datos de ejemplo (property binding) ────────────────────────────────
       const allRows = [
         { id: 1, name: 'Café solo', cat: 'Bebidas', stock: 120, price: 1.2, sku: 'CAF-001' },
         { id: 2, name: 'Café con leche', cat: 'Bebidas', stock: 95, price: 1.6, sku: 'CAF-002' },
@@ -205,7 +168,7 @@
       ];
       dt.addEventListener('rowAction', (e) => alert(`${e.detail.actionId} → ${e.detail.row.name}`));
 
-      // Filtrar por el tab activo de la página.
+      // Filtrar por el tab activo del dashboard.
       tabs.addEventListener('ok-change', (e) => {
         const v = e.detail.value;
         if (v === 'low') dt.rows = allRows.filter((r) => r.stock <= 5);
