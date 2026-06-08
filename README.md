@@ -249,6 +249,51 @@ export const view = (cols, rows) => html`
 
 ---
 
+## Navegación / routing (router-agnóstico)
+
+OutfitKit **no incluye router** y **no envuelve el router de Ionic**. Es una decisión de diseño,
+no una carencia: los componentes de shell son **presentacionales** y la navegación la **cablea el
+host** a través de eventos `ok-*`:
+
+- `ok-sidebar` → emite **`ok-nav`** `{ path }` al pulsar un ítem (el host decide qué significa
+  navegar; el resaltado activo entra por la prop `active-path`).
+- `ok-topbar` → emite **`ok-action`** `{ id }` y **`ok-back`**.
+
+### ¿Por qué no un `ok-router`?
+
+Sí, el router de Ionic son web components (`ion-router`, `ion-route`, `ion-router-outlet`,
+`ion-nav`, `ion-back-button`), y el Hub hoy usa además `IonReactRouter` (Ionic React + React
+Router). Pero **no son candidatos a wrapper `ok-*`**:
+
+1. **La librería sirve en dos modelos de navegación opuestos.** En **Cloud (Django/Datastar)** la
+   navegación es *server-driven* (SSE morph, `@get(...)`): no hay router cliente. En el **Hub (SPA)**
+   sí lo hay. Un `ok-router` solo tendría sentido en el SPA y sería peso muerto —y modelo
+   equivocado— en Django.
+2. **Reintroduciría el acoplamiento a Ionic/framework que precisamente escondemos.** `ion-router-outlet`/
+   `ion-nav` gestionan **stack de navegación, transiciones/animaciones y ciclo de vida** de páginas,
+   atados al router del framework. Es lo más específico del host que existe (URL strategy, history,
+   guards, transiciones).
+3. **El *seam* limpio ya existe**: los eventos `ok-nav` / `ok-action` / `ok-back`. Cada host conecta
+   su routing detrás de ellos.
+
+### Cómo lo cablea cada host
+
+```js
+// Hub / SPA Lit — un router pequeño (p. ej. @lit-labs/router o URLPattern) escucha ok-nav:
+shell.addEventListener('ok-nav', (e) => router.goto(e.detail.path));
+```
+
+```django
+{# Cloud / Django — la navegación es server-driven (Datastar); el ítem dispara el SSE: #}
+<ok-sidebar slot="sidebar" active-path="{{ request.path }}"
+            data-on:ok-nav="@get(evt.detail.path)"></ok-sidebar>
+```
+
+Si algún día un SPA puro necesitara un router empaquetado, sería una pieza **del host** (no del
+core de OutfitKit), para no romper la portabilidad a Django.
+
+---
+
 ## Comandos de desarrollo
 
 ```sh
