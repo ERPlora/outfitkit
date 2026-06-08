@@ -5,143 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>OutfitKit — Guía</title>
     <link rel="icon" href="logo.png" />
-    <meta name="description" content="Guía de OutfitKit: instalación (npm/CDN), theming por tokens --ok-* y la relación con Ionic." />
-
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    <!-- La guía se integró en el docs-app (SPA) de index.html. -->
+    <meta http-equiv="refresh" content="0; url=index.html#/" />
+    <link rel="canonical" href="index.html" />
+    <script type="module">
+      location.replace('index.html#/');
     </script>
-    <link rel="stylesheet" href="../dist/theme.example.css" />
-    <script type="module" src="../dist/outfitkit.js"></script>
-
-    <link rel="stylesheet" href="showcase.css" />
   </head>
   <body>
-    <ion-app>
-      <ion-split-pane content-id="main" when="md">
-        <ion-menu content-id="main">
-          <ion-header>
-            <ion-toolbar>
-              <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content class="ion-padding">
-            <ion-list>
-              <ion-item href="index.html" detail="false">
-                <ion-icon slot="start" name="home-outline"></ion-icon>
-                <ion-label>Inicio</ion-label>
-              </ion-item>
-              <ion-item href="components.html" detail="false">
-                <ion-icon slot="start" name="cube-outline"></ion-icon>
-                <ion-label>Componentes</ion-label>
-              </ion-item>
-              <ion-item href="guide.html" detail="false" color="primary">
-                <ion-icon slot="start" name="book-outline"></ion-icon>
-                <ion-label>Guía</ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-content>
-        </ion-menu>
-
-        <div class="ion-page" id="main">
-          <ion-header>
-            <ion-toolbar>
-              <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
-              <ion-title>Guía</ion-title>
-              <ion-buttons slot="end">
-                <ion-button id="btn-github" aria-label="GitHub"><ion-icon slot="icon-only" name="logo-github"></ion-icon></ion-button>
-                <ion-button id="btn-theme" aria-label="Tema"><ion-icon slot="icon-only" name="contrast-outline"></ion-icon></ion-button>
-              </ion-buttons>
-            </ion-toolbar>
-          </ion-header>
-
-          <ion-content class="ion-padding">
-            <div class="doc">
-              <h1>Guía</h1>
-              <p class="lead">
-                Cómo instalar OutfitKit, tematizarlo con tokens y cómo se relaciona con Ionic.
-              </p>
-
-              <div class="note">
-                <strong>Ionic es la base.</strong> OutfitKit cubre los huecos que Ionic no trae
-                (tabla rica, árbol, kpi/stat, stepper/wizard, feedback inline, estados vacíos,
-                chrome web). Para botones, inputs, listas, modales, toolbars y layout de app:
-                <strong>usa Ionic directo</strong> — este mismo showcase está construido así.
-              </div>
-
-              <h2>Instalación</h2>
-              <p>Instala el paquete y sus <em>peers</em> (Ionic y Lit los aporta el host una sola vez):</p>
-              <pre class="code">npm i @outfitkit/core
-# peers
-npm i @ionic/core lit</pre>
-
-              <h3>Carga de Ionic (lo registra el host)</h3>
-              <p>OutfitKit asume que <code>@ionic/core</code> ya está registrado; no lo importa por componente. Cárgalo una vez en tu app:</p>
-              <pre class="code">import '@ionic/core';
-import '@ionic/core/css/ionic.bundle.css';</pre>
-
-              <h3>Imports individuales (recomendado)</h3>
-              <p>Importa solo los componentes que uses (mejor tree-shaking). El import tiene efecto secundario: registra el custom element.</p>
-              <pre class="code">import '@outfitkit/core/ok-data-table';
-import '@outfitkit/core/ok-tree';
-import '@outfitkit/core/ok-kpi';
-
-// También puedes importar las clases/tipos desde el barrel:
-import { OkDataTable } from '@outfitkit/core';</pre>
-
-              <h3>Bundle completo (CDN / prototipos)</h3>
-              <p>Un único import que auto-registra todos los <code>ok-*</code>:</p>
-              <pre class="code">import '@outfitkit/core/cdn';</pre>
-
-              <h2>Theming por tokens <code>--ok-*</code></h2>
-              <p>
-                OutfitKit no define valores por defecto: tú decides de dónde salen. Lo más cómodo es
-                <strong>heredarlos de Ionic</strong> (<code>--ion-*</code>), con lo que el tema
-                claro/oscuro se aplica solo. Copia <code>@outfitkit/core/theme.css</code> a tu CSS y
-                ajusta lo que quieras:
-              </p>
-              <pre class="code">:root {
-  --ok-primary: var(--ion-color-primary);
-  --ok-primary-contrast: var(--ion-color-primary-contrast);
-  --ok-bg: var(--ion-background-color);
-  --ok-surface: var(--ion-card-background);
-  --ok-text: var(--ion-text-color);
-  --ok-border: rgba(var(--ion-text-color-rgb), 0.12);
-  --ok-radius: 12px;
-  --ok-spacing: 1rem;
-  --ok-container-max: 1140px;
-  --ok-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-}</pre>
-              <p>
-                Cada componente también expone <strong>vars propias estilo Ionic</strong> (sin guion
-                bajo: <code>--background</code>, <code>--color</code>, <code>--border-radius</code>…)
-                que degradan en cadena <code>--ok-*</code> → <code>--ion-*</code> → hex, así que puedes
-                ajustar uno a uno sin tocar los tokens globales.
-              </p>
-              <p>Sin Ionic (p.ej. una landing Django sin Ionic) pon valores propios en los tokens <code>--ok-*</code>.</p>
-
-              <h2>Reglas</h2>
-              <ul>
-                <li>Solo Web Components (Lit, Shadow DOM). <strong>CSP estricta</strong>: sin <code>eval</code> / <code>new Function</code> (<code>script-src 'self'</code>).</li>
-                <li>Prefijo de tags <code>ok-*</code>; eventos propios normalizados a <code>ok-*</code>.</li>
-                <li>Para arrays/objetos/funciones (columns, rows, nodes, steps…) usa <strong>property binding por JS</strong> (<code>el.columns = […]</code>), no atributos.</li>
-                <li>El resto de UI (botones, inputs, listas, layout de app) es <strong>Ionic directo</strong>.</li>
-              </ul>
-            </div>
-          </ion-content>
-        </div>
-      </ion-split-pane>
-    </ion-app>
-
-    <script type="module">
-      document.getElementById('btn-github').addEventListener('click', () => {
-        window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
-      document.getElementById('btn-theme').addEventListener('click', () => {
-        document.documentElement.classList.toggle('ion-palette-dark');
-      });
-    </script>
+    <p>Esta página se ha movido al <a href="index.html#/">docs-app de OutfitKit</a>.</p>
   </body>
 </html>

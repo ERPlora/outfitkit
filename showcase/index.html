@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OutfitKit — Inicio</title>
+    <title>OutfitKit — Docs</title>
     <link rel="icon" href="logo.png" />
     <meta
       name="description"
-      content="@outfitkit/core — Web Components (Lit) que CONSTRUYEN lo que Ionic no tiene (data-table rica, tree, kpi/stat, stepper/wizard, inline-feedback…) sobre Ionic. Ionic es la base."
+      content="@outfitkit/core — Web Components (Lit) que CONSTRUYEN lo que Ionic no tiene (data-table rica, tree, kpi/stat, stepper/wizard, calendar, kanban, inline-feedback…) sobre Ionic. Docs-app interactivo."
     />
 
     <!-- ── Carga CSP-safe (script-src 'self', sin eval) ──────────────────────────
@@ -23,198 +23,10 @@
     <script type="module" src="../dist/outfitkit.js"></script>
 
     <link rel="stylesheet" href="showcase.css" />
+    <script type="module" src="app.js"></script>
   </head>
   <body>
-    <!-- ── Chrome: Ionic DIRECTO (ion-app + ion-split-pane + ion-menu + toolbar + content) ── -->
-    <ion-app>
-      <ion-split-pane content-id="main" when="md">
-        <ion-menu content-id="main">
-          <ion-header>
-            <ion-toolbar>
-              <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content class="ion-padding">
-            <ion-list>
-              <ion-item href="index.html" detail="false" color="primary">
-                <ion-icon slot="start" name="home-outline"></ion-icon>
-                <ion-label>Inicio</ion-label>
-              </ion-item>
-              <ion-item href="components.html" detail="false">
-                <ion-icon slot="start" name="cube-outline"></ion-icon>
-                <ion-label>Componentes</ion-label>
-              </ion-item>
-              <ion-item href="guide.html" detail="false">
-                <ion-icon slot="start" name="book-outline"></ion-icon>
-                <ion-label>Guía</ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-content>
-        </ion-menu>
-
-        <div class="ion-page" id="main">
-          <ion-header>
-            <ion-toolbar>
-              <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
-              <ion-title>Inicio</ion-title>
-              <ion-buttons slot="end">
-                <ion-button id="btn-github" aria-label="GitHub"><ion-icon slot="icon-only" name="logo-github"></ion-icon></ion-button>
-                <ion-button id="btn-theme" aria-label="Tema"><ion-icon slot="icon-only" name="contrast-outline"></ion-icon></ion-button>
-              </ion-buttons>
-            </ion-toolbar>
-          </ion-header>
-
-          <ion-content class="ion-padding">
-            <div class="doc">
-              <h1>¿Qué es OutfitKit?</h1>
-              <p class="lead">
-                <strong>OutfitKit</strong> es una librería de <strong>Web Components (Lit)</strong> que
-                <strong>construye lo que Ionic NO tiene</strong> —tabla de datos rica, árbol, KPIs y
-                métricas, stepper/wizard, feedback inline, estados vacíos, formulario de contacto y
-                chrome web (navbar/footer/hero)— <strong>sobre Ionic</strong>. Ionic es la base: para
-                botones, inputs, listas y layout usas Ionic directo (como este propio panel). OutfitKit
-                cubre los huecos con un set <code>ok-*</code> tematizado por tokens <code>--ok-*</code>.
-              </p>
-
-              <!-- Highlights en vivo -->
-              <h2>KPIs</h2>
-              <div class="kpis">
-                <ok-kpi label="Ventas hoy" value="€2.480" delta="+12% vs ayer" trend="up" icon="cash-outline"></ok-kpi>
-                <ok-kpi label="Tickets" value="137" delta="+4%" trend="up" icon="receipt-outline"></ok-kpi>
-                <ok-kpi label="Ticket medio" value="€18,10" delta="estable" trend="flat" icon="pricetag-outline"></ok-kpi>
-                <ok-kpi label="Stock bajo" value="3" delta="-1 vs ayer" trend="down" icon="alert-circle-outline"></ok-kpi>
-              </div>
-
-              <h2>Aviso inline</h2>
-              <ok-inline-feedback tone="success" heading="Sincronización completa" dismissible>
-                Los 6 empleados se sincronizaron con el Hub correctamente.
-              </ok-inline-feedback>
-
-              <h2>Tabla de datos</h2>
-              <ok-data-table id="dt" style="display:block;" fill></ok-data-table>
-
-              <h2>Árbol</h2>
-              <ok-tree id="tree" selectable active-id="pos"></ok-tree>
-
-              <h2>Tendencias</h2>
-              <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center;">
-                <div style="display:flex;flex-direction:column;gap:.25rem;">
-                  <span style="color:var(--ion-color-medium);font-size:.85rem;">Ventas (7 días)</span>
-                  <ok-sparkline id="spark-sales" type="line" color="success" width="160" height="44" filled></ok-sparkline>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:.25rem;">
-                  <span style="color:var(--ion-color-medium);font-size:.85rem;">Tickets/día</span>
-                  <ok-sparkline id="spark-tickets" type="bar" color="primary" width="160" height="44"></ok-sparkline>
-                </div>
-              </div>
-
-              <h2>Calendario</h2>
-              <ok-calendar id="cal" view="month" max-per-day="3"></ok-calendar>
-            </div>
-          </ion-content>
-        </div>
-      </ion-split-pane>
-    </ion-app>
-
-    <script type="module">
-      const { html: h } = await import('lit');
-
-      // Acciones del toolbar
-      document.getElementById('btn-github').addEventListener('click', () => {
-        window.location.href = 'https://github.com/ERPlora/outfitkit';
-      });
-      document.getElementById('btn-theme').addEventListener('click', () => {
-        document.documentElement.classList.toggle('ion-palette-dark');
-      });
-
-      // ── ok-data-table «Staff» (estilo /employees del Hub) ─────────────────────
-      const fmtDate = (iso) =>
-        new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-      const statusBadge = (s) =>
-        h`<ion-badge color=${s === 'Activo' ? 'success' : 'medium'}>${s}</ion-badge>`;
-
-      const ALL = [
-        { id: '1', name: 'Demo Admin', email: 'demo@erplora.com', role: 'Administrador', status: 'Activo', createdAt: '2025-01-12' },
-        { id: '2', name: 'María López', email: 'maria@erplora.com', role: 'Encargado', status: 'Activo', createdAt: '2025-02-03' },
-        { id: '3', name: 'Juan Pérez', email: 'juan@erplora.com', role: 'Cajero', status: 'Activo', createdAt: '2025-02-20' },
-        { id: '4', name: 'Ana Ruiz', email: 'ana@erplora.com', role: 'Almacén', status: 'Inactivo', createdAt: '2025-03-15' },
-        { id: '5', name: 'Luis Gómez', email: 'luis@erplora.com', role: 'Camarero', status: 'Activo', createdAt: '2025-04-09' },
-        { id: '6', name: 'Sara Díaz', email: 'sara@erplora.com', role: 'Cocina', status: 'Activo', createdAt: '2025-05-01' },
-      ];
-
-      const dt = document.getElementById('dt');
-      dt.title = 'Staff';
-      dt.rowKey = (r) => r.id;
-      dt.selectable = true;
-      dt.columns = [
-        { key: 'name', header: 'Empleado', width: 'minmax(11rem,1.3fr)' },
-        { key: 'email', header: 'Email', width: 'minmax(9rem,1fr)' },
-        { key: 'role', header: 'Rol', width: '9rem' },
-        { key: 'status', header: 'Estado', width: '7rem', render: (r) => statusBadge(r.status) },
-        { key: 'createdAt', header: 'Alta', width: '8rem', format: (r) => fmtDate(r.createdAt) },
-      ];
-      dt.rows = ALL;
-      dt.searchKeys = ['name', 'email', 'role'];
-      dt.pageSize = 12;
-      dt.exportable = true;
-      dt.views = ['table', 'cards'];
-      dt.primaryAction = { label: 'Nuevo empleado', icon: 'add' };
-      dt.actions = [
-        { id: 'edit', label: 'Editar', icon: 'create-outline' },
-        { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
-      ];
-      dt.cardIcon = () => 'person-outline';
-      dt.cardTitle = (r) => r.name;
-      dt.renderCard = (r) => h`
-        <div style="display:flex;flex-direction:column;gap:.5rem;">
-          <span style="color:var(--ion-color-medium);font-size:.85rem;">${r.email}</span>
-          <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
-            <ion-badge>${r.role}</ion-badge>${statusBadge(r.status)}
-          </div>
-          <span style="color:var(--ion-color-medium);font-size:.75rem;">Alta ${fmtDate(r.createdAt)}</span>
-        </div>`;
-      dt.addEventListener('rowAction', (e) => alert(`${e.detail.actionId} → ${e.detail.row.name}`));
-      dt.addEventListener('primaryAction', () => alert('Nuevo empleado'));
-
-      // ── ok-tree ───────────────────────────────────────────────────────────────
-      const tree = document.getElementById('tree');
-      tree.nodes = [
-        {
-          id: 'pos', label: 'Punto de venta', icon: 'storefront-outline', expanded: true,
-          children: [
-            { id: 'sales', label: 'Ventas', icon: 'cart-outline' },
-            { id: 'cash', label: 'Caja', icon: 'cash-outline' },
-          ],
-        },
-        {
-          id: 'inv', label: 'Inventario', icon: 'cube-outline',
-          children: [
-            { id: 'products', label: 'Productos' },
-            { id: 'stock', label: 'Stock' },
-          ],
-        },
-        { id: 'staff', label: 'Empleados', icon: 'people-outline' },
-      ];
-      tree.addEventListener('ok-select', (e) => { tree.activeId = e.detail.id; });
-
-      // ── ok-sparkline ────────────────────────────────────────────────────────────
-      document.getElementById('spark-sales').values = [1820, 2110, 1990, 2480, 2200, 2650, 2480];
-      document.getElementById('spark-tickets').values = [98, 121, 110, 137, 119, 142, 137];
-
-      // ── ok-calendar ─────────────────────────────────────────────────────────────
-      const cal = document.getElementById('cal');
-      const _now = new Date();
-      const _ymd = (n) => {
-        const d = new Date(_now.getFullYear(), _now.getMonth(), n);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      };
-      cal.events = [
-        { id: 'e1', date: _ymd(4), title: 'Inventario', color: 'primary' },
-        { id: 'e2', date: _ymd(12), title: 'Cierre de caja', color: 'success' },
-        { id: 'e3', date: _ymd(12), title: 'Reunión equipo', color: 'warning' },
-        { id: 'e4', date: _ymd(20), title: 'Pedido proveedor', color: 'tertiary' },
-      ];
-      cal.value = _ymd(12);
-    </script>
+    <!-- El chrome (ion-app + split-pane + menu + toolbar + content) lo monta app.js. -->
+    <div id="app-root"></div>
   </body>
 </html>

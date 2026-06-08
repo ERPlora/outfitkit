@@ -183,3 +183,169 @@ ion-searchbar.gallery-search {
 
 /* Logo en el título del menú. */
 .brand-title img { vertical-align: -4px; margin-right: 6px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DOCS-APP (SPA) — sidebar con buscador, topbar (viewport/tema/modo), ficha de
+ * componente con tabs Preview/Código y marco de viewport.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+#app-root,
+#app-root ion-app { height: 100%; }
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+ion-searchbar.nav-search {
+  --background: var(--ok-surface-2);
+  --box-shadow: none;
+  padding: 0 8px 6px;
+}
+#nav-list ion-list-header {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ok-muted);
+  min-height: 30px;
+  margin-top: 0.35rem;
+}
+#nav-list ion-item { --min-height: 38px; font-size: 0.92rem; }
+#nav-list .nav-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86rem;
+}
+.nav-empty {
+  padding: 1rem 1.2rem;
+  color: var(--ok-muted);
+  font-size: 0.88rem;
+}
+
+/* ── Topbar ───────────────────────────────────────────────────────────────── */
+.topbar-end { gap: 4px; align-items: center; }
+ion-segment.viewport-seg {
+  width: auto;
+  max-width: 160px;
+  --background: var(--ok-surface-2);
+}
+ion-segment.viewport-seg ion-segment-button {
+  min-width: 42px;
+  --padding-start: 6px;
+  --padding-end: 6px;
+}
+ion-select.theme-select {
+  max-width: 140px;
+  --padding-start: 8px;
+  font-size: 0.88rem;
+}
+/* En pantallas estrechas, esconde el segment de viewport (no aplica sin sitio). */
+@media (max-width: 640px) {
+  ion-segment.viewport-seg { display: none; }
+  ion-select.theme-select { max-width: 110px; }
+}
+
+/* ── Ficha de componente ──────────────────────────────────────────────────── */
+.comp-view .comp-head { margin-bottom: 1rem; }
+.comp-view .comp-head h1 {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(1.3rem, 3vw, 1.9rem);
+  margin: 0.1rem 0 0.4rem;
+}
+.comp-view .desc { color: var(--ok-muted); font-size: 1rem; margin: 0 0 0.75rem; max-width: 70ch; }
+pre.import-line {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.45rem 0.8rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.comp-view ion-segment {
+  max-width: 280px;
+  margin: 0.5rem 0 1rem;
+}
+.tab-panel[hidden] { display: none; }
+
+/* ── Marco de viewport (preview) ──────────────────────────────────────────── */
+.viewport-stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.viewport-frame {
+  width: 100%;
+  max-width: 100%;
+  transition: width 0.25s ease;
+  background: var(--ok-bg);
+  border-radius: 10px;
+  padding: 1.25rem;
+  border: 1px dashed var(--ok-border);
+}
+/* Aspecto «dispositivo» en tablet/móvil: borde sólido + sombra. */
+.viewport-stage[data-viewport='tablet'] .viewport-frame,
+.viewport-stage[data-viewport='mobile'] .viewport-frame {
+  border: 1px solid var(--ok-border);
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background: var(--ok-surface);
+}
+.viewport-frame > * { max-width: 100%; }
+
+/* ── Código + Copiar ──────────────────────────────────────────────────────── */
+.code-wrap { position: relative; }
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+.copy-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.copy-btn ion-icon { font-size: 0.95rem; }
+.comp-view pre.code { margin: 0; }
+
+.api-title { font-size: 1.2rem; margin: 2rem 0 0.5rem; }
+
+/* ── Inicio (categorías + chips) ──────────────────────────────────────────── */
+.home-cats { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem; }
+.home-cat h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.05rem;
+  margin: 0 0 0.6rem;
+}
+.home-cat h3 ion-icon { color: var(--ok-primary); }
+.home-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.home-chip {
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.84rem;
+  color: var(--ok-text);
+  background: var(--ok-surface-2);
+  border: 1px solid var(--ok-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.home-chip:hover {
+  background: var(--ok-primary);
+  color: var(--ok-primary-contrast);
+  border-color: transparent;
+}
+
+/* ── Overlays tipo "menú web": más estrechos en escritorio; completos en móvil. ──
+   (En la librería existe la clase reutilizable .ok-overlay en theme.example.css.) */
+ion-popover { --width: auto; --max-width: 320px; --max-height: 70vh; }
+@media (max-width: 768px) {
+  ion-popover { --max-width: 92vw; --max-height: 80vh; }
+}
