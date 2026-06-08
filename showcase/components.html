@@ -19,22 +19,28 @@
     <link rel="stylesheet" href="showcase.css" />
   </head>
   <body>
-    <!-- El showcase ENTERO es un ok-app-shell; el scroll vive dentro del ok-page. -->
-    <ok-app-shell id="shell">
+    <!-- Shell Ionic nativo (un solo ok-app-shell, un solo toolbar). -->
+    <ok-app-shell id="shell" heading="Componentes" when="md">
       <ok-sidebar id="sidebar" slot="sidebar" active-path="components.html">
-        <span slot="brand"><strong style="font-size:1.1rem;letter-spacing:-0.01em;">OutfitKit</strong></span>
+        <div class="logo-brand" slot="brand">
+          <img src="logo.png" alt="OutfitKit" />
+          <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
+        </div>
       </ok-sidebar>
 
-      <ok-page>
-        <ok-topbar id="topbar" slot="header" heading="Componentes"></ok-topbar>
+      <ok-button slot="actions" id="btn-github" icon="logo-github" fill="clear" aria-label="GitHub"></ok-button>
+      <ok-button slot="actions" id="btn-theme" icon="contrast-outline" fill="clear" aria-label="Tema"></ok-button>
 
-        <div class="doc">
-          <h1>Galería de componentes</h1>
-          <p class="lead">
-            Cada bloque: ejemplo en vivo, snippet de uso y la API (props, eventos, slots). Todos los
-            tags llevan prefijo <code>ok-*</code>; nunca uses <code>ion-*</code> directamente. Cada
-            componente va envuelto en un <code>ok-card</code> (dogfooding).
-          </p>
+      <div class="doc">
+        <h1>Galería de componentes</h1>
+        <p class="lead">
+          Cada bloque: ejemplo en vivo, snippet de uso y la API (props, eventos, slots). Todos los
+          tags llevan prefijo <code>ok-*</code>; nunca uses <code>ion-*</code> directamente.
+        </p>
+
+        <!-- Buscador por nombre -->
+        <ok-searchbar id="search" placeholder="Buscar componente por nombre…"></ok-searchbar>
+        <p id="noresults" class="lead" hidden>Sin resultados.</p>
 
           <!-- ═══════════════════ PRIMITIVOS ═══════════════════ -->
           <h2>Primitivos</h2>
@@ -591,17 +597,16 @@ dt.addEventListener('rowAction', (e) =&gt; console.log(e.detail.actionId, e.deta
             </ok-card-content>
           </ok-card>
         </div>
-      </ok-page>
     </ok-app-shell>
 
     <script type="module">
-      // ── Chrome del showcase: sidebar (navegación) + topbar (GitHub/tema) ──────────────────
+      // ── Chrome del showcase: sidebar (navegación) + acciones (GitHub/tema) ────────────────
       const sidebar = document.getElementById('sidebar');
       sidebar.sections = [
         {
           label: 'Showcase',
           items: [
-            { path: 'index.html', label: 'Dashboard', icon: 'grid-outline' },
+            { path: 'index.html', label: 'Inicio', icon: 'home-outline' },
             { path: 'components.html', label: 'Componentes', icon: 'cube-outline' },
             { path: 'guide.html', label: 'Guía', icon: 'book-outline' },
           ],
@@ -612,20 +617,41 @@ dt.addEventListener('rowAction', (e) =&gt; console.log(e.detail.actionId, e.deta
         window.location.href = 'https://github.com/ERPlora/outfitkit';
       });
 
-      const topbar = document.getElementById('topbar');
-      topbar.actions = [
-        { id: 'github', label: 'GitHub', icon: 'logo-github', pinned: true },
-        { id: 'theme', label: 'Tema', icon: 'contrast-outline', pinned: true },
-      ];
-      topbar.addEventListener('ok-action', (e) => {
-        if (e.detail.id === 'theme') document.documentElement.classList.toggle('ion-palette-dark');
-        else if (e.detail.id === 'github') window.location.href = 'https://github.com/ERPlora/outfitkit';
+      document.getElementById('btn-github').addEventListener('click', () => {
+        window.location.href = 'https://github.com/ERPlora/outfitkit';
+      });
+      document.getElementById('btn-theme').addEventListener('click', () => {
+        document.documentElement.classList.toggle('ion-palette-dark');
       });
 
       // Navegación sin router: ok-nav → location (el path es el nombre del fichero).
       document.getElementById('shell').addEventListener('ok-nav', (e) => {
         const path = e.detail.path;
         if (path && path !== 'components.html') window.location.href = path;
+      });
+
+      // ── Buscador por nombre: filtra las tarjetas .comp por su id (ok-…) ───────────────────
+      const search = document.getElementById('search');
+      const noresults = document.getElementById('noresults');
+      const cards = Array.from(document.querySelectorAll('.comp'));
+      search.addEventListener('ok-input', (e) => {
+        const q = (e.detail.value || '').trim().toLowerCase();
+        let visible = 0;
+        cards.forEach((c) => {
+          const match = !q || (c.id || '').toLowerCase().includes(q);
+          c.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        // Oculta los encabezados de sección (h2) sin tarjetas visibles.
+        document.querySelectorAll('.doc h2').forEach((h) => {
+          let n = h.nextElementSibling, any = false;
+          while (n && n.tagName !== 'H2') {
+            if (n.classList && n.classList.contains('comp') && n.style.display !== 'none') any = true;
+            n = n.nextElementSibling;
+          }
+          h.style.display = any ? '' : 'none';
+        });
+        noresults.hidden = visible > 0;
       });
 
       // ── Demos vivas que necesitan property binding ────────────────────────────────────────

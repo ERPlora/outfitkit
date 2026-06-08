@@ -35,20 +35,15 @@ body {
   font-family: var(--ok-font);
   -webkit-font-smoothing: antialiased;
 }
+/* El shell llena el viewport; Ionic (ion-app/ion-split-pane/ion-content) hace el resto del
+ * layout y el scroll de forma nativa (sin estilos propios en los componentes). */
 ok-app-shell { height: 100%; }
 
-/* El ok-page debe quedar acotado al alto del viewport para que SU área de contenido
- * (.content, overflow-y:auto) sea el scroller — y no desborde el shell (cuyo grid item
- * crece con el contenido). Con el body-lock de Ionic activo, 100svh = alto visible del shell.
- * Así el scroll ocurre DENTRO del ok-page y el body-lock deja de importar. */
-ok-app-shell > ok-page {
-  /* !important para ganar al `:host { block-size: 100% }` del propio ok-page (el selector
-   * `:host` tiene especificidad de clase, mayor que `ok-app-shell > ok-page`). */
-  height: 100svh !important;
-  min-height: 0;
-}
+/* Marca del menú (logo + nombre) en el slot brand del ok-sidebar. */
+.logo-brand { display: flex; align-items: center; gap: 0.5rem; padding: 14px 16px 4px; }
+.logo-brand img { height: 22px; width: auto; display: block; }
 
-/* ── Contenido de documentación (galería / guía), ahora dentro del ok-page ─── */
+/* ── Contenido de documentación (galería / guía), dentro del ion-content del shell ─── */
 .doc {
   max-width: var(--ok-container-max);
   margin: 0 auto;

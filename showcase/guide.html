@@ -19,17 +19,20 @@
     <link rel="stylesheet" href="showcase.css" />
   </head>
   <body>
-    <!-- El showcase ENTERO es un ok-app-shell; el scroll vive dentro del ok-page. -->
-    <ok-app-shell id="shell">
+    <!-- Shell Ionic nativo (un solo ok-app-shell, un solo toolbar). -->
+    <ok-app-shell id="shell" heading="Guía" when="md">
       <ok-sidebar id="sidebar" slot="sidebar" active-path="guide.html">
-        <span slot="brand"><strong style="font-size:1.1rem;letter-spacing:-0.01em;">OutfitKit</strong></span>
+        <div class="logo-brand" slot="brand">
+          <img src="logo.png" alt="OutfitKit" />
+          <strong style="letter-spacing:-0.01em;">OutfitKit</strong>
+        </div>
       </ok-sidebar>
 
-      <ok-page>
-        <ok-topbar id="topbar" slot="header" heading="Guía"></ok-topbar>
+      <ok-button slot="actions" id="btn-github" icon="logo-github" fill="clear" aria-label="GitHub"></ok-button>
+      <ok-button slot="actions" id="btn-theme" icon="contrast-outline" fill="clear" aria-label="Tema"></ok-button>
 
-        <div class="doc">
-          <h1>Guía de uso</h1>
+      <div class="doc">
+        <h1>Guía de uso</h1>
           <p class="lead">
             <code>@outfitkit/core</code> es una librería de Web Components (Lit) que envuelve Ionic por
             completo: tu código usa solo <code>ok-*</code> y nunca <code>ion-*</code> directamente. Se
@@ -258,17 +261,16 @@ inc.addEventListener('click', () =&gt; store.update('count', (n = 0) =&gt; n + 1
             <ok-button fill="outline" href="index.html"><ok-icon slot="start" name="grid-outline"></ok-icon>Ver demo de dashboard</ok-button>
           </p>
         </div>
-      </ok-page>
     </ok-app-shell>
 
     <script type="module">
-      // ── Chrome del showcase: sidebar (navegación) + topbar (GitHub/tema) ──────────────────
+      // ── Chrome del showcase: sidebar (navegación) + acciones (GitHub/tema) ────────────────
       const sidebar = document.getElementById('sidebar');
       sidebar.sections = [
         {
           label: 'Showcase',
           items: [
-            { path: 'index.html', label: 'Dashboard', icon: 'grid-outline' },
+            { path: 'index.html', label: 'Inicio', icon: 'home-outline' },
             { path: 'components.html', label: 'Componentes', icon: 'cube-outline' },
             { path: 'guide.html', label: 'Guía', icon: 'book-outline' },
           ],
@@ -279,14 +281,11 @@ inc.addEventListener('click', () =&gt; store.update('count', (n = 0) =&gt; n + 1
         window.location.href = 'https://github.com/ERPlora/outfitkit';
       });
 
-      const topbar = document.getElementById('topbar');
-      topbar.actions = [
-        { id: 'github', label: 'GitHub', icon: 'logo-github', pinned: true },
-        { id: 'theme', label: 'Tema', icon: 'contrast-outline', pinned: true },
-      ];
-      topbar.addEventListener('ok-action', (e) => {
-        if (e.detail.id === 'theme') document.documentElement.classList.toggle('ion-palette-dark');
-        else if (e.detail.id === 'github') window.location.href = 'https://github.com/ERPlora/outfitkit';
+      document.getElementById('btn-github').addEventListener('click', () => {
+        window.location.href = 'https://github.com/ERPlora/outfitkit';
+      });
+      document.getElementById('btn-theme').addEventListener('click', () => {
+        document.documentElement.classList.toggle('ion-palette-dark');
       });
 
       // Navegación sin router: ok-nav → location (el path es el nombre del fichero).
