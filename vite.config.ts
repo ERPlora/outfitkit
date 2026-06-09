@@ -72,6 +72,7 @@ export default defineConfig({
         'ok-video': resolve(__dirname, 'src/components/ok-video/ok-video.ts'),
         'ok-pdf': resolve(__dirname, 'src/components/ok-pdf/ok-pdf.ts'),
         'ok-receipt': resolve(__dirname, 'src/components/ok-receipt/ok-receipt.ts'),
+        'ok-invoice': resolve(__dirname, 'src/components/ok-invoice/ok-invoice.ts'),
         'ok-timeline': resolve(__dirname, 'src/components/ok-timeline/ok-timeline.ts'),
         'ok-qty-stepper': resolve(__dirname, 'src/components/ok-qty-stepper/ok-qty-stepper.ts'),
         'ok-command-palette': resolve(__dirname, 'src/components/ok-command-palette/ok-command-palette.ts'),
