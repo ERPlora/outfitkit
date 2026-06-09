@@ -50,7 +50,7 @@ export class OkNavbar extends LitElement {
     }
     .brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
     .spacer { flex: 1; }
-    .links { display: flex; align-items: center; }
+    .links { display: flex; align-items: center; gap: 1.75rem; }
     .links-inner { display: flex; align-items: center; gap: 1.25rem; }
     .actions { display: flex; align-items: center; gap: 0.5rem; }
     ::slotted(a) {
@@ -96,6 +96,14 @@ export class OkNavbar extends LitElement {
 
     /* ── Móvil: el burger abre el panel offcanvas a la derecha ──────────────── */
     @media (max-width: 800px) {
+      /* OJO: backdrop-filter crea un "containing block" → el panel position:fixed se
+         mediría contra la navbar (no el viewport) y no cubriría la pantalla. En móvil
+         desactivamos el glass (bar sólido) para que el offcanvas ocupe el alto completo. */
+      :host([glass]) {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--background);
+      }
       .burger { display: block; position: relative; z-index: 61; }
 
       .scrim {
@@ -124,11 +132,25 @@ export class OkNavbar extends LitElement {
         z-index: 60;
         padding: 4.25rem var(--padding) var(--padding);
         overflow-y: auto;
+        /* En móvil el panel apila los enlaces y, debajo, las acciones (idioma + CTAs). */
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
       }
       :host([open]) .links { transform: translateX(0); }
       .links-inner { flex-direction: column; align-items: stretch; gap: 0; }
       ::slotted(a) { display: block; padding: 0.85rem 0; border-top: 1px solid var(--border-color-soft); }
       ::slotted(a:first-child) { border-top: 0; }
+      /* Acciones dentro del panel: en columna, separadas de los enlaces y a ancho completo. */
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-color);
+      }
+      .actions ::slotted(ion-button) { width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) {
       .links, .scrim { transition: none; }
@@ -172,8 +194,8 @@ export class OkNavbar extends LitElement {
         <div class="spacer"></div>
         <div class="links" id="ok-nav-links">
           <div class="links-inner" @click=${this.onLinkClick}><slot></slot></div>
+          <div class="actions"><slot name="actions"></slot></div>
         </div>
-        <div class="actions"><slot name="actions"></slot></div>
         <button
           class="burger"
           aria-label="Menú"

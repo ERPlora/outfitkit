@@ -55,6 +55,7 @@ import './components/ok-product-card/ok-product-card.js';
 import './components/ok-logo-cloud/ok-logo-cloud.js';
 import './components/ok-testimonial/ok-testimonial.js';
 import './components/ok-cta-band/ok-cta-band.js';
+import './components/ok-language-select/ok-language-select.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';

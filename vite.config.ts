@@ -86,6 +86,7 @@ export default defineConfig({
         'ok-logo-cloud': resolve(__dirname, 'src/components/ok-logo-cloud/ok-logo-cloud.ts'),
         'ok-testimonial': resolve(__dirname, 'src/components/ok-testimonial/ok-testimonial.ts'),
         'ok-cta-band': resolve(__dirname, 'src/components/ok-cta-band/ok-cta-band.ts'),
+        'ok-language-select': resolve(__dirname, 'src/components/ok-language-select/ok-language-select.ts'),
         // Chrome web / marketing (Ionic no cubre la web pública)
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),

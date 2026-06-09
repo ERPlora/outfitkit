@@ -74,6 +74,7 @@
     "./ok-logo-cloud": "./dist/ok-logo-cloud.js",
     "./ok-testimonial": "./dist/ok-testimonial.js",
     "./ok-cta-band": "./dist/ok-cta-band.js",
+    "./ok-language-select": "./dist/ok-language-select.js",
     "./ok-navbar": "./dist/ok-navbar.js",
     "./ok-footer": "./dist/ok-footer.js",
     "./ok-hero": "./dist/ok-hero.js",

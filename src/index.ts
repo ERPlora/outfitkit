@@ -82,6 +82,7 @@ export { OkProductCard } from './components/ok-product-card/ok-product-card.js';
 export { OkLogoCloud } from './components/ok-logo-cloud/ok-logo-cloud.js';
 export { OkTestimonial } from './components/ok-testimonial/ok-testimonial.js';
 export { OkCtaBand } from './components/ok-cta-band/ok-cta-band.js';
+export { OkLanguageSelect } from './components/ok-language-select/ok-language-select.js';
 
 // ── Chrome web / marketing ──────────────────────────────────────────────────────────────────
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';

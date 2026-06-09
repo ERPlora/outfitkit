@@ -19,6 +19,33 @@ Docs-app estilo `ux` (sidebar+búsqueda, viewport, temas — ERPlora terracota p
 **Descartados (decisión)**: charts (chart/donut/gauge → librería externa: Chart.js/ApexCharts/uPlot),
 `radio-card` (no necesario), `tooltip` (usar `ion-popover`). No quedan pendientes en el backlog.
 
+### Oleada marketing 2026 (2026-06-09) — bento · scroll-reveal · glass
+
+Para rediseñar la **web pública del Cloud Portal** (tendencias 2026: bento grids, animaciones al
+scroll, glass/“liquid glass” como acento, tipografía display) se añadieron 11 tags:
+
+- [x] `ok-section` — envoltorio de sección (eyebrow + título display + subtítulo + slot), align left/center, divider.
+- [x] `ok-bento` + `ok-bento-item` — rejilla bento modular (cols/rows variables, `glass`, `tone`, `interactive`).
+- [x] `ok-feature-card` — tarjeta de característica (icono + título + desc, hover lift, `glass`).
+- [x] `ok-pricing-card` — tarjeta de plan (precio/periodo/features/`featured`/badge, slot `cta`).
+- [x] `ok-product-card` — tarjeta de producto/módulo (icono + categoría + badge + precio + flecha hover).
+- [x] `ok-reveal` — anima el contenido al entrar en viewport (IntersectionObserver, CSP-safe, respeta `prefers-reduced-motion`).
+- [x] `ok-logo-cloud` — banda de logos / prueba social (grid o `marquee`).
+- [x] `ok-testimonial` — cita de cliente (rating + autor + `author-role` + avatar).
+- [x] `ok-cta-band` — banda CTA full-width (variantes solid/soft/glass).
+- [x] `ok-language-select` — selector de idioma (dropdown; enlaces en light DOM → SEO; default = idioma del navegador). `ok-navbar` ganó atributo `glass`.
+
+**GOTCHA**: `<iconify-icon>` NO renderiza dentro de Shadow DOM (light DOM sí). Los componentes con
+icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`background:currentColor` +
+`mask:url(.../prefix/name.svg)`), tematizable y CSP-safe.
+
+**TODO — aplicar estos efectos/animaciones también en el showcase (docs-app):**
+- [ ] Envolver las secciones del docs-app en `ok-reveal` (entrada al scroll, escalonada).
+- [ ] Hero del docs-app con `ok-section` + acentos glass; rejilla de categorías como `ok-bento`.
+- [ ] Página de cada componente: añadir los 11 nuevos al `components-data.js` (ejemplo + API + código), categoría “Web/Marketing”.
+- [ ] Demostrar `ok-language-select` y `ok-navbar glass` en la demo de chrome web.
+- [ ] Repasar `prefers-reduced-motion` en toda la docs-app.
+
 ### Decisiones
 - **Retirar YA** los wrappers redundantes (lista en §Limpieza). Se usa Ionic directo para todo lo que
   Ionic ya da.
