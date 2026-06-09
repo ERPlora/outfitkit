@@ -84,6 +84,9 @@ export class OkDataTable extends LitElement {
       --color-muted: var(--ok-muted, var(--ion-color-medium, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.55)));
       --border-color: var(--ok-border, var(--ion-color-step-150, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.12)));
       --border-color-soft: var(--ok-border-soft, var(--ion-color-step-100, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07)));
+      /* Borde más marcado para los controles de la toolbar (selects/pastilla de fechas), para que se
+       * distingan como controles en claro y oscuro aunque el lienzo y la superficie casi no contrasten. */
+      --control-border: color-mix(in srgb, var(--color) 22%, transparent);
       /* Relieve de cabecera/pie: step-100 (definido en claro y oscuro) → contraste con el lienzo. */
       --header-background: var(--ok-surface-2, var(--ion-color-step-100, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.04)));
       --row-hover: var(--ok-row-hover, var(--ion-color-step-50, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.03)));
@@ -156,9 +159,12 @@ export class OkDataTable extends LitElement {
 
     /* Buscador (caja con icono + limpiar), look del Hub */
     .search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
-    ion-searchbar { --background: var(--background); --border-radius: 10px; --box-shadow: none; padding: 0; min-height: 36px; }
-    /* Flat: campo de búsqueda sin borde ni elevación (directiva 2026-06-09). */
-    ion-searchbar::part(native) { border: none; }
+    ion-searchbar { --background: var(--background); --border-radius: 10px; padding: 0; min-height: 36px; }
+    /* Flat: el buscador quita borde y elevación vía la clase específica de Ionic 'ion-no-border'.
+     * (La regla global de Ionic para .ion-no-border no cruza el Shadow DOM, así que la
+     * reimplementamos aquí dentro: --box-shadow controla la elevación; ::part(native) el borde.) */
+    ion-searchbar.ion-no-border { --box-shadow: none; }
+    ion-searchbar.ion-no-border::part(native) { border: none; box-shadow: none; }
 
     /* Toggle de vista lista/tarjetas (segmento) */
     .viewseg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); }
@@ -167,15 +173,17 @@ export class OkDataTable extends LitElement {
     /* Botón primario (primaryAction) */
     .primary-btn { --background: var(--primary); --color: var(--primary-contrast); }
 
-    .tk-cols { min-width: 6.5rem; max-width: 9rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.3rem; --padding-bottom: 0.3rem; }
+    /* Selects de la toolbar: fondo + borde visibles (como el buscador y la pastilla de fechas) para
+     * que se distingan como controles en claro y oscuro (sin fondo eran invisibles en dark). */
+    .tk-cols { min-width: 6.5rem; max-width: 9rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.3rem; --padding-bottom: 0.3rem; }
     .vsep { width: 1px; align-self: stretch; background: var(--border-color); margin: 0.3rem 0.25rem; }
 
     /* Selector de filas/página en la toolbar (consolidado) */
-    .tk-psize { min-width: 4.25rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
+    .tk-psize { min-width: 4.25rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
 
     /* Filtros EN LÍNEA en la toolbar (select / rango de fechas) */
-    .tk-filter { min-width: 8.5rem; max-width: 13rem; font-size: 13px; border: 1px solid var(--border-color); border-radius: 10px; --padding-start: 0.7rem; --padding-end: 0.5rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
-    .tk-daterange { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.6rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); color: var(--color-muted); font-size: 13px; }
+    .tk-filter { min-width: 8.5rem; max-width: 13rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.7rem; --padding-end: 0.5rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
+    .tk-daterange { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.6rem; min-height: 38px; border: 1px solid var(--control-border); border-radius: 10px; background: var(--background); color: var(--color-muted); font-size: 13px; }
     .tk-daterange ion-icon { font-size: 15px; flex: 0 0 auto; }
     .tk-daterange ion-input { --background: transparent; --padding-start: 0; --padding-end: 0; --padding-top: 2px; --padding-bottom: 2px; --color: var(--color); min-height: 26px; width: 6.8rem; font-size: 13px; }
     .tk-daterange .arr { color: var(--color-muted); }
@@ -976,8 +984,8 @@ export class OkDataTable extends LitElement {
     };
 
     const searchbar = this.serverSide
-      ? html`<ion-searchbar placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
-      : html`<ion-searchbar .value=${this.q} placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
+      ? html`<ion-searchbar class="ion-no-border" placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
+      : html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
 
     const selCount = this.selection.size;
     const showTopbar =
