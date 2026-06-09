@@ -38,6 +38,7 @@ export default defineConfig({
         'ok-store': resolve(__dirname, 'src/components/ok-store/ok-store.ts'),
         // Compuesto / datos
         'ok-data-table': resolve(__dirname, 'src/components/ok-data-table/ok-data-table.ts'),
+        'ok-mail': resolve(__dirname, 'src/components/ok-mail/ok-mail.ts'),
         // Componentes nuevos (huecos de Ionic)
         'ok-tree': resolve(__dirname, 'src/components/ok-tree/ok-tree.ts'),
         'ok-inline-feedback': resolve(__dirname, 'src/components/ok-inline-feedback/ok-inline-feedback.ts'),

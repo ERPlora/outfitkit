@@ -160,6 +160,18 @@ export class OkColorPicker extends LitElement {
       background-image: var(--checker);
       background-size: 12px 12px;
       background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .swatch:hover {
+        border-color: var(--color-muted);
+      }
+    }
+    .swatch:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .swatch .fill {
       width: 100%;
@@ -282,9 +294,27 @@ export class OkColorPicker extends LitElement {
       border: 1px solid var(--border-color);
       border-radius: 5px;
       cursor: pointer;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .presets button:hover {
+        border-color: var(--color-muted);
+      }
+    }
+    .presets button:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .presets button.active {
       box-shadow: 0 0 0 2px var(--panel-bg), 0 0 0 4px var(--ok-primary, var(--ion-color-primary, #3880ff));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .swatch:active,
+      .presets button:active {
+        transform: none;
+      }
     }
   `;
 

@@ -103,14 +103,28 @@ export class OkCombo extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      transition: background 0.12s ease, color 0.12s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .option:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .option:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .option:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .option.active {
       background: var(--primary-color);
       color: var(--primary-contrast);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .option:hover,
+      .option:active {
+        transform: none;
+      }
     }
     .empty {
       padding: 0.6rem;

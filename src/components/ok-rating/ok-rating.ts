@@ -39,17 +39,31 @@ export class OkRating extends LitElement {
       color: var(--color-empty);
       cursor: pointer;
       font-size: var(--size);
-      transition: transform 0.12s ease, color 0.12s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
     .star.filled {
       color: var(--color);
     }
-    .star:not(.readonly):hover {
-      transform: scale(1.12);
+    @media (hover: hover) {
+      .star:not(.readonly):hover {
+        transform: scale(1.12);
+      }
+    }
+    .star:not(.readonly):active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     :host([readonly]) .star,
     .star.readonly {
       cursor: default;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .star:not(.readonly):hover,
+      .star:not(.readonly):active {
+        transform: none;
+      }
     }
     ion-icon {
       pointer-events: none;

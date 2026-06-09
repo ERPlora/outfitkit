@@ -114,11 +114,28 @@ export class OkCarousel extends LitElement {
       border-radius: 50%;
       background: var(--dot-color);
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
     .dot.active {
       background: var(--dot-active);
       transform: scale(1.25);
+    }
+    @media (hover: hover) {
+      .dot:not(.active):hover {
+        background: var(--dot-active);
+        transform: scale(1.15);
+      }
+    }
+    .dot:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dot:hover,
+      .dot:active {
+        transform: none;
+      }
     }
     /* En móvil, oculta las flechas y deja navegar por swipe + puntos. */
     @media (max-width: 480px) {

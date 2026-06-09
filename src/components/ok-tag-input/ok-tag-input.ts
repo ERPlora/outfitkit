@@ -67,6 +67,10 @@ export class OkTagInput extends LitElement {
       border-radius: 999px;
       font-size: 0.85rem;
       line-height: 1.2;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
     .chip .text {
       overflow: hidden;
@@ -86,10 +90,27 @@ export class OkTagInput extends LitElement {
       color: inherit;
       cursor: pointer;
       opacity: 0.7;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease,
+        opacity var(--ok-transition, 150ms ease);
     }
-    .chip .remove:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.08);
+    @media (hover: hover) {
+      .chip .remove:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.08);
+      }
+    }
+    .chip .remove:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .chip:active,
+      .chip .remove:hover,
+      .chip .remove:active {
+        transform: none;
+      }
     }
     .chip .remove ion-icon {
       font-size: 0.9rem;

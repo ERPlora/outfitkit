@@ -211,10 +211,17 @@ export class OkScheduler extends LitElement {
       bottom: 0;
       border-right: 1px solid var(--border-color);
       cursor: pointer;
-      transition: background 0.12s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .slot:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .slot:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .slot:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .slot:last-child {
       border-right: 0;
@@ -235,10 +242,18 @@ export class OkScheduler extends LitElement {
       overflow: hidden;
       z-index: 1;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-      transition: filter 0.12s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease, filter 0.12s ease;
     }
-    .event:hover {
-      filter: brightness(1.05);
+    @media (hover: hover) {
+      .event:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      }
+    }
+    .event:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .event-title {
       font-size: 0.78rem;
@@ -261,6 +276,13 @@ export class OkScheduler extends LitElement {
       padding: 1.5rem;
       text-align: center;
       color: var(--color-muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .slot:active,
+      .event:active {
+        transform: none;
+      }
     }
 
     /* ── Responsive (móvil): franja más estrecha, recurso visible ── */

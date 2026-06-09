@@ -183,16 +183,32 @@ export class OkKanban extends LitElement {
       border-radius: var(--border-radius);
       cursor: grab;
       user-select: none;
-      transition: box-shadow 0.15s ease, opacity 0.15s ease, transform 0.05s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease, opacity 0.15s ease;
     }
-    .card:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    /* Hover sutil solo con ratón: la tarjeta se levanta ligeramente. */
+    @media (hover: hover) {
+      .card:not(.dragging):hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
     }
     .card:active {
       cursor: grabbing;
     }
+    /* Press feedback solo cuando no se está arrastrando (no romper el drag&drop). */
+    .card:not(.dragging):active {
+      transform: translateY(0) scale(0.98);
+    }
     .card.dragging {
       opacity: 0.45;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card:not(.dragging):hover,
+      .card:not(.dragging):active {
+        transform: none;
+      }
     }
     /* Marcador del punto de inserción (placeholder) durante el dragover. */
     .card.drop-before {

@@ -61,10 +61,17 @@ export class OkAppLauncher extends LitElement {
       color: inherit;
       cursor: pointer;
       border-radius: 50%;
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .trigger:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .trigger:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .trigger:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .trigger ion-icon {
       font-size: 1.4rem;
@@ -118,10 +125,26 @@ export class OkAppLauncher extends LitElement {
       border-radius: 10px;
       text-align: center;
       text-decoration: none;
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .app:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .app:hover {
+        background: var(--hover-bg);
+        transform: translateY(-1px);
+      }
+    }
+    .app:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .trigger:hover,
+      .trigger:active,
+      .app:hover,
+      .app:active {
+        transform: none;
+      }
     }
     /* Cuadro del icono grande (color de la app o primary por defecto). */
     .app .box {

@@ -128,10 +128,22 @@ export class OkTimeline extends LitElement {
       font: inherit;
       cursor: pointer;
       border-radius: var(--border-radius);
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .content:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .content:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .content:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .content:active {
+        transform: none;
+      }
     }
     .item.current .content {
       background: var(--current-bg);

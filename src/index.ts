@@ -17,6 +17,8 @@ export type {
   DataTablePrimaryAction,
   DataTableRowKey,
 } from './components/ok-data-table/ok-data-table.js';
+export { OkMail } from './components/ok-mail/ok-mail.js';
+export type { OkMailFolder, OkMailMessage } from './components/ok-mail/ok-mail.js';
 
 // ── Componentes nuevos (huecos de Ionic) ────────────────────────────────────────────────────
 export { OkTree } from './components/ok-tree/ok-tree.js';

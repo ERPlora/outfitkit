@@ -202,14 +202,19 @@ export class OkDataTable extends LitElement {
     .gcell.right { justify-content: flex-end; text-align: right; }
     .gcell.center { justify-content: center; text-align: center; }
     .gh { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
-    .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
-    .gh.sortable:hover { color: var(--color); }
+    .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
+    @media (hover: hover) {
+      .gh.sortable:hover { color: var(--color); }
+    }
     /* Caret de orden (3 estados, icono Ionic): neutral atenuado / activo en color primario. */
     .caret { display: inline-flex; align-items: center; margin-left: 0.25rem; flex: 0 0 auto; font-size: 13px; opacity: 0.3; }
     .caret.on { opacity: 1; color: var(--primary); }
-    .grow-data { border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background 0.12s; }
+    .grow-data { border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
     .grow-data:last-child { border-bottom: 0; }
-    .grow-data:hover { background: var(--row-hover); }
+    @media (hover: hover) {
+      .grow-data:hover { background: var(--row-hover); }
+    }
+    .grow-data:active { transform: scale(0.995); }
     .grow-data.selected { background: color-mix(in srgb, var(--primary) 10%, transparent); }
     .selcb { display: flex; align-items: center; justify-content: center; }
     .filters-grow { padding-top: 0.4rem; padding-bottom: 0.6rem; }
@@ -219,8 +224,16 @@ export class OkDataTable extends LitElement {
     /* ── Vista tarjetas ──────────────────────────────────────────────────────────────────── */
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; }
     /* Flat: sin borde ni elevación — las tarjetas se delimitan por la superficie (no por sombra). */
-    .rcard { display: flex; flex-direction: column; border: 0; border-radius: 12px; overflow: hidden; background: var(--header-background); box-shadow: none; transition: background 0.12s; }
-    .rcard:hover { background: var(--row-hover); }
+    .rcard { display: flex; flex-direction: column; border: 0; border-radius: 12px; overflow: hidden; background: var(--header-background); box-shadow: none; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
+    @media (hover: hover) {
+      .rcard:hover { background: var(--row-hover); }
+    }
+    .rcard:active { transform: scale(0.995); }
+    @media (prefers-reduced-motion: reduce) {
+      .gh.sortable:hover, .gh.sortable:active,
+      .grow-data:hover, .grow-data:active,
+      .rcard:hover, .rcard:active { transform: none; }
+    }
     .rcard.selected { background: color-mix(in srgb, var(--primary) 12%, var(--header-background)); }
     .rcard-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }

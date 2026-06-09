@@ -94,7 +94,18 @@ export class OkCalendar extends LitElement {
       font-size: 0.85rem;
       padding: 0.35rem 0.75rem;
       cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .toggle button:not(.active):hover {
+        background: var(--hover-bg);
+        color: var(--color);
+      }
+    }
+    .toggle button:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .toggle button.active {
       background: var(--primary-color);
@@ -128,11 +139,18 @@ export class OkCalendar extends LitElement {
       flex-direction: column;
       gap: 0.2rem;
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
       overflow: hidden;
     }
-    .day:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .day:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .day:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .day.other-month {
       opacity: 0.4;
@@ -175,6 +193,18 @@ export class OkCalendar extends LitElement {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .chip:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+      }
+    }
+    .chip:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .chip .chip-title {
       overflow: hidden;
@@ -218,10 +248,17 @@ export class OkCalendar extends LitElement {
       padding: 0.4rem 0.3rem;
       border-radius: var(--border-radius);
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .agenda-item:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .agenda-item:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .agenda-item:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .dot {
       flex: 0 0 auto;
@@ -235,6 +272,15 @@ export class OkCalendar extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .toggle button:active,
+      .day:active,
+      .chip:active,
+      .agenda-item:active {
+        transform: none;
+      }
     }
 
     /* ── Responsive (móvil) ─────────────────────────────────────── */

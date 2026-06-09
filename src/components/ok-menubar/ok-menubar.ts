@@ -91,11 +91,20 @@ export class OkMenubar extends LitElement {
       cursor: pointer;
       border-radius: var(--border-radius);
       white-space: nowrap;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .top:hover,
     .top.open {
       background: var(--hover-bg);
+    }
+    @media (hover: hover) {
+      .top:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .top:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .top.open {
       background: var(--primary-color);
@@ -140,11 +149,20 @@ export class OkMenubar extends LitElement {
       text-align: left;
       cursor: pointer;
       border-radius: 6px;
-      transition: background 0.12s ease, color 0.12s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .item:hover:not(.disabled),
     .item.active:not(.disabled) {
       background: var(--hover-bg);
+    }
+    @media (hover: hover) {
+      .item:hover:not(.disabled) {
+        background: var(--hover-bg);
+      }
+    }
+    .item:active:not(.disabled) {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .item.disabled {
       opacity: 0.45;
@@ -207,9 +225,29 @@ export class OkMenubar extends LitElement {
       font: inherit;
       cursor: pointer;
       border-radius: var(--border-radius);
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .burger:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .burger:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .burger:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .top:hover,
+      .top:active,
+      .item:hover,
+      .item:active,
+      .burger:hover,
+      .burger:active,
+      .acc-head:hover,
+      .acc-head:active {
+        transform: none;
+      }
     }
     .burger ion-icon {
       font-size: 1.25rem;
@@ -237,9 +275,17 @@ export class OkMenubar extends LitElement {
       text-align: left;
       cursor: pointer;
       border-radius: 6px;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .acc-head:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .acc-head:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .acc-head:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .acc-head .caret {
       margin-left: auto;

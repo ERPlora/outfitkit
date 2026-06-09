@@ -71,11 +71,29 @@ export class OkStepper extends LitElement {
       flex-direction: column;
       align-items: center;
       gap: 0.375rem;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
     .step-btn:focus-visible {
       outline: 2px solid var(--color-primary);
       outline-offset: 2px;
       border-radius: 0.5rem;
+    }
+    /* Hover sutil solo con ratón: el círculo se acerca al primary. */
+    @media (hover: hover) {
+      .step-btn:hover .circle {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+    }
+    .step-btn:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .step-btn:active {
+        transform: none;
+      }
     }
 
     /* La línea conectora se dibuja a la izquierda de cada círculo (excepto el primero). */

@@ -46,8 +46,17 @@ export class OkNavbar extends LitElement {
     .links { display: flex; align-items: center; }
     .links-inner { display: flex; align-items: center; gap: 1.25rem; }
     .actions { display: flex; align-items: center; gap: 0.5rem; }
-    ::slotted(a) { color: var(--color); text-decoration: none; font-size: 0.95rem; }
-    ::slotted(a:hover) { color: var(--primary-color); }
+    ::slotted(a) {
+      color: var(--color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      /* Micro-interacción: transición sutil en color al hacer hover. */
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    /* Hover de enlaces solo con ratón (evita estados pegados en táctil). */
+    @media (hover: hover) {
+      ::slotted(a:hover) { color: var(--primary-color); }
+    }
 
     /* Scrim del offcanvas (solo móvil). */
     .scrim { display: none; }
@@ -59,6 +68,15 @@ export class OkNavbar extends LitElement {
       cursor: pointer;
       padding: 0.5rem;
       color: var(--color);
+      /* Micro-interacción: feedback sutil al presionar el burger. */
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .burger:hover { color: var(--primary-color); }
+    }
+    .burger:active { transform: scale(var(--ok-press-scale, 0.97)); }
+    @media (prefers-reduced-motion: reduce) {
+      ::slotted(a):active, .burger:hover, .burger:active { transform: none; }
     }
     .burger span { display: block; width: 22px; height: 2px; background: currentColor; border-radius: 2px; position: relative; transition: background 0.2s ease; }
     .burger span::before, .burger span::after { content: ''; position: absolute; left: 0; width: 22px; height: 2px; background: currentColor; border-radius: 2px; transition: transform 0.2s ease, top 0.2s ease; }

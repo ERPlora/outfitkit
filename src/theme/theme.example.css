@@ -21,6 +21,10 @@
   --ok-spacing: 1rem;
   --ok-container-max: 1140px;
   --ok-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Micro-interacciones (hover suave en escritorio + feedback de pulsación, sutil) */
+  --ok-transition: 150ms ease;   /* duración/easing de los estados hover/activo */
+  --ok-press-scale: 0.97;        /* escala al pulsar (feedback breve, vale en táctil) */
 }
 
 /* Ejemplo SIN Ionic (descomenta y pon tu marca):

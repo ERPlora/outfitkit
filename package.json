@@ -29,6 +29,7 @@
     },
     "./ok-store": "./dist/ok-store.js",
     "./ok-data-table": "./dist/ok-data-table.js",
+    "./ok-mail": "./dist/ok-mail.js",
     "./ok-tree": "./dist/ok-tree.js",
     "./ok-inline-feedback": "./dist/ok-inline-feedback.js",
     "./ok-empty-state": "./dist/ok-empty-state.js",

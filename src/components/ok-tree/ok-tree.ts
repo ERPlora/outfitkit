@@ -71,13 +71,20 @@ export class OkTree extends LitElement {
       border-radius: var(--border-radius);
       cursor: default;
       user-select: none;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
     .row.selectable {
       cursor: pointer;
     }
-    .row.selectable:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .row.selectable:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .row.selectable:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .row.active {
       background: var(--primary-color);
@@ -103,6 +110,17 @@ export class OkTree extends LitElement {
       color: inherit;
       cursor: pointer;
       border-radius: 4px;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
+    }
+    @media (hover: hover) {
+      .chevron:not(.leaf):hover {
+        background: var(--hover-bg);
+      }
+    }
+    .chevron:not(.leaf):active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     .chevron.leaf {
       visibility: hidden;
@@ -131,6 +149,14 @@ export class OkTree extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .row.selectable:hover,
+      .row.selectable:active,
+      .chevron:not(.leaf):hover,
+      .chevron:not(.leaf):active {
+        transform: none;
+      }
     }
   `;
 

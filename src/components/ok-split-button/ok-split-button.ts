@@ -94,10 +94,23 @@ export class OkSplitButton extends LitElement {
       text-align: left;
       cursor: pointer;
       border-radius: 6px;
-      transition: background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
-    .item:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .item:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .item:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .item:hover,
+      .item:active {
+        transform: none;
+      }
     }
     .item ion-icon {
       flex: 0 0 auto;

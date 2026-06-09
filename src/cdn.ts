@@ -7,6 +7,7 @@ import './components/ok-store/ok-store.js';
 import './store/store.js';
 // Compuesto / datos
 import './components/ok-data-table/ok-data-table.js';
+import './components/ok-mail/ok-mail.js';
 // Componentes nuevos (huecos de Ionic)
 import './components/ok-tree/ok-tree.js';
 import './components/ok-inline-feedback/ok-inline-feedback.js';

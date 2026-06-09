@@ -52,15 +52,29 @@ export class OkDropzone extends LitElement {
       border-radius: var(--border-radius);
       background: var(--surface);
       cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .zone:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .zone:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .zone:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     /* Estado mientras se arrastra un fichero por encima. */
     .zone.dragging {
       border-color: var(--primary-color);
       background: var(--primary-bg);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .zone:active,
+      .file .remove:active {
+        transform: none;
+      }
     }
     .zone .big-icon {
       font-size: 2rem;
@@ -129,11 +143,19 @@ export class OkDropzone extends LitElement {
       color: var(--color-muted);
       cursor: pointer;
       border-radius: 50%;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease),
+        box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
     }
-    .file .remove:hover {
-      background: var(--hover-bg);
-      color: var(--danger-color);
+    @media (hover: hover) {
+      .file .remove:hover {
+        background: var(--hover-bg);
+        color: var(--danger-color);
+      }
+    }
+    .file .remove:active {
+      transform: scale(var(--ok-press-scale, 0.97));
     }
     /* Error inline (tipo/tamaño no admitido). */
     .error {

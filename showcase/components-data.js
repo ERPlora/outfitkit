@@ -159,6 +159,50 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
     ],
   },
   {
+    id: 'ok-mail',
+    name: 'ok-mail',
+    category: 'flujo',
+    desc: 'Cliente de correo estilo Outlook pero SOLO email: 3 paneles (carpetas · lista · lectura), buscador, no leídos, estrella, adjuntos y acciones (responder/reenviar/archivar/eliminar). Responsive: un panel a la vez en móvil. Reutiliza ion-* y ok-empty-state.',
+    importPath: "@outfitkit/core/ok-mail",
+    example: '<div style="height:520px;width:100%"><ok-mail id="mailx"></ok-mail></div>',
+    setup: (root) => {
+      const mail = root.querySelector('#mailx');
+      mail.folders = [
+        { id: 'inbox', label: 'Bandeja', icon: 'mail-outline', count: 2 },
+        { id: 'sent', label: 'Enviados', icon: 'send-outline' },
+        { id: 'drafts', label: 'Borradores', icon: 'document-outline', count: 1 },
+        { id: 'trash', label: 'Papelera', icon: 'trash-outline' },
+      ];
+      mail.messages = [
+        { id: 'm1', folderId: 'inbox', from: { name: 'Ana Pérez', email: 'ana@acme.com' }, to: ['yo@erplora.com'], subject: 'Pedido #1042 confirmado', preview: 'Confirmamos la entrega para mañana por la mañana…', body: 'Hola,\n\nConfirmamos la entrega del pedido #1042 para mañana por la mañana.\n\nUn saludo,\nAna', date: '2026-06-09T08:30:00Z', read: false, starred: true, attachments: [{ name: 'albaran-1042.pdf', size: 84210 }] },
+        { id: 'm2', folderId: 'inbox', from: { name: 'Soporte ERPlora', email: 'support@erplora.com' }, subject: 'Tu factura de junio', preview: 'Adjuntamos la factura del periodo…', body: 'Adjuntamos la factura del periodo de junio.', date: '2026-06-08T17:05:00Z', read: false },
+        { id: 'm3', folderId: 'inbox', from: { name: 'Luis Gómez', email: 'luis@proveedor.es' }, subject: 'Reposición de stock', preview: 'El lunes llega el nuevo lote…', body: 'El lunes llega el nuevo lote de producto.', date: '2026-06-07T11:20:00Z', read: true },
+      ];
+      mail.activeFolder = 'inbox';
+      mail.activeMessage = 'm1';
+    },
+    code: `mail.folders = [
+  { id: 'inbox', label: 'Bandeja', icon: 'mail-outline', count: 2 },
+  { id: 'sent', label: 'Enviados', icon: 'send-outline' },
+];
+mail.messages = [
+  { id: 'm1', folderId: 'inbox', from: { name: 'Ana', email: 'ana@acme.com' },
+    subject: 'Pedido #1042', preview: 'Confirmamos…', date: '2026-06-09T08:30:00Z',
+    read: false, starred: true, attachments: [{ name: 'albaran.pdf', size: 84210 }] },
+];
+mail.activeFolder = 'inbox';
+mail.addEventListener('ok-message-select', (e) => openMessage(e.detail.message));
+mail.addEventListener('ok-compose', () => openComposer());`,
+    api: [
+      { kind: 'prop', name: '.folders', type: 'OkMailFolder[]', detail: '{id, label, icon?, count?}' },
+      { kind: 'prop', name: '.messages', type: 'OkMailMessage[]', detail: '{id, folderId, from{name,email}, subject, preview?, body?, date, read?, starred?, attachments?}' },
+      { kind: 'prop', name: 'active-folder · active-message', type: 'string', detail: 'Carpeta / mensaje activos' },
+      { kind: 'event', name: 'ok-message-select · ok-folder-select', type: '{id, message} · {id}', detail: 'Selección' },
+      { kind: 'event', name: 'ok-compose · ok-reply · ok-forward · ok-archive · ok-delete · ok-star', type: 'varios', detail: 'Acciones de correo' },
+      { kind: 'event', name: 'ok-search', type: '{query}', detail: 'Búsqueda' },
+    ],
+  },
+  {
     id: 'ok-tree',
     name: 'ok-tree',
     category: 'datos',

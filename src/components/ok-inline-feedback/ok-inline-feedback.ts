@@ -109,14 +109,23 @@ export class OkInlineFeedback extends LitElement {
       font-size: 1.2rem;
       line-height: 1;
       border-radius: 4px;
-      transition: opacity 0.15s ease, background 0.15s ease;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        opacity 0.15s ease, transform 120ms ease;
     }
-    .close:hover { opacity: 1; background: rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07); }
+    @media (hover: hover) {
+      .close:hover { opacity: 1; background: rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07); }
+    }
+    .close:active { transform: scale(var(--ok-press-scale, 0.97)); }
 
     /* Móvil: las actions bajan bajo el texto (apiladas a ancho completo). */
     @media (max-width: 640px) {
       .row { flex-direction: column; align-items: stretch; }
       .actions { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .close:hover,
+      .close:active { transform: none; }
     }
   `;
 

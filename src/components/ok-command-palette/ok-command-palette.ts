@@ -150,15 +150,29 @@ export class OkCommandPalette extends LitElement {
       padding: 0.55rem 1rem;
       cursor: pointer;
       user-select: none;
+      transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
+        border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
+        transform 120ms ease;
     }
     .item.active {
       background: var(--active-bg);
     }
-    .item:hover {
-      background: var(--hover-bg);
+    @media (hover: hover) {
+      .item:hover {
+        background: var(--hover-bg);
+      }
+      .item.active:hover {
+        background: var(--active-bg);
+      }
     }
-    .item.active:hover {
-      background: var(--active-bg);
+    .item:active {
+      transform: scale(var(--ok-press-scale, 0.97));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .item:hover,
+      .item:active {
+        transform: none;
+      }
     }
     .item .icon {
       flex: 0 0 auto;
