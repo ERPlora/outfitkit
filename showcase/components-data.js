@@ -25,6 +25,7 @@ const CATEGORIES = [
   { id: 'acciones', label: 'Acciones', icon: 'flash-outline' },
   { id: 'formularios', label: 'Formularios', icon: 'document-text-outline' },
   { id: 'web', label: 'Web', icon: 'globe-outline' },
+  { id: 'marketing', label: 'Marketing', icon: 'megaphone-outline' },
   { id: 'multimedia', label: 'Multimedia', icon: 'film-outline' },
   { id: 'estado', label: 'Estado', icon: 'cube-outline' },
 ];
@@ -1019,6 +1020,286 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
       { kind: 'prop', name: '.menus', type: 'OkMenu[]', detail: '{id, label, items:[{id, label, icon?, shortcut?, disabled?, separator?, children?}]}' },
       { kind: 'event', name: 'ok-select', type: '{id, item}', detail: 'Click en un item hoja' },
       { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre de un menú' },
+    ],
+  },
+
+  // ═══════════════════════════════ MARKETING ══════════════════════════════
+  {
+    id: 'ok-section',
+    name: 'ok-section',
+    category: 'marketing',
+    desc: 'Envoltorio de sección de marketing: eyebrow (píldora), título display, subtítulo y contenido (slot default). Quita el markup repetido de cada sección de la landing (encabezado centrado/alineado + separador superior opcional). Para títulos ricos usa los slots eyebrow/heading/subheading.',
+    importPath: "@outfitkit/core/ok-section",
+    example: `<ok-section eyebrow="Plataforma" heading="Todo en uno" subheading="Cubre los huecos que Ionic no trae con un set ok-* tematizado." align="center" divider>
+  <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+    <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque A</div>
+    <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque B</div>
+    <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque C</div>
+  </div>
+</ok-section>`,
+    code: `<ok-section eyebrow="Plataforma" heading="Todo en uno"
+  subheading="…" align="center" divider>
+  …contenido…
+</ok-section>
+<!-- Títulos ricos: usa slots en vez de atributos -->
+<ok-section align="center">
+  <span slot="eyebrow">Marketplace</span>
+  <h2 slot="heading">Un ecosistema. <span style="color:var(--ion-color-primary)">Dos modos.</span></h2>
+  <p slot="subheading">…</p>
+  …contenido…
+</ok-section>`,
+    api: [
+      { kind: 'prop', name: 'eyebrow · heading · subheading', type: 'string', detail: 'Píldora superior · título · subtítulo (para markup rico usa los slots homónimos)' },
+      { kind: 'prop', name: 'align', type: 'left|center', detail: 'Alineación del encabezado (def left)' },
+      { kind: 'prop', name: 'divider', type: 'bool', detail: 'Dibuja un separador superior de 1px' },
+      { kind: 'slot', name: 'eyebrow · heading · subheading', type: '—', detail: 'Versión rica de cada texto del encabezado' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Cuerpo de la sección' },
+    ],
+  },
+  {
+    id: 'ok-bento',
+    name: 'ok-bento',
+    category: 'marketing',
+    desc: 'Rejilla «bento» modular (tendencia 2026): contenedor de celdas de tamaños variados. Las celdas son ok-bento-item (cada una ocupa cols×rows de la rejilla). En móvil colapsa a 1 columna automáticamente.',
+    importPath: "@outfitkit/core/ok-bento",
+    example: `<ok-bento cols="6" gap="1rem" style="width:100%">
+  <ok-bento-item cols="4" rows="2" tone="primary" icon="lucide:zap" heading="Tiempo real">
+    <p>Cada acción se refleja al instante en todos los dispositivos.</p>
+  </ok-bento-item>
+  <ok-bento-item cols="2" interactive icon="lucide:boxes" heading="Inventario">
+    <p>Stock por almacén y lote.</p>
+  </ok-bento-item>
+  <ok-bento-item cols="2" glass icon="lucide:credit-card" heading="Cobros">
+    <p>TPV, factura y caja.</p>
+  </ok-bento-item>
+  <ok-bento-item cols="4" tone="success" icon="lucide:chart-line" heading="Informes">
+    <p>KPIs y tendencias en cada panel.</p>
+  </ok-bento-item>
+</ok-bento>`,
+    code: `<ok-bento cols="6" gap="1rem">
+  <ok-bento-item cols="4" rows="2" glass icon="lucide:zap" heading="Bridge">…</ok-bento-item>
+  <ok-bento-item cols="2">…</ok-bento-item>
+</ok-bento>`,
+    api: [
+      { kind: 'prop', name: 'cols · cols-md', type: 'number', detail: 'Columnas en escritorio (def 6) · en tablet ≤900px (def 4)' },
+      { kind: 'prop', name: 'gap', type: 'CSS length', detail: 'Separación entre celdas (def 1rem)' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Celdas (ok-bento-item o cualquier elemento con grid-column/row)' },
+    ],
+  },
+  {
+    id: 'ok-bento-item',
+    name: 'ok-bento-item',
+    category: 'marketing',
+    desc: 'Celda de una ok-bento. Ocupa cols×rows de la rejilla. Panel con superficie, borde y radio; opcionalmente glass (cristal esmerilado), tinte de color (tone), elevación al hover (interactive) y enlace (href). Encabezado opcional (eyebrow/heading/icon) + slot default. En móvil ocupa el ancho total.',
+    importPath: "@outfitkit/core/ok-bento-item",
+    example: `<ok-bento cols="4" gap="1rem" style="width:100%">
+  <ok-bento-item cols="2" rows="1" icon="lucide:box" eyebrow="Catálogo" heading="Productos">
+    <p>Define artículos, variantes y precios.</p>
+  </ok-bento-item>
+  <ok-bento-item cols="2" tone="warning" glass icon="lucide:bell" heading="Avisos">
+    <p>Stock bajo y caducidades.</p>
+  </ok-bento-item>
+  <ok-bento-item cols="4" tone="primary" interactive href="#" icon="lucide:rocket" heading="Empieza ya">
+    <p>Toda la celda es un enlace que se eleva al hover.</p>
+  </ok-bento-item>
+</ok-bento>`,
+    code: `<ok-bento-item cols="4" rows="2" glass tone="primary"
+  icon="lucide:zap" eyebrow="Nuevo" heading="Bridge" interactive href="/bridge">
+  <p>Descripción de la celda…</p>
+</ok-bento-item>`,
+    api: [
+      { kind: 'prop', name: 'cols · rows', type: 'number', detail: 'Columnas (def 2) · filas (def 1) que ocupa' },
+      { kind: 'prop', name: 'tone', type: 'default|primary|success|warning|danger', detail: 'Tinte de acento' },
+      { kind: 'prop', name: 'glass · interactive', type: 'bool', detail: 'Cristal esmerilado · eleva al hover (cursor/enlace)' },
+      { kind: 'prop', name: 'href', type: 'string', detail: 'Si se pasa, toda la celda es un enlace' },
+      { kind: 'prop', name: 'icon · eyebrow · heading', type: 'string', detail: 'Icono iconify (p.ej. lucide:zap) · eyebrow · título' },
+      { kind: 'slot', name: 'icon · (default)', type: '—', detail: 'Icono alternativo · contenido de la celda' },
+    ],
+  },
+  {
+    id: 'ok-reveal',
+    name: 'ok-reveal',
+    category: 'marketing',
+    desc: 'Anima su contenido al entrar en el viewport (scroll reveal, tendencia 2026). Usa IntersectionObserver (CSP-safe, sin eval) y respeta prefers-reduced-motion. delay para escalonar varios reveal seguidos.',
+    importPath: "@outfitkit/core/ok-reveal",
+    example: `<div style="display:flex;flex-direction:column;gap:1rem;width:100%">
+  <ok-reveal variant="up">
+    <div style="background:var(--ok-surface-2);padding:1.25rem;border-radius:12px">Aparece desde abajo (up).</div>
+  </ok-reveal>
+  <ok-reveal variant="left" delay="80">
+    <div style="background:var(--ok-surface-2);padding:1.25rem;border-radius:12px">Entra desde la izquierda, con retardo.</div>
+  </ok-reveal>
+  <ok-reveal variant="scale" delay="160">
+    <div style="background:var(--ok-surface-2);padding:1.25rem;border-radius:12px">Escala al revelarse.</div>
+  </ok-reveal>
+</div>`,
+    code: `<ok-reveal variant="up" delay="80"> …bloque… </ok-reveal>
+<!-- variant: up (def) | fade | scale | left | right -->
+<!-- once (def true): revela una vez y deja de observar -->`,
+    api: [
+      { kind: 'prop', name: 'variant', type: 'up|fade|scale|left|right', detail: 'Variante de entrada (def up)' },
+      { kind: 'prop', name: 'delay', type: 'number', detail: 'Retardo en ms (para escalonar)' },
+      { kind: 'prop', name: 'once', type: 'bool', detail: 'Revela solo una vez (def true)' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido a animar' },
+    ],
+  },
+  {
+    id: 'ok-feature-card',
+    name: 'ok-feature-card',
+    category: 'marketing',
+    desc: 'Tarjeta de característica para marketing: icono + (eyebrow) + título + descripción (slot default). Eleva al hover con línea de acento superior. Si se pasa href, toda la tarjeta es enlace. Reemplaza el patrón ion-card manual de la landing.',
+    importPath: "@outfitkit/core/ok-feature-card",
+    example: `<div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));width:100%">
+  <ok-feature-card icon="lucide:credit-card" eyebrow="01 · POS" heading="Punto de venta">
+    Cobra, factura y controla caja desde cualquier dispositivo.
+  </ok-feature-card>
+  <ok-feature-card icon="lucide:boxes" eyebrow="02 · Stock" heading="Inventario">
+    Ubicaciones, lotes y picking en varios almacenes.
+  </ok-feature-card>
+  <ok-feature-card icon="lucide:users" eyebrow="03 · CRM" heading="Clientes" href="#">
+    Fichas, grupos y notas; toda la tarjeta es un enlace.
+  </ok-feature-card>
+</div>`,
+    code: `<ok-feature-card icon="lucide:box" eyebrow="01 · POS" heading="Punto de venta">
+  Cobra, factura y controla caja desde cualquier dispositivo.
+</ok-feature-card>
+<!-- href → tarjeta-enlace · glass → cristal esmerilado · slot="icon" para una <img> -->`,
+    api: [
+      { kind: 'prop', name: 'icon', type: 'string', detail: 'Icono iconify (p.ej. lucide:box); para img usa slot="icon"' },
+      { kind: 'prop', name: 'eyebrow · heading', type: 'string', detail: 'Eyebrow (numeración/categoría) · título' },
+      { kind: 'prop', name: 'href', type: 'string', detail: 'Si se pasa, la tarjeta entera es un enlace' },
+      { kind: 'prop', name: 'glass', type: 'bool', detail: 'Cristal esmerilado' },
+      { kind: 'slot', name: 'icon · (default)', type: '—', detail: 'Icono alternativo · descripción' },
+    ],
+  },
+  {
+    id: 'ok-pricing-card',
+    name: 'ok-pricing-card',
+    category: 'marketing',
+    desc: 'Tarjeta de plan/precio: nombre, precio + periodo, descripción, lista de features (prop .features o slot con <ul>) y CTA (slot="cta"). featured la destaca con borde de marca y badge flotante. Pensada para una rejilla de planes.',
+    importPath: "@outfitkit/core/ok-pricing-card",
+    example: `<div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));width:100%;padding-top:1rem">
+  <ok-pricing-card id="pc-basic" name="Básico" price="€0" period="/ mes" description="Para empezar."></ok-pricing-card>
+  <ok-pricing-card id="pc-pro" name="Pro" price="€49" period="/ mes" description="Para equipos en crecimiento." featured badge="Popular"></ok-pricing-card>
+  <ok-pricing-card id="pc-ent" name="Empresa" price="A medida" description="Volumen y soporte dedicado."></ok-pricing-card>
+</div>`,
+    setup: (root) => {
+      root.querySelector('#pc-basic').features = ['1 hub', '3 módulos', 'Soporte por email'];
+      const pro = root.querySelector('#pc-pro');
+      pro.features = ['Hubs ilimitados', 'Todos los módulos', 'Soporte prioritario', 'Asistente AI'];
+      const cta = document.createElement('ion-button');
+      cta.setAttribute('slot', 'cta');
+      cta.setAttribute('expand', 'block');
+      cta.textContent = 'Empezar';
+      pro.appendChild(cta);
+      root.querySelector('#pc-ent').features = ['SLA dedicado', 'Onboarding', 'Facturación anual'];
+    },
+    code: `<ok-pricing-card name="Pro" price="€49" period="/ mes"
+  .features=\${['Hubs ilimitados', 'Todos los módulos']} featured badge="Popular">
+  <ion-button slot="cta" expand="block" href="/signup">Empezar</ion-button>
+</ok-pricing-card>`,
+    api: [
+      { kind: 'prop', name: 'name · price · period', type: 'string', detail: 'Nombre · precio formateado · periodo (p.ej. "/ mes")' },
+      { kind: 'prop', name: 'description', type: 'string', detail: 'Descripción corta' },
+      { kind: 'prop', name: '.features', type: 'string[]', detail: 'Lista de características (alternativa: slot default con un <ul>)' },
+      { kind: 'prop', name: 'featured · badge', type: 'bool · string', detail: 'Plan destacado · texto del badge (def "Popular" si featured)' },
+      { kind: 'slot', name: 'cta · (default)', type: '—', detail: 'Botón de acción · lista de features alternativa' },
+    ],
+  },
+  {
+    id: 'ok-product-card',
+    name: 'ok-product-card',
+    category: 'marketing',
+    desc: 'Tarjeta de producto/módulo del catálogo (marketplace): icono + categoría + nombre + descripción (slot) + badge opcional + precio. Si hay href, toda la tarjeta es enlace y muestra una flecha «ir» al hover.',
+    importPath: "@outfitkit/core/ok-product-card",
+    example: `<div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));width:100%">
+  <ok-product-card icon="lucide:boxes" category="Inventario" name="WMS multi-almacén" badge="Premium" price="€12/mes" href="#">
+    Gestiona ubicaciones, lotes y picking en varios almacenes.
+  </ok-product-card>
+  <ok-product-card icon="lucide:credit-card" category="Ventas" name="TPV avanzado" badge="Incluido" price="Gratis">
+    Cobro rápido, devoluciones y arqueo de caja.
+  </ok-product-card>
+</div>`,
+    code: `<ok-product-card icon="lucide:boxes" category="Inventario" name="WMS multi-almacén"
+  badge="Premium" price="€12/mes" href="/modules/wms">
+  Gestiona ubicaciones, lotes y picking en varios almacenes.
+</ok-product-card>`,
+    api: [
+      { kind: 'prop', name: 'icon · category · name', type: 'string', detail: 'Icono iconify (o slot="icon") · categoría · nombre' },
+      { kind: 'prop', name: 'badge · price', type: 'string', detail: 'Badge (precio/estado) · precio del pie' },
+      { kind: 'prop', name: 'href', type: 'string', detail: 'Si se pasa, la tarjeta es enlace (flecha «ir» al hover)' },
+      { kind: 'slot', name: 'icon · (default)', type: '—', detail: 'Icono alternativo · descripción' },
+    ],
+  },
+  {
+    id: 'ok-logo-cloud',
+    name: 'ok-logo-cloud',
+    category: 'marketing',
+    desc: 'Banda de logos de clientes / «trusted by» (prueba social). Acepta los logos como slot (imgs o texto) y los muestra en rejilla atenuada (grayscale → color al hover). Con marquee desplaza la fila en bucle (CSS, sin JS). label opcional encima.',
+    importPath: "@outfitkit/core/ok-logo-cloud",
+    example: `<ok-logo-cloud label="Usado por equipos de" style="width:100%">
+  <span>Café Central</span>
+  <span>Moda Norte</span>
+  <span>Bici&Co</span>
+  <span>Pan del Día</span>
+  <span>Veterinaria Sur</span>
+</ok-logo-cloud>`,
+    code: `<ok-logo-cloud label="Usado por equipos de">
+  <img src="/a.svg" alt="A"><img src="/b.svg" alt="B"> …
+</ok-logo-cloud>
+<!-- marquee: desplaza en bucle (duplica los logos para continuidad) -->`,
+    api: [
+      { kind: 'prop', name: 'label', type: 'string', detail: 'Etiqueta opcional encima de los logos' },
+      { kind: 'prop', name: 'marquee', type: 'bool', detail: 'Desplaza la fila en bucle (duplica los logos en el HTML)' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Logos (imgs o texto)' },
+    ],
+  },
+  {
+    id: 'ok-testimonial',
+    name: 'ok-testimonial',
+    category: 'marketing',
+    desc: 'Cita de cliente (prueba social): rating opcional en estrellas, cita (slot default), avatar (o iniciales) + autor + rol. glass para cristal esmerilado. Pensada para una rejilla de testimonios.',
+    importPath: "@outfitkit/core/ok-testimonial",
+    example: `<div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));width:100%">
+  <ok-testimonial rating="5" author="Marina Ribó" author-role="Gerente · Café Central">
+    Cambiamos 7 herramientas por ERPlora y cerramos caja en la mitad de tiempo.
+  </ok-testimonial>
+  <ok-testimonial rating="4" author="Joaquín Gómez" author-role="Dueño · Bici&Co" glass>
+    El inventario por almacén nos quitó un dolor de cabeza diario.
+  </ok-testimonial>
+</div>`,
+    code: `<ok-testimonial rating="5" author="Marina Ribó"
+  author-role="Gerente · Café Central" avatar="/m.jpg">
+  Cambiamos 7 herramientas por ERPlora y cerramos caja en la mitad de tiempo.
+</ok-testimonial>`,
+    api: [
+      { kind: 'prop', name: 'rating', type: 'number', detail: 'Estrellas 0–5 (0/undefined no se muestran)' },
+      { kind: 'prop', name: 'author · author-role', type: 'string', detail: 'Nombre · rol/empresa (atributo author-role; role está reservado por ARIA)' },
+      { kind: 'prop', name: 'avatar', type: 'string', detail: 'URL del avatar (si no hay, muestra iniciales)' },
+      { kind: 'prop', name: 'glass', type: 'bool', detail: 'Cristal esmerilado' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Texto de la cita' },
+    ],
+  },
+  {
+    id: 'ok-cta-band',
+    name: 'ok-cta-band',
+    category: 'marketing',
+    desc: 'Banda de llamada a la acción (final de página/sección). Fondo con degradado de marca (variant solid, def) o soft/glass, título grande, subtítulo y CTAs (slot="actions", normalmente ion-button). Centrada por defecto.',
+    importPath: "@outfitkit/core/ok-cta-band",
+    example: `<ok-cta-band eyebrow="Empieza hoy" heading="Tu ERP, listo en 5 minutos" subheading="Sin tarjeta. Sin instalación." style="width:100%">
+  <ion-button slot="actions" href="#">Crear mi hub</ion-button>
+  <ion-button slot="actions" fill="outline" href="#">Ver demo</ion-button>
+</ok-cta-band>`,
+    code: `<ok-cta-band eyebrow="Empieza hoy" heading="Tu ERP, listo en 5 minutos"
+  subheading="Sin tarjeta. Sin instalación." variant="solid">
+  <ion-button slot="actions" href="/signup">Crear mi hub</ion-button>
+  <ion-button slot="actions" fill="outline" href="/demo">Ver demo</ion-button>
+</ok-cta-band>
+<!-- Título rico: <h2 slot="heading">…</h2> -->`,
+    api: [
+      { kind: 'prop', name: 'eyebrow · heading · subheading', type: 'string', detail: 'Eyebrow · título (slot="heading" para markup rico) · subtítulo' },
+      { kind: 'prop', name: 'variant', type: 'solid|soft|glass', detail: 'Estilo de fondo (def solid, degradado de marca)' },
+      { kind: 'slot', name: 'heading · actions', type: '—', detail: 'Título rico · CTAs (ion-button)' },
     ],
   },
 
