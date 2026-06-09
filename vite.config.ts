@@ -70,6 +70,10 @@ export default defineConfig({
         'ok-audio': resolve(__dirname, 'src/components/ok-audio/ok-audio.ts'),
         'ok-video': resolve(__dirname, 'src/components/ok-video/ok-video.ts'),
         'ok-pdf': resolve(__dirname, 'src/components/ok-pdf/ok-pdf.ts'),
+        'ok-timeline': resolve(__dirname, 'src/components/ok-timeline/ok-timeline.ts'),
+        'ok-qty-stepper': resolve(__dirname, 'src/components/ok-qty-stepper/ok-qty-stepper.ts'),
+        'ok-command-palette': resolve(__dirname, 'src/components/ok-command-palette/ok-command-palette.ts'),
+        'ok-color-picker': resolve(__dirname, 'src/components/ok-color-picker/ok-color-picker.ts'),
         // Chrome web / marketing (Ionic no cubre la web pública)
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),

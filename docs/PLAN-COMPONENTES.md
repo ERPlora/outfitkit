@@ -7,17 +7,17 @@ OutfitKit = **librería de Web Components que Ionic NO tiene**, construidos *con
 
 Fuente de inspiración: catálogo **`ERPlora/ux`** (https://erplora.github.io/ux/), 90 componentes.
 
-### Estado (2026-06-09) — 37 componentes en el docs-app
+### Estado (2026-06-09) — BACKLOG COMPLETO, 41 componentes en el docs-app
 
 **Construidos** (Tier 0–3): navbar (offcanvas móvil), footer, hero, container(-full), contact-form ·
 data-table, tree, sparkline, inline-feedback, empty-state, kpi, stat, stepper, wizard, calendar,
-kanban, scheduler, chat · combo, tag-input, rating, otp, pinpad, currency, phone, dropzone ·
-app-launcher, split-button, menubar · qr, carousel, signature, audio, video, pdf · store.
+kanban, scheduler, chat, timeline · combo, tag-input, rating, otp, pinpad, currency, phone,
+dropzone, qty-stepper, color-picker · app-launcher, split-button, menubar, command-palette ·
+qr, carousel, signature, audio, video, pdf · store.
 Docs-app estilo `ux` (sidebar+búsqueda, viewport, temas — ERPlora terracota por defecto, claro/oscuro).
 
-**Descartados**: charts (chart/donut/gauge → librería externa), `radio-card` (no necesario),
-`tooltip` (usar `ion-popover`). **Pendientes opcionales**: `timeline`, `command-palette`,
-`color-picker`, `qty-stepper`.
+**Descartados (decisión)**: charts (chart/donut/gauge → librería externa: Chart.js/ApexCharts/uPlot),
+`radio-card` (no necesario), `tooltip` (usar `ion-popover`). No quedan pendientes en el backlog.
 
 ### Decisiones
 - **Retirar YA** los wrappers redundantes (lista en §Limpieza). Se usa Ionic directo para todo lo que

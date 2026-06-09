@@ -481,6 +481,34 @@ sch.addEventListener('ok-nav', (e) => …);          // { date }`,
       { kind: 'event', name: 'ok-nav', type: '{date}', detail: 'Cambio de día (YYYY-MM-DD)' },
     ],
   },
+  {
+    id: 'ok-timeline',
+    name: 'ok-timeline',
+    category: 'flujo',
+    desc: 'Línea de tiempo vertical por datos: una fila por hito con punto de color/icono, título, descripción y hora. Estado done / current / pending y modo alternado (zig-zag) en pantallas anchas. Ionic no la trae.',
+    importPath: "@outfitkit/core/ok-timeline",
+    example: '<ok-timeline id="tl" align="left" style="display:block;width:100%"></ok-timeline>',
+    setup: (root) => {
+      root.querySelector('#tl').items = [
+        { id: 't1', title: 'Pedido recibido', description: 'Pedido #2041 confirmado por el cliente.', time: '09:12', icon: 'cart-outline', status: 'done' },
+        { id: 't2', title: 'Pago verificado', description: 'Cobro de €324,50 aprobado.', time: '09:14', icon: 'card-outline', status: 'done' },
+        { id: 't3', title: 'Preparando envío', description: 'Almacén empaquetando los artículos.', time: '10:30', icon: 'cube-outline', status: 'current' },
+        { id: 't4', title: 'Entregado', description: 'Pendiente de salida del repartidor.', time: '—', icon: 'checkmark-done-outline', status: 'pending' },
+      ];
+    },
+    code: `timeline.items = [
+  { id: 't1', title: 'Pedido recibido', description: '…', time: '09:12', icon: 'cart-outline', status: 'done' },
+  { id: 't3', title: 'Preparando envío', time: '10:30', status: 'current' },
+  { id: 't4', title: 'Entregado', status: 'pending' },
+];
+timeline.align = 'alternate'; // 'left' | 'alternate'
+timeline.addEventListener('ok-item-click', (e) => …); // { id, item }`,
+    api: [
+      { kind: 'prop', name: '.items', type: 'OkTimelineItem[]', detail: "{id, title, description?, time?, icon?, color?, status?:'done'|'current'|'pending'}" },
+      { kind: 'prop', name: 'align', type: 'left|alternate', detail: 'Columna izquierda · zig-zag en pantallas anchas' },
+      { kind: 'event', name: 'ok-item-click', type: '{id, item}', detail: 'Click en un hito' },
+    ],
+  },
 
   // ════════════════════════════════ INPUTS ════════════════════════════════
   {
@@ -640,6 +668,41 @@ dz.addEventListener('ok-error', (e) => …);  // { message }`,
       { kind: 'event', name: 'ok-error', type: '{message}', detail: 'Tipo o tamaño no válido' },
     ],
   },
+  {
+    id: 'ok-qty-stepper',
+    name: 'ok-qty-stepper',
+    category: 'inputs',
+    desc: 'Selector de cantidad (−/+ con campo central editable) que hace clamp a min/max según step. Útil en TPV/carritos. Ionic no trae un stepper numérico con tope.',
+    importPath: "@outfitkit/core/ok-qty-stepper",
+    example: '<ok-qty-stepper value="1" min="0" max="10"></ok-qty-stepper>',
+    code: `<ok-qty-stepper value="1" min="0" max="10" step="1"></ok-qty-stepper>
+stepper.addEventListener('ok-change', (e) => …); // { value }`,
+    api: [
+      { kind: 'prop', name: 'value · min · max', type: 'number', detail: 'Valor actual · mínimo · máximo (sin tope si se omite)' },
+      { kind: 'prop', name: 'step · disabled', type: 'number · bool', detail: 'Incremento · deshabilitado' },
+      { kind: 'event', name: 'ok-change', type: '{value}', detail: 'Nuevo valor (tras clamp)' },
+    ],
+  },
+  {
+    id: 'ok-color-picker',
+    name: 'ok-color-picker',
+    category: 'inputs',
+    desc: 'Selector de color: un botón-muestra (swatch) abre un panel con área HSV, hex y una rejilla de presets. Salida en hex + RGB. Ionic no trae color picker.',
+    importPath: "@outfitkit/core/ok-color-picker",
+    example: '<ok-color-picker id="cp" value="#2dd36f"></ok-color-picker>',
+    setup: (root) => {
+      root.querySelector('#cp').presets = ['#3880ff', '#2dd36f', '#ffc409', '#eb445a', '#6030ff', '#1c1b17', '#92949c', '#ffffff'];
+    },
+    code: `<ok-color-picker value="#2dd36f"></ok-color-picker>
+picker.presets = ['#3880ff', '#2dd36f', '#ffc409', '#eb445a'];
+picker.addEventListener('ok-change', (e) => …); // { value, rgb: { r, g, b } }`,
+    api: [
+      { kind: 'prop', name: 'value', type: 'string (hex)', detail: "Color actual (p.ej. '#2dd36f')" },
+      { kind: 'prop', name: '.presets', type: 'string[]', detail: 'Hex de la rejilla de presets' },
+      { kind: 'event', name: 'ok-change', type: '{value, rgb}', detail: 'hex + {r, g, b}' },
+      { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre del panel' },
+    ],
+  },
 
   // ═══════════════════════════════ ACCIONES ═══════════════════════════════
   {
@@ -695,6 +758,45 @@ split.addEventListener('ok-select', (e) => …);   // { id, item }`,
       { kind: 'prop', name: '.items', type: 'OkSplitItem[]', detail: '{id, label, icon?}' },
       { kind: 'event', name: 'ok-main', type: '—', detail: 'Acción principal pulsada' },
       { kind: 'event', name: 'ok-select', type: '{id, item}', detail: 'Acción secundaria pulsada' },
+    ],
+  },
+  {
+    id: 'ok-command-palette',
+    name: 'ok-command-palette',
+    category: 'acciones',
+    desc: 'Paleta de comandos estilo ⌘K (overlay propio): input de búsqueda con fuzzy-match sobre etiqueta/keywords, comandos agrupados con icono y atajo, navegación con teclado. Se abre con Cmd/Ctrl+K o por método. (Es un overlay display:contents: en este preview ábrela con el botón o ⌘K.)',
+    importPath: "@outfitkit/core/ok-command-palette",
+    example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
+  <ion-button id="cmdk-open" size="small">Abrir paleta (⌘K)</ion-button>
+  <small style="color:var(--ion-color-medium)">También se abre con Cmd/Ctrl + K.</small>
+  <ok-command-palette id="cmdk" placeholder="Buscar comando…"></ok-command-palette>
+</div>`,
+    setup: (root) => {
+      const palette = root.querySelector('#cmdk');
+      palette.commands = [
+        { id: 'new-sale', label: 'Nueva venta', hint: 'Abrir el TPV', icon: 'cart-outline', group: 'POS', shortcut: '⌘N', keywords: ['venta', 'ticket', 'tpv'] },
+        { id: 'open-drawer', label: 'Abrir cajón', icon: 'cash-outline', group: 'POS', keywords: ['caja', 'efectivo'] },
+        { id: 'close-register', label: 'Cierre de caja', icon: 'lock-closed-outline', group: 'POS' },
+        { id: 'add-product', label: 'Añadir producto', icon: 'add-circle-outline', group: 'Gestión', shortcut: '⌘P', keywords: ['catálogo', 'artículo'] },
+        { id: 'customers', label: 'Ver clientes', icon: 'people-outline', group: 'Gestión' },
+        { id: 'settings', label: 'Ajustes', icon: 'settings-outline', group: 'Gestión', shortcut: '⌘,' },
+      ];
+      root.querySelector('#cmdk-open').addEventListener('click', () => palette.openPalette());
+    },
+    code: `palette.commands = [
+  { id: 'new-sale', label: 'Nueva venta', icon: 'cart-outline', group: 'POS', shortcut: '⌘N', keywords: ['ticket'] },
+  { id: 'settings', label: 'Ajustes', icon: 'settings-outline', group: 'Gestión' },
+];
+// Se abre con Cmd/Ctrl+K (hotkey por defecto) o por método:
+palette.openPalette();  // close() / toggle()
+palette.addEventListener('ok-select', (e) => …); // { id, command }
+palette.addEventListener('ok-open', (e) => …);   // { open }`,
+    api: [
+      { kind: 'prop', name: '.commands', type: 'OkCommand[]', detail: '{id, label, hint?, icon?, group?, shortcut?, keywords?}' },
+      { kind: 'prop', name: 'open · placeholder · hotkey', type: 'bool · string · bool', detail: 'Abierta · placeholder · ⌘K global (def true)' },
+      { kind: 'event', name: 'openPalette() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
+      { kind: 'event', name: 'ok-select', type: '{id, command}', detail: 'Comando ejecutado' },
+      { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre de la paleta' },
     ],
   },
 

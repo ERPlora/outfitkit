@@ -39,6 +39,10 @@ import './components/ok-qr/ok-qr.js';
 import './components/ok-audio/ok-audio.js';
 import './components/ok-video/ok-video.js';
 import './components/ok-pdf/ok-pdf.js';
+import './components/ok-timeline/ok-timeline.js';
+import './components/ok-qty-stepper/ok-qty-stepper.js';
+import './components/ok-command-palette/ok-command-palette.js';
+import './components/ok-color-picker/ok-color-picker.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';
