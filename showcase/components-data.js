@@ -95,6 +95,7 @@ const COMPONENTS = [
       dt.rowKey = (r) => r.id;
       dt.selectable = true;
       dt.inlineFilters = true;
+      dt.columnSelector = true; // multi-select en la toolbar para elegir columnas visibles
       dt.columns = [
         { key: 'id', header: 'Pedido', width: '8rem', render: (r) => h`<span style="font-weight:600">#${r.id}</span>` },
         { key: 'customer', header: 'Cliente', width: 'minmax(13rem,1.4fr)', render: avatar },
@@ -169,6 +170,7 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
       const mail = root.querySelector('#mailx');
       mail.folders = [
         { id: 'inbox', label: 'Bandeja', icon: 'mail-outline', count: 2 },
+        { id: 'spam', label: 'Spam', icon: 'warning-outline', count: 1 },
         { id: 'sent', label: 'Enviados', icon: 'send-outline' },
         { id: 'drafts', label: 'Borradores', icon: 'document-outline', count: 1 },
         { id: 'trash', label: 'Papelera', icon: 'trash-outline' },
@@ -177,6 +179,7 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
         { id: 'm1', folderId: 'inbox', from: { name: 'Ana Pérez', email: 'ana@acme.com' }, to: ['yo@erplora.com'], subject: 'Pedido #1042 confirmado', preview: 'Confirmamos la entrega para mañana por la mañana…', body: 'Hola,\n\nConfirmamos la entrega del pedido #1042 para mañana por la mañana.\n\nUn saludo,\nAna', date: '2026-06-09T08:30:00Z', read: false, starred: true, attachments: [{ name: 'albaran-1042.pdf', size: 84210 }] },
         { id: 'm2', folderId: 'inbox', from: { name: 'Soporte ERPlora', email: 'support@erplora.com' }, subject: 'Tu factura de junio', preview: 'Adjuntamos la factura del periodo…', body: 'Adjuntamos la factura del periodo de junio.', date: '2026-06-08T17:05:00Z', read: false },
         { id: 'm3', folderId: 'inbox', from: { name: 'Luis Gómez', email: 'luis@proveedor.es' }, subject: 'Reposición de stock', preview: 'El lunes llega el nuevo lote…', body: 'El lunes llega el nuevo lote de producto.', date: '2026-06-07T11:20:00Z', read: true },
+        { id: 's1', folderId: 'spam', from: { name: 'Promo Mega', email: 'no-reply@mega-promo.biz' }, subject: '¡¡Has GANADO un premio!!', preview: 'Haz clic aquí para reclamar tu premio…', body: 'Reclama tu premio ahora.', date: '2026-06-09T03:12:00Z', read: false },
       ];
       mail.activeFolder = 'inbox';
       mail.activeMessage = 'm1';

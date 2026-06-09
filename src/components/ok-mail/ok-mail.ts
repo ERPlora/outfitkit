@@ -6,10 +6,12 @@ import { define } from '../../base/define.js';
 // registra el HOST). Para los estados vacíos REUSA <ok-empty-state> del catálogo. OutfitKit
 // construye SOBRE Ionic; no envolvemos lo que Ionic (o el propio core) ya da.
 
-// ok-mail — cliente de correo estilo Outlook pero SOLO email (sin calendario/contactos). Tres
-// paneles: Carpetas (izq) · Lista de mensajes (centro) · Lectura (der). En móvil (<=820px) se
-// muestra UN panel a la vez con navegación atrás (Carpetas → Lista → Lectura). Componente
-// compuesto: CSS propio autocontenido con tokens --ok-* → --ion-* → hex. El WC nunca toca la red.
+// ok-mail — cliente de correo moderno y mobile-first, SOLO email (sin calendario/contactos).
+// Layout en columna: cabecera superior (Redactar + buscador) + barra de TABS de carpetas con
+// scroll horizontal; debajo, dos paneles (lista de mensajes + lectura) lado a lado en desktop.
+// En móvil (<=760px) las tabs siguen arriba y se ve UN panel a la vez: lista → (al seleccionar)
+// lectura a pantalla completa con botón atrás. Componente compuesto: CSS propio autocontenido con
+// tokens --ok-* → --ion-* → hex. El WC nunca toca la red.
 
 /** Carpeta del buzón (Bandeja, Enviados, Borradores…). */
 export interface OkMailFolder {
@@ -64,11 +66,11 @@ export class OkMail extends LitElement {
       --primary-contrast: var(--ok-primary-contrast, var(--ion-color-primary-contrast, #ffffff));
       --warning: var(--ok-warning, var(--ion-color-warning, #ffc409));
       --font: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
-      --folders-width: 200px;
-      --list-width: 340px;
+      --list-width: 360px;
       --press-scale: var(--ok-press-scale, 0.98);
 
       display: flex;
+      flex-direction: column;
       height: 100%;
       width: 100%;
       min-height: 0;
@@ -78,55 +80,78 @@ export class OkMail extends LitElement {
     }
     * { box-sizing: border-box; }
 
-    /* ── Panel Carpetas (izquierda) ──────────────────────────────────────────────────────── */
-    .folders {
-      flex: 0 0 var(--folders-width);
-      width: var(--folders-width);
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      border-right: 1px solid var(--border-color);
-      background: var(--surface-2);
-    }
-    .compose {
-      padding: 0.75rem;
+    /* ── Cabecera superior: Redactar + buscador ──────────────────────────────────────────── */
+    .topbar {
       flex: 0 0 auto;
-    }
-    .compose ion-button { --box-shadow: none; margin: 0; width: 100%; }
-    .folder-list {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: auto;
-      padding: 0.25rem 0.5rem;
-    }
-    .folder {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      width: 100%;
-      padding: 0.55rem 0.65rem;
+      gap: 0.5rem;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-color-soft);
+    }
+    .topbar ion-button { --box-shadow: none; margin: 0; flex: 0 0 auto; }
+    .topbar ion-searchbar {
+      --background: var(--surface-2);
+      --border-radius: 12px;
+      --box-shadow: none;
+      padding: 0;
+      flex: 1 1 auto;
+      min-height: 40px;
+    }
+    .topbar ion-searchbar::part(native) { border: none; }
+
+    /* ── Barra de TABS de carpetas (scroll horizontal) ───────────────────────────────────── */
+    .tabs {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: stretch;
+      gap: 0.35rem;
+      padding: 0.4rem 0.6rem 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-bottom: 1px solid var(--border-color);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      scroll-snap-type: x proximity;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex: 0 0 auto;
+      padding: 0.55rem 0.85rem;
       border: 0;
-      border-radius: 10px;
+      border-bottom: 2px solid transparent;
+      border-radius: 10px 10px 0 0;
       background: none;
-      color: var(--color);
+      color: var(--color-muted);
       font: inherit;
       font-size: 14px;
-      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
-      transition: background-color 150ms ease, color 150ms ease;
+      scroll-snap-align: start;
+      transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
     }
-    .folder ion-icon { font-size: 18px; flex: 0 0 auto; color: var(--color-muted); }
-    .folder .flabel { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .folder ion-badge { --background: var(--primary); --color: var(--primary-contrast); font-size: 11px; }
-    .folder.active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-    .folder.active ion-icon { color: var(--primary); }
+    .tab ion-icon { font-size: 17px; flex: 0 0 auto; }
+    .tab ion-badge { --background: var(--surface-2); --color: var(--color-muted); font-size: 11px; min-width: 18px; }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab.active ion-badge { --background: var(--primary); --color: var(--primary-contrast); }
     @media (hover: hover) {
-      .folder:hover { background: var(--row-hover); }
-      .folder.active:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+      .tab:hover { color: var(--color); background: var(--row-hover); }
+      .tab.active:hover { color: var(--primary); }
     }
-    .folder:active { transform: scale(var(--press-scale)); }
+    .tab:active { transform: scale(var(--press-scale)); }
 
-    /* ── Panel Lista de mensajes (centro) ────────────────────────────────────────────────── */
+    /* ── Cuerpo: dos paneles (lista + lectura) ───────────────────────────────────────────── */
+    .body {
+      flex: 1 1 auto;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* ── Panel Lista de mensajes ─────────────────────────────────────────────────────────── */
     .list {
       flex: 0 0 var(--list-width);
       width: var(--list-width);
@@ -135,16 +160,6 @@ export class OkMail extends LitElement {
       min-height: 0;
       border-right: 1px solid var(--border-color);
     }
-    .list-head {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.4rem 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .list-head ion-searchbar { --background: var(--surface-2); --border-radius: 10px; --box-shadow: none; padding: 0; flex: 1 1 auto; min-height: 38px; }
-    .list-head ion-searchbar::part(native) { border: none; }
     .msg-list {
       flex: 1 1 auto;
       min-height: 0;
@@ -286,10 +301,9 @@ export class OkMail extends LitElement {
     .back { display: none; }
     .back ion-button { --box-shadow: none; margin: 0; }
 
-    /* ── Responsive (Outlook móvil): UN panel a la vez ─────────────────────────────────── */
-    @media (max-width: 820px) {
-      :host { display: block; position: relative; }
-      .folders,
+    /* ── Responsive (móvil): tabs siempre arriba, UN panel del cuerpo a la vez ──────────── */
+    @media (max-width: 760px) {
+      .body { position: relative; }
       .list,
       .reader {
         position: absolute;
@@ -300,17 +314,13 @@ export class OkMail extends LitElement {
         background: var(--background);
       }
       /* Solo el panel correspondiente a la vista móvil activa queda visible. */
-      :host([data-mview='folders']) .list,
-      :host([data-mview='folders']) .reader,
-      :host([data-mview='list']) .folders,
       :host([data-mview='list']) .reader,
-      :host([data-mview='message']) .folders,
       :host([data-mview='message']) .list { display: none; }
       .back { display: flex; align-items: center; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .folder:active,
+      .tab:active,
       .msg:active,
       .msg .star:active { transform: none; }
     }
@@ -334,11 +344,10 @@ export class OkMail extends LitElement {
     this.dispatchEvent(new CustomEvent<T>(type, { detail, bubbles: true, composed: true }));
   }
 
-  /** Vista móvil derivada del estado activo: message si hay seleccionado, si no list. */
-  private get mobileView(): 'folders' | 'list' | 'message' {
-    if (this.activeMessage) return 'message';
-    if (this.activeFolder) return 'list';
-    return 'folders';
+  /** Vista móvil derivada del estado activo: las tabs están siempre arriba, así que el cuerpo
+   * solo alterna entre la lista y la lectura (message si hay mensaje seleccionado, si no list). */
+  private get mobileView(): 'list' | 'message' {
+    return this.activeMessage ? 'message' : 'list';
   }
 
   // Refleja la vista móvil en un atributo del host para que el CSS responsive muestre un panel.
@@ -410,33 +419,47 @@ export class OkMail extends LitElement {
     this.emit('ok-star', { id: m.id, starred: !m.starred });
   }
 
-  // ── Render: Panel Carpetas ─────────────────────────────────────────────────────────────────
-  private renderFolders(): unknown {
+  // ── Render: Cabecera superior (Redactar + buscador) ───────────────────────────────────────
+  private renderTopbar(): unknown {
     return html`
-      <aside class="folders">
-        <div class="compose">
-          <ion-button @click=${() => this.emit('ok-compose', {})}>
-            <ion-icon slot="start" name="create-outline"></ion-icon>
-            Redactar
-          </ion-button>
-        </div>
-        <nav class="folder-list">
-          ${repeat(
-            this.folders,
-            (f) => f.id,
-            (f) => html`
-              <button
-                class=${`folder${f.id === this.activeFolder ? ' active' : ''}`}
-                @click=${() => this.onFolderSelect(f.id)}
-              >
-                <ion-icon name=${f.icon ?? 'folder-outline'}></ion-icon>
-                <span class="flabel">${f.label}</span>
-                ${f.count ? html`<ion-badge>${f.count}</ion-badge>` : nothing}
-              </button>
-            `,
-          )}
-        </nav>
-      </aside>
+      <div class="topbar">
+        <ion-button @click=${() => this.emit('ok-compose', {})}>
+          <ion-icon slot="start" name="create-outline"></ion-icon>
+          Redactar
+        </ion-button>
+        ${this.searchable
+          ? html`<ion-searchbar
+              .value=${this.q}
+              placeholder="Buscar correo…"
+              debounce="200"
+              @ionInput=${this.onSearch}
+            ></ion-searchbar>`
+          : nothing}
+      </div>
+    `;
+  }
+
+  // ── Render: Barra de TABS de carpetas (scroll horizontal) ─────────────────────────────────
+  private renderTabs(): unknown {
+    return html`
+      <nav class="tabs" role="tablist">
+        ${repeat(
+          this.folders,
+          (f) => f.id,
+          (f) => html`
+            <button
+              class=${`tab${f.id === this.activeFolder ? ' active' : ''}`}
+              role="tab"
+              aria-selected=${f.id === this.activeFolder ? 'true' : 'false'}
+              @click=${() => this.onFolderSelect(f.id)}
+            >
+              ${f.icon ? html`<ion-icon name=${f.icon}></ion-icon>` : nothing}
+              <span class="tlabel">${f.label}</span>
+              ${f.count ? html`<ion-badge>${f.count}</ion-badge>` : nothing}
+            </button>
+          `,
+        )}
+      </nav>
     `;
   }
 
@@ -445,21 +468,6 @@ export class OkMail extends LitElement {
     const msgs = this.folderMessages;
     return html`
       <section class="list">
-        <div class="list-head">
-          <span class="back">
-            <ion-button fill="clear" size="small" aria-label="Volver a carpetas" @click=${() => this.onFolderSelect('')}>
-              <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
-            </ion-button>
-          </span>
-          ${this.searchable
-            ? html`<ion-searchbar
-                .value=${this.q}
-                placeholder="Buscar correo…"
-                debounce="200"
-                @ionInput=${this.onSearch}
-              ></ion-searchbar>`
-            : nothing}
-        </div>
         <div class="msg-list">
           ${msgs.length === 0
             ? html`<div class="empty-wrap"><ok-empty-state icon="mail-outline" heading="Sin mensajes"></ok-empty-state></div>`
@@ -563,7 +571,11 @@ export class OkMail extends LitElement {
   }
 
   render(): unknown {
-    return html`${this.renderFolders()}${this.renderList()}${this.renderReader()}`;
+    return html`
+      ${this.renderTopbar()}
+      ${this.renderTabs()}
+      <div class="body">${this.renderList()}${this.renderReader()}</div>
+    `;
   }
 }
 
