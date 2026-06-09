@@ -63,6 +63,21 @@ export { OkQr } from './components/ok-qr/ok-qr.js';
 export { OkAudio } from './components/ok-audio/ok-audio.js';
 export { OkVideo } from './components/ok-video/ok-video.js';
 export { OkPdf } from './components/ok-pdf/ok-pdf.js';
+export { OkReceipt } from './components/ok-receipt/ok-receipt.js';
+export type {
+  ReceiptData,
+  ReceiptLine,
+  ReceiptTax,
+  ReceiptPayment,
+  ReceiptBusiness,
+} from './components/ok-receipt/ok-receipt.js';
+export { OkInvoice } from './components/ok-invoice/ok-invoice.js';
+export type {
+  InvoiceData,
+  InvoiceParty,
+  InvoiceLine,
+  InvoiceTaxLine,
+} from './components/ok-invoice/ok-invoice.js';
 export { OkTimeline } from './components/ok-timeline/ok-timeline.js';
 export type { OkTimelineItem } from './components/ok-timeline/ok-timeline.js';
 export { OkQtyStepper } from './components/ok-qty-stepper/ok-qty-stepper.js';

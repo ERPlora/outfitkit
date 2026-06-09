@@ -1437,6 +1437,98 @@ video.addEventListener('ok-ended', () => …);`,
       { kind: 'prop', name: 'height', type: 'string', detail: 'Altura del visor (def 480px)' },
     ],
   },
+  {
+    id: 'ok-receipt',
+    name: 'ok-receipt',
+    category: 'multimedia',
+    desc: 'Tiquet/recibo de venta (POS) presentacional: recibe un JSON (prop .receipt) y lo pinta con estética de impresora térmica (80mm). Cabecera de negocio (+logo), líneas, subtotal/impuestos/total, pago+cambio, pie y QR (reusa ok-qr, p.ej. VeriFactu). No habla con ningún backend; cualquier botón externo le pasa el JSON.',
+    importPath: "@outfitkit/core/ok-receipt",
+    example: '<ok-receipt id="rcpt" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18);background:#fff"></ok-receipt>',
+    setup: (root) => {
+      const el = root.querySelector('#rcpt');
+      if (el) el.receipt = {
+        business: { name: 'Bar Pepe', address: 'C/ Mayor 1, 28013 Madrid', tax_id: 'NIF B12345678', phone: '600 123 123' },
+        number: 'A-000142', datetime: '09/06/2026 14:32', cashier: 'Ana', customer: 'Juan García',
+        lines: [
+          { name: 'Café con leche', qty: 2, unit_price: 1.5, total: 3.0 },
+          { name: 'Tostada con tomate', qty: 1, unit_price: 2.2, total: 2.2, note: 'sin sal' },
+          { name: 'Zumo de naranja natural', qty: 1, unit_price: 2.8, total: 2.8 },
+        ],
+        subtotal: 8.0,
+        taxes: [{ label: 'IVA 10%', base: 8.0, amount: 0.8 }],
+        total: 8.8,
+        payment: { method: 'Efectivo', paid: 10.0, change: 1.2 },
+        currency: '€',
+        footer: '¡Gracias por su visita!\nwww.barpepe.example',
+        qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=A-000142&total=8.80',
+        qr_note: 'Factura verificable en la sede electrónica de la AEAT (VeriFactu)',
+      };
+    },
+    code: `const el = document.createElement('ok-receipt');
+el.receipt = {
+  business: { name: 'Bar Pepe', tax_id: 'NIF B12345678', logo_url: '/logo.png' },
+  number: 'A-000142', datetime: '09/06/2026 14:32',
+  lines: [{ name: 'Café', qty: 2, unit_price: 1.5, total: 3.0 }],
+  subtotal: 3.0, taxes: [{ label: 'IVA 10%', base: 3.0, amount: 0.3 }], total: 3.3,
+  payment: { method: 'Efectivo', paid: 5, change: 1.7 },
+  qr: 'https://…', qr_note: 'VeriFactu',
+};
+container.appendChild(el);
+// Imprimir desde el contenedor padre: window.print() + @media print`,
+    api: [
+      { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…)' },
+      { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 120)' },
+      { kind: 'slot', name: 'logo', type: '—', detail: 'Logo alternativo si no hay business.logo_url' },
+    ],
+  },
+  {
+    id: 'ok-invoice',
+    name: 'ok-invoice',
+    category: 'multimedia',
+    desc: 'Factura A4 (documento fiscal completo) presentacional: recibe un JSON (prop .invoice) y lo pinta como factura profesional — emisor+receptor con datos fiscales, líneas con descuento/impuesto, resumen de impuestos por tipo, totales, condiciones de pago, pie legal y QR opcional (reusa ok-qr). Hermano A4 de ok-receipt (tiquet 80mm). No habla con backend.',
+    importPath: "@outfitkit/core/ok-invoice",
+    example: '<ok-invoice id="inv" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18)"></ok-invoice>',
+    setup: (root) => {
+      const el = root.querySelector('#inv');
+      if (el) el.invoice = {
+        issuer: { name: 'ERPlora S.L.', tax_id: 'B-12345678', address: 'C/ Mayor 1', postal_code: '28013', city: 'Madrid', country: 'España', email: 'hola@erplora.com' },
+        customer: { name: 'Cliente Ejemplo S.A.', tax_id: 'A-87654321', address: 'Av. Diagonal 100', postal_code: '08019', city: 'Barcelona', country: 'España' },
+        type: 'F1 · Factura completa', number: 'F2026/0042', issue_date: '09/06/2026', due_date: '09/07/2026',
+        lines: [
+          { description: 'Licencia ERPlora — plan Pro (anual)', qty: 1, unit_price: 480.0, tax_rate: 21, total: 480.0 },
+          { description: 'Módulo VeriFactu', qty: 1, unit_price: 120.0, discount_percent: 10, tax_rate: 21, total: 108.0 },
+          { description: 'Soporte prioritario (horas)', qty: 5, unit_price: 60.0, tax_rate: 21, total: 300.0 },
+        ],
+        subtotal: 888.0,
+        discount_total: 12.0,
+        taxes: [{ label: 'IVA 21%', rate: 21, base: 888.0, amount: 186.48 }],
+        tax_total: 186.48,
+        total: 1074.48,
+        currency: '€',
+        payment_method: 'Transferencia bancaria',
+        payment_terms: 'IBAN ES12 3456 7890 1234 5678 9012 · Vencimiento a 30 días',
+        notes: 'Gracias por confiar en ERPlora.',
+        footer: 'ERPlora S.L. · Inscrita en el Registro Mercantil de Madrid, Tomo 0000, Folio 00, Hoja M-000000 · NIF B-12345678',
+        qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=F2026/0042&total=1074.48',
+        qr_note: 'Factura verificable en la AEAT (VeriFactu)',
+      };
+    },
+    code: `const el = document.createElement('ok-invoice');
+el.invoice = {
+  issuer:   { name: 'ERPlora S.L.', tax_id: 'B-12345678', address: 'C/ Mayor 1', city: 'Madrid' },
+  customer: { name: 'Cliente S.A.', tax_id: 'A-87654321', city: 'Barcelona' },
+  type: 'F1', number: 'F2026/0042', issue_date: '09/06/2026', due_date: '09/07/2026',
+  lines: [{ description: 'Licencia Pro', qty: 1, unit_price: 480, tax_rate: 21, total: 480 }],
+  subtotal: 480, taxes: [{ label: 'IVA 21%', base: 480, amount: 100.8 }], tax_total: 100.8, total: 580.8,
+  payment_method: 'Transferencia', payment_terms: 'IBAN ES… · 30 días',
+  qr: 'https://…', qr_note: 'VeriFactu',
+};
+container.appendChild(el);`,
+    api: [
+      { kind: 'prop', name: 'invoice', type: 'InvoiceData', detail: 'JSON de la factura (issuer · customer · lines · taxes · totales · pago · qr…)' },
+      { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 96)' },
+    ],
+  },
 
   // ════════════════════════════════ ESTADO ════════════════════════════════
   {
