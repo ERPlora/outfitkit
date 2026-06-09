@@ -895,6 +895,27 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     ],
   },
   {
+    id: 'ok-language-select',
+    name: 'ok-language-select',
+    category: 'web',
+    desc: 'Selector de idioma para la web pública: los idiomas se pasan como enlaces (<a data-lang href>) en light DOM → SEO-crawlable, funciona sin JS y CSP-safe (navega por href). Autoselecciona el idioma del navegador si no se fija value.',
+    importPath: "@outfitkit/core/ok-language-select",
+    example: `<ok-language-select value="es">
+  <a data-lang="en" href="#/c/ok-language-select">English</a>
+  <a data-lang="es" href="#/c/ok-language-select">Español</a>
+  <a data-lang="fr" href="#/c/ok-language-select">Français</a>
+  <a data-lang="de" href="#/c/ok-language-select">Deutsch</a>
+</ok-language-select>`,
+    code: `<ok-language-select value="es">
+  <a data-lang="en" href="/i18n/setlang/?language=en&next=/">English</a>
+  <a data-lang="es" href="/i18n/setlang/?language=es&next=/">Español</a>
+</ok-language-select>`,
+    api: [
+      { kind: 'prop', name: 'value · open', type: 'string · bool', detail: 'Idioma activo (autodetecta navigator.language si vacío) · estado del dropdown' },
+      { kind: 'slot', name: '(default)', type: '<a data-lang href>', detail: 'Un enlace por idioma (light DOM; navega por href, sin evento)' },
+    ],
+  },
+  {
     id: 'ok-footer',
     name: 'ok-footer',
     category: 'web',
