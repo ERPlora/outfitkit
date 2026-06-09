@@ -1437,6 +1437,50 @@ video.addEventListener('ok-ended', () => …);`,
       { kind: 'prop', name: 'height', type: 'string', detail: 'Altura del visor (def 480px)' },
     ],
   },
+  {
+    id: 'ok-receipt',
+    name: 'ok-receipt',
+    category: 'multimedia',
+    desc: 'Tiquet/recibo de venta (POS) presentacional: recibe un JSON (prop .receipt) y lo pinta con estética de impresora térmica (80mm). Cabecera de negocio (+logo), líneas, subtotal/impuestos/total, pago+cambio, pie y QR (reusa ok-qr, p.ej. VeriFactu). No habla con ningún backend; cualquier botón externo le pasa el JSON.',
+    importPath: "@outfitkit/core/ok-receipt",
+    example: '<ok-receipt id="rcpt" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18);background:#fff"></ok-receipt>',
+    setup: (root) => {
+      const el = root.querySelector('#rcpt');
+      if (el) el.receipt = {
+        business: { name: 'Bar Pepe', address: 'C/ Mayor 1, 28013 Madrid', tax_id: 'NIF B12345678', phone: '600 123 123' },
+        number: 'A-000142', datetime: '09/06/2026 14:32', cashier: 'Ana', customer: 'Juan García',
+        lines: [
+          { name: 'Café con leche', qty: 2, unit_price: 1.5, total: 3.0 },
+          { name: 'Tostada con tomate', qty: 1, unit_price: 2.2, total: 2.2, note: 'sin sal' },
+          { name: 'Zumo de naranja natural', qty: 1, unit_price: 2.8, total: 2.8 },
+        ],
+        subtotal: 8.0,
+        taxes: [{ label: 'IVA 10%', base: 8.0, amount: 0.8 }],
+        total: 8.8,
+        payment: { method: 'Efectivo', paid: 10.0, change: 1.2 },
+        currency: '€',
+        footer: '¡Gracias por su visita!\nwww.barpepe.example',
+        qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=A-000142&total=8.80',
+        qr_note: 'Factura verificable en la sede electrónica de la AEAT (VeriFactu)',
+      };
+    },
+    code: `const el = document.createElement('ok-receipt');
+el.receipt = {
+  business: { name: 'Bar Pepe', tax_id: 'NIF B12345678', logo_url: '/logo.png' },
+  number: 'A-000142', datetime: '09/06/2026 14:32',
+  lines: [{ name: 'Café', qty: 2, unit_price: 1.5, total: 3.0 }],
+  subtotal: 3.0, taxes: [{ label: 'IVA 10%', base: 3.0, amount: 0.3 }], total: 3.3,
+  payment: { method: 'Efectivo', paid: 5, change: 1.7 },
+  qr: 'https://…', qr_note: 'VeriFactu',
+};
+container.appendChild(el);
+// Imprimir desde el contenedor padre: window.print() + @media print`,
+    api: [
+      { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…)' },
+      { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 120)' },
+      { kind: 'slot', name: 'logo', type: '—', detail: 'Logo alternativo si no hay business.logo_url' },
+    ],
+  },
 
   // ════════════════════════════════ ESTADO ════════════════════════════════
   {

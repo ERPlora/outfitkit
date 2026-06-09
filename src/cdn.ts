@@ -40,6 +40,7 @@ import './components/ok-qr/ok-qr.js';
 import './components/ok-audio/ok-audio.js';
 import './components/ok-video/ok-video.js';
 import './components/ok-pdf/ok-pdf.js';
+import './components/ok-receipt/ok-receipt.js';
 import './components/ok-timeline/ok-timeline.js';
 import './components/ok-qty-stepper/ok-qty-stepper.js';
 import './components/ok-command-palette/ok-command-palette.js';

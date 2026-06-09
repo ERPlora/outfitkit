@@ -60,6 +60,7 @@
     "./ok-audio": "./dist/ok-audio.js",
     "./ok-video": "./dist/ok-video.js",
     "./ok-pdf": "./dist/ok-pdf.js",
+    "./ok-receipt": "./dist/ok-receipt.js",
     "./ok-timeline": "./dist/ok-timeline.js",
     "./ok-qty-stepper": "./dist/ok-qty-stepper.js",
     "./ok-command-palette": "./dist/ok-command-palette.js",
