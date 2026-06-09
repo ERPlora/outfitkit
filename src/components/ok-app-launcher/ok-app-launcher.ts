@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { computeAnchor } from '../../base/anchor.js';
 
 // App (entrada de la rejilla). La aporta el consumidor vía la prop `.apps`.
 export interface OkLauncherApp {
@@ -68,20 +69,34 @@ export class OkAppLauncher extends LitElement {
     .trigger ion-icon {
       font-size: 1.4rem;
     }
-    /* Panel/popover propio, posicionado bajo el botón y alineado a la derecha. */
+    /* Panel/popover propio. Es position:absolute relativo al host (robusto ante ancestros con
+       transform): por defecto se abre debajo y alineado a la IZQUIERDA del botón. computeAnchor()
+       decide si voltear a la derecha (.end) o hacia arriba (.above) según el espacio del viewport. */
     .panel {
       position: absolute;
       top: calc(100% + 8px);
-      right: 0;
+      left: 0;
       z-index: 1000;
       min-width: 280px;
-      max-width: 360px;
+      max-width: min(360px, calc(100vw - 16px));
+      max-height: calc(100vh - 16px);
+      overflow: auto;
       padding: 0.75rem;
       background: var(--panel-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
       box-sizing: border-box;
+    }
+    /* Volteo horizontal: alinear el borde derecho del panel con el del botón. */
+    .panel.end {
+      left: auto;
+      right: 0;
+    }
+    /* Volteo vertical: abrir hacia arriba del botón. */
+    .panel.above {
+      top: auto;
+      bottom: calc(100% + 8px);
     }
     /* Rejilla de apps: 3 columnas fijas, responsive al ancho del panel. */
     .grid {
@@ -161,14 +176,36 @@ export class OkAppLauncher extends LitElement {
     this.unbind();
   }
 
+  // Reposiciona el panel mientras está abierto (scroll/resize).
+  private readonly reposition = (): void => this.positionPanel();
+
   private bind(): void {
     document.addEventListener('click', this.onDocClick, true);
     document.addEventListener('keydown', this.onKeydown);
+    window.addEventListener('resize', this.reposition);
+    window.addEventListener('scroll', this.reposition, true);
   }
 
   private unbind(): void {
     document.removeEventListener('click', this.onDocClick, true);
     document.removeEventListener('keydown', this.onKeydown);
+    window.removeEventListener('resize', this.reposition);
+    window.removeEventListener('scroll', this.reposition, true);
+  }
+
+  // Elige el lado del panel (izq/der, arriba/abajo) según el espacio del viewport y aplica clases.
+  private positionPanel(): void {
+    const trigger = this.renderRoot.querySelector('.trigger') as HTMLElement | null;
+    const panel = this.renderRoot.querySelector('.panel') as HTMLElement | null;
+    if (!trigger || !panel) return;
+    const { end, above } = computeAnchor(trigger, panel);
+    panel.classList.toggle('end', end);
+    panel.classList.toggle('above', above);
+  }
+
+  protected updated(): void {
+    // Tras pintar el panel (cuando open=true), lo posicionamos en el siguiente frame.
+    if (this.open) requestAnimationFrame(() => this.positionPanel());
   }
 
   private toggle(): void {

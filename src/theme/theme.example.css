@@ -49,11 +49,17 @@
  */
 .ok-overlay {
   --width: auto;
-  --max-width: var(--ok-overlay-max, 320px);
-  --max-height: 70vh;
+  --max-width: var(--ok-overlay-max, 380px);
+  /* También aplica a ion-modal / ion-select interface="modal" en ESCRITORIO:
+   * tamaño auto y acotado (menú web), no el modal a pantalla completa de Ionic. */
+  --height: auto;
+  --max-height: 80vh;
+  --border-radius: 14px;
 }
 @media (max-width: 768px) {
   .ok-overlay {
+    /* En MÓVIL se deja al comportamiento nativo de Ionic (ancho completo). */
+    --width: 100%;
     --max-width: 100%;
     --max-height: 80vh;
   }

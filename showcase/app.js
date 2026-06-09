@@ -16,20 +16,21 @@ const GITHUB_URL = 'https://github.com/ERPlora/outfitkit';
 const BY_ID = new Map(COMPONENTS.map((c) => [c.id, c]));
 
 // ── Paletas de tema ──────────────────────────────────────────────────────────
-// `erplora` = la paleta REAL del sitio ERPlora UX (terracota), con sus colores de
-// estado y superficies cálidas claro/oscuro. El resto solo cambian el primario.
+// `erplora` = la paleta REAL de erplora.com (azul corporativo, neutros gris; primario distinto en
+// oscuro). El resto solo cambian el primario. `light`/`dark` definen superficies; `dark.primary`
+// (opcional) sobreescribe el primario en modo oscuro.
 const THEMES = {
   erplora: {
-    label: 'ERPlora (terracota)', primary: '#E8552A', contrast: '#ffffff',
-    shade: '#B83A12', tint: '#FF7A4D',
-    success: '#4F9D6E', warning: '#D8A23A', danger: '#D8553F',
-    light: { bg: '#FAF8F4', surface: '#ffffff', text: '#1A1612' },
-    dark: { bg: '#0B0A09', surface: '#1A1815', text: '#F5F1EA' },
+    label: 'ERPlora', primary: '#1496d6', contrast: '#ffffff',
+    shade: '#1284bc', tint: '#2ca1da',
+    light: { bg: '#fafafa', surface: '#ffffff', text: '#18181b' },
+    dark: { bg: '#09090b', surface: '#18181b', text: '#fafafa',
+            primary: '#2aa6e4', shade: '#2592c9', tint: '#3fafe7' },
   },
   indigo: { label: 'Índigo', primary: '#5b5bd6' },
   ocean: { label: 'Océano', primary: '#0c8ce9' },
   forest: { label: 'Bosque', primary: '#1f9d55' },
-  sunset: { label: 'Atardecer', primary: '#e8590c' },
+  sunset: { label: 'Terracota', primary: '#e8590c' },
 };
 const VIEWPORTS = {
   desktop: { label: 'Desktop', icon: 'desktop-outline', width: '100%' },
@@ -73,17 +74,21 @@ const SURFACE_VARS = [
 function applyTheme() {
   const t = THEMES[state.theme] || THEMES.erplora;
   const root = document.documentElement.style;
-  root.setProperty('--ion-color-primary', t.primary);
-  root.setProperty('--ion-color-primary-rgb', hexToRgb(t.primary));
+  const surf = state.dark ? t.dark : t.light;
+  // Primario del tema, sobreescrito por el del modo (p.ej. dark.primary de ERPlora) si existe.
+  const primary = (surf && surf.primary) || t.primary;
+  root.setProperty('--ion-color-primary', primary);
+  root.setProperty('--ion-color-primary-rgb', hexToRgb(primary));
   root.setProperty('--ion-color-primary-contrast', t.contrast || '#ffffff');
   root.setProperty('--ion-color-primary-contrast-rgb', '255, 255, 255');
-  root.setProperty('--ion-color-primary-shade', t.shade || t.primary);
-  root.setProperty('--ion-color-primary-tint', t.tint || t.primary);
-  setColor(root, 'success', t.success);
-  setColor(root, 'warning', t.warning);
-  setColor(root, 'danger', t.danger);
-  // Superficies cálidas según modo (si el tema las define); si no, se usa la paleta de Ionic.
-  const surf = state.dark ? t.dark : t.light;
+  root.setProperty('--ion-color-primary-shade', (surf && surf.shade) || t.shade || primary);
+  root.setProperty('--ion-color-primary-tint', (surf && surf.tint) || t.tint || primary);
+  // Colores de estado: si el tema no los define, se limpian (se usan los de Ionic).
+  ['success', 'warning', 'danger'].forEach((name) => {
+    if (t[name]) { setColor(root, name, t[name]); }
+    else { root.removeProperty(`--ion-color-${name}`); root.removeProperty(`--ion-color-${name}-rgb`); }
+  });
+  // Superficies según modo (si el tema las define); si no, se usa la paleta de Ionic.
   if (surf) {
     root.setProperty('--ion-background-color', surf.bg);
     root.setProperty('--ion-background-color-rgb', hexToRgb(surf.bg));

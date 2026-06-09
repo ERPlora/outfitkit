@@ -37,8 +37,8 @@ export interface DataTableColumn {
   /** (server) La columna es filtrable: añade un control en la fila de filtros. */
   filterable?: boolean;
   /** (server) Tipo de control de filtro. Por defecto 'text'. */
-  filterType?: 'text' | 'select' | 'number' | 'date' | 'range' | 'daterange';
-  /** (server) Opciones para `filterType: 'select'`. */
+  filterType?: 'text' | 'select' | 'multiselect' | 'number' | 'date' | 'range' | 'daterange';
+  /** (server) Opciones para `filterType: 'select'` / `'multiselect'`. */
   options?: { value: string; label: string }[];
   /** Render de celda a medida (devuelve un TemplateResult de Lit, p.ej. un `ok-toggle` o un chip).
    *  Tiene prioridad sobre `format`/valor crudo. El módulo lo crea con su `html` (lit deduplicado). */
@@ -157,7 +157,8 @@ export class OkDataTable extends LitElement {
     /* Buscador (caja con icono + limpiar), look del Hub */
     .search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
     ion-searchbar { --background: var(--background); --border-radius: 10px; --box-shadow: none; padding: 0; min-height: 36px; }
-    ion-searchbar::part(native) { border: 1px solid var(--border-color); }
+    /* Flat: campo de búsqueda sin borde ni elevación (directiva 2026-06-09). */
+    ion-searchbar::part(native) { border: none; }
 
     /* Toggle de vista lista/tarjetas (segmento) */
     .viewseg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--background); }
@@ -707,12 +708,20 @@ export class OkDataTable extends LitElement {
     this.clientFilters = next;
     this.clientPage = 0;
   }
-  private onInlineSelect(col: DataTableColumn, value: string): void {
+  // ion-select (select/multiselect) del panel de filtros (renderFilterControl). En servidor emite
+  // `filterChange`; en cliente escribe `clientFilters` (multiselect ⇒ filtra por inclusión).
+  private onFilterSelect(col: DataTableColumn, value: unknown, multi: boolean): void {
     if (this.serverSide) {
-      this.emit('filterChange', { col: col.key, value });
+      this.emit('filterChange', { col: col.key, value: value ?? (multi ? [] : '') });
       return;
     }
-    this.setClientFilter(col.key, { values: value ? new Set([value]) : undefined });
+    if (multi) {
+      const arr = Array.isArray(value) ? value.map((v) => String(v)) : value != null && value !== '' ? [String(value)] : [];
+      this.setClientFilter(col.key, { values: arr.length ? new Set(arr) : undefined });
+    } else {
+      const v = String(value ?? '');
+      this.setClientFilter(col.key, { values: v ? new Set([v]) : undefined });
+    }
   }
   private onInlineRange(col: DataTableColumn, edge: 'from' | 'to', ev: Event): void {
     const v = (ev.target as HTMLInputElement).value ?? '';
@@ -739,18 +748,21 @@ export class OkDataTable extends LitElement {
   private renderFilterControl(col: DataTableColumn): unknown {
     if (!col.filterable) return nothing;
     const type = col.filterType ?? 'text';
-    if (type === 'select') {
+    if (type === 'select' || type === 'multiselect') {
+      const multi = type === 'multiselect';
+      const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
       return html`
         <ion-select
           label=${col.header}
           label-placement="stacked"
-          interface="popover"
-          placeholder="—"
-          @ionChange=${(e: CustomEvent) =>
-            this.emit('filterChange', { col: col.key, value: (e.detail as { value: unknown }).value ?? '' })}
+          ?multiple=${multi}
+          interface="modal"
+          .interfaceOptions=${{ cssClass: 'ok-overlay' }}
+          placeholder=${col.header}
+          @ionChange=${(e: CustomEvent) => this.onFilterSelect(col, (e.detail as { value: unknown }).value, multi)}
         >
-          <ion-select-option value="">—</ion-select-option>
-          ${(col.options ?? []).map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
+          ${multi ? nothing : html`<ion-select-option value="">${col.header}</ion-select-option>`}
+          ${opts.map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
         </ion-select>
       `;
     }
@@ -788,7 +800,7 @@ export class OkDataTable extends LitElement {
   private renderInlineFilters(): unknown {
     const cols = this.filterColumns.filter((c) => {
       const t = c.filterType ?? 'text';
-      return t === 'select' || t === 'date' || t === 'daterange';
+      return t === 'select' || t === 'multiselect' || t === 'date' || t === 'daterange';
     });
     if (!cols.length) return nothing;
     return html`${cols.map((c) => this.renderInlineFilter(c))}`;
@@ -796,19 +808,26 @@ export class OkDataTable extends LitElement {
   private renderInlineFilter(col: DataTableColumn): unknown {
     const type = col.filterType ?? 'text';
     const f = this.clientFilters[col.key];
-    if (type === 'select') {
+    if (type === 'select' || type === 'multiselect') {
+      const multi = type === 'multiselect';
       const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
-      const current = f?.values && f.values.size ? [...f.values][0] : '';
+      const current = multi
+        ? [...(f?.values ?? new Set<string>())]
+        : f?.values && f.values.size
+          ? [...f.values][0]
+          : '';
       return html`
         <ion-select
           class="tk-filter"
-          interface="popover"
+          ?multiple=${multi}
+          interface="modal"
+          .interfaceOptions=${{ cssClass: 'ok-overlay' }}
           aria-label=${col.header}
           placeholder=${col.header}
           .value=${current}
-          @ionChange=${(e: CustomEvent) => this.onInlineSelect(col, String((e.detail as { value: unknown }).value ?? ''))}
+          @ionChange=${(e: CustomEvent) => this.onFilterSelect(col, (e.detail as { value: unknown }).value, multi)}
         >
-          <ion-select-option value="">${col.header}</ion-select-option>
+          ${multi ? nothing : html`<ion-select-option value="">${col.header}</ion-select-option>`}
           ${opts.map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
         </ion-select>
       `;
