@@ -32,6 +32,13 @@ export class OkNavbar extends LitElement {
       font-family: var(--font);
     }
     :host([sticky]) { position: sticky; top: 0; z-index: 50; }
+    /* Navbar de cristal (tendencia 2026): fondo translúcido + desenfoque. Úsalo con sticky. */
+    :host([glass]) {
+      background: color-mix(in oklab, var(--background) 72%, transparent);
+      -webkit-backdrop-filter: blur(14px) saturate(1.4);
+      backdrop-filter: blur(14px) saturate(1.4);
+      border-bottom-color: color-mix(in oklab, var(--color) 9%, transparent);
+    }
     .bar {
       position: relative;
       max-width: var(--max-width);
@@ -130,6 +137,8 @@ export class OkNavbar extends LitElement {
 
   /** Fija la navbar arriba al hacer scroll. */
   @property({ type: Boolean, reflect: true }) sticky = false;
+  /** Fondo de cristal (translúcido + desenfoque). Combínalo con `sticky`. */
+  @property({ type: Boolean, reflect: true }) glass = false;
   /** Estado del panel offcanvas móvil (reflejado para el selector :host([open])). */
   @property({ type: Boolean, reflect: true }) open = false;
 

@@ -75,6 +75,17 @@ export default defineConfig({
         'ok-qty-stepper': resolve(__dirname, 'src/components/ok-qty-stepper/ok-qty-stepper.ts'),
         'ok-command-palette': resolve(__dirname, 'src/components/ok-command-palette/ok-command-palette.ts'),
         'ok-color-picker': resolve(__dirname, 'src/components/ok-color-picker/ok-color-picker.ts'),
+        // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
+        'ok-section': resolve(__dirname, 'src/components/ok-section/ok-section.ts'),
+        'ok-bento': resolve(__dirname, 'src/components/ok-bento/ok-bento.ts'),
+        'ok-bento-item': resolve(__dirname, 'src/components/ok-bento-item/ok-bento-item.ts'),
+        'ok-reveal': resolve(__dirname, 'src/components/ok-reveal/ok-reveal.ts'),
+        'ok-feature-card': resolve(__dirname, 'src/components/ok-feature-card/ok-feature-card.ts'),
+        'ok-pricing-card': resolve(__dirname, 'src/components/ok-pricing-card/ok-pricing-card.ts'),
+        'ok-product-card': resolve(__dirname, 'src/components/ok-product-card/ok-product-card.ts'),
+        'ok-logo-cloud': resolve(__dirname, 'src/components/ok-logo-cloud/ok-logo-cloud.ts'),
+        'ok-testimonial': resolve(__dirname, 'src/components/ok-testimonial/ok-testimonial.ts'),
+        'ok-cta-band': resolve(__dirname, 'src/components/ok-cta-band/ok-cta-band.ts'),
         // Chrome web / marketing (Ionic no cubre la web pública)
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),

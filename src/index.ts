@@ -71,6 +71,18 @@ export type { OkCommand } from './components/ok-command-palette/ok-command-palet
 export { OkColorPicker } from './components/ok-color-picker/ok-color-picker.js';
 export type { OkRgb } from './components/ok-color-picker/ok-color-picker.js';
 
+// ── Marketing 2026 (bento · cards · scroll-reveal · prueba social) ───────────────────────────
+export { OkSection } from './components/ok-section/ok-section.js';
+export { OkBento } from './components/ok-bento/ok-bento.js';
+export { OkBentoItem } from './components/ok-bento-item/ok-bento-item.js';
+export { OkReveal } from './components/ok-reveal/ok-reveal.js';
+export { OkFeatureCard } from './components/ok-feature-card/ok-feature-card.js';
+export { OkPricingCard } from './components/ok-pricing-card/ok-pricing-card.js';
+export { OkProductCard } from './components/ok-product-card/ok-product-card.js';
+export { OkLogoCloud } from './components/ok-logo-cloud/ok-logo-cloud.js';
+export { OkTestimonial } from './components/ok-testimonial/ok-testimonial.js';
+export { OkCtaBand } from './components/ok-cta-band/ok-cta-band.js';
+
 // ── Chrome web / marketing ──────────────────────────────────────────────────────────────────
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';
 export { OkFooter } from './components/ok-footer/ok-footer.js';

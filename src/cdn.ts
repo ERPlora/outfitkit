@@ -44,6 +44,17 @@ import './components/ok-timeline/ok-timeline.js';
 import './components/ok-qty-stepper/ok-qty-stepper.js';
 import './components/ok-command-palette/ok-command-palette.js';
 import './components/ok-color-picker/ok-color-picker.js';
+// Marketing 2026 (bento · cards · scroll-reveal · prueba social)
+import './components/ok-section/ok-section.js';
+import './components/ok-bento/ok-bento.js';
+import './components/ok-bento-item/ok-bento-item.js';
+import './components/ok-reveal/ok-reveal.js';
+import './components/ok-feature-card/ok-feature-card.js';
+import './components/ok-pricing-card/ok-pricing-card.js';
+import './components/ok-product-card/ok-product-card.js';
+import './components/ok-logo-cloud/ok-logo-cloud.js';
+import './components/ok-testimonial/ok-testimonial.js';
+import './components/ok-cta-band/ok-cta-band.js';
 // Chrome web / marketing
 import './components/ok-navbar/ok-navbar.js';
 import './components/ok-footer/ok-footer.js';

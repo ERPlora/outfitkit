@@ -19,6 +19,7 @@ export class OkReveal extends LitElement {
       width: 100%;
     }
     .r {
+      height: 100%;
       opacity: 0;
       transform: translateY(18px);
       transition:

@@ -78,6 +78,14 @@ export class OkBentoItem extends LitElement {
       background: color-mix(in oklab, var(--accent) 14%, transparent);
       font-size: 1.25rem;
     }
+    /* Glifo via máscara CSS sobre la SVG del API de Iconify (funciona en Shadow DOM). */
+    .glyph {
+      width: 1.35rem;
+      height: 1.35rem;
+      background-color: currentColor;
+      -webkit-mask: var(--u) center / contain no-repeat;
+      mask: var(--u) center / contain no-repeat;
+    }
     .eyebrow {
       font-size: 0.7rem;
       font-weight: 600;
@@ -119,9 +127,17 @@ export class OkBentoItem extends LitElement {
     this.style.setProperty('--rows', String(this.rows));
   }
 
+  /** "lucide:box" → "https://api.iconify.design/lucide/box.svg". */
+  private iconUrl(name: string): string {
+    const i = name.indexOf(':');
+    const prefix = i === -1 ? 'lucide' : name.slice(0, i);
+    const icon = i === -1 ? name : name.slice(i + 1);
+    return `https://api.iconify.design/${prefix}/${icon}.svg`;
+  }
+
   private body(): unknown {
     return html`
-      ${this.icon ? html`<span class="ico"><iconify-icon icon=${this.icon}></iconify-icon></span>` : null}
+      ${this.icon ? html`<span class="ico"><i class="glyph" style="--u:url('${this.iconUrl(this.icon)}')"></i></span>` : null}
       ${this.eyebrow ? html`<span class="eyebrow">${this.eyebrow}</span>` : null}
       ${this.heading ? html`<h3 class="title">${this.heading}</h3>` : null}
       <slot></slot>
