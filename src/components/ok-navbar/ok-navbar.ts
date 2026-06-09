@@ -11,6 +11,17 @@ import { define } from '../../base/define.js';
 //   • slot (default) → enlaces de navegación (en línea en desktop; dentro del offcanvas en móvil)
 //   • slot="actions" → CTAs (login, "Empezar"); visibles siempre en la barra
 // Contenido por slot (light DOM) → SEO crawlable. Atributos: `sticky`, `open`.
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkNavbarLabels {
+  /** aria-label del botón hamburguesa (abre/cierra el menú). */
+  menu: string;
+}
+
+const DEFAULT_LABELS: OkNavbarLabels = {
+  menu: 'Menu',
+};
+
 export class OkNavbar extends LitElement {
   static styles = css`
     :host {
@@ -163,6 +174,12 @@ export class OkNavbar extends LitElement {
   @property({ type: Boolean, reflect: true }) glass = false;
   /** Estado del panel offcanvas móvil (reflejado para el selector :host([open])). */
   @property({ type: Boolean, reflect: true }) open = false;
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkNavbarLabels> = {};
+
+  private get t(): OkNavbarLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -198,7 +215,7 @@ export class OkNavbar extends LitElement {
         </div>
         <button
           class="burger"
-          aria-label="Menú"
+          aria-label=${this.t.menu}
           aria-controls="ok-nav-links"
           aria-expanded=${this.open ? 'true' : 'false'}
           @click=${this.toggle}

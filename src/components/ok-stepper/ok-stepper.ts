@@ -10,6 +10,16 @@ export interface OkStep {
   description?: string;
 }
 
+// Textos humanos del stepper (i18n). Default INGLÉS; el consumidor sobreescribe vía `labels`.
+export interface OkStepperLabels {
+  /** Resumen compacto (móvil); `{n}` = paso actual (1-based), `{total}` = total de pasos. */
+  stepCount: string;
+}
+
+const DEFAULT_LABELS: OkStepperLabels = {
+  stepCount: 'Step {n} of {total}',
+};
+
 // ok-stepper — indicador de pasos (no envuelve un ion-* contenedor: es CSS propio autocontenido).
 // Muestra círculos numerados conectados por una línea. En desktop es horizontal; en móvil colapsa a
 // "Paso X de N · label". Estados por índice respecto a `current`:
@@ -224,6 +234,13 @@ export class OkStepper extends LitElement {
   @property({ attribute: false }) steps: OkStep[] = [];
   /** Índice (0-based) del paso activo. */
   @property({ type: Number }) current = 0;
+  /** Textos humanos sobreescribibles (i18n). Default INGLÉS. */
+  @property({ attribute: false }) labels: Partial<OkStepperLabels> = {};
+
+  /** Textos efectivos: defaults INGLÉS mezclados con los del consumidor. */
+  private get t(): OkStepperLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   /** Emite ok-step-select al pulsar un paso. */
   private _select(index: number): void {
@@ -281,7 +298,11 @@ export class OkStepper extends LitElement {
       <div class="compact">
         <span class="circle">${this.current + 1}</span>
         <span class="compact-text">
-          <span class="compact-count">Paso ${this.current + 1} de ${total}</span>
+          <span class="compact-count"
+            >${this.t.stepCount
+              .replace('{n}', String(this.current + 1))
+              .replace('{total}', String(total))}</span
+          >
           <span class="compact-label">${cur ? cur.label : ''}</span>
         </span>
       </div>

@@ -75,6 +75,118 @@ export interface DataTablePrimaryAction {
 /** Clave estable de fila: nombre de campo o función que la devuelve. */
 export type DataTableRowKey = string | ((row: Record<string, unknown>) => string);
 
+/** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n. Default en INGLÉS.
+ *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al default inglés.
+ *  El contenido data-driven (columns/rows/options) NO va aquí — ya es externo. */
+export interface OkDataTableLabels {
+  /** Placeholder del buscador. */
+  search: string;
+  /** Estado vacío / "sin resultados". */
+  empty: string;
+  /** Título del botón/panel de filtros + aria del drawer de filtros. */
+  filters: string;
+  /** Botón "Limpiar" (selección y filtros). */
+  clear: string;
+  /** Botón "Aplicar" (filtros). */
+  apply: string;
+  /** Barra de selección: "{n} seleccionados" ({n} = nº filas). */
+  selected: string;
+  /** Botón "Importar CSV". */
+  importCsv: string;
+  /** Botón "Exportar CSV". */
+  exportCsv: string;
+  /** Botón "Añadir" (alta). */
+  add: string;
+  /** Aria del botón de menú overflow (⋮). */
+  moreActions: string;
+  /** Aria del selector de "filas por página". */
+  rowsPerPage: string;
+  /** Sufijo del selector compacto de tamaño de página (p.ej. "10 / pág."). */
+  perPageShort: string;
+  /** Aria del botón de vista lista. */
+  viewList: string;
+  /** Aria del botón de vista tarjetas. */
+  viewCards: string;
+  /** Aria del selector de columnas. */
+  columnsVisible: string;
+  /** Texto resumido del selector de columnas. */
+  columns: string;
+  /** Cabecera de la columna de acciones de fila. */
+  actions: string;
+  /** Aria del botón "Cerrar" (drawer). */
+  close: string;
+  /** Título del drawer de alta. */
+  newRecord: string;
+  /** Aria del drawer del formulario de alta/edición. */
+  form: string;
+  /** Placeholder del input de filtro de texto. */
+  filterPlaceholder: string;
+  /** Etiqueta/placeholder "Desde" (rango de fechas). */
+  from: string;
+  /** Etiqueta/placeholder "Hasta" (rango de fechas). */
+  to: string;
+  /** Sufijo aria "{label} desde" (rango de fechas en línea); {label} = cabecera de columna. */
+  fromOf: string;
+  /** Sufijo aria "{label} hasta" (rango de fechas en línea); {label} = cabecera de columna. */
+  toOf: string;
+  /** Placeholder "≥" (rango numérico, borde inferior). */
+  gte: string;
+  /** Placeholder "≤" (rango numérico, borde superior). */
+  lte: string;
+  /** Texto cuando una columna no tiene valores distintos (chips de filtro). */
+  noValues: string;
+  /** Aria "Seleccionar todo" (checkbox de cabecera). */
+  selectAll: string;
+  /** Aria "Seleccionar fila" (checkbox de fila, vista lista). */
+  selectRow: string;
+  /** Aria "Seleccionar" (checkbox de tarjeta). */
+  select: string;
+  /** Pager: "Mostrando {from}–{to} de" ({from}/{to} ya interpolados por el componente). */
+  showing: string;
+  /** Pager: singular "registro" (cuando count === 1). */
+  recordSingular: string;
+  /** Pager: plural "registros" (cuando count !== 1). */
+  recordPlural: string;
+}
+
+/** Defaults en INGLÉS. Variables con token `{n}`/`{label}`/`{from}`/`{to}`. */
+const DEFAULT_LABELS: OkDataTableLabels = {
+  search: 'Search…',
+  empty: 'No results',
+  filters: 'Filters',
+  clear: 'Clear',
+  apply: 'Apply',
+  selected: '{n} selected',
+  importCsv: 'Import CSV',
+  exportCsv: 'Export CSV',
+  add: 'Add',
+  moreActions: 'More actions',
+  rowsPerPage: 'Rows per page',
+  perPageShort: '{n} / page',
+  viewList: 'View as list',
+  viewCards: 'View as cards',
+  columnsVisible: 'Visible columns',
+  columns: 'Columns',
+  actions: 'Actions',
+  close: 'Close',
+  newRecord: 'New',
+  form: 'Form',
+  filterPlaceholder: 'Filter…',
+  from: 'From',
+  to: 'To',
+  fromOf: '{label} from',
+  toOf: '{label} to',
+  gte: '≥',
+  lte: '≤',
+  noValues: 'No values',
+  selectAll: 'Select all',
+  selectRow: 'Select row',
+  select: 'Select',
+  showing: 'Showing {from}–{to} of',
+  recordSingular: 'record',
+  recordPlural: 'records',
+};
+
 export class OkDataTable extends LitElement {
   static styles = css`
     :host {
@@ -286,10 +398,13 @@ export class OkDataTable extends LitElement {
   @property({ attribute: false }) rowKey?: DataTableRowKey;
   /** Filas por página. */
   @property({ type: Number, attribute: 'page-size' }) pageSize = 10;
-  /** Mensaje cuando no hay filas. */
-  @property({ attribute: 'empty-message' }) emptyMessage = 'Sin resultados';
-  /** Placeholder del buscador. */
-  @property({ attribute: 'search-placeholder' }) searchPlaceholder = 'Buscar…';
+  /** Mensaje cuando no hay filas. Si no se pasa, deriva de `this.t.empty` (inglés por defecto). */
+  @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  /** Placeholder del buscador. Si no se pasa, deriva de `this.t.search` (inglés por defecto). */
+  @property({ attribute: 'search-placeholder' }) searchPlaceholder?: string;
+  /** (NUEVO, additivo) Textos humanos del data-table para i18n (parcial). Lo no pasado cae al
+   *  default inglés (`DEFAULT_LABELS`). No afecta a columns/rows/options (ya externos). */
+  @property({ attribute: false }) labels: Partial<OkDataTableLabels> = {};
   /** Acciones por fila (botones). */
   @property({ attribute: false }) actions: DataTableAction[] = [];
   /** Muestra el botón "+" que despliega un acordeón con el slot `create` (formulario de alta). */
@@ -384,6 +499,19 @@ export class OkDataTable extends LitElement {
   // no resuelve dentro de Shadow DOM → se ancla con `.event`).
   @state() private menuOpen = false;
   private menuEv?: Event;
+
+  // ── i18n: textos efectivos (default inglés ← overrides de `.labels`) ──────────────────────
+  private get t(): OkDataTableLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+  /** Placeholder efectivo del buscador (prop explícita → label i18n → default inglés). */
+  private get effSearchPlaceholder(): string {
+    return this.searchPlaceholder ?? this.t.search;
+  }
+  /** Mensaje efectivo de estado vacío (prop explícita → label i18n → default inglés). */
+  private get effEmptyMessage(): string {
+    return this.emptyMessage ?? this.t.empty;
+  }
 
   // ── Resolución de alias (compat + documentados) ──────────────────────────────────────────
   private get effPageSizes(): number[] {
@@ -794,9 +922,9 @@ export class OkDataTable extends LitElement {
         <div class="fblock">
           <span class="flabel">${col.header}</span>
           <div class="frange">
-            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? 'Desde' : '≥'}
+            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? this.t.from : this.t.gte}
               @ionInput=${(e: Event) => onEdge(col, 'from', e)}></ion-input>
-            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? 'Hasta' : '≤'}
+            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? this.t.to : this.t.lte}
               @ionInput=${(e: Event) => onEdge(col, 'to', e)}></ion-input>
           </div>
         </div>
@@ -809,7 +937,7 @@ export class OkDataTable extends LitElement {
         fill="outline"
         label=${col.header}
         label-placement="stacked"
-        placeholder="Filtrar…"
+        placeholder=${this.t.filterPlaceholder}
         @ionInput=${(e: Event) => this.onFilterInput(col, e)}
       ></ion-input>
     `;
@@ -857,9 +985,9 @@ export class OkDataTable extends LitElement {
     return html`
       <span class="tk-daterange" role="group" aria-label=${col.header}>
         <ion-icon name="calendar-outline"></ion-icon>
-        <ion-input type="date" aria-label=${`${col.header} desde`} .value=${f?.from ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'from', e)}></ion-input>
+        <ion-input type="date" aria-label=${this.t.fromOf.replace('{label}', col.header)} .value=${f?.from ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'from', e)}></ion-input>
         <span class="arr">→</span>
-        <ion-input type="date" aria-label=${`${col.header} hasta`} .value=${f?.to ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'to', e)}></ion-input>
+        <ion-input type="date" aria-label=${this.t.toOf.replace('{label}', col.header)} .value=${f?.to ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'to', e)}></ion-input>
       </span>
     `;
   }
@@ -868,7 +996,7 @@ export class OkDataTable extends LitElement {
   private renderOverflowMenu(): unknown {
     if (!this.menuActions.length) return nothing;
     return html`
-      <ion-button class="toolbtn" fill="clear" aria-label="Más acciones" @click=${(e: Event) => this.openMenu(e)}>
+      <ion-button class="toolbtn" fill="clear" aria-label=${this.t.moreActions} @click=${(e: Event) => this.openMenu(e)}>
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
       <ion-popover
@@ -984,8 +1112,8 @@ export class OkDataTable extends LitElement {
     };
 
     const searchbar = this.serverSide
-      ? html`<ion-searchbar class="ion-no-border" placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
-      : html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.searchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
+      ? html`<ion-searchbar class="ion-no-border" placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
+      : html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
 
     const selCount = this.selection.size;
     const showTopbar =
@@ -1010,7 +1138,7 @@ export class OkDataTable extends LitElement {
                           <ion-select
                             class="tk-psize"
                             interface="popover"
-                            aria-label="Filas por página"
+                            aria-label=${this.t.rowsPerPage}
                             .value=${ps}
                             @ionChange=${(e: CustomEvent) => setPageSize(Number((e.detail as { value: unknown }).value))}
                           >
@@ -1021,8 +1149,8 @@ export class OkDataTable extends LitElement {
                     ${this.viewToggle
                       ? html`
                           <span class="viewseg">
-                            ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), 'Ver como lista')}
-                            ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), 'Ver como tarjetas')}
+                            ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), this.t.viewList)}
+                            ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), this.t.viewCards)}
                           </span>
                         `
                       : nothing}
@@ -1032,24 +1160,24 @@ export class OkDataTable extends LitElement {
                             class="tk-cols"
                             multiple
                             interface="popover"
-                            aria-label="Columnas visibles"
+                            aria-label=${this.t.columnsVisible}
                             .value=${this.visibleColumns.map((c) => c.key)}
-                            .selectedText=${'Columnas'}
+                            .selectedText=${this.t.columns}
                             @ionChange=${(e: CustomEvent) => this.setVisibleColumns((e.detail as { value: string[] }).value)}
                           >
                             ${this.columns.map((c) => html`<ion-select-option value=${c.key}>${c.header}</ion-select-option>`)}
                           </ion-select>
                         `
                       : nothing}
-                    ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), 'Filtros', this.serverSide ? undefined : this.activeFilterCount) : nothing}
+                    ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), this.t.filters, this.serverSide ? undefined : this.activeFilterCount) : nothing}
                     ${this.effImport
                       ? html`
-                          ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), 'Importar CSV')}
+                          ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), this.t.importCsv)}
                           <input class="tk-file" type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
                         `
                       : nothing}
-                    ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), 'Exportar CSV') : nothing}
-                    ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), 'Añadir') : nothing}
+                    ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), this.t.exportCsv) : nothing}
+                    ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), this.t.add) : nothing}
                     ${this.renderOverflowMenu()}
                     ${this.primaryAction
                       ? html`
@@ -1069,9 +1197,9 @@ export class OkDataTable extends LitElement {
                 ${this.selectable && selCount > 0
                   ? html`
                       <div class="selbar">
-                        <strong>${selCount} seleccionados</strong>
+                        <strong>${this.t.selected.replace('{n}', String(selCount))}</strong>
                         <button class="sel-clear" @click=${() => this.setSelection(new Set())}>
-                          <ion-icon name="close" style="font-size:14px"></ion-icon> Limpiar
+                          <ion-icon name="close" style="font-size:14px"></ion-icon> ${this.t.clear}
                         </button>
                       </div>
                     `
@@ -1088,14 +1216,16 @@ export class OkDataTable extends LitElement {
                 <div class="left">
                   <span>
                     ${pages > 1
-                      ? html`Mostrando ${current * ps + 1}–${Math.min((current + 1) * ps, count)} de `
+                      ? html`${this.t.showing
+                          .replace('{from}', String(current * ps + 1))
+                          .replace('{to}', String(Math.min((current + 1) * ps, count)))} `
                       : nothing}
-                    <span class="strong">${count}</span> ${count === 1 ? 'registro' : 'registros'}
+                    <span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}
                   </span>
                   ${!showTopbar && this.effPageSizes.length
                     ? html`
                         <select class="psize" @change=${(e: Event) => setPageSize(Number((e.target as HTMLSelectElement).value))}>
-                          ${this.effPageSizes.map((n) => html`<option value=${n} ?selected=${n === ps}>${n} / pág.</option>`)}
+                          ${this.effPageSizes.map((n) => html`<option value=${n} ?selected=${n === ps}>${this.t.perPageShort.replace('{n}', String(n))}</option>`)}
                         </select>
                       `
                     : nothing}
@@ -1131,10 +1261,10 @@ export class OkDataTable extends LitElement {
     const clientFilters = isFilters && !this.serverSide;
     return html`
       <div class="tk-scrim" @click=${() => this.close()}></div>
-      <aside class="drawer" role="dialog" aria-label=${isFilters ? 'Filtros' : 'Formulario'}>
+      <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.t.form}>
         <header class="dh">
-          <strong>${isFilters ? 'Filtros' : 'Nuevo'}</strong>
-          <ion-button fill="clear" size="small" aria-label="Cerrar" @click=${() => this.close()}><ion-icon slot="icon-only" name="close"></ion-icon></ion-button>
+          <strong>${isFilters ? this.t.filters : this.t.newRecord}</strong>
+          <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.close()}><ion-icon slot="icon-only" name="close"></ion-icon></ion-button>
         </header>
         <div class="db">
           ${isFilters
@@ -1146,8 +1276,8 @@ export class OkDataTable extends LitElement {
         ${clientFilters
           ? html`
               <footer class="df">
-                <button class="sel-clear df-clear" ?disabled=${Object.keys(this.filterDraft).length === 0} @click=${() => this.clearFilters()}>Limpiar</button>
-                <ion-button class="primary-btn" size="small" @click=${() => this.applyFilters()}>Aplicar</ion-button>
+                <button class="sel-clear df-clear" ?disabled=${Object.keys(this.filterDraft).length === 0} @click=${() => this.clearFilters()}>${this.t.clear}</button>
+                <ion-button class="primary-btn" size="small" @click=${() => this.applyFilters()}>${this.t.apply}</ion-button>
               </footer>
             `
           : nothing}
@@ -1164,8 +1294,8 @@ export class OkDataTable extends LitElement {
         <div class="fblock">
           <span class="flabel">${label}</span>
           <div class="daterange">
-            <ion-input type="date" label="Desde" label-placement="stacked" fill="outline" .value=${f.from ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'from', (e as CustomEvent).detail.value ?? '')}></ion-input>
-            <ion-input type="date" label="Hasta" label-placement="stacked" fill="outline" .value=${f.to ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'to', (e as CustomEvent).detail.value ?? '')}></ion-input>
+            <ion-input type="date" label=${this.t.from} label-placement="stacked" fill="outline" .value=${f.from ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'from', (e as CustomEvent).detail.value ?? '')}></ion-input>
+            <ion-input type="date" label=${this.t.to} label-placement="stacked" fill="outline" .value=${f.to ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'to', (e as CustomEvent).detail.value ?? '')}></ion-input>
           </div>
         </div>
       `;
@@ -1178,7 +1308,7 @@ export class OkDataTable extends LitElement {
         <span class="flabel">${label}</span>
         <div class="chips">
           ${distinct.length === 0
-            ? html`<span class="chip-empty">Sin valores</span>`
+            ? html`<span class="chip-empty">${this.t.noValues}</span>`
             : distinct.map((v) => {
                 const on = selected.has(v);
                 return html`
@@ -1196,7 +1326,7 @@ export class OkDataTable extends LitElement {
     return html`
       <div class="empty">
         <span class="empty-ic"><ion-icon name="file-tray-outline"></ion-icon></span>
-        <span>${this.emptyMessage}</span>
+        <span>${this.effEmptyMessage}</span>
       </div>
     `;
   }
@@ -1215,7 +1345,7 @@ export class OkDataTable extends LitElement {
           <!-- Cabecera -->
           <div class="grow ghead" role="row" style=${styleMap(tpl)}>
             ${this.selectable
-              ? html`<span class="selcb"><ion-checkbox .checked=${allOn} aria-label="Seleccionar todo" @ionChange=${() => this.toggleAll(visible)}></ion-checkbox></span>`
+              ? html`<span class="selcb"><ion-checkbox .checked=${allOn} aria-label=${this.t.selectAll} @ionChange=${() => this.toggleAll(visible)}></ion-checkbox></span>`
               : nothing}
             ${cols.map((c) => {
               const sortable = this.isSortable(c);
@@ -1236,7 +1366,7 @@ export class OkDataTable extends LitElement {
                 </div>
               `;
             })}
-            ${this.actions.length ? html`<div class="gcell gh right" role="columnheader">Acciones</div>` : nothing}
+            ${this.actions.length ? html`<div class="gcell gh right" role="columnheader">${this.t.actions}</div>` : nothing}
           </div>
 
           <!-- Filas -->
@@ -1249,7 +1379,7 @@ export class OkDataTable extends LitElement {
               return html`
                 <div class=${`grow grow-data${selected ? ' selected' : ''}`} role="row" style=${styleMap(tpl)}>
                   ${this.selectable
-                    ? html`<span class="selcb"><ion-checkbox .checked=${selected} aria-label="Seleccionar fila" @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
+                    ? html`<span class="selcb"><ion-checkbox .checked=${selected} aria-label=${this.t.selectRow} @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
                     : nothing}
                   ${cols.map(
                     (c) => html`<div class=${`gcell ${alignCls(c.align)}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
@@ -1286,7 +1416,7 @@ export class OkDataTable extends LitElement {
                           : nothing}
                         <span class="rc-title">${this.cardTitle ? this.cardTitle(row) : nothing}</span>
                         ${this.selectable
-                          ? html`<ion-checkbox .checked=${selected} aria-label="Seleccionar" @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
+                          ? html`<ion-checkbox .checked=${selected} aria-label=${this.t.select} @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
                           : nothing}
                       </header>
                     `

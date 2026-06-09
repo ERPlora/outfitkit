@@ -14,6 +14,29 @@ import { define } from '../../base/define.js';
 // Eventos (bubbles + composed):
 //   • `ok-change`  detail { files: File[] }   → lista actual de archivos válidos
 //   • `ok-error`   detail { message: string } → archivo rechazado (tipo o tamaño)
+
+// Textos i18n del componente (default inglés). Pásalos vía la prop `.labels`.
+export interface OkDropzoneLabels {
+  /** Texto principal de la zona. Usa {browse} como ancla del enlace "selecciónalos". */
+  title: string;
+  /** Texto del enlace (la palabra resaltada dentro de `title`). */
+  browse: string;
+  /** Error de tipo no admitido. Variable: {name}. */
+  errorType: string;
+  /** Error de tamaño excedido. Variables: {name}, {size}. */
+  errorSize: string;
+  /** aria-label del botón de quitar un archivo. Variable: {name}. */
+  removeLabel: string;
+}
+
+const DEFAULT_LABELS: OkDropzoneLabels = {
+  title: 'Drag & drop files here or {browse}',
+  browse: 'browse',
+  errorType: '“{name}” is not an accepted file type.',
+  errorSize: '“{name}” exceeds the maximum size ({size}).',
+  removeLabel: 'Remove {name}',
+};
+
 export class OkDropzone extends LitElement {
   static styles = css`
     :host {
@@ -179,6 +202,13 @@ export class OkDropzone extends LitElement {
   @property({ type: Number, attribute: 'max-size' }) maxSize?: number;
   /** Texto de ayuda mostrado bajo el icono. */
   @property() hint?: string;
+  /** Textos i18n (default inglés); pasa solo las claves que quieras sobreescribir. */
+  @property({ attribute: false }) labels: Partial<OkDropzoneLabels> = {};
+
+  // Textos efectivos: defaults inglés sobreescritos por los pasados desde fuera.
+  private get t(): OkDropzoneLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Archivos válidos acumulados.
   @state() private files: File[] = [];
@@ -250,12 +280,14 @@ export class OkDropzone extends LitElement {
     const next = this.multiple ? [...this.files] : [];
     for (const file of incoming) {
       if (!this.matchesAccept(file)) {
-        this.reportError(`«${file.name}» no es un tipo de archivo admitido.`);
+        this.reportError(this.t.errorType.replace('{name}', file.name));
         continue;
       }
       if (this.maxSize != null && file.size > this.maxSize) {
         this.reportError(
-          `«${file.name}» supera el tamaño máximo (${this.formatSize(this.maxSize)}).`,
+          this.t.errorSize
+            .replace('{name}', file.name)
+            .replace('{size}', this.formatSize(this.maxSize)),
         );
         continue;
       }
@@ -303,6 +335,8 @@ export class OkDropzone extends LitElement {
   }
 
   render(): unknown {
+    // El título lleva el enlace "browse" embebido vía marcador {browse}: lo partimos.
+    const [titleBefore, titleAfter = ''] = this.t.title.split('{browse}');
     return html`
       <div
         class=${`zone ${this.dragging ? 'dragging' : ''}`.trim()}
@@ -321,7 +355,7 @@ export class OkDropzone extends LitElement {
       >
         <ion-icon class="big-icon" name="cloud-upload-outline"></ion-icon>
         <span class="title">
-          Arrastra archivos aquí o <span class="link">selecciónalos</span>
+          ${titleBefore}<span class="link">${this.t.browse}</span>${titleAfter}
         </span>
         ${this.hint ? html`<span class="hint">${this.hint}</span>` : ''}
       </div>
@@ -347,7 +381,7 @@ export class OkDropzone extends LitElement {
                 <button
                   type="button"
                   class="remove"
-                  aria-label=${`Quitar ${file.name}`}
+                  aria-label=${this.t.removeLabel.replace('{name}', file.name)}
                   @click=${(e: Event) => {
                     e.stopPropagation();
                     this.removeAt(i);

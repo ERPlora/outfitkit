@@ -15,6 +15,17 @@ import { define } from '../../base/define.js';
 //
 // `value` = código del idioma activo. Si no se pasa, se autoselecciona el idioma del
 // NAVEGADOR (navigator.language) cuando coincide con uno de los enlaces; si no, el primero.
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkLanguageSelectLabels {
+  /** aria-label del trigger que abre el desplegable de idiomas. */
+  language: string;
+}
+
+const DEFAULT_LABELS: OkLanguageSelectLabels = {
+  language: 'Language',
+};
+
 export class OkLanguageSelect extends LitElement {
   static styles = css`
     :host {
@@ -97,6 +108,12 @@ export class OkLanguageSelect extends LitElement {
   @property() value = '';
   /** Estado del desplegable (reflejado para :host([open])). */
   @property({ type: Boolean, reflect: true }) open = false;
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkLanguageSelectLabels> = {};
+
+  private get t(): OkLanguageSelectLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   @state() private currentLabel = '';
 
@@ -153,6 +170,7 @@ export class OkLanguageSelect extends LitElement {
       <button
         class="trigger"
         type="button"
+        aria-label=${this.t.language}
         aria-haspopup="listbox"
         aria-expanded=${this.open ? 'true' : 'false'}
         @click=${this.toggle}

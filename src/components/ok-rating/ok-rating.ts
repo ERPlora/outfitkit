@@ -12,6 +12,17 @@ import { define } from '../../base/define.js';
 //   • prop `allow-half`  → permite medias estrellas
 // Eventos (bubbles + composed):
 //   • `ok-change`  detail { value }
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkRatingLabels {
+  /** aria-label de cada estrella / del grupo. Recibe el valor y el máximo. */
+  starLabel: (value: number, max: number) => string;
+}
+
+const DEFAULT_LABELS: OkRatingLabels = {
+  starLabel: (value, max) => `${value} of ${max}`,
+};
+
 export class OkRating extends LitElement {
   static styles = css`
     :host {
@@ -95,6 +106,13 @@ export class OkRating extends LitElement {
   @property({ type: Boolean, reflect: true }) readonly = false;
   /** Permite seleccionar medias estrellas. */
   @property({ type: Boolean, attribute: 'allow-half' }) allowHalf = false;
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkRatingLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkRatingLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Valor previsualizado por hover (null = sin hover, se muestra `value`).
   @state() private hoverValue: number | null = null;
@@ -161,7 +179,7 @@ export class OkRating extends LitElement {
     return html`<button
       type="button"
       class=${`star ${filled ? 'filled' : ''} ${this.readonly ? 'readonly' : ''}`}
-      aria-label=${`${index} de ${this.max}`}
+      aria-label=${this.t.starLabel(index, this.max)}
       ?disabled=${this.readonly}
       @mouseenter=${() => this.onEnter(index)}
       @click=${() => this.setValue(index)}
@@ -174,7 +192,7 @@ export class OkRating extends LitElement {
     const stars = Array.from({ length: Math.max(0, this.max) }, (_, i) => i + 1);
     return html`<span
       role="img"
-      aria-label=${`${this.value} de ${this.max}`}
+      aria-label=${this.t.starLabel(this.value, this.max)}
       @mouseleave=${() => this.onLeave()}
     >
       ${stars.map((i) => (this.allowHalf ? this.renderHalfStar(i) : this.renderFullStar(i)))}

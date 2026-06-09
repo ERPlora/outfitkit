@@ -20,6 +20,23 @@ import { define } from '../../base/define.js';
 // Eventos (bubbles + composed):
 //   • `ok-change` detail { empty } — al terminar un trazo
 //   • `ok-clear`                   — al limpiar
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkSignatureLabels {
+  /** Texto del botón de limpiar el lienzo. */
+  clear: string;
+  /** Texto del botón de exportar la firma. */
+  export: string;
+  /** Nombre de fichero al descargar la firma exportada. */
+  exportFilename: string;
+}
+
+const DEFAULT_LABELS: OkSignatureLabels = {
+  clear: 'Clear',
+  export: 'Export',
+  exportFilename: 'signature.png',
+};
+
 export class OkSignature extends LitElement {
   static styles = css`
     :host {
@@ -79,6 +96,12 @@ export class OkSignature extends LitElement {
   @property({ type: Number }) height = 200;
   /** Muestra el botón de exportar. */
   @property({ type: Boolean, attribute: 'show-export' }) showExport = false;
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkSignatureLabels> = {};
+
+  private get t(): OkSignatureLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   @query('canvas') private canvas!: HTMLCanvasElement;
 
@@ -256,7 +279,7 @@ export class OkSignature extends LitElement {
       <div class="actions">
         <ion-button fill="clear" size="small" @click=${() => this.clear()}>
           <ion-icon slot="start" name="trash-outline"></ion-icon>
-          Limpiar
+          ${this.t.clear}
         </ion-button>
         ${this.showExport
           ? html`<ion-button
@@ -265,7 +288,7 @@ export class OkSignature extends LitElement {
               @click=${() => this.onExport()}
             >
               <ion-icon slot="start" name="download-outline"></ion-icon>
-              Exportar
+              ${this.t.export}
             </ion-button>`
           : ''}
       </div>
@@ -278,7 +301,7 @@ export class OkSignature extends LitElement {
     const url = this.toDataURL();
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'firma.png';
+    a.download = this.t.exportFilename;
     a.click();
   }
 }

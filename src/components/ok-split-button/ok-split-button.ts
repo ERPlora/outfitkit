@@ -25,6 +25,23 @@ export interface OkSplitButtonItem {
 //   • `ok-main`   detail {}            → click en la acción principal
 //   • `ok-select` detail { id, item }  → click en un item del menú
 //   • `ok-open`   detail { open }      → apertura/cierre del menú
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkSplitButtonLabels {
+  /** aria-label del botón caret que abre el menú. */
+  more: string;
+  /** aria-label del menú desplegable. */
+  menu: string;
+  /** Texto mostrado cuando no hay items. */
+  empty: string;
+}
+
+const DEFAULT_LABELS: OkSplitButtonLabels = {
+  more: 'More actions',
+  menu: 'Actions',
+  empty: 'No actions',
+};
+
 export class OkSplitButton extends LitElement {
   static styles = css`
     :host {
@@ -139,6 +156,13 @@ export class OkSplitButton extends LitElement {
   @property() fill: 'solid' | 'outline' | 'clear' | 'default' = 'solid';
   /** Items del menú desplegable. */
   @property({ attribute: false }) items: OkSplitButtonItem[] = [];
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkSplitButtonLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkSplitButtonLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno: menú abierto/cerrado.
   @state() private open = false;
@@ -236,17 +260,17 @@ export class OkSplitButton extends LitElement {
           fill=${this.fill}
           aria-haspopup="menu"
           aria-expanded=${this.open ? 'true' : 'false'}
-          aria-label="Más acciones"
+          aria-label=${this.t.more}
           @click=${() => this.toggle()}
         >
           <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
         </ion-button>
       </div>
       ${this.open
-        ? html`<div class="menu" role="menu" aria-label="Acciones">
+        ? html`<div class="menu" role="menu" aria-label=${this.t.menu}>
             ${this.items.length
               ? this.items.map((item) => this.renderItem(item))
-              : html`<div class="empty">Sin acciones</div>`}
+              : html`<div class="empty">${this.t.empty}</div>`}
           </div>`
         : ''}
     `;

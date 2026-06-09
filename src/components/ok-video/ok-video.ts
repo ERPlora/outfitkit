@@ -13,6 +13,32 @@ import { define } from '../../base/define.js';
 //   • `ok-play`   detail { currentTime }
 //   • `ok-pause`  detail { currentTime }
 //   • `ok-ended`  detail { duration }
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkVideoLabels {
+  /** aria-label del botón cuando está pausado (acción: reproducir). */
+  play: string;
+  /** aria-label del botón cuando reproduce (acción: pausar). */
+  pause: string;
+  /** aria-label del botón de mute cuando hay sonido (acción: silenciar). */
+  mute: string;
+  /** aria-label del botón de mute cuando está silenciado (acción: activar sonido). */
+  unmute: string;
+  /** aria-label del slider de volumen. */
+  volume: string;
+  /** aria-label del botón de pantalla completa. */
+  fullscreen: string;
+}
+
+const DEFAULT_LABELS: OkVideoLabels = {
+  play: 'Play',
+  pause: 'Pause',
+  mute: 'Mute',
+  unmute: 'Unmute',
+  volume: 'Volume',
+  fullscreen: 'Fullscreen',
+};
+
 export class OkVideo extends LitElement {
   static styles = css`
     :host {
@@ -152,6 +178,12 @@ export class OkVideo extends LitElement {
   @property() src = '';
   /** Imagen de previsualización opcional. */
   @property() poster = '';
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkVideoLabels> = {};
+
+  private get t(): OkVideoLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno reflejado del elemento `<video>` nativo.
   @state() private playing = false;
@@ -279,7 +311,7 @@ export class OkVideo extends LitElement {
 
         <button
           class=${`overlay ${this.playing ? 'playing' : ''}`}
-          aria-label=${this.playing ? 'Pausar' : 'Reproducir'}
+          aria-label=${this.playing ? this.t.pause : this.t.play}
           @click=${this.togglePlay}
         >
           <span class="big">
@@ -291,7 +323,7 @@ export class OkVideo extends LitElement {
           <ion-button
             fill="clear"
             size="small"
-            aria-label=${this.playing ? 'Pausar' : 'Reproducir'}
+            aria-label=${this.playing ? this.t.pause : this.t.play}
             @click=${this.togglePlay}
           >
             <ion-icon slot="icon-only" name=${this.playing ? 'pause' : 'play'}></ion-icon>
@@ -308,7 +340,7 @@ export class OkVideo extends LitElement {
             <ion-button
               fill="clear"
               size="small"
-              aria-label=${this.muted ? 'Activar sonido' : 'Silenciar'}
+              aria-label=${this.muted ? this.t.unmute : this.t.mute}
               @click=${this.toggleMute}
             >
               <ion-icon slot="icon-only" name=${volIcon}></ion-icon>
@@ -320,14 +352,14 @@ export class OkVideo extends LitElement {
               step="0.01"
               .value=${String(this.muted ? 0 : this.volume)}
               @input=${this.onVolume}
-              aria-label="Volumen"
+              aria-label=${this.t.volume}
             />
           </div>
 
           <ion-button
             fill="clear"
             size="small"
-            aria-label="Pantalla completa"
+            aria-label=${this.t.fullscreen}
             @click=${this.toggleFullscreen}
           >
             <ion-icon slot="icon-only" name="expand-outline"></ion-icon>

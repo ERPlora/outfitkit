@@ -51,6 +51,52 @@ export interface OkMailMessage {
   attachments?: Array<{ name: string; size?: number }>;
 }
 
+/** Textos humanos de ok-mail (i18n; default inglés, override vía prop `labels`). */
+export interface OkMailLabels {
+  /** Botón "Redactar". */
+  compose: string;
+  /** Placeholder del buscador. */
+  searchPlaceholder: string;
+  /** aria-label del punto de no leído. */
+  unread: string;
+  /** aria-label para destacar un mensaje. */
+  star: string;
+  /** aria-label para quitar el destacado de un mensaje. */
+  unstar: string;
+  /** Estado vacío: lista sin mensajes. */
+  noMessages: string;
+  /** Estado vacío: ningún mensaje seleccionado. */
+  selectMessage: string;
+  /** aria-label del botón atrás (móvil). */
+  back: string;
+  /** aria-label de Responder. */
+  reply: string;
+  /** aria-label de Reenviar. */
+  forward: string;
+  /** aria-label de Archivar. */
+  archive: string;
+  /** aria-label de Eliminar. */
+  delete: string;
+  /** Etiqueta "Para:" en la cabecera de lectura. */
+  to: string;
+}
+
+const DEFAULT_LABELS: OkMailLabels = {
+  compose: 'Compose',
+  searchPlaceholder: 'Search mail…',
+  unread: 'Unread',
+  star: 'Star',
+  unstar: 'Remove star',
+  noMessages: 'No messages',
+  selectMessage: 'Select a message',
+  back: 'Back to list',
+  reply: 'Reply',
+  forward: 'Forward',
+  archive: 'Archive',
+  delete: 'Delete',
+  to: 'To:',
+};
+
 export class OkMail extends LitElement {
   static styles = css`
     :host {
@@ -336,6 +382,13 @@ export class OkMail extends LitElement {
   @property({ attribute: 'active-message' }) activeMessage = '';
   /** Muestra el buscador en la lista de mensajes. */
   @property({ type: Boolean }) searchable = true;
+  /** Overrides de textos humanos (i18n). Se fusionan sobre los defaults en inglés. */
+  @property({ attribute: false }) labels: Partial<OkMailLabels> = {};
+
+  /** Textos efectivos (defaults inglés + overrides). */
+  private get t(): OkMailLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Texto del buscador (filtra preview/asunto/remitente en memoria).
   @state() private q = '';
@@ -425,12 +478,12 @@ export class OkMail extends LitElement {
       <div class="topbar">
         <ion-button @click=${() => this.emit('ok-compose', {})}>
           <ion-icon slot="start" name="create-outline"></ion-icon>
-          Redactar
+          ${this.t.compose}
         </ion-button>
         ${this.searchable
           ? html`<ion-searchbar
               .value=${this.q}
-              placeholder="Buscar correo…"
+              placeholder=${this.t.searchPlaceholder}
               debounce="200"
               @ionInput=${this.onSearch}
             ></ion-searchbar>`
@@ -470,7 +523,7 @@ export class OkMail extends LitElement {
       <section class="list">
         <div class="msg-list">
           ${msgs.length === 0
-            ? html`<div class="empty-wrap"><ok-empty-state icon="mail-outline" heading="Sin mensajes"></ok-empty-state></div>`
+            ? html`<div class="empty-wrap"><ok-empty-state icon="mail-outline" heading=${this.t.noMessages}></ok-empty-state></div>`
             : repeat(
                 msgs,
                 (m) => m.id,
@@ -481,7 +534,7 @@ export class OkMail extends LitElement {
                       class=${`msg${unread ? ' unread' : ''}${m.id === this.activeMessage ? ' active' : ''}`}
                       @click=${() => this.onMessageSelect(m)}
                     >
-                      ${unread ? html`<span class="dot" aria-label="No leído"></span>` : nothing}
+                      ${unread ? html`<span class="dot" aria-label=${this.t.unread}></span>` : nothing}
                       <span class="avatar"><ion-avatar>${this.initials(m.from.name)}</ion-avatar></span>
                       <div class="top">
                         <span class="from">${m.from.name}</span>
@@ -491,7 +544,7 @@ export class OkMail extends LitElement {
                       ${m.preview ? html`<span class="preview">${m.preview}</span>` : nothing}
                       <button
                         class=${`star${m.starred ? ' on' : ''}`}
-                        aria-label=${m.starred ? 'Quitar destacado' : 'Destacar'}
+                        aria-label=${m.starred ? this.t.unstar : this.t.star}
                         @click=${(e: Event) => this.onStar(e, m)}
                       >
                         <ion-icon name=${m.starred ? 'star' : 'star-outline'}></ion-icon>
@@ -512,7 +565,7 @@ export class OkMail extends LitElement {
       return html`
         <section class="reader">
           <div class="empty-wrap">
-            <ok-empty-state icon="mail-open-outline" heading="Selecciona un mensaje"></ok-empty-state>
+            <ok-empty-state icon="mail-open-outline" heading=${this.t.selectMessage}></ok-empty-state>
           </div>
         </section>
       `;
@@ -521,20 +574,20 @@ export class OkMail extends LitElement {
       <section class="reader">
         <div class="reader-actions">
           <span class="back">
-            <ion-button fill="clear" size="small" aria-label="Volver a la lista" @click=${() => { this.activeMessage = ''; }}>
+            <ion-button fill="clear" size="small" aria-label=${this.t.back} @click=${() => { this.activeMessage = ''; }}>
               <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
             </ion-button>
           </span>
-          <ion-button fill="clear" size="small" aria-label="Responder" @click=${() => this.emit('ok-reply', { id: m.id })}>
+          <ion-button fill="clear" size="small" aria-label=${this.t.reply} @click=${() => this.emit('ok-reply', { id: m.id })}>
             <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
           </ion-button>
-          <ion-button fill="clear" size="small" aria-label="Reenviar" @click=${() => this.emit('ok-forward', { id: m.id })}>
+          <ion-button fill="clear" size="small" aria-label=${this.t.forward} @click=${() => this.emit('ok-forward', { id: m.id })}>
             <ion-icon slot="icon-only" name="arrow-redo-outline"></ion-icon>
           </ion-button>
-          <ion-button fill="clear" size="small" aria-label="Archivar" @click=${() => this.emit('ok-archive', { id: m.id })}>
+          <ion-button fill="clear" size="small" aria-label=${this.t.archive} @click=${() => this.emit('ok-archive', { id: m.id })}>
             <ion-icon slot="icon-only" name="archive-outline"></ion-icon>
           </ion-button>
-          <ion-button fill="clear" size="small" color="danger" aria-label="Eliminar" @click=${() => this.emit('ok-delete', { id: m.id })}>
+          <ion-button fill="clear" size="small" color="danger" aria-label=${this.t.delete} @click=${() => this.emit('ok-delete', { id: m.id })}>
             <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
           </ion-button>
         </div>
@@ -545,7 +598,7 @@ export class OkMail extends LitElement {
             <div class="who">
               <div class="name">${m.from.name}</div>
               <div class="addr">${m.from.email}</div>
-              ${m.to && m.to.length ? html`<div class="to">Para: ${m.to.join(', ')}</div>` : nothing}
+              ${m.to && m.to.length ? html`<div class="to">${this.t.to} ${m.to.join(', ')}</div>` : nothing}
             </div>
             <span class="when">${this.fmtDate(m.date)}</span>
           </header>

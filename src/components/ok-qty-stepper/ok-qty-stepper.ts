@@ -12,6 +12,20 @@ import { define } from '../../base/define.js';
 //   • prop `disabled`  → boolean
 // Eventos (bubbles + composed):
 //   • `ok-change`  detail { value }
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkQtyStepperLabels {
+  /** aria-label del botón restar (−). */
+  decrement: string;
+  /** aria-label del botón sumar (+). */
+  increment: string;
+}
+
+const DEFAULT_LABELS: OkQtyStepperLabels = {
+  decrement: 'Decrease',
+  increment: 'Increase',
+};
+
 export class OkQtyStepper extends LitElement {
   static styles = css`
     :host {
@@ -96,6 +110,13 @@ export class OkQtyStepper extends LitElement {
   @property({ type: Number }) step = 1;
   /** Deshabilita toda la interacción. */
   @property({ type: Boolean, reflect: true }) disabled = false;
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkQtyStepperLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkQtyStepperLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Recorta `n` al rango [min, max] respetando los límites definidos.
   private clamp(n: number): number {
@@ -161,7 +182,7 @@ export class OkQtyStepper extends LitElement {
       <ion-button
         fill="clear"
         size="small"
-        aria-label="Restar"
+        aria-label=${this.t.decrement}
         ?disabled=${this.disabled || atMin}
         @click=${() => this.decrement()}
       >
@@ -183,7 +204,7 @@ export class OkQtyStepper extends LitElement {
       <ion-button
         fill="clear"
         size="small"
-        aria-label="Sumar"
+        aria-label=${this.t.increment}
         ?disabled=${this.disabled || atMax}
         @click=${() => this.increment()}
       >

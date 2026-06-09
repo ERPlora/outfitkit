@@ -16,6 +16,48 @@ import { define } from '../../base/define.js';
 // no se envía si es inválido.
 // Al enviar válido emite `ok-submit` con detail { name, email, subject, message }. Si hay
 // `action`, además hace POST y al ok muestra `success-message`.
+
+// Textos i18n del componente (default inglés). Pásalos vía la prop `.labels`.
+// (submit-label y success-message siguen siendo props/atributos propios; ver más abajo.)
+export interface OkContactFormLabels {
+  /** Label del campo Nombre. */
+  nameLabel: string;
+  /** Label del campo Email. */
+  emailLabel: string;
+  /** Label del campo Asunto (opcional). */
+  subjectLabel: string;
+  /** Label del campo Mensaje. */
+  messageLabel: string;
+  /** Texto del botón mientras se envía. */
+  sending: string;
+  /** Error: nombre obligatorio. */
+  errorNameRequired: string;
+  /** Error: email obligatorio. */
+  errorEmailRequired: string;
+  /** Error: email con formato inválido. */
+  errorEmailInvalid: string;
+  /** Error: mensaje obligatorio. */
+  errorMessageRequired: string;
+  /** Error: el POST falló (respuesta no-ok). */
+  errorSendFailed: string;
+  /** Error: el POST falló por red/conexión. */
+  errorNetwork: string;
+}
+
+const DEFAULT_LABELS: OkContactFormLabels = {
+  nameLabel: 'Name',
+  emailLabel: 'Email',
+  subjectLabel: 'Subject (optional)',
+  messageLabel: 'Message',
+  sending: 'Sending…',
+  errorNameRequired: 'Name is required.',
+  errorEmailRequired: 'Email is required.',
+  errorEmailInvalid: 'Enter a valid email.',
+  errorMessageRequired: 'Message is required.',
+  errorSendFailed: 'Could not send. Please try again.',
+  errorNetwork: 'Could not send. Check your connection.',
+};
+
 export class OkContactForm extends LitElement {
   static styles = css`
     :host {
@@ -99,11 +141,18 @@ export class OkContactForm extends LitElement {
   /** Título opcional sobre el formulario. */
   @property() heading?: string;
   /** Texto del botón de envío. */
-  @property({ attribute: 'submit-label' }) submitLabel = 'Enviar';
+  @property({ attribute: 'submit-label' }) submitLabel = 'Send';
   /** URL opcional: si se da, el envío válido hace además POST nativo (fetch). */
   @property() action?: string;
   /** Texto mostrado tras un envío correcto. */
-  @property({ attribute: 'success-message' }) successMessage = '¡Gracias! Te responderemos pronto.';
+  @property({ attribute: 'success-message' }) successMessage = 'Thanks! We’ll get back to you soon.';
+  /** Textos i18n (default inglés); pasa solo las claves que quieras sobreescribir. */
+  @property({ attribute: false }) labels: Partial<OkContactFormLabels> = {};
+
+  // Textos efectivos: defaults inglés sobreescritos por los pasados desde fuera.
+  private get t(): OkContactFormLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Valores actuales de los campos (controlados internamente).
   @state() private values = { name: '', email: '', subject: '', message: '' };
@@ -134,10 +183,10 @@ export class OkContactForm extends LitElement {
   private validate(): boolean {
     const errors: Record<string, string> = {};
     const { name, email, message } = this.values;
-    if (!name.trim()) errors.name = 'El nombre es obligatorio.';
-    if (!email.trim()) errors.email = 'El email es obligatorio.';
-    else if (!OkContactForm.EMAIL_RE.test(email.trim())) errors.email = 'Introduce un email válido.';
-    if (!message.trim()) errors.message = 'El mensaje es obligatorio.';
+    if (!name.trim()) errors.name = this.t.errorNameRequired;
+    if (!email.trim()) errors.email = this.t.errorEmailRequired;
+    else if (!OkContactForm.EMAIL_RE.test(email.trim())) errors.email = this.t.errorEmailInvalid;
+    if (!message.trim()) errors.message = this.t.errorMessageRequired;
     this.errors = errors;
     return Object.keys(errors).length === 0;
   }
@@ -176,9 +225,9 @@ export class OkContactForm extends LitElement {
         body,
       });
       if (res.ok) this.markSent();
-      else this.errors = { ...this.errors, message: 'No se pudo enviar. Inténtalo de nuevo.' };
+      else this.errors = { ...this.errors, message: this.t.errorSendFailed };
     } catch {
-      this.errors = { ...this.errors, message: 'No se pudo enviar. Revisa tu conexión.' };
+      this.errors = { ...this.errors, message: this.t.errorNetwork };
     } finally {
       this.sending = false;
     }
@@ -203,7 +252,7 @@ export class OkContactForm extends LitElement {
             <ion-input
               class="control"
               name="name"
-              label="Nombre"
+              label=${this.t.nameLabel}
               label-placement="stacked"
               fill="outline"
               .value=${this.values.name}
@@ -218,7 +267,7 @@ export class OkContactForm extends LitElement {
               name="email"
               type="email"
               inputmode="email"
-              label="Email"
+              label=${this.t.emailLabel}
               label-placement="stacked"
               fill="outline"
               .value=${this.values.email}
@@ -231,7 +280,7 @@ export class OkContactForm extends LitElement {
             <ion-input
               class="control"
               name="subject"
-              label="Asunto (opcional)"
+              label=${this.t.subjectLabel}
               label-placement="stacked"
               fill="outline"
               .value=${this.values.subject}
@@ -242,7 +291,7 @@ export class OkContactForm extends LitElement {
             <ion-textarea
               class="control"
               name="message"
-              label="Mensaje"
+              label=${this.t.messageLabel}
               label-placement="stacked"
               fill="outline"
               auto-grow
@@ -255,7 +304,7 @@ export class OkContactForm extends LitElement {
           </div>
           <div class="actions">
             <ion-button type="submit" ?disabled=${this.sending}>
-              ${this.sending ? 'Enviando…' : this.submitLabel}
+              ${this.sending ? this.t.sending : this.submitLabel}
             </ion-button>
           </div>
         </form>

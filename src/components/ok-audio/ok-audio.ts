@@ -12,6 +12,29 @@ import { define } from '../../base/define.js';
 //   • `ok-play`   detail { currentTime }
 //   • `ok-pause`  detail { currentTime }
 //   • `ok-ended`  detail { duration }
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkAudioLabels {
+  /** aria-label del botón cuando está pausado (acción: reproducir). */
+  play: string;
+  /** aria-label del botón cuando reproduce (acción: pausar). */
+  pause: string;
+  /** aria-label del botón de mute cuando hay sonido (acción: silenciar). */
+  mute: string;
+  /** aria-label del botón de mute cuando está silenciado (acción: activar sonido). */
+  unmute: string;
+  /** aria-label del slider de volumen. */
+  volume: string;
+}
+
+const DEFAULT_LABELS: OkAudioLabels = {
+  play: 'Play',
+  pause: 'Pause',
+  mute: 'Mute',
+  unmute: 'Unmute',
+  volume: 'Volume',
+};
+
 export class OkAudio extends LitElement {
   static styles = css`
     :host {
@@ -122,6 +145,12 @@ export class OkAudio extends LitElement {
   @property() src = '';
   /** Título opcional mostrado sobre los controles. */
   @property() title = '';
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkAudioLabels> = {};
+
+  private get t(): OkAudioLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno reflejado del elemento `<audio>` nativo.
   @state() private playing = false;
@@ -244,7 +273,7 @@ export class OkAudio extends LitElement {
             class="play"
             fill="clear"
             size="small"
-            aria-label=${this.playing ? 'Pausar' : 'Reproducir'}
+            aria-label=${this.playing ? this.t.pause : this.t.play}
             @click=${this.togglePlay}
           >
             <ion-icon
@@ -264,7 +293,7 @@ export class OkAudio extends LitElement {
             <ion-button
               fill="clear"
               size="small"
-              aria-label=${this.muted ? 'Activar sonido' : 'Silenciar'}
+              aria-label=${this.muted ? this.t.unmute : this.t.mute}
               @click=${this.toggleMute}
             >
               <ion-icon slot="icon-only" name=${volIcon}></ion-icon>
@@ -276,7 +305,7 @@ export class OkAudio extends LitElement {
               step="0.01"
               .value=${String(this.muted ? 0 : this.volume)}
               @input=${this.onVolume}
-              aria-label="Volumen"
+              aria-label=${this.t.volume}
             />
           </div>
         </div>

@@ -11,6 +11,29 @@ import { define } from '../../base/define.js';
 // Render: `<object type="application/pdf">` con fallback a enlace de descarga si el navegador
 // no incrusta PDFs. Barra mínima con título + botón "Abrir / Descargar".
 // Eventos: ninguno propio (es un visor estático); la descarga abre en pestaña nueva.
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkPdfLabels {
+  /** Título por defecto en la barra cuando no se pasa `title`. */
+  documentTitle: string;
+  /** Texto del botón de abrir el PDF. */
+  open: string;
+  /** aria-label del botón de abrir/descargar. */
+  openAria: string;
+  /** Texto del fallback cuando el navegador no incrusta el PDF. */
+  cannotDisplay: string;
+  /** Texto del botón de descarga en el fallback. */
+  download: string;
+}
+
+const DEFAULT_LABELS: OkPdfLabels = {
+  documentTitle: 'PDF document',
+  open: 'Open',
+  openAria: 'Open or download PDF',
+  cannotDisplay: 'This PDF cannot be displayed here.',
+  download: 'Download',
+};
+
 export class OkPdf extends LitElement {
   static styles = css`
     :host {
@@ -95,6 +118,12 @@ export class OkPdf extends LitElement {
   @property() title = '';
   /** Alto del visor (cualquier unidad CSS válida). */
   @property() height = '480px';
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkPdfLabels> = {};
+
+  private get t(): OkPdfLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Abre el PDF en una pestaña nueva (descarga / vista a pantalla completa del navegador).
   private open(): void {
@@ -105,15 +134,15 @@ export class OkPdf extends LitElement {
     return html`
       <div class="frame">
         <div class="toolbar">
-          <span class="title">${this.title || 'Documento PDF'}</span>
+          <span class="title">${this.title || this.t.documentTitle}</span>
           <ion-button
             fill="clear"
             size="small"
-            aria-label="Abrir o descargar PDF"
+            aria-label=${this.t.openAria}
             @click=${this.open}
           >
             <ion-icon slot="start" name="open-outline"></ion-icon>
-            Abrir
+            ${this.t.open}
           </ion-button>
         </div>
         <div class="viewer" style=${`height:${this.height}`}>
@@ -121,10 +150,10 @@ export class OkPdf extends LitElement {
             <!-- Fallback: el navegador no pudo incrustar el PDF → enlace de descarga. -->
             <div class="fallback">
               <ion-icon name="document-text-outline"></ion-icon>
-              <span>No se pudo mostrar el PDF aquí.</span>
+              <span>${this.t.cannotDisplay}</span>
               <ion-button fill="solid" size="small" @click=${this.open}>
                 <ion-icon slot="start" name="download-outline"></ion-icon>
-                Descargar
+                ${this.t.download}
               </ion-button>
             </div>
           </object>

@@ -27,6 +27,20 @@ export interface OkLauncherApp {
 // Eventos (bubbles + composed):
 //   • `ok-app-select` detail { id, app }
 //   • `ok-open`        detail { open }
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkAppLauncherLabels {
+  /** aria-label del botón disparador y del panel. */
+  apps: string;
+  /** Texto mostrado cuando no hay apps. */
+  empty: string;
+}
+
+const DEFAULT_LABELS: OkAppLauncherLabels = {
+  apps: 'Apps',
+  empty: 'No apps',
+};
+
 export class OkAppLauncher extends LitElement {
   static styles = css`
     :host {
@@ -179,6 +193,13 @@ export class OkAppLauncher extends LitElement {
 
   /** Apps a mostrar en la rejilla. */
   @property({ attribute: false }) apps: OkLauncherApp[] = [];
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkAppLauncherLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkAppLauncherLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno: panel abierto/cerrado.
   @state() private open = false;
@@ -293,16 +314,16 @@ export class OkAppLauncher extends LitElement {
         class="trigger"
         aria-haspopup="menu"
         aria-expanded=${this.open ? 'true' : 'false'}
-        aria-label="Aplicaciones"
+        aria-label=${this.t.apps}
         @click=${() => this.toggle()}
       >
         <ion-icon name="apps-outline"></ion-icon>
       </button>
       ${this.open
-        ? html`<div class="panel" role="menu" aria-label="Aplicaciones">
+        ? html`<div class="panel" role="menu" aria-label=${this.t.apps}>
             ${this.apps.length
               ? html`<div class="grid">${this.apps.map((app) => this.renderApp(app))}</div>`
-              : html`<div class="empty">Sin aplicaciones</div>`}
+              : html`<div class="empty">${this.t.empty}</div>`}
           </div>`
         : ''}
     `;

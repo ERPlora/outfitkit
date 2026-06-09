@@ -24,6 +24,20 @@ export interface OkComboOption {
 //   • `ok-input`   detail { query }          — cada vez que cambia el texto
 //   • `ok-change`  detail { value, label }   — al elegir una opción
 // Cierra el dropdown al hacer click fuera del componente.
+
+// Textos i18n del componente (default inglés). Pásalos vía la prop `.labels`.
+export interface OkComboLabels {
+  /** Texto guía del campo de búsqueda. */
+  placeholder: string;
+  /** Texto mostrado cuando ninguna opción casa con la búsqueda. */
+  empty: string;
+}
+
+const DEFAULT_LABELS: OkComboLabels = {
+  placeholder: 'Search…',
+  empty: 'No results',
+};
+
 export class OkCombo extends LitElement {
   static styles = css`
     :host {
@@ -137,10 +151,22 @@ export class OkCombo extends LitElement {
   @property({ attribute: false }) options: OkComboOption[] = [];
   /** Valor seleccionado actual. */
   @property() value = '';
-  /** Texto guía del campo. */
+  /** Texto guía del campo. Si se deja vacío, usa `labels.placeholder` (inglés por defecto). */
   @property() placeholder = '';
   /** Etiqueta opcional mostrada sobre el campo. */
   @property() label?: string;
+  /** Textos i18n (default inglés); pasa solo las claves que quieras sobreescribir. */
+  @property({ attribute: false }) labels: Partial<OkComboLabels> = {};
+
+  // Textos efectivos: defaults inglés sobreescritos por los pasados desde fuera.
+  private get t(): OkComboLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
+  // Placeholder efectivo: prop explícita si se pasó, si no el de los labels.
+  private get effectivePlaceholder(): string {
+    return this.placeholder || this.t.placeholder;
+  }
 
   // Texto que el usuario ha tecleado (filtra las opciones).
   @state() private query = '';
@@ -256,7 +282,7 @@ export class OkCombo extends LitElement {
         label-placement=${this.label ? 'stacked' : 'start'}
         fill="outline"
         .value=${this.displayText}
-        placeholder=${this.placeholder}
+        placeholder=${this.effectivePlaceholder}
         @ionInput=${(e: Event) => this.handleInput(e)}
         @ionFocus=${() => {
           this.open = true;
@@ -282,7 +308,7 @@ export class OkCombo extends LitElement {
                     ${option.label}
                   </li>`,
                 )
-              : html`<li class="empty">Sin resultados</li>`}
+              : html`<li class="empty">${this.t.empty}</li>`}
           </ul>`
         : ''}
     </div>`;

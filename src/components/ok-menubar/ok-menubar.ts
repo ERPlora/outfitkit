@@ -42,6 +42,17 @@ export interface OkMenu {
 // Eventos (bubbles + composed):
 //   • `ok-select` detail { id, item } → click en un item hoja (no separador/disabled)
 //   • `ok-open`   detail { open }     → apertura/cierre de cualquier menú
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkMenubarLabels {
+  /** aria-label y texto del botón hamburguesa móvil. */
+  menu: string;
+}
+
+const DEFAULT_LABELS: OkMenubarLabels = {
+  menu: 'Menu',
+};
+
 export class OkMenubar extends LitElement {
   static styles = css`
     :host {
@@ -331,6 +342,13 @@ export class OkMenubar extends LitElement {
 
   /** Menús de la barra (cada uno con su lista de items). */
   @property({ attribute: false }) menus: OkMenu[] = [];
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkMenubarLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkMenubarLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Id del menú de la barra abierto (desktop). '' = ninguno.
   @state() private openMenuId = '';
@@ -631,11 +649,11 @@ export class OkMenubar extends LitElement {
         class="burger"
         aria-haspopup="menu"
         aria-expanded=${this.mobileOpen ? 'true' : 'false'}
-        aria-label="Menú"
+        aria-label=${this.t.menu}
         @click=${() => this.toggleMobile()}
       >
         <ion-icon name="menu-outline"></ion-icon>
-        <span>Menú</span>
+        <span>${this.t.menu}</span>
       </button>
       ${this.mobileOpen
         ? html`<div class="accordion" role="menu">

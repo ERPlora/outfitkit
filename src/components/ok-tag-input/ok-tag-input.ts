@@ -11,6 +11,20 @@ import { define } from '../../base/define.js';
 //   • prop `.suggestions`  → string[] opcional; muestra un dropdown filtrado al escribir
 // Evento (bubbles + composed):
 //   • `ok-change`  detail { tags }  — cada vez que cambia la lista de tags
+
+// Textos i18n del componente (default inglés). Pásalos vía la prop `.labels`.
+export interface OkTagInputLabels {
+  /** Texto guía del input cuando no hay tags. */
+  placeholder: string;
+  /** aria-label del botón × de cada chip. Variable: {tag}. */
+  removeLabel: string;
+}
+
+const DEFAULT_LABELS: OkTagInputLabels = {
+  placeholder: 'Add tag…',
+  removeLabel: 'Remove {tag}',
+};
+
 export class OkTagInput extends LitElement {
   static styles = css`
     :host {
@@ -164,10 +178,22 @@ export class OkTagInput extends LitElement {
 
   /** Tags actuales. */
   @property({ attribute: false }) value: string[] = [];
-  /** Texto guía del campo. */
+  /** Texto guía del campo. Si se deja vacío, usa `labels.placeholder` (inglés por defecto). */
   @property() placeholder = '';
   /** Sugerencias opcionales para el dropdown. */
   @property({ attribute: false }) suggestions?: string[];
+  /** Textos i18n (default inglés); pasa solo las claves que quieras sobreescribir. */
+  @property({ attribute: false }) labels: Partial<OkTagInputLabels> = {};
+
+  // Textos efectivos: defaults inglés sobreescritos por los pasados desde fuera.
+  private get t(): OkTagInputLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
+  // Placeholder efectivo: prop explícita si se pasó, si no el de los labels.
+  private get effectivePlaceholder(): string {
+    return this.placeholder || this.t.placeholder;
+  }
 
   // Texto en curso (aún no convertido en tag).
   @state() private draft = '';
@@ -309,7 +335,7 @@ export class OkTagInput extends LitElement {
           <button
             type="button"
             class="remove"
-            aria-label=${`Quitar ${tag}`}
+            aria-label=${this.t.removeLabel.replace('{tag}', tag)}
             @click=${(e: Event) => {
               e.stopPropagation();
               this.removeAt(i);
@@ -321,7 +347,7 @@ export class OkTagInput extends LitElement {
       )}
       <ion-input
         .value=${this.draft}
-        placeholder=${this.value.length ? '' : this.placeholder}
+        placeholder=${this.value.length ? '' : this.effectivePlaceholder}
         @ionInput=${(e: Event) => this.handleInput(e)}
         @keydown=${(e: KeyboardEvent) => this.handleKeydown(e)}
       ></ion-input>

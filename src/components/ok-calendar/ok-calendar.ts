@@ -17,6 +17,35 @@ export interface OkCalendarEvent {
 // Vista del calendario.
 export type OkCalendarView = 'month' | 'agenda';
 
+// Textos humanos del calendario (i18n). Default INGLÉS; el consumidor puede sobreescribir
+// claves sueltas vía la prop `labels`. Variables con token `{n}` (p.ej. `more`).
+export interface OkCalendarLabels {
+  /** Etiqueta del botón de vista Mes. */
+  month: string;
+  /** Etiqueta del botón de vista Agenda. */
+  agenda: string;
+  /** Indicador de eventos extra por día; `{n}` = cantidad. */
+  more: string;
+  /** Texto cuando la agenda no tiene próximos eventos. */
+  agendaEmpty: string;
+  /** aria-label del botón "mes anterior". */
+  prevMonth: string;
+  /** aria-label del botón "mes siguiente". */
+  nextMonth: string;
+}
+
+const DEFAULT_LABELS: OkCalendarLabels = {
+  month: 'Month',
+  agenda: 'Agenda',
+  more: '+{n} more',
+  agendaEmpty: 'No upcoming events.',
+  prevMonth: 'Previous month',
+  nextMonth: 'Next month',
+};
+
+// Nombres de los días de la semana (Lun–Dom) según el locale, vía Intl.
+const WEEKDAY_REF = new Date(2021, 1, 1); // 2021-02-01 es lunes
+
 // ok-calendar — calendario por DATOS (`events`), algo que Ionic NO ofrece: `ion-datetime` es solo
 // un picker de fechas, no una rejilla con eventos. AUTOCONTENIDO: CSS propio en el shadow, sin
 // librerías de fechas (solo `Date` nativo → CSP-safe). Usa `ion-icon`/`ion-button` internos (los
@@ -311,13 +340,28 @@ export class OkCalendar extends LitElement {
   @property() view: OkCalendarView = 'month';
   /** Máximo de chips de evento por celda antes de mostrar "+X más". */
   @property({ type: Number, attribute: 'max-per-day' }) maxPerDay = 3;
+  /** Locale BCP-47 para formatear meses/días/fechas (Intl). Default 'en-US'. */
+  @property() locale = 'en-US';
+  /** Textos humanos sobreescribibles (i18n). Default INGLÉS. */
+  @property({ attribute: false }) labels: Partial<OkCalendarLabels> = {};
+
+  /** Textos efectivos: defaults INGLÉS mezclados con los del consumidor. */
+  private get t(): OkCalendarLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Mes/año visibles en la vista de mes (estado interno de navegación).
   @state() private cursor = new Date();
   // Marca para sembrar el cursor desde `value` una sola vez.
   private seeded = false;
 
-  private static readonly WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  // Nombres cortos de los días (Lun–Dom) según el locale actual.
+  private weekdays(): string[] {
+    const fmt = new Intl.DateTimeFormat(this.locale, { weekday: 'short' });
+    return Array.from({ length: 7 }, (_, i) =>
+      fmt.format(new Date(WEEKDAY_REF.getFullYear(), WEEKDAY_REF.getMonth(), 1 + i)),
+    );
+  }
 
   // Normaliza una fecha (`YYYY-MM-DD` o ISO) a clave local `YYYY-MM-DD`.
   private dayKey(d: Date): string {
@@ -402,7 +446,7 @@ export class OkCalendar extends LitElement {
 
   // Etiqueta de mes/año del cursor (capitalizada vía CSS).
   private monthLabel(): string {
-    return this.cursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    return this.cursor.toLocaleDateString(this.locale, { month: 'long', year: 'numeric' });
   }
 
   // Construye la matriz de días visibles (semanas que empiezan en lunes).
@@ -428,7 +472,7 @@ export class OkCalendar extends LitElement {
     const days = this.buildDays();
 
     return html`<div class="grid">
-      ${OkCalendar.WEEKDAYS.map((w) => html`<div class="weekday">${w}</div>`)}
+      ${this.weekdays().map((w) => html`<div class="weekday">${w}</div>`)}
       ${days.map((d) => {
         const key = this.dayKey(d);
         const dayEvents = byDay.get(key) ?? [];
@@ -456,7 +500,9 @@ export class OkCalendar extends LitElement {
                 <span class="chip-title">${ev.title}</span>
               </span>`,
             )}
-            ${extra > 0 ? html`<span class="more">+${extra} más</span>` : ''}
+            ${extra > 0
+              ? html`<span class="more">${this.t.more.replace('{n}', String(extra))}</span>`
+              : ''}
           </div>
         </div>`;
       })}
@@ -470,13 +516,13 @@ export class OkCalendar extends LitElement {
     const keys = [...byDay.keys()].filter((k) => k >= todayKey).sort();
 
     if (keys.length === 0) {
-      return html`<div class="agenda-empty">No hay próximos eventos.</div>`;
+      return html`<div class="agenda-empty">${this.t.agendaEmpty}</div>`;
     }
 
     return html`<div class="agenda">
       ${keys.map((key) => {
         const d = this.parseDate(key);
-        const label = d.toLocaleDateString(undefined, {
+        const label = d.toLocaleDateString(this.locale, {
           weekday: 'long',
           day: 'numeric',
           month: 'long',
@@ -509,7 +555,7 @@ export class OkCalendar extends LitElement {
           <ion-button
             fill="clear"
             size="small"
-            aria-label="Mes anterior"
+            aria-label=${this.t.prevMonth}
             @click=${() => this.navMonth(-1)}
           >
             <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
@@ -518,7 +564,7 @@ export class OkCalendar extends LitElement {
           <ion-button
             fill="clear"
             size="small"
-            aria-label="Mes siguiente"
+            aria-label=${this.t.nextMonth}
             @click=${() => this.navMonth(1)}
           >
             <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
@@ -530,14 +576,14 @@ export class OkCalendar extends LitElement {
             class=${this.view === 'month' ? 'active' : ''}
             @click=${() => this.setView('month')}
           >
-            Mes
+            ${this.t.month}
           </button>
           <button
             type="button"
             class=${this.view === 'agenda' ? 'active' : ''}
             @click=${() => this.setView('agenda')}
           >
-            Agenda
+            ${this.t.agenda}
           </button>
         </div>
       </div>

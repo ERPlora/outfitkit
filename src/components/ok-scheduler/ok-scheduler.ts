@@ -30,6 +30,23 @@ export interface OkSchedulerEvent {
   color?: string;
 }
 
+// Textos humanos del scheduler (i18n). Default INGLÉS; el consumidor sobreescribe claves
+// sueltas vía la prop `labels`.
+export interface OkSchedulerLabels {
+  /** aria-label del botón "día anterior". */
+  prevDay: string;
+  /** aria-label del botón "día siguiente". */
+  nextDay: string;
+  /** Texto cuando no hay recursos que mostrar. */
+  empty: string;
+}
+
+const DEFAULT_LABELS: OkSchedulerLabels = {
+  prevDay: 'Previous day',
+  nextDay: 'Next day',
+  empty: 'No resources to display.',
+};
+
 // ok-scheduler — agenda de recursos/turnos en TIMELINE, algo que Ionic NO ofrece. Por DATOS
 // (`resources` + `events`). AUTOCONTENIDO: CSS propio en el shadow, sin librerías de fechas (solo
 // `Date` nativo → CSP-safe). Usa `ion-icon`/`ion-button` internos (los registra el host).
@@ -319,6 +336,15 @@ export class OkScheduler extends LitElement {
   @property({ type: Number, attribute: 'end-hour' }) endHour = 20;
   /** Minutos por celda/columna. (attr `slot-minutes`: `slot` colisiona con HTMLElement.slot.) */
   @property({ type: Number, attribute: 'slot-minutes' }) slotMin = 60;
+  /** Locale BCP-47 para formatear la fecha del día (Intl). Default 'en-US'. */
+  @property() locale = 'en-US';
+  /** Textos humanos sobreescribibles (i18n). Default INGLÉS. */
+  @property({ attribute: false }) labels: Partial<OkSchedulerLabels> = {};
+
+  /** Textos efectivos: defaults INGLÉS mezclados con los del consumidor. */
+  private get t(): OkSchedulerLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Cursor de día (estado interno de navegación). Se siembra desde `date` una sola vez.
   @state() private cursor = new Date();
@@ -417,7 +443,7 @@ export class OkScheduler extends LitElement {
 
   // Etiqueta del día del cursor (capitalizada vía CSS).
   private dayLabel(): string {
-    return this.cursor.toLocaleDateString(undefined, {
+    return this.cursor.toLocaleDateString(this.locale, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -522,7 +548,7 @@ export class OkScheduler extends LitElement {
         <ion-button
           fill="clear"
           size="small"
-          aria-label="Día anterior"
+          aria-label=${this.t.prevDay}
           @click=${() => this.navDay(-1)}
         >
           <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
@@ -531,7 +557,7 @@ export class OkScheduler extends LitElement {
         <ion-button
           fill="clear"
           size="small"
-          aria-label="Día siguiente"
+          aria-label=${this.t.nextDay}
           @click=${() => this.navDay(1)}
         >
           <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
@@ -545,7 +571,7 @@ export class OkScheduler extends LitElement {
           </div>
           ${this.resources.length
             ? this.resources.map((r) => this.renderRow(r))
-            : html`<div class="empty">No hay recursos que mostrar.</div>`}
+            : html`<div class="empty">${this.t.empty}</div>`}
         </div>
       </div>`;
   }

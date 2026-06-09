@@ -29,6 +29,19 @@ export interface OkChatMessage {
 //   • prop `readonly`    → oculta el compositor
 // Eventos (bubbles + composed):
 //   • `ok-send`  detail { text }  → al enviar texto no vacío (el consumidor añade a `.messages`)
+/** Textos humanos de ok-chat (i18n; default inglés, override vía prop `labels`). */
+export interface OkChatLabels {
+  /** Placeholder del compositor. */
+  composerPlaceholder: string;
+  /** aria-label del botón de enviar. */
+  send: string;
+}
+
+const DEFAULT_LABELS: OkChatLabels = {
+  composerPlaceholder: 'Type a message…',
+  send: 'Send',
+};
+
 export class OkChat extends LitElement {
   static styles = css`
     :host {
@@ -205,10 +218,22 @@ export class OkChat extends LitElement {
   @property({ attribute: false }) messages: OkChatMessage[] = [];
   /** Texto de la cabecera; si está vacío no se dibuja cabecera. */
   @property() title = '';
-  /** Placeholder del compositor. */
-  @property() placeholder = 'Escribe un mensaje…';
+  /** Placeholder del compositor. Si vacío, se deriva de `labels.composerPlaceholder`. */
+  @property() placeholder = '';
   /** Si está activo, oculta el compositor (chat de solo lectura). */
   @property({ type: Boolean }) readonly = false;
+  /** Overrides de textos humanos (i18n). Se fusionan sobre los defaults en inglés. */
+  @property({ attribute: false }) labels: Partial<OkChatLabels> = {};
+
+  /** Textos efectivos (defaults inglés + overrides). */
+  private get t(): OkChatLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
+  /** Placeholder efectivo: prop explícita o el de labels. */
+  private get effectivePlaceholder(): string {
+    return this.placeholder || this.t.composerPlaceholder;
+  }
 
   // Referencias a la lista (auto-scroll) y al textarea (envío/limpieza).
   @query('.log') private logEl?: HTMLElement;
@@ -303,12 +328,12 @@ export class OkChat extends LitElement {
             <ion-textarea
               auto-grow
               rows="1"
-              placeholder=${this.placeholder}
+              placeholder=${this.effectivePlaceholder}
               @keydown=${(e: KeyboardEvent) => this.onKeydown(e)}
             ></ion-textarea>
             <ion-button
               fill="solid"
-              aria-label="Enviar"
+              aria-label=${this.t.send}
               @click=${() => this.send()}
             >
               <ion-icon slot="icon-only" name="send"></ion-icon>

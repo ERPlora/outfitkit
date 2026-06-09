@@ -28,6 +28,20 @@ export interface OkTreeNode {
 // Eventos (bubbles + composed):
 //   • `ok-toggle`  detail { id, expanded }
 //   • `ok-select`  detail { id, node }
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkTreeLabels {
+  /** aria-label del chevron cuando el nodo está colapsado. */
+  expand: string;
+  /** aria-label del chevron cuando el nodo está expandido. */
+  collapse: string;
+}
+
+const DEFAULT_LABELS: OkTreeLabels = {
+  expand: 'Expand',
+  collapse: 'Collapse',
+};
+
 export class OkTree extends LitElement {
   static styles = css`
     :host {
@@ -166,6 +180,13 @@ export class OkTree extends LitElement {
   @property({ type: Boolean }) selectable = false;
   /** Id del nodo resaltado. */
   @property({ attribute: 'active-id' }) activeId = '';
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkTreeLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkTreeLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno de expansión por id. Se inicializa de forma perezosa a partir de `expanded`.
   @state() private expandedIds = new Set<string>();
@@ -238,7 +259,7 @@ export class OkTree extends LitElement {
           class=${`chevron ${hasChildren ? '' : 'leaf'} ${expanded ? 'open' : ''}`.trim()}
           aria-hidden=${hasChildren ? 'false' : 'true'}
           tabindex=${hasChildren ? '0' : '-1'}
-          aria-label=${expanded ? 'Colapsar' : 'Expandir'}
+          aria-label=${expanded ? this.t.collapse : this.t.expand}
           @click=${(e: Event) => {
             e.stopPropagation();
             this.toggle(node);

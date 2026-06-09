@@ -12,6 +12,20 @@ import { define } from '../../base/define.js';
 // Eventos (bubbles + composed):
 //   • `ok-input`     detail { value }   — en cada pulsación/borrado
 //   • `ok-complete`  detail { value }   — al alcanzar `length` (si está definida)
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkPinpadLabels {
+  /** aria-label del grupo de teclas. */
+  keypad: string;
+  /** aria-label de la tecla de borrado. */
+  backspace: string;
+}
+
+const DEFAULT_LABELS: OkPinpadLabels = {
+  keypad: 'Number pad',
+  backspace: 'Delete',
+};
+
 export class OkPinpad extends LitElement {
   static styles = css`
     :host {
@@ -85,6 +99,13 @@ export class OkPinpad extends LitElement {
   @property({ type: Number }) length?: number;
   /** Enmascara la pantalla con •. */
   @property({ type: Boolean }) masked = false;
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkPinpadLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkPinpadLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Añade un dígito (respetando `length`) y emite eventos.
   private press(digit: string): void {
@@ -134,7 +155,7 @@ export class OkPinpad extends LitElement {
     const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
     return html`
       <div class="display" role="status" aria-live="polite">${this.renderDisplay()}</div>
-      <div class="grid" role="group" aria-label="Teclado numérico">
+      <div class="grid" role="group" aria-label=${this.t.keypad}>
         ${digits.map(
           (d) => html`<ion-button
             fill="outline"
@@ -144,7 +165,7 @@ export class OkPinpad extends LitElement {
         )}
         <span class="spacer" aria-hidden="true"></span>
         <ion-button fill="outline" aria-label="0" @click=${() => this.press('0')}>0</ion-button>
-        <ion-button fill="clear" aria-label="Borrar" @click=${() => this.backspace()}>
+        <ion-button fill="clear" aria-label=${this.t.backspace} @click=${() => this.backspace()}>
           <ion-icon slot="icon-only" name="backspace-outline"></ion-icon>
         </ion-button>
       </div>

@@ -11,6 +11,23 @@ import { define } from '../../base/define.js';
 // Opcionales: `autoplay` (ms entre slides; 0 = desactivado) y `loop` (vuelve al inicio/fin).
 // Eventos (bubbles + composed):
 //   • `ok-change` detail { index }
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkCarouselLabels {
+  /** aria-label de la flecha anterior. */
+  previous: string;
+  /** aria-label de la flecha siguiente. */
+  next: string;
+  /** aria-label de cada punto indicador. `{n}` se reemplaza por el número de slide. */
+  goToSlide: string;
+}
+
+const DEFAULT_LABELS: OkCarouselLabels = {
+  previous: 'Previous',
+  next: 'Next',
+  goToSlide: 'Go to slide {n}',
+};
+
 export class OkCarousel extends LitElement {
   static styles = css`
     :host {
@@ -154,6 +171,12 @@ export class OkCarousel extends LitElement {
   @property({ type: Number }) autoplay = 0;
   /** Permite saltar del último al primero (y viceversa). */
   @property({ type: Boolean }) loop = false;
+  /** Textos i18n (parcial; se mezclan sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkCarouselLabels> = {};
+
+  private get t(): OkCarouselLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Número de slides aportados por `<slot>` (se mide al asignarse hijos).
   @state() private slottedCount = 0;
@@ -286,7 +309,7 @@ export class OkCarousel extends LitElement {
         <ion-button
           class="arrow prev"
           fill="clear"
-          aria-label="Anterior"
+          aria-label=${this.t.previous}
           ?disabled=${n <= 1 || (!this.loop && atStart)}
           @click=${() => this.prev()}
         >
@@ -314,7 +337,7 @@ export class OkCarousel extends LitElement {
         <ion-button
           class="arrow next"
           fill="clear"
-          aria-label="Siguiente"
+          aria-label=${this.t.next}
           ?disabled=${n <= 1 || (!this.loop && atEnd)}
           @click=${() => this.next()}
         >
@@ -330,7 +353,7 @@ export class OkCarousel extends LitElement {
                 class=${`dot ${i === this.index ? 'active' : ''}`.trim()}
                 role="tab"
                 aria-selected=${i === this.index ? 'true' : 'false'}
-                aria-label=${`Ir al slide ${i + 1}`}
+                aria-label=${this.t.goToSlide.replace('{n}', String(i + 1))}
                 @click=${() => {
                   this.goTo(i);
                   this.restartAutoplay();

@@ -62,12 +62,12 @@ export class OkWizard extends LitElement {
   @property({ attribute: false }) steps: OkStep[] = [];
   /** Índice (0-based) del paso actual. */
   @property({ type: Number }) current = 0;
-  /** Etiqueta del botón Atrás. */
-  @property() backLabel = 'Atrás';
-  /** Etiqueta del botón Siguiente. */
-  @property() nextLabel = 'Siguiente';
-  /** Etiqueta del botón Finalizar (último paso). */
-  @property() finishLabel = 'Finalizar';
+  /** Etiqueta del botón Atrás. Default INGLÉS. */
+  @property() backLabel = 'Back';
+  /** Etiqueta del botón Siguiente. Default INGLÉS. */
+  @property() nextLabel = 'Next';
+  /** Etiqueta del botón Finalizar (último paso). Default INGLÉS. */
+  @property() finishLabel = 'Finish';
 
   /** Cambia al índice dado (con clamp) y emite ok-step-change si realmente cambia. */
   private _goTo(index: number): void {

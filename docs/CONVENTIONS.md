@@ -80,3 +80,26 @@ El CORE incluye un **store** (`src/store/`) reutilizable, con CERO dependencias 
 Wiring de un módulo del store nuevo: entry en `vite.config.ts`, export en `package.json`
 (`exports`) + `src/index.ts`; los entries de elemento (`<ok-store>`) además en `src/cdn.ts`. Los
 módulos `store`/`store-controller` NO son elementos: no se registran, solo se exportan.
+
+## i18n — textos traducibles (default INGLÉS)
+
+Todos los componentes con texto de UI propio (chrome) exponen sus cadenas para que el consumidor las
+traduzca. Convención única y reutilizable:
+
+- Los **defaults son INGLÉS** (placeholders, labels de botón, mensajes vacíos, aria-labels, títulos).
+- Cada componente con texto exporta `interface OkXLabels { … }` y un `const DEFAULT_LABELS: OkXLabels`
+  en inglés.
+- Prop: `@property({ attribute: false }) labels: Partial<OkXLabels> = {}` — el consumidor pasa **solo
+  las claves que quiere traducir**.
+- Merge: `private get t(): OkXLabels { return { ...DEFAULT_LABELS, ...this.labels }; }` y en el
+  template se usa `this.t.clave`.
+- Variables: tokens `{n}`/`{x}` en el string (p.ej. `selected: '{n} selected'`) → `.replace('{n}', …)`.
+- Formato de fecha/número (Intl): el default de `locale` es `'en-US'`; prop `locale` para override.
+- El contenido **data-driven** (`.messages`/`.columns`/`.folders`/`.items`/slots) NO es i18n del
+  componente: lo aporta ya traducido el consumidor.
+
+Uso:
+```js
+mail.labels = { compose: 'Redactar', empty: 'Sin mensajes', search: 'Buscar…' }; // ES
+table.labels = { selected: '{n} seleccionados', clear: 'Limpiar', apply: 'Aplicar' };
+```

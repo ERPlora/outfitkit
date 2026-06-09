@@ -119,6 +119,24 @@ function normalizeHex(hex: string): string | null {
 // Eventos (bubbles + composed):
 //   • `ok-change` detail { value (hex), rgb { r, g, b } }
 //   • `ok-open`   detail { open }
+
+// Textos i18n del componente (default inglés). Pásalos vía la prop `.labels`.
+// Solo hay texto en aria-labels (no hay texto visible salvo presets/hex, que son data/valores).
+export interface OkColorPickerLabels {
+  /** aria-label del botón swatch que abre el panel. */
+  triggerLabel: string;
+  /** aria-label del panel/popover. */
+  panelLabel: string;
+  /** aria-label del input de valor hexadecimal. */
+  hexLabel: string;
+}
+
+const DEFAULT_LABELS: OkColorPickerLabels = {
+  triggerLabel: 'Select color',
+  panelLabel: 'Color picker',
+  hexLabel: 'Hex value',
+};
+
 export class OkColorPicker extends LitElement {
   static styles = css`
     :host {
@@ -322,6 +340,13 @@ export class OkColorPicker extends LitElement {
   @property({ type: String }) value = '#3880ff';
   /** Swatches preset (array de hex). Si no se pasa, se usa una paleta razonable. */
   @property({ attribute: false }) presets: string[] = DEFAULT_PRESETS;
+  /** Textos i18n (default inglés); pasa solo las claves que quieras sobreescribir. */
+  @property({ attribute: false }) labels: Partial<OkColorPickerLabels> = {};
+
+  // Textos efectivos: defaults inglés sobreescritos por los pasados desde fuera.
+  private get t(): OkColorPickerLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   // Estado interno: panel abierto/cerrado.
   @state() private open = false;
@@ -541,7 +566,7 @@ export class OkColorPicker extends LitElement {
         class="swatch"
         aria-haspopup="dialog"
         aria-expanded=${this.open ? 'true' : 'false'}
-        aria-label="Seleccionar color"
+        aria-label=${this.t.triggerLabel}
         @click=${() => this.toggle()}
       >
         <span class="fill" style=${`background:${this.value}`}></span>
@@ -550,7 +575,7 @@ export class OkColorPicker extends LitElement {
         ? html`<div
             class="panel"
             role="dialog"
-            aria-label="Selector de color"
+            aria-label=${this.t.panelLabel}
             style=${`--hue-color:${hueColor}`}
           >
             <div
@@ -572,7 +597,7 @@ export class OkColorPicker extends LitElement {
                 type="text"
                 spellcheck="false"
                 autocomplete="off"
-                aria-label="Valor hexadecimal"
+                aria-label=${this.t.hexLabel}
                 .value=${this.hexInput}
                 @input=${(e: Event) =>
                   this.onHexInput((e.target as HTMLInputElement).value)}

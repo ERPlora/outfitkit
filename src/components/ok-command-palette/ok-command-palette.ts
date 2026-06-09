@@ -34,6 +34,25 @@ export interface OkCommand {
 // Eventos (bubbles + composed):
 //   • `ok-select` detail { id, command }   al ejecutar un comando
 //   • `ok-open`   detail { open }          al abrir/cerrar
+/** Textos humanos de ok-command-palette (i18n; default inglés, override vía prop `labels`). */
+export interface OkCommandPaletteLabels {
+  /** Placeholder del input de búsqueda. */
+  searchPlaceholder: string;
+  /** aria-label del overlay (dialog). */
+  dialogLabel: string;
+  /** Pista visual del atajo para cerrar (tecla Escape). */
+  escHint: string;
+  /** Estado vacío: ningún comando coincide. */
+  noMatches: string;
+}
+
+const DEFAULT_LABELS: OkCommandPaletteLabels = {
+  searchPlaceholder: 'Search command…',
+  dialogLabel: 'Command palette',
+  escHint: 'Esc',
+  noMatches: 'No matches',
+};
+
 export class OkCommandPalette extends LitElement {
   static styles = css`
     :host {
@@ -247,10 +266,22 @@ export class OkCommandPalette extends LitElement {
   @property({ attribute: false }) commands: OkCommand[] = [];
   /** Abierto/cerrado (reflejado a atributo para CSS externo). */
   @property({ type: Boolean, reflect: true }) open = false;
-  /** Texto guía del input de búsqueda. */
-  @property() placeholder = 'Buscar comando…';
+  /** Texto guía del input de búsqueda. Si vacío, se deriva de `labels.searchPlaceholder`. */
+  @property() placeholder = '';
   /** Si true, Cmd/Ctrl+K abre/cierra la paleta globalmente. */
   @property({ type: Boolean }) hotkey = true;
+  /** Overrides de textos humanos (i18n). Se fusionan sobre los defaults en inglés. */
+  @property({ attribute: false }) labels: Partial<OkCommandPaletteLabels> = {};
+
+  /** Textos efectivos (defaults inglés + overrides). */
+  private get t(): OkCommandPaletteLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
+  /** Placeholder efectivo: prop explícita o el de labels. */
+  private get effectivePlaceholder(): string {
+    return this.placeholder || this.t.searchPlaceholder;
+  }
 
   // Texto de búsqueda actual.
   @state() private queryText = '';
@@ -420,7 +451,7 @@ export class OkCommandPalette extends LitElement {
       class="scrim"
       role="dialog"
       aria-modal="true"
-      aria-label="Paleta de comandos"
+      aria-label=${this.t.dialogLabel}
       @click=${(e: MouseEvent) => this.onScrimClick(e)}
       @keydown=${(e: KeyboardEvent) => this.onPanelKey(e)}
     >
@@ -430,13 +461,13 @@ export class OkCommandPalette extends LitElement {
           <input
             type="text"
             .value=${this.queryText}
-            placeholder=${this.placeholder}
-            aria-label=${this.placeholder}
+            placeholder=${this.effectivePlaceholder}
+            aria-label=${this.effectivePlaceholder}
             autocomplete="off"
             spellcheck="false"
             @input=${(e: Event) => this.onInput(e)}
           />
-          <span class="esc">Esc</span>
+          <span class="esc">${this.t.escHint}</span>
         </div>
         ${flat.length
           ? html`<ul class="results" role="listbox">
@@ -450,7 +481,7 @@ export class OkCommandPalette extends LitElement {
                 `,
               )}
             </ul>`
-          : html`<div class="empty">Sin coincidencias</div>`}
+          : html`<div class="empty">${this.t.noMatches}</div>`}
       </div>
     </div>`;
   }

@@ -11,6 +11,16 @@ import { define } from '../../base/define.js';
 // `icon`, `dismissible`. Emite `ok-dismiss` (bubbles+composed) al cerrar.
 export type OkInlineFeedbackTone = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkInlineFeedbackLabels {
+  /** aria-label del botón de cierre. */
+  dismiss: string;
+}
+
+const DEFAULT_LABELS: OkInlineFeedbackLabels = {
+  dismiss: 'Dismiss',
+};
+
 export class OkInlineFeedback extends LitElement {
   static styles = css`
     :host {
@@ -139,6 +149,13 @@ export class OkInlineFeedback extends LitElement {
   @property({ type: Boolean, reflect: true }) dismissible = false;
   /** Oculta el banner (reflejado para CSS y consumidores externos). */
   @property({ type: Boolean, reflect: true }) hidden = false;
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkInlineFeedbackLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkInlineFeedbackLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   /** Marca si el slot de actions tiene contenido (para colapsar el contenedor vacío). */
   @state() private hasActions = false;
@@ -184,7 +201,7 @@ export class OkInlineFeedback extends LitElement {
         </div>
         ${this.dismissible
           ? html`
-              <button class="close" aria-label="Cerrar" @click=${this.dismiss}>
+              <button class="close" aria-label=${this.t.dismiss} @click=${this.dismiss}>
                 <ion-icon name="close" aria-hidden="true"></ion-icon>
               </button>
             `

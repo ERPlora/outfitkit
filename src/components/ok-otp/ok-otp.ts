@@ -11,6 +11,17 @@ import { define } from '../../base/define.js';
 // Eventos (bubbles + composed):
 //   • `ok-change`    detail { value }   — en cada cambio
 //   • `ok-complete`  detail { value }   — cuando se llenan todas las casillas
+
+// Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
+export interface OkOtpLabels {
+  /** aria-label de cada casilla. Recibe el índice (1-based) y el total. */
+  digitLabel: (index: number, length: number) => string;
+}
+
+const DEFAULT_LABELS: OkOtpLabels = {
+  digitLabel: (index, length) => `Digit ${index} of ${length}`,
+};
+
 export class OkOtp extends LitElement {
   static styles = css`
     :host {
@@ -64,6 +75,13 @@ export class OkOtp extends LitElement {
   @property({ type: Number }) length = 6;
   /** Valor actual (string de dígitos). */
   @property({ type: String }) value = '';
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkOtpLabels> = {};
+
+  // Textos efectivos: defaults en inglés + overrides del consumidor.
+  private get t(): OkOtpLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
 
   @query('input') private firstInput?: HTMLInputElement;
 
@@ -175,7 +193,7 @@ export class OkOtp extends LitElement {
         inputmode="numeric"
         autocomplete="one-time-code"
         maxlength="1"
-        aria-label=${`Dígito ${i + 1} de ${this.length}`}
+        aria-label=${this.t.digitLabel(i + 1, this.length)}
         .value=${this.digitAt(i)}
         @input=${(e: Event) => this.onInput(e, i)}
         @keydown=${(e: KeyboardEvent) => this.onKeydown(e, i)}
