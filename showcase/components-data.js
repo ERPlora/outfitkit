@@ -25,6 +25,7 @@ const CATEGORIES = [
   { id: 'acciones', label: 'Acciones', icon: 'flash-outline' },
   { id: 'formularios', label: 'Formularios', icon: 'document-text-outline' },
   { id: 'web', label: 'Web', icon: 'globe-outline' },
+  { id: 'multimedia', label: 'Multimedia', icon: 'film-outline' },
   { id: 'estado', label: 'Estado', icon: 'cube-outline' },
 ];
 
@@ -441,6 +442,45 @@ chat.addEventListener('ok-send', (e) => {
       { kind: 'event', name: 'ok-send', type: '{text}', detail: 'Texto enviado (Enter); el consumidor añade el mensaje' },
     ],
   },
+  {
+    id: 'ok-scheduler',
+    name: 'ok-scheduler',
+    category: 'flujo',
+    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día y celdas-slot clicables. Ionic no trae scheduler.',
+    importPath: "@outfitkit/core/ok-scheduler",
+    example: '<ok-scheduler id="sch" start-hour="8" end-hour="20" slot-minutes="60" style="display:block;height:360px;width:100%"></ok-scheduler>',
+    setup: (root) => {
+      const sch = root.querySelector('#sch');
+      const today = new Date();
+      sch.date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      sch.resources = [
+        { id: 'r1', label: 'María López' },
+        { id: 'r2', label: 'Juan Pérez' },
+        { id: 'r3', label: 'Ana Ruiz' },
+      ];
+      sch.events = [
+        { id: 'e1', resourceId: 'r1', start: '09:00', end: '11:00', title: 'Apertura tienda' },
+        { id: 'e2', resourceId: 'r1', start: '13:00', end: '15:00', title: 'Caja', color: 'var(--ion-color-success)' },
+        { id: 'e3', resourceId: 'r2', start: '10:30', end: '14:00', title: 'Almacén', color: 'var(--ion-color-warning)' },
+        { id: 'e4', resourceId: 'r3', start: '15:00', end: '19:00', title: 'Atención cliente', color: 'var(--ion-color-tertiary)' },
+      ];
+    },
+    code: `sch.resources = [{ id: 'r1', label: 'María López', avatar? }];
+sch.events = [{ id: 'e1', resourceId: 'r1', start: '09:00', end: '11:00', title: 'Apertura', color? }];
+sch.date = '2026-06-09';   // attrs: start-hour, end-hour, slot-minutes
+sch.addEventListener('ok-event-click', (e) => …); // { id, event }
+sch.addEventListener('ok-slot-click', (e) => …);  // { resourceId, time }
+sch.addEventListener('ok-nav', (e) => …);          // { date }`,
+    api: [
+      { kind: 'prop', name: '.resources', type: 'OkSchedulerResource[]', detail: '{id, label, avatar?}' },
+      { kind: 'prop', name: '.events', type: 'OkSchedulerEvent[]', detail: "{id, resourceId, start:'HH:MM'|ISO, end, title, color?}" },
+      { kind: 'prop', name: 'date', type: 'string', detail: 'Día mostrado (YYYY-MM-DD)' },
+      { kind: 'prop', name: 'start-hour · end-hour · slot-minutes', type: 'number', detail: 'Primera hora (8) · última hora (20) · minutos por celda (60)' },
+      { kind: 'event', name: 'ok-event-click', type: '{id, event}', detail: 'Click en un bloque' },
+      { kind: 'event', name: 'ok-slot-click', type: '{resourceId, time}', detail: 'Click en celda vacía (time = HH:MM)' },
+      { kind: 'event', name: 'ok-nav', type: '{date}', detail: 'Cambio de día (YYYY-MM-DD)' },
+    ],
+  },
 
   // ════════════════════════════════ INPUTS ════════════════════════════════
   {
@@ -780,6 +820,170 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     code: `<ok-container-full>…banda full-bleed…</ok-container-full>`,
     api: [
       { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido a ancho completo' },
+    ],
+  },
+  {
+    id: 'ok-menubar',
+    name: 'ok-menubar',
+    category: 'web',
+    desc: 'Barra de menús de escritorio (estilo app: Archivo / Editar / Ver…): dropdowns con iconos, atajos, separadores y submenús. En móvil colapsa a hamburguesa con acordeón. Navegación con teclado.',
+    importPath: "@outfitkit/core/ok-menubar",
+    example: '<ok-menubar id="mb" style="display:block;width:100%"></ok-menubar>',
+    setup: (root) => {
+      root.querySelector('#mb').menus = [
+        { id: 'file', label: 'Archivo', items: [
+          { id: 'new', label: 'Nuevo', icon: 'document-outline', shortcut: '⌘N' },
+          { id: 'open', label: 'Abrir…', icon: 'folder-open-outline', shortcut: '⌘O' },
+          { id: 'recent', label: 'Abrir reciente', icon: 'time-outline', children: [
+            { id: 'r1', label: 'pedidos.csv' },
+            { id: 'r2', label: 'clientes.csv' },
+          ]},
+          { id: 'sep1', separator: true },
+          { id: 'save', label: 'Guardar', icon: 'save-outline', shortcut: '⌘S' },
+          { id: 'export', label: 'Exportar', icon: 'download-outline', disabled: true },
+        ]},
+        { id: 'edit', label: 'Editar', items: [
+          { id: 'undo', label: 'Deshacer', shortcut: '⌘Z' },
+          { id: 'redo', label: 'Rehacer', shortcut: '⇧⌘Z' },
+          { id: 'sep2', separator: true },
+          { id: 'cut', label: 'Cortar', shortcut: '⌘X' },
+          { id: 'copy', label: 'Copiar', shortcut: '⌘C' },
+          { id: 'paste', label: 'Pegar', shortcut: '⌘V' },
+        ]},
+        { id: 'view', label: 'Ver', items: [
+          { id: 'zoom-in', label: 'Acercar', icon: 'add-outline' },
+          { id: 'zoom-out', label: 'Alejar', icon: 'remove-outline' },
+          { id: 'fullscreen', label: 'Pantalla completa', icon: 'expand-outline', shortcut: 'F11' },
+        ]},
+      ];
+    },
+    code: `menubar.menus = [
+  { id: 'file', label: 'Archivo', items: [
+    { id: 'new', label: 'Nuevo', icon: 'document-outline', shortcut: '⌘N' },
+    { id: 'sep1', separator: true },
+    { id: 'recent', label: 'Reciente', children: [{ id: 'r1', label: 'pedidos.csv' }] },
+  ]},
+];
+menubar.addEventListener('ok-select', (e) => …); // { id, item }
+menubar.addEventListener('ok-open', (e) => …);   // { open }`,
+    api: [
+      { kind: 'prop', name: '.menus', type: 'OkMenu[]', detail: '{id, label, items:[{id, label, icon?, shortcut?, disabled?, separator?, children?}]}' },
+      { kind: 'event', name: 'ok-select', type: '{id, item}', detail: 'Click en un item hoja' },
+      { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre de un menú' },
+    ],
+  },
+
+  // ═════════════════════════════ MULTIMEDIA ═══════════════════════════════
+  {
+    id: 'ok-carousel',
+    name: 'ok-carousel',
+    category: 'multimedia',
+    desc: 'Carrusel de slides con transición por transform: flechas prev/next, puntos indicadores y swipe táctil. Slides por slot (cada hijo directo) o por prop .slides (array de strings/HTML). Autoplay y loop opcionales.',
+    importPath: "@outfitkit/core/ok-carousel",
+    example: `<ok-carousel loop autoplay="4000" style="display:block;width:100%">
+  <div style="display:grid;place-items:center;height:100%;background:var(--ion-color-primary);color:#fff;font-size:1.5rem;font-weight:700">Slide 1</div>
+  <div style="display:grid;place-items:center;height:100%;background:var(--ion-color-success);color:#fff;font-size:1.5rem;font-weight:700">Slide 2</div>
+  <div style="display:grid;place-items:center;height:100%;background:var(--ion-color-tertiary);color:#fff;font-size:1.5rem;font-weight:700">Slide 3</div>
+</ok-carousel>`,
+    code: `<ok-carousel loop autoplay="4000" index="0">
+  <div>Slide 1</div>
+  <div>Slide 2</div>
+</ok-carousel>
+// o por datos:
+carousel.slides = ['<h2>Uno</h2>', '<h2>Dos</h2>'];
+carousel.addEventListener('ok-change', (e) => …); // { index }`,
+    api: [
+      { kind: 'prop', name: '.slides', type: 'string[]', detail: 'Slides por datos (alternativa al slot)' },
+      { kind: 'prop', name: 'index', type: 'number', detail: 'Slide activo (0-based)' },
+      { kind: 'prop', name: 'autoplay · loop', type: 'number · bool', detail: 'ms entre slides (0 = off) · vuelve al inicio/fin' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Cada hijo directo es un slide' },
+      { kind: 'event', name: 'ok-change', type: '{index}', detail: 'Cambio de slide' },
+    ],
+  },
+  {
+    id: 'ok-signature',
+    name: 'ok-signature',
+    category: 'multimedia',
+    desc: 'Pad de firma sobre canvas con trazo suavizado y soporte HiDPI (devicePixelRatio). Métodos clear() / toDataURL() / isEmpty(). Ionic no trae captura de firma.',
+    importPath: "@outfitkit/core/ok-signature",
+    example: '<ok-signature pen-color="#1c1b17" line-width="2.5" height="200" show-export style="display:block;width:100%"></ok-signature>',
+    code: `<ok-signature pen-color="#1c1b17" line-width="2.5" height="200" show-export></ok-signature>
+sig.clear();
+const png = sig.toDataURL('image/png');
+sig.isEmpty(); // true si no se ha dibujado
+sig.addEventListener('ok-change', (e) => …); // { empty }
+sig.addEventListener('ok-clear', () => …);`,
+    api: [
+      { kind: 'prop', name: 'pen-color · line-width', type: 'string · number', detail: 'Color y grosor del trazo' },
+      { kind: 'prop', name: 'background · height', type: 'string · number', detail: 'Fondo del lienzo · altura en px' },
+      { kind: 'prop', name: 'show-export', type: 'bool', detail: 'Muestra el botón de exportar' },
+      { kind: 'event', name: 'clear() · toDataURL() · isEmpty()', type: 'método', detail: 'Limpiar · data URL (def image/png) · ¿vacío?' },
+      { kind: 'event', name: 'ok-change · ok-clear', type: '{empty} · —', detail: 'Fin de trazo · al limpiar' },
+    ],
+  },
+  {
+    id: 'ok-qr',
+    name: 'ok-qr',
+    category: 'multimedia',
+    desc: 'Generador de código QR autocontenido (SVG, sin dependencias). Nivel de corrección de errores, tamaño, colores y margen configurables.',
+    importPath: "@outfitkit/core/ok-qr",
+    example: '<ok-qr value="https://erplora.com" size="160"></ok-qr>',
+    code: `<ok-qr value="https://erplora.com" ec="M" size="160"></ok-qr>
+qr.value = 'https://erplora.com';
+qr.ec = 'H'; // L | M | Q | H`,
+    api: [
+      { kind: 'prop', name: 'value', type: 'string', detail: 'Texto/URL a codificar' },
+      { kind: 'prop', name: 'ec', type: 'L|M|Q|H', detail: 'Nivel de corrección de errores (def M)' },
+      { kind: 'prop', name: 'size · margin', type: 'number', detail: 'Lado en px (def 160) · margen quiet-zone (def 4)' },
+      { kind: 'prop', name: 'color · background', type: 'string', detail: 'Color de los módulos · fondo' },
+    ],
+  },
+  {
+    id: 'ok-audio',
+    name: 'ok-audio',
+    category: 'multimedia',
+    desc: 'Reproductor de audio con controles propios (play/pausa, barra de progreso, tiempo). Construido sobre <audio> nativo.',
+    importPath: "@outfitkit/core/ok-audio",
+    // NOTA: usa un src de ejemplo público (SoundHelix); sustituir por tu propio audio en producción.
+    example: '<ok-audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" title="Pista de ejemplo" style="display:block;width:100%"></ok-audio>',
+    code: `<ok-audio src="/media/jingle.mp3" title="Jingle"></ok-audio>
+audio.addEventListener('ok-play', () => …);
+audio.addEventListener('ok-pause', () => …);
+audio.addEventListener('ok-ended', () => …);`,
+    api: [
+      { kind: 'prop', name: 'src · title', type: 'string', detail: 'URL del audio · título mostrado' },
+      { kind: 'event', name: 'ok-play · ok-pause · ok-ended', type: '—', detail: 'Reproducir · pausar · fin de pista' },
+    ],
+  },
+  {
+    id: 'ok-video',
+    name: 'ok-video',
+    category: 'multimedia',
+    desc: 'Reproductor de vídeo responsive (aspect-ratio 16/9) con controles propios y póster. Construido sobre <video> nativo.',
+    importPath: "@outfitkit/core/ok-video",
+    // NOTA: usa un src de ejemplo público (Google sample); sustituir por tu propio vídeo en producción.
+    example: '<ok-video src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg" style="display:block;width:100%"></ok-video>',
+    code: `<ok-video src="/media/intro.mp4" poster="/media/intro.jpg"></ok-video>
+video.addEventListener('ok-play', () => …);
+video.addEventListener('ok-pause', () => …);
+video.addEventListener('ok-ended', () => …);`,
+    api: [
+      { kind: 'prop', name: 'src · poster', type: 'string', detail: 'URL del vídeo · imagen de portada' },
+      { kind: 'event', name: 'ok-play · ok-pause · ok-ended', type: '—', detail: 'Reproducir · pausar · fin' },
+    ],
+  },
+  {
+    id: 'ok-pdf',
+    name: 'ok-pdf',
+    category: 'multimedia',
+    desc: 'Visor de PDF embebido (vía <iframe>/<embed>) con cabecera de título y altura configurable.',
+    importPath: "@outfitkit/core/ok-pdf",
+    // NOTA: usa un src de ejemplo público (pdf.js tracemonkey sample); sustituir por tu propio PDF en producción.
+    example: '<ok-pdf src="https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf" title="Documento de ejemplo" height="480px" style="display:block;width:100%"></ok-pdf>',
+    code: `<ok-pdf src="/docs/factura.pdf" title="Factura" height="480px"></ok-pdf>`,
+    api: [
+      { kind: 'prop', name: 'src · title', type: 'string', detail: 'URL del PDF · título de la cabecera' },
+      { kind: 'prop', name: 'height', type: 'string', detail: 'Altura del visor (def 480px)' },
     ],
   },
 
