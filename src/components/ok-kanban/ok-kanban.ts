@@ -26,6 +26,16 @@ export interface OkKanbanColumn {
   cards: OkKanbanCard[];
 }
 
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkKanbanLabels {
+  /** Mensaje de columna sin tarjetas. */
+  empty: string;
+}
+
+const DEFAULT_LABELS: OkKanbanLabels = {
+  empty: 'No cards',
+};
+
 // Detalle interno del arrastre en curso (qué tarjeta y de qué columna sale).
 interface DragState {
   cardId: string;
@@ -251,6 +261,13 @@ export class OkKanban extends LitElement {
   /** Columnas del tablero (con sus tarjetas). El componente mantiene una copia interna `view`. */
   @property({ attribute: false }) columns: OkKanbanColumn[] = [];
 
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkKanbanLabels> = {};
+
+  private get t(): OkKanbanLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
   // Copia interna del modelo que el componente reordena al soltar. Se re-siembra cuando el
   // consumidor cambia la prop `columns` (identidad de array distinta).
   @state() private view: OkKanbanColumn[] = [];
@@ -457,7 +474,7 @@ export class OkKanban extends LitElement {
             ${column.cards.map((card) => this.renderCard(column, card))}
           </ul>`
         : html`<ul class="cards">
-            <li class="empty">Sin tarjetas</li>
+            <li class="empty">${this.t.empty}</li>
           </ul>`}
     </section>`;
   }

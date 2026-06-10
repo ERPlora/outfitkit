@@ -12,6 +12,19 @@ export interface OkPhoneCountry {
   dial: string;
 }
 
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkPhoneLabels {
+  /** aria-label del selector de país. */
+  country: string;
+  /** aria-label del input de número. */
+  number: string;
+}
+
+const DEFAULT_LABELS: OkPhoneLabels = {
+  country: 'Country',
+  number: 'Phone number',
+};
+
 // ok-phone — teléfono con prefijo de país: un selector (bandera emoji + prefijo) + input de número.
 // AUTOCONTENIDO: CSS propio en el shadow; por dentro usa `ion-select` (país) e `ion-input` (número);
 // el HOST registra Ionic, aquí no se importa @ionic/core. CSP-safe: sin eval.
@@ -118,6 +131,13 @@ export class OkPhone extends LitElement {
   /** Etiqueta opcional sobre el grupo. */
   @property() label?: string;
 
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkPhoneLabels> = {};
+
+  private get t(): OkPhoneLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
   // Texto crudo del número (sólo dígitos), reflejado en el ion-input.
   @state() private number = '';
 
@@ -200,7 +220,7 @@ export class OkPhone extends LitElement {
           class="country"
           fill="outline"
           interface="popover"
-          aria-label="País"
+          aria-label=${this.t.country}
           .value=${this.current.iso}
           @ionChange=${this.onCountry}
         >
@@ -215,7 +235,7 @@ export class OkPhone extends LitElement {
           type="tel"
           inputmode="tel"
           fill="outline"
-          aria-label="Número de teléfono"
+          aria-label=${this.t.number}
           placeholder=${this.placeholder}
           .value=${this.number}
           @ionInput=${this.onNumber}

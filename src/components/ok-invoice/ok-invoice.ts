@@ -51,6 +51,64 @@ export interface InvoiceTaxLine {
   amount: number;
 }
 
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkInvoiceLabels {
+  /** Mensaje cuando no hay datos de factura. */
+  empty: string;
+  /** Título del documento (cabecera derecha). */
+  invoice: string;
+  /** Etiqueta del nº de factura. */
+  number: string;
+  /** Etiqueta de la fecha de emisión. */
+  date: string;
+  /** Etiqueta de la fecha de vencimiento. */
+  dueDate: string;
+  /** Cabecera del bloque receptor. */
+  billTo: string;
+  /** Cabecera de columna: descripción. */
+  description: string;
+  /** Cabecera de columna: cantidad. */
+  qty: string;
+  /** Cabecera de columna: precio unitario. */
+  price: string;
+  /** Cabecera de columna: descuento. */
+  discount: string;
+  /** Cabecera de columna: impuesto. */
+  tax: string;
+  /** Cabecera de columna: importe de línea. */
+  amount: string;
+  /** Mensaje cuando no hay líneas. */
+  noLines: string;
+  /** Etiqueta de la base imponible. */
+  taxBase: string;
+  /** Etiqueta del descuento total. */
+  discountTotal: string;
+  /** Etiqueta del total. */
+  total: string;
+  /** Cabecera de la forma de pago. */
+  paymentMethod: string;
+}
+
+const DEFAULT_LABELS: OkInvoiceLabels = {
+  empty: 'No invoice data.',
+  invoice: 'Invoice',
+  number: 'No.',
+  date: 'Date',
+  dueDate: 'Due date',
+  billTo: 'Bill to',
+  description: 'Description',
+  qty: 'Qty',
+  price: 'Price',
+  discount: 'Disc.',
+  tax: 'Tax',
+  amount: 'Amount',
+  noLines: '— No lines —',
+  taxBase: 'Tax base',
+  discountTotal: 'Discount',
+  total: 'TOTAL',
+  paymentMethod: 'Payment method',
+};
+
 /** JSON completo de la factura. */
 export interface InvoiceData {
   /** Emisor (con logo opcional). */
@@ -164,6 +222,13 @@ export class OkInvoice extends LitElement {
   /** Tamaño del QR en px (lado). */
   @property({ type: Number, attribute: 'qr-size' }) qrSize = 96;
 
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkInvoiceLabels> = {};
+
+  private get t(): OkInvoiceLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
   private cur(): string {
     return this.invoice?.currency ?? '€';
   }
@@ -174,7 +239,7 @@ export class OkInvoice extends LitElement {
 
   render() {
     const inv = this.invoice;
-    if (!inv) return html`<div class="sheet empty">Sin datos de factura.</div>`;
+    if (!inv) return html`<div class="sheet empty">${this.t.empty}</div>`;
 
     return html`<div class="sheet" part="sheet">
       ${this.renderTop(inv)}
@@ -201,12 +266,12 @@ export class OkInvoice extends LitElement {
         <div class="issuer-meta">${this.party(iss)}</div>
       </div>
       <div class="doc">
-        <div class="doc-title">Factura</div>
+        <div class="doc-title">${this.t.invoice}</div>
         ${inv.type ? html`<div class="doc-type">${inv.type}</div>` : nothing}
         <div class="doc-grid">
-          <span class="k">Nº</span><span class="v">${inv.number}</span>
-          <span class="k">Fecha</span><span class="v">${inv.issue_date}</span>
-          ${inv.due_date ? html`<span class="k">Vencimiento</span><span class="v">${inv.due_date}</span>` : nothing}
+          <span class="k">${this.t.number}</span><span class="v">${inv.number}</span>
+          <span class="k">${this.t.date}</span><span class="v">${inv.issue_date}</span>
+          ${inv.due_date ? html`<span class="k">${this.t.dueDate}</span><span class="v">${inv.due_date}</span>` : nothing}
         </div>
       </div>
     </div>`;
@@ -216,7 +281,7 @@ export class OkInvoice extends LitElement {
     const c = inv.customer;
     if (!c) return nothing;
     return html`<div class="bill-to">
-      <div class="label">Facturar a</div>
+      <div class="label">${this.t.billTo}</div>
       <div class="name">${c.name}</div>
       <div class="party-meta">${this.party(c)}</div>
     </div>`;
@@ -229,12 +294,12 @@ export class OkInvoice extends LitElement {
     return html`<table class="lines">
       <thead>
         <tr>
-          <th class="desc">Descripción</th>
-          <th class="num">Cant.</th>
-          <th class="num">Precio</th>
-          ${hasDisc ? html`<th class="num">Dto.</th>` : nothing}
-          ${hasTax ? html`<th class="num">Imp.</th>` : nothing}
-          <th class="num">Importe</th>
+          <th class="desc">${this.t.description}</th>
+          <th class="num">${this.t.qty}</th>
+          <th class="num">${this.t.price}</th>
+          ${hasDisc ? html`<th class="num">${this.t.discount}</th>` : nothing}
+          ${hasTax ? html`<th class="num">${this.t.tax}</th>` : nothing}
+          <th class="num">${this.t.amount}</th>
         </tr>
       </thead>
       <tbody>
@@ -249,7 +314,7 @@ export class OkInvoice extends LitElement {
                 <td class="num">${this.money(l.total)}</td>
               </tr>`,
             )
-          : html`<tr><td colspan="6" class="muted" style="text-align:center;padding:6mm">— Sin líneas —</td></tr>`}
+          : html`<tr><td colspan="6" class="muted" style="text-align:center;padding:6mm">${this.t.noLines}</td></tr>`}
       </tbody>
     </table>`;
   }
@@ -258,14 +323,14 @@ export class OkInvoice extends LitElement {
     const taxes = inv.taxes ?? [];
     return html`<div class="summary">
       <table>
-        <tr><td class="muted">Base imponible</td><td class="num">${this.money(inv.subtotal)}</td></tr>
+        <tr><td class="muted">${this.t.taxBase}</td><td class="num">${this.money(inv.subtotal)}</td></tr>
         ${inv.discount_total
-          ? html`<tr><td class="muted">Descuento</td><td class="num">−${this.money(inv.discount_total)}</td></tr>`
+          ? html`<tr><td class="muted">${this.t.discountTotal}</td><td class="num">−${this.money(inv.discount_total)}</td></tr>`
           : nothing}
         ${taxes.map(
           (t) => html`<tr><td class="muted">${t.label}${t.base != null ? html` <span class="muted">(${this.money(t.base)})</span>` : nothing}</td><td class="num">${this.money(t.amount)}</td></tr>`,
         )}
-        <tr class="grand"><td>TOTAL</td><td class="num">${this.money(inv.total)}</td></tr>
+        <tr class="grand"><td>${this.t.total}</td><td class="num">${this.money(inv.total)}</td></tr>
       </table>
     </div>`;
   }
@@ -275,7 +340,7 @@ export class OkInvoice extends LitElement {
     if (!hasPay && !inv.qr) return nothing;
     return html`<div class="foot">
       <div class="pay-box">
-        ${inv.payment_method ? html`<div class="h">Forma de pago</div><div>${inv.payment_method}</div>` : nothing}
+        ${inv.payment_method ? html`<div class="h">${this.t.paymentMethod}</div><div>${inv.payment_method}</div>` : nothing}
         ${inv.payment_terms ? html`<div style="margin-top:2mm" class="muted">${inv.payment_terms}</div>` : nothing}
         ${inv.notes ? html`<div style="margin-top:3mm">${inv.notes}</div>` : nothing}
       </div>

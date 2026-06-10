@@ -49,6 +49,46 @@ export interface ReceiptPayment {
   change?: number;
 }
 
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkReceiptLabels {
+  /** Mensaje cuando no hay datos de tiquet. */
+  empty: string;
+  /** Prefijo del teléfono del negocio (p.ej. 'Tel.'). */
+  phone: string;
+  /** Etiqueta del nº de tiquet. */
+  receipt: string;
+  /** Etiqueta de quien atiende (cajero/a). */
+  servedBy: string;
+  /** Etiqueta del cliente. */
+  customer: string;
+  /** Cabecera de columna: concepto/artículo. */
+  item: string;
+  /** Cabecera de columna: importe. */
+  amount: string;
+  /** Mensaje cuando no hay líneas. */
+  noLines: string;
+  /** Etiqueta del subtotal. */
+  subtotal: string;
+  /** Etiqueta del total. */
+  total: string;
+  /** Etiqueta del cambio devuelto. */
+  change: string;
+}
+
+const DEFAULT_LABELS: OkReceiptLabels = {
+  empty: 'No receipt data.',
+  phone: 'Tel.',
+  receipt: 'Receipt',
+  servedBy: 'Served by',
+  customer: 'Customer',
+  item: 'Item',
+  amount: 'Amount',
+  noLines: '— No lines —',
+  subtotal: 'Subtotal',
+  total: 'TOTAL',
+  change: 'Change',
+};
+
 /** JSON completo del tiquet. */
 export interface ReceiptData {
   business: ReceiptBusiness;
@@ -128,6 +168,13 @@ export class OkReceipt extends LitElement {
   /** Tamaño del QR en px (lado). */
   @property({ type: Number, attribute: 'qr-size' }) qrSize = 120;
 
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkReceiptLabels> = {};
+
+  private get t(): OkReceiptLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
   private cur(): string {
     return this.receipt?.currency ?? '€';
   }
@@ -138,7 +185,7 @@ export class OkReceipt extends LitElement {
 
   render() {
     const r = this.receipt;
-    if (!r) return html`<div class="paper empty">Sin datos de tiquet.</div>`;
+    if (!r) return html`<div class="paper empty">${this.t.empty}</div>`;
 
     return html`<div class="paper" part="paper">
       ${this.renderHeader(r)}
@@ -162,29 +209,29 @@ export class OkReceipt extends LitElement {
       <div class="biz-name">${b.name}</div>
       ${b.address ? html`<div class="biz-meta">${b.address}</div>` : nothing}
       ${b.tax_id ? html`<div class="biz-meta">${b.tax_id}</div>` : nothing}
-      ${b.phone ? html`<div class="biz-meta">Tel. ${b.phone}</div>` : nothing}
+      ${b.phone ? html`<div class="biz-meta">${this.t.phone} ${b.phone}</div>` : nothing}
     </div>`;
   }
 
   private renderMeta(r: ReceiptData) {
     return html`<div class="meta">
-        <span>Tiquet: <strong>${r.number}</strong></span>
+        <span>${this.t.receipt}: <strong>${r.number}</strong></span>
         ${r.datetime ? html`<span>${r.datetime}</span>` : nothing}
       </div>
       ${r.cashier || r.customer
         ? html`<div class="meta">
-            ${r.cashier ? html`<span>Atendido: ${r.cashier}</span>` : html`<span></span>`}
-            ${r.customer ? html`<span>Cliente: ${r.customer}</span>` : nothing}
+            ${r.cashier ? html`<span>${this.t.servedBy}: ${r.cashier}</span>` : html`<span></span>`}
+            ${r.customer ? html`<span>${this.t.customer}: ${r.customer}</span>` : nothing}
           </div>`
         : nothing}`;
   }
 
   private renderLines(r: ReceiptData) {
     const lines = r.lines ?? [];
-    if (!lines.length) return html`<div class="center biz-meta">— Sin líneas —</div>`;
+    if (!lines.length) return html`<div class="center biz-meta">${this.t.noLines}</div>`;
     return html`<table>
       <thead>
-        <tr><th>Concepto</th><th class="num">Importe</th></tr>
+        <tr><th>${this.t.item}</th><th class="num">${this.t.amount}</th></tr>
       </thead>
       <tbody>
         ${lines.map(
@@ -205,18 +252,18 @@ export class OkReceipt extends LitElement {
     const taxes = r.taxes ?? [];
     return html`<table class="totals">
       ${r.subtotal != null
-        ? html`<tr><td>Subtotal</td><td class="num">${this.money(r.subtotal)}</td></tr>`
+        ? html`<tr><td>${this.t.subtotal}</td><td class="num">${this.money(r.subtotal)}</td></tr>`
         : nothing}
       ${taxes.map(
         (t) => html`<tr><td>${t.label}</td><td class="num">${this.money(t.amount)}</td></tr>`,
       )}
-      <tr class="grand"><td>TOTAL</td><td class="num">${this.money(r.total)}</td></tr>
+      <tr class="grand"><td>${this.t.total}</td><td class="num">${this.money(r.total)}</td></tr>
       ${r.payment
         ? html`<tr class="pay"><td>${r.payment.method}</td><td class="num">${this.money(
               r.payment.paid ?? r.total,
             )}</td></tr>
             ${r.payment.change != null
-              ? html`<tr class="pay"><td>Cambio</td><td class="num">${this.money(
+              ? html`<tr class="pay"><td>${this.t.change}</td><td class="num">${this.money(
                   r.payment.change,
                 )}</td></tr>`
               : nothing}`

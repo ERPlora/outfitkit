@@ -10,6 +10,17 @@ import { define } from '../../base/define.js';
 //   <ok-pricing-card name="Pro" price="€49" period="/ mes" .features=${[...]} featured badge="Popular">
 //     <ion-button slot="cta" expand="block" href="/signup">Empezar</ion-button>
 //   </ok-pricing-card>
+
+// Textos i18n (default inglés). Pásalos desde fuera con `.labels`.
+export interface OkPricingCardLabels {
+  /** Texto por defecto del badge cuando `featured` y no se pasa `badge`. */
+  popular: string;
+}
+
+const DEFAULT_LABELS: OkPricingCardLabels = {
+  popular: 'Popular',
+};
+
 export class OkPricingCard extends LitElement {
   static styles = css`
     :host {
@@ -136,8 +147,15 @@ export class OkPricingCard extends LitElement {
   /** Texto del badge flotante (def "Popular" si featured y sin texto). */
   @property() badge?: string;
 
+  /** Textos traducibles (merge sobre los defaults en inglés). */
+  @property({ attribute: false }) labels: Partial<OkPricingCardLabels> = {};
+
+  private get t(): OkPricingCardLabels {
+    return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
   render(): unknown {
-    const badgeText = this.badge ?? (this.featured ? 'Popular' : '');
+    const badgeText = this.badge ?? (this.featured ? this.t.popular : '');
     return html`
       <div class="card">
         ${badgeText ? html`<span class="badge">${badgeText}</span>` : null}
