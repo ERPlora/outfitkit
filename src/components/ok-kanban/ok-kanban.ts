@@ -497,3 +497,7 @@ declare global {
     'ok-kanban': OkKanban;
   }
 }
+
+// prueba deliberada de gate rojo (no mergear)
+const broken: number = "not a number";
+export { broken };
