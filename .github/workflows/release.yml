@@ -1,0 +1,77 @@
+name: Release npm
+
+# Publica @outfitkit/core en npm (registro público npmjs, --access public).
+#
+# Disparadores:
+#   - push de tag `v*` (p.ej. v0.1.0) — la versión del tag DEBE coincidir con package.json
+#   - workflow_dispatch (manual, para re-lanzar una publicación)
+#
+# Requiere el secreto NPM_TOKEN (token "Automation" de npmjs con permiso de publish
+# sobre el scope @outfitkit). Sin él, el job de publish falla en la autenticación.
+#
+# El gate previo replica el CI: build + typecheck + verify:csp (la CSP estricta de
+# Cloud/Hub exige dist sin eval/new Function).
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20 (registro npmjs)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      # No hay package-lock.json en el repo: mismo patrón que ci.yml/pages.yml.
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build (vite + tsc declarations)
+        run: npm run build
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Verify CSP (sin eval / new Function en dist)
+        run: npm run verify:csp
+
+      # En releases por tag, la versión del tag debe coincidir con package.json
+      # (evita publicar una versión que no es la que dice el tag).
+      - name: Check tag == package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::El tag v$TAG_VERSION no coincide con package.json ($PKG_VERSION)"
+            exit 1
+          fi
+
+      # No re-publicar una versión ya existente (npm lo rechazaría con error).
+      - name: Skip if version already published
+        id: check
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if npm view "@outfitkit/core@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::@outfitkit/core@$PKG_VERSION ya está publicada; no se republica."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
