@@ -1,0 +1,44 @@
+name: CI
+
+# Gate de calidad del paquete: build + typecheck + verify:csp.
+# Corre en cada PR y en cada push a main. Si cualquiera falla, el check sale rojo
+# y la regresión (tipos rotos, wiring incompleto, eval/new Function que viola la
+# CSP estricta de Cloud/Hub) no entra a main sin avisar.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # No hay package-lock.json en el repo: mismo patrón que pages.yml.
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build (vite + tsc declarations)
+        run: npm run build
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Verify CSP (sin eval / new Function en dist)
+        run: npm run verify:csp
