@@ -1099,36 +1099,43 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     ],
   },
   {
-    id: 'ok-container',
-    name: 'ok-container',
+    id: 'ok-layout',
+    name: 'layout.css (container · grid)',
     category: 'web',
-    desc: 'Ancho máximo centrado (estilo .container). Hay también ok-container-full a ancho completo.',
-    importPath: "@outfitkit/core/ok-container",
-    example: `<ok-container style="display:block;width:100%">
-  <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center">
-    Contenido centrado con ancho máximo (--ok-container-max).
+    desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fill, sin breakpoints). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
+    importPath: "@outfitkit/core/layout.css",
+    example: `<div class="ok-container">
+  <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center;margin-bottom:1rem">
+    .ok-container — centrado con ancho máximo (--ok-container-max).
   </div>
-</ok-container>`,
-    code: `<ok-container>…contenido centrado…</ok-container>`,
-    api: [
-      { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido (light DOM → SEO)' },
-      { kind: 'prop', name: '--max-width · --padding', type: 'CSS', detail: 'Ancho máximo · padding lateral' },
-    ],
-  },
-  {
-    id: 'ok-container-full',
-    name: 'ok-container-full',
-    category: 'web',
-    desc: 'Contenedor de ancho completo (full-bleed). Pareja de ok-container para bandas a sangre.',
-    importPath: "@outfitkit/core/ok-container-full",
-    example: `<ok-container-full style="display:block;width:100%">
-  <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center">
-    Banda a ancho completo (full-bleed).
+  <div class="ok-grid">
+    <div class="ok-col ok-md-6 ok-xl-3" style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Ventas</div>
+    <div class="ok-col ok-md-6 ok-xl-3" style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Pedidos</div>
+    <div class="ok-col ok-md-6 ok-xl-3" style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Stock</div>
+    <div class="ok-col ok-md-6 ok-xl-3" style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Caja</div>
   </div>
-</ok-container-full>`,
-    code: `<ok-container-full>…banda full-bleed…</ok-container-full>`,
+</div>`,
+    code: `<link rel="stylesheet" href=".../layout.css">
+
+<!-- Web pública: ancho máximo centrado -->
+<div class="ok-container">…</div>
+
+<!-- Dashboard (ion-split-pane): SIN max-width; padding = .ion-padding -->
+<ion-content>
+  <main class="ion-padding">
+    <div class="ok-grid">
+      <section class="ok-col ok-md-6 ok-xl-3"><ion-card>Ventas</ion-card></section>
+      …
+    </div>
+    <!-- o sin breakpoints: -->
+    <div class="ok-grid-cards">…cards…</div>
+  </main>
+</ion-content>`,
     api: [
-      { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido a ancho completo' },
+      { kind: 'prop', name: '.ok-container · .ok-container-fluid', type: 'class', detail: 'Ancho máximo centrado (--ok-container-max) · fluido a ancho completo' },
+      { kind: 'prop', name: '.ok-grid · .ok-col', type: 'class', detail: 'Rejilla de 12 col (gap --ok-grid-gap) · celda (span 12 por defecto, min-width:0)' },
+      { kind: 'prop', name: '.ok-md-N · .ok-lg-N · .ok-xl-N', type: 'class', detail: 'Span responsive (N = 3·4·6·8·9·12; breakpoints 768/992/1200)' },
+      { kind: 'prop', name: '.ok-grid-cards', type: 'class', detail: 'Grid auto-fill minmax(--ok-card-min, 1fr) — sin clases de breakpoint' },
     ],
   },
   {
@@ -1185,34 +1192,34 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
   // ═══════════════════════════════ MARKETING ══════════════════════════════
   {
     id: 'ok-section',
-    name: 'ok-section',
+    name: '.ok-section (layout.css)',
     category: 'marketing',
-    desc: 'Envoltorio de sección de marketing: eyebrow (píldora), título display, subtítulo y contenido (slot default). Quita el markup repetido de cada sección de la landing (encabezado centrado/alineado + separador superior opcional). Para títulos ricos usa los slots eyebrow/heading/subheading.',
-    importPath: "@outfitkit/core/ok-section",
-    example: `<ok-section eyebrow="Plataforma" heading="Todo en uno" subheading="Cubre los huecos que Ionic no trae con un set ok-* tematizado." align="center" divider>
+    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado) y --divider (separador superior). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
+    importPath: "@outfitkit/core/layout.css",
+    example: `<section class="ok-section ok-section--center ok-section--divider" style="padding-block:2rem">
+  <header class="ok-section-head">
+    <span class="ok-eyebrow">Plataforma</span>
+    <h2 class="ok-section-title">Todo en uno</h2>
+    <p class="ok-section-sub">Cubre los huecos que Ionic no trae con un set ok-* tematizado.</p>
+  </header>
   <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
     <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque A</div>
     <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque B</div>
     <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px">Bloque C</div>
   </div>
-</ok-section>`,
-    code: `<ok-section eyebrow="Plataforma" heading="Todo en uno"
-  subheading="…" align="center" divider>
+</section>`,
+    code: `<section class="ok-section ok-section--center ok-section--divider">
+  <header class="ok-section-head">
+    <span class="ok-eyebrow">Marketplace</span>
+    <h2 class="ok-section-title">Un ecosistema. <span style="color:var(--ion-color-primary)">Dos modos.</span></h2>
+    <p class="ok-section-sub">…</p>
+  </header>
   …contenido…
-</ok-section>
-<!-- Títulos ricos: usa slots en vez de atributos -->
-<ok-section align="center">
-  <span slot="eyebrow">Marketplace</span>
-  <h2 slot="heading">Un ecosistema. <span style="color:var(--ion-color-primary)">Dos modos.</span></h2>
-  <p slot="subheading">…</p>
-  …contenido…
-</ok-section>`,
+</section>`,
     api: [
-      { kind: 'prop', name: 'eyebrow · heading · subheading', type: 'string', detail: 'Píldora superior · título · subtítulo (para markup rico usa los slots homónimos)' },
-      { kind: 'prop', name: 'align', type: 'left|center', detail: 'Alineación del encabezado (def left)' },
-      { kind: 'prop', name: 'divider', type: 'bool', detail: 'Dibuja un separador superior de 1px' },
-      { kind: 'slot', name: 'eyebrow · heading · subheading', type: '—', detail: 'Versión rica de cada texto del encabezado' },
-      { kind: 'slot', name: '(default)', type: '—', detail: 'Cuerpo de la sección' },
+      { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo vertical (--ok-section-pad-y) y ancho máximo (--ok-container-max)' },
+      { kind: 'prop', name: '.ok-section--center · .ok-section--divider', type: 'class', detail: 'Encabezado centrado · separador superior de 1px' },
+      { kind: 'prop', name: '.ok-section-head · .ok-eyebrow · .ok-section-title · .ok-section-sub', type: 'class', detail: 'Encabezado · píldora · título display · subtítulo' },
     ],
   },
   {

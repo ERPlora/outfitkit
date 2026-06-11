@@ -15,6 +15,14 @@ const emitTheme = {
       fileName: 'theme.example.css',
       source: readFileSync(resolve(__dirname, 'src/theme/theme.example.css'), 'utf8'),
     });
+    // layout.css — primitivos de layout como CSS plano (container/grid/section);
+    // sustituye a los antiguos <ok-container>/<ok-container-full>/<ok-section>.
+    // @ts-expect-error — rollup `this.emitFile` disponible en el hook.
+    this.emitFile({
+      type: 'asset',
+      fileName: 'layout.css',
+      source: readFileSync(resolve(__dirname, 'src/styles/layout.css'), 'utf8'),
+    });
   },
 };
 
@@ -82,7 +90,6 @@ export default defineConfig({
         'ok-drawer': resolve(__dirname, 'src/components/ok-drawer/ok-drawer.ts'),
         'ok-page-header': resolve(__dirname, 'src/components/ok-page-header/ok-page-header.ts'),
         // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
-        'ok-section': resolve(__dirname, 'src/components/ok-section/ok-section.ts'),
         'ok-bento': resolve(__dirname, 'src/components/ok-bento/ok-bento.ts'),
         'ok-bento-item': resolve(__dirname, 'src/components/ok-bento-item/ok-bento-item.ts'),
         'ok-reveal': resolve(__dirname, 'src/components/ok-reveal/ok-reveal.ts'),
@@ -97,8 +104,6 @@ export default defineConfig({
         'ok-navbar': resolve(__dirname, 'src/components/ok-navbar/ok-navbar.ts'),
         'ok-footer': resolve(__dirname, 'src/components/ok-footer/ok-footer.ts'),
         'ok-hero': resolve(__dirname, 'src/components/ok-hero/ok-hero.ts'),
-        'ok-container': resolve(__dirname, 'src/components/ok-container/ok-container.ts'),
-        'ok-container-full': resolve(__dirname, 'src/components/ok-container-full/ok-container-full.ts'),
       },
     },
     rollupOptions: {

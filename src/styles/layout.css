@@ -1,0 +1,170 @@
+/* OutfitKit — layout.css
+ *
+ * Primitivos de layout como CSS PLANO (sin web component). Para geometría pura
+ * (container, grid, sección de marketing) un custom element solo aporta costes:
+ * FOUC hasta `:defined`, shadow boundary que rompe el grid del padre y peso de
+ * registro/upgrade. Regla: comportamiento/estado → web component (ok-*);
+ * geometría/tipografía → clase CSS de este fichero.
+ *
+ * Reemplaza a los antiguos <ok-container>, <ok-container-full> y <ok-section>
+ * (eliminados del paquete). Complementa a Ionic: para el padding de página de
+ * un dashboard usa `.ion-padding` dentro de <ion-content>; aquí solo vive lo
+ * que Ionic NO tiene (grid de 12 col, container con max-width, secciones).
+ *
+ * Tokens: hereda --ok-container-max / --ok-spacing del tema (outfitkit-theme.css
+ * o equivalente) con los mismos fallbacks que usaban los componentes.
+ * Cargar después del tema. Export del paquete: `@outfitkit/core/layout.css`.
+ */
+
+:root {
+  --ok-grid-gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  --ok-section-pad-y: clamp(3rem, 7vw, 5.5rem);
+}
+
+/* ===== Container (web pública; en dashboard NO: ahí el ancho lo da el split-pane) ===== */
+
+.ok-container {
+  width: 100%;
+  max-width: var(--ok-container-max, 1140px);
+  margin-inline: auto;
+  padding-inline: var(--ok-spacing, var(--ion-padding, 16px));
+  box-sizing: border-box;
+}
+
+.ok-container-fluid {
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--ok-spacing, var(--ion-padding, 16px));
+  box-sizing: border-box;
+}
+
+/* ===== Grid de 12 columnas (compatible con ion-split-pane: minmax(0,1fr) +
+   min-width:0 evitan que el contenido fuerce el ancho cuando el menú está abierto).
+   Breakpoints = los de Ionic (md 768 / lg 992 / xl 1200). ===== */
+
+.ok-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--ok-grid-gap);
+}
+
+.ok-col {
+  grid-column: span 12;
+  min-width: 0;
+}
+
+/* Grid de cards/KPIs sin clases de breakpoint: se adapta solo al ancho útil. */
+.ok-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ok-card-min, 260px), 1fr));
+  gap: var(--ok-grid-gap);
+}
+
+@media (min-width: 768px) {
+  .ok-md-3 { grid-column: span 3; }
+  .ok-md-4 { grid-column: span 4; }
+  .ok-md-6 { grid-column: span 6; }
+  .ok-md-8 { grid-column: span 8; }
+  .ok-md-9 { grid-column: span 9; }
+  .ok-md-12 { grid-column: span 12; }
+}
+
+@media (min-width: 992px) {
+  .ok-lg-3 { grid-column: span 3; }
+  .ok-lg-4 { grid-column: span 4; }
+  .ok-lg-6 { grid-column: span 6; }
+  .ok-lg-8 { grid-column: span 8; }
+  .ok-lg-9 { grid-column: span 9; }
+  .ok-lg-12 { grid-column: span 12; }
+}
+
+@media (min-width: 1200px) {
+  .ok-xl-3 { grid-column: span 3; }
+  .ok-xl-4 { grid-column: span 4; }
+  .ok-xl-6 { grid-column: span 6; }
+  .ok-xl-8 { grid-column: span 8; }
+  .ok-xl-9 { grid-column: span 9; }
+  .ok-xl-12 { grid-column: span 12; }
+}
+
+/* ===== Sección de marketing (antes <ok-section>) =====
+ *
+ *   <section class="ok-section ok-section--center ok-section--divider">
+ *     <header class="ok-section-head">
+ *       <span class="ok-eyebrow">Plataforma</span>
+ *       <h2 class="ok-section-title">Todo en uno</h2>
+ *       <p class="ok-section-sub">…</p>
+ *     </header>
+ *     …contenido…
+ *   </section>
+ *
+ * El centrado horizontal se hace con padding-inline:max(...) en el propio
+ * elemento (sin wrapper interno): así el divisor (border-top) ocupa el ancho
+ * completo igual que hacía el :host del componente.
+ */
+
+.ok-section {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding-block: var(--ok-section-pad-y);
+  padding-inline: max(
+    var(--ok-spacing, 1.25rem),
+    calc((100% - var(--ok-container-max, 1140px)) / 2 + var(--ok-spacing, 1.25rem))
+  );
+  color: var(--ok-text, var(--ion-text-color, #18181b));
+  font-family: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+}
+
+.ok-section--divider {
+  border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 8%, transparent);
+}
+
+.ok-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  max-width: 56ch;
+}
+
+.ok-section--center .ok-section-head {
+  align-items: center;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.ok-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ok-primary, var(--ion-color-primary, #1496d6));
+  background: color-mix(in oklab, var(--ok-primary, var(--ion-color-primary, #1496d6)) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ok-primary, var(--ion-color-primary, #1496d6)) 22%, transparent);
+}
+
+.ok-section--center .ok-eyebrow {
+  align-self: center;
+}
+
+.ok-section-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  font-weight: 650;
+}
+
+.ok-section-sub {
+  margin: 0;
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+  line-height: 1.55;
+  color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
+}

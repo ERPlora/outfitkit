@@ -94,7 +94,6 @@ export type { OkDrawerSide, OkDrawerLabels } from './components/ok-drawer/ok-dra
 export { OkPageHeader } from './components/ok-page-header/ok-page-header.js';
 
 // ── Marketing 2026 (bento · cards · scroll-reveal · prueba social) ───────────────────────────
-export { OkSection } from './components/ok-section/ok-section.js';
 export { OkBento } from './components/ok-bento/ok-bento.js';
 export { OkBentoItem } from './components/ok-bento-item/ok-bento-item.js';
 export { OkReveal } from './components/ok-reveal/ok-reveal.js';
@@ -110,5 +109,3 @@ export { OkLanguageSelect } from './components/ok-language-select/ok-language-se
 export { OkNavbar } from './components/ok-navbar/ok-navbar.js';
 export { OkFooter } from './components/ok-footer/ok-footer.js';
 export { OkHero } from './components/ok-hero/ok-hero.js';
-export { OkContainer } from './components/ok-container/ok-container.js';
-export { OkContainerFull } from './components/ok-container-full/ok-container-full.js';

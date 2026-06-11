@@ -70,7 +70,6 @@
     "./ok-status-pill": "./dist/ok-status-pill.js",
     "./ok-drawer": "./dist/ok-drawer.js",
     "./ok-page-header": "./dist/ok-page-header.js",
-    "./ok-section": "./dist/ok-section.js",
     "./ok-bento": "./dist/ok-bento.js",
     "./ok-bento-item": "./dist/ok-bento-item.js",
     "./ok-reveal": "./dist/ok-reveal.js",
@@ -84,9 +83,8 @@
     "./ok-navbar": "./dist/ok-navbar.js",
     "./ok-footer": "./dist/ok-footer.js",
     "./ok-hero": "./dist/ok-hero.js",
-    "./ok-container": "./dist/ok-container.js",
-    "./ok-container-full": "./dist/ok-container-full.js",
     "./theme.css": "./dist/theme.example.css",
+    "./layout.css": "./dist/layout.css",
     "./cdn": "./dist/outfitkit.js"
   },
   "files": [

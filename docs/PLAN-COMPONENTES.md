@@ -24,7 +24,7 @@ Docs-app estilo `ux` (sidebar+búsqueda, viewport, temas — ERPlora terracota p
 Para rediseñar la **web pública del Cloud Portal** (tendencias 2026: bento grids, animaciones al
 scroll, glass/“liquid glass” como acento, tipografía display) se añadieron 11 tags:
 
-- [x] `ok-section` — envoltorio de sección (eyebrow + título display + subtítulo + slot), align left/center, divider.
+- [x] `.ok-section` (layout.css) — sección de marketing como CSS plano sobre `<section>` (antes WC `ok-section`, eliminado): eyebrow + título display + subtítulo; modificadores `--center`/`--divider`.
 - [x] `ok-bento` + `ok-bento-item` — rejilla bento modular (cols/rows variables, `glass`, `tone`, `interactive`).
 - [x] `ok-feature-card` — tarjeta de característica (icono + título + desc, hover lift, `glass`).
 - [x] `ok-pricing-card` — tarjeta de plan (precio/periodo/features/`featured`/badge, slot `cta`).
@@ -41,7 +41,7 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
 
 **TODO — aplicar estos efectos/animaciones también en el showcase (docs-app):**
 - [ ] Envolver las secciones del docs-app en `ok-reveal` (entrada al scroll, escalonada).
-- [ ] Hero del docs-app con `ok-section` + acentos glass; rejilla de categorías como `ok-bento`.
+- [ ] Hero del docs-app con `.ok-section` (layout.css) + acentos glass; rejilla de categorías como `ok-bento`.
 - [ ] Página de cada componente: añadir los 11 nuevos al `components-data.js` (ejemplo + API + código), categoría “Web/Marketing”.
 - [ ] Demostrar `ok-language-select` y `ok-navbar glass` en la demo de chrome web.
 - [ ] Repasar `prefers-reduced-motion` en toda la docs-app.
@@ -70,7 +70,7 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
 - [ ] `ok-navbar` — navbar responsive con burger (existe; revisar/pulir)
 - [ ] `ok-footer` — pie de página (existe; revisar/pulir)
 - [ ] `ok-hero` — hero de cabecera (existe; revisar)
-- [ ] `ok-container` / `ok-container-full` — contenedores (existen; revisar)
+- [x] `.ok-container` / `.ok-container-fluid` / `.ok-grid` — layout.css (CSS plano; los WC se eliminaron)
 - [ ] `ok-contact-form` — formulario de contacto responsive (NUEVO)
 
 ### Tier 1 — genéricos núcleo
@@ -134,8 +134,9 @@ event-card, product-card). Se construyen en sus módulos reusando los genéricos
   (`ok-tree`, `ok-inline-feedback`, …) + cómo usarlos sobre Ionic. **Ionic es la base principal**;
   nada de los wrappers retirados.
 
-**Se conserva**: `ok-data-table`, `src/store/*` (+ `ok-store`), `ok-navbar`/`ok-footer`/`ok-hero`/
-`ok-container`/`ok-container-full`.
+**Se conserva**: `ok-data-table`, `src/store/*` (+ `ok-store`), `ok-navbar`/`ok-footer`/`ok-hero`.
+(Los contenedores pasaron a CSS plano en `layout.css`; los WC `ok-container`/`ok-container-full`
+se eliminaron.)
 
 ---
 

@@ -127,9 +127,14 @@ Contenido por **slots** (light DOM) → crawlable para SEO; no dependen de `ion-
 |---|---|
 | **`ok-navbar`** | Barra de navegación pública. |
 | **`ok-footer`** | Pie de página. |
-| **`ok-container`** | Contenedor centrado con `--max-width` (`--ok-container-max`). |
-| **`ok-container-full`** | Contenedor a ancho completo. |
 | **`ok-hero`** | Sección hero de cabecera. |
+
+Los **primitivos de layout** (container, grid de 12 col, sección de marketing) NO son web
+components: van como CSS plano en **`@outfitkit/core/layout.css`** (`.ok-container`,
+`.ok-container-fluid`, `.ok-grid`/`.ok-col`/`.ok-md-*`, `.ok-grid-cards`, `.ok-section` y su
+encabezado). La geometría pura no necesita JS y así no sufre FOUC ni rompe el grid con el
+shadow boundary. (Sustituyen a los antiguos `<ok-container>`, `<ok-container-full>` y
+`<ok-section>`, eliminados.)
 
 ---
 
