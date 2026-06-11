@@ -66,6 +66,8 @@
     "./ok-qty-stepper": "./dist/ok-qty-stepper.js",
     "./ok-command-palette": "./dist/ok-command-palette.js",
     "./ok-color-picker": "./dist/ok-color-picker.js",
+    "./ok-avatar": "./dist/ok-avatar.js",
+    "./ok-status-pill": "./dist/ok-status-pill.js",
     "./ok-section": "./dist/ok-section.js",
     "./ok-bento": "./dist/ok-bento.js",
     "./ok-bento-item": "./dist/ok-bento-item.js",

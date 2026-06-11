@@ -85,6 +85,10 @@ export { OkCommandPalette } from './components/ok-command-palette/ok-command-pal
 export type { OkCommand } from './components/ok-command-palette/ok-command-palette.js';
 export { OkColorPicker } from './components/ok-color-picker/ok-color-picker.js';
 export type { OkRgb } from './components/ok-color-picker/ok-color-picker.js';
+export { OkAvatar } from './components/ok-avatar/ok-avatar.js';
+export type { OkAvatarSize, OkAvatarShape, OkAvatarTone, OkAvatarStatus } from './components/ok-avatar/ok-avatar.js';
+export { OkStatusPill } from './components/ok-status-pill/ok-status-pill.js';
+export type { OkStatusPillTone, OkStatusPillSize } from './components/ok-status-pill/ok-status-pill.js';
 
 // ── Marketing 2026 (bento · cards · scroll-reveal · prueba social) ───────────────────────────
 export { OkSection } from './components/ok-section/ok-section.js';

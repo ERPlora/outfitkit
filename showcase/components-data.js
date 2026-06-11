@@ -261,6 +261,56 @@ spark.type = 'line'; // 'line' | 'bar'
       { kind: 'prop', name: 'width · height · filled', type: 'number · number · bool', detail: 'Tamaño · relleno bajo la línea' },
     ],
   },
+  {
+    id: 'ok-avatar',
+    name: 'ok-avatar',
+    category: 'datos',
+    desc: 'Avatar de iniciales o imagen (lo que ion-avatar no cubre): tamaños, color derivado por hash, punto de estado y enlace opcional.',
+    importPath: "@outfitkit/core/ok-avatar",
+    example: `<div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+  <ok-avatar name="Demo Admin" size="lg" status="online"></ok-avatar>
+  <ok-avatar name="María López" tone="auto"></ok-avatar>
+  <ok-avatar name="Juan Pérez" tone="auto" shape="rounded"></ok-avatar>
+  <ok-avatar name="Ana Ruiz" tone="auto" size="sm" status="busy"></ok-avatar>
+  <ok-avatar email="luis@erplora.com" size="xs"></ok-avatar>
+  <ok-avatar name="Sara Díaz" src="https://i.pravatar.cc/96?img=5" size="lg" status="online"></ok-avatar>
+</div>`,
+    code: `<ok-avatar name="María López" size="md" tone="auto" status="online"></ok-avatar>
+<ok-avatar name="Sara Díaz" src="/media/sara.webp" href="/profile/"></ok-avatar>`,
+    api: [
+      { kind: 'prop', name: 'name · email', type: 'string', detail: 'Deriva las iniciales (email = fallback y title)' },
+      { kind: 'prop', name: 'src', type: 'string', detail: 'Imagen; vuelve a iniciales si falla' },
+      { kind: 'prop', name: 'size', type: 'xs|sm|md|lg', detail: 'Tamaño (~32px md) — o --ok-avatar-size libre' },
+      { kind: 'prop', name: 'shape · tone', type: 'circle|rounded · primary|auto', detail: 'Forma · color (auto = hash estable del nombre)' },
+      { kind: 'prop', name: 'status · href', type: 'online|offline|busy · string', detail: 'Punto de estado · envolver en <a>' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Override del contenido (p.ej. un icono)' },
+    ],
+  },
+  {
+    id: 'ok-status-pill',
+    name: 'ok-status-pill',
+    category: 'datos',
+    desc: 'Pill de estado con tinte semántico suave (fondo al ~14% + texto en el shade): el hueco entre ion-badge (sólido) e ion-chip (neutro). Celda de estado típica de ok-data-table.',
+    importPath: "@outfitkit/core/ok-status-pill",
+    example: `<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+  <ok-status-pill tone="success" dot>Activo</ok-status-pill>
+  <ok-status-pill tone="warning" icon="time-outline">Pendiente</ok-status-pill>
+  <ok-status-pill tone="danger" dot>Bloqueado</ok-status-pill>
+  <ok-status-pill tone="info">En revisión</ok-status-pill>
+  <ok-status-pill tone="primary" size="sm">Nuevo</ok-status-pill>
+  <ok-status-pill tone="neutral" size="sm" label="Borrador"></ok-status-pill>
+</div>`,
+    code: `<ok-status-pill tone="success" dot>Activo</ok-status-pill>
+// en renders de celda (JS):
+const pill = document.createElement('ok-status-pill');
+pill.tone = 'danger'; pill.label = 'Bloqueado';`,
+    api: [
+      { kind: 'prop', name: 'tone', type: 'success|warning|danger|info|primary|neutral', detail: 'Tinte semántico' },
+      { kind: 'prop', name: 'label · icon · dot', type: 'string · string · bool', detail: 'Texto por prop · icono izq. · punto de color' },
+      { kind: 'prop', name: 'size', type: 'sm|md', detail: 'Tamaño' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido del pill' },
+    ],
+  },
 
   // ═══════════════════════════════ FEEDBACK ═══════════════════════════════
   {
