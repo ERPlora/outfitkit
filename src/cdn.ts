@@ -48,6 +48,8 @@ import './components/ok-command-palette/ok-command-palette.js';
 import './components/ok-color-picker/ok-color-picker.js';
 import './components/ok-avatar/ok-avatar.js';
 import './components/ok-status-pill/ok-status-pill.js';
+import './components/ok-drawer/ok-drawer.js';
+import './components/ok-page-header/ok-page-header.js';
 // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
 import './components/ok-section/ok-section.js';
 import './components/ok-bento/ok-bento.js';

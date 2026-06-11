@@ -393,6 +393,94 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
       { kind: 'prop', name: 'label · value · hint', type: 'string', detail: 'Etiqueta, valor, texto secundario' },
     ],
   },
+  {
+    id: 'ok-page-header',
+    name: 'ok-page-header',
+    category: 'dashboard',
+    desc: 'Cabecera de página IN-CONTENT típica de un ERP: título + descripción + acciones a la derecha + hueco para ion-breadcrumbs y línea de metadatos. Ionic resuelve la topbar pero no esta cabecera dentro del contenido. Layout puro (sin eventos), responsive (stack < 640px).',
+    importPath: "@outfitkit/core/ok-page-header",
+    example: `<div style="width:100%">
+  <ok-page-header heading="Empleados" description="Gestiona el personal de tu negocio y sus roles de acceso.">
+    <ion-breadcrumbs slot="breadcrumbs">
+      <ion-breadcrumb>Inicio</ion-breadcrumb>
+      <ion-breadcrumb>RRHH</ion-breadcrumb>
+      <ion-breadcrumb>Empleados</ion-breadcrumb>
+    </ion-breadcrumbs>
+    <span slot="meta">6 activos · 2 inactivos</span>
+    <span slot="meta">Actualizado hoy</span>
+    <ion-button slot="actions" size="small" fill="outline">Exportar</ion-button>
+    <ion-button slot="actions" size="small">Nuevo empleado</ion-button>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <ok-status-pill tone="success" dot>Plantilla completa</ok-status-pill>
+      <ok-status-pill tone="info">3 módulos activos</ok-status-pill>
+    </div>
+  </ok-page-header>
+  <ok-page-header heading="Detalle de empleado" level="2" compact description="Variante compacta para sub-páginas.">
+    <ion-button slot="actions" size="small" fill="clear">Editar</ion-button>
+  </ok-page-header>
+</div>`,
+    code: `<ok-page-header heading="Empleados" description="Gestiona el personal y sus roles.">
+  <ion-breadcrumbs slot="breadcrumbs">…</ion-breadcrumbs>
+  <span slot="meta">6 activos · 2 inactivos</span>
+  <ion-button slot="actions">Nuevo empleado</ion-button>
+  <!-- default: chips de filtros, pills… -->
+</ok-page-header>`,
+    api: [
+      { kind: 'prop', name: 'heading · level', type: 'string · 1|2', detail: 'Título y su nivel semántico (h1/h2)' },
+      { kind: 'prop', name: 'description', type: 'string', detail: 'Subtítulo atenuado' },
+      { kind: 'prop', name: 'compact', type: 'bool', detail: 'Variante densa para sub-páginas' },
+      { kind: 'slot', name: 'breadcrumbs', type: '—', detail: 'Hueco para <ion-breadcrumbs>' },
+      { kind: 'slot', name: 'meta', type: '—', detail: 'Línea de metadatos (fechas, ids) bajo el título' },
+      { kind: 'slot', name: 'actions', type: '—', detail: 'Botones a la derecha; en móvil bajan debajo' },
+      { kind: 'slot', name: '(default)', type: '—', detail: 'Contenido extra bajo la descripción (chips, pills…)' },
+    ],
+  },
+  {
+    id: 'ok-drawer',
+    name: 'ok-drawer',
+    category: 'dashboard',
+    desc: 'Panel lateral deslizante (slide-over) contextual: asistente, detalle de registro, filtros. Ionic no lo trae (ion-menu es navegación de app; ion-modal sheet es bottom-sheet). Scrim clicable, focus-trap, ESC, slots de cabecera/pie. Modo controlado: los gestos emiten ok-close cancelable. (Overlay display:contents: ábrelo con el botón.)',
+    importPath: "@outfitkit/core/ok-drawer",
+    example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
+  <ion-button id="drw-open" size="small">Abrir drawer</ion-button>
+  <small style="color:var(--ion-color-medium)">Cierra con ESC, click fuera o el botón X.</small>
+  <ok-drawer id="drw" heading="Asistente" icon="sparkles-outline" width="380px">
+    <ion-button slot="header-actions" size="small" fill="clear">
+      <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
+    </ion-button>
+    <p style="margin:0 0 .75rem">Hola 👋 Soy el asistente. Este es el cuerpo del drawer, con scroll interno.</p>
+    <ok-inline-feedback tone="info" heading="Contextual">Úsame para detalle de registro o filtros.</ok-inline-feedback>
+    <div slot="footer" style="display:flex;gap:.5rem">
+      <ion-button size="small" expand="block" style="flex:1">Acción principal</ion-button>
+    </div>
+  </ok-drawer>
+</div>`,
+    setup: (root) => {
+      const drawer = root.querySelector('#drw');
+      root.querySelector('#drw-open').addEventListener('click', () => { drawer.open = true; });
+    },
+    code: `<ok-drawer heading="Asistente" icon="sparkles-outline" side="end" width="420px">
+  <ion-button slot="header-actions" size="small" fill="clear">…</ion-button>
+  … cuerpo con scroll interno …
+  <div slot="footer">…</div>
+</ok-drawer>
+drawer.open = true;                       // controlado por el padre (señal/ref)
+drawer.addEventListener('ok-close', (e) => {
+  // e.detail.reason: 'scrim' | 'esc' | 'button'
+  // e.preventDefault() para vetar el cierre (modo controlado);
+  // si nadie lo veta, el drawer se cierra solo.
+});`,
+    api: [
+      { kind: 'prop', name: 'open', type: 'bool (reflejado)', detail: 'Abierto/cerrado; el padre puede controlarlo' },
+      { kind: 'prop', name: 'side · width', type: 'end|start · string', detail: 'Lado (def end) · ancho (def 420px; móvil 100%)' },
+      { kind: 'prop', name: 'heading · icon', type: 'string', detail: 'Título e icono de la cabecera' },
+      { kind: 'prop', name: 'scrim · dismissible', type: 'bool · bool', detail: 'Fondo clicable (def true) · ESC/scrim/X cierran (def true)' },
+      { kind: 'prop', name: '.labels', type: '{close}', detail: 'Textos traducibles (default inglés)' },
+      { kind: 'slot', name: '(default) · header-actions · footer', type: '—', detail: 'Cuerpo (scroll) · botones extra cabecera · pie fijo' },
+      { kind: 'event', name: 'ok-open', type: '{open:true}', detail: 'Al abrirse' },
+      { kind: 'event', name: 'ok-close', type: '{reason} cancelable', detail: 'Gesto de cierre; preventDefault() lo veta' },
+    ],
+  },
 
   // ════════════════════════════════ FLUJO ═════════════════════════════════
   {

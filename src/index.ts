@@ -89,6 +89,9 @@ export { OkAvatar } from './components/ok-avatar/ok-avatar.js';
 export type { OkAvatarSize, OkAvatarShape, OkAvatarTone, OkAvatarStatus } from './components/ok-avatar/ok-avatar.js';
 export { OkStatusPill } from './components/ok-status-pill/ok-status-pill.js';
 export type { OkStatusPillTone, OkStatusPillSize } from './components/ok-status-pill/ok-status-pill.js';
+export { OkDrawer } from './components/ok-drawer/ok-drawer.js';
+export type { OkDrawerSide, OkDrawerLabels } from './components/ok-drawer/ok-drawer.js';
+export { OkPageHeader } from './components/ok-page-header/ok-page-header.js';
 
 // ── Marketing 2026 (bento · cards · scroll-reveal · prueba social) ───────────────────────────
 export { OkSection } from './components/ok-section/ok-section.js';

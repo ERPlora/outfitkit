@@ -79,6 +79,8 @@ export default defineConfig({
         'ok-color-picker': resolve(__dirname, 'src/components/ok-color-picker/ok-color-picker.ts'),
         'ok-avatar': resolve(__dirname, 'src/components/ok-avatar/ok-avatar.ts'),
         'ok-status-pill': resolve(__dirname, 'src/components/ok-status-pill/ok-status-pill.ts'),
+        'ok-drawer': resolve(__dirname, 'src/components/ok-drawer/ok-drawer.ts'),
+        'ok-page-header': resolve(__dirname, 'src/components/ok-page-header/ok-page-header.ts'),
         // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
         'ok-section': resolve(__dirname, 'src/components/ok-section/ok-section.ts'),
         'ok-bento': resolve(__dirname, 'src/components/ok-bento/ok-bento.ts'),
