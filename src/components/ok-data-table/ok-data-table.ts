@@ -262,7 +262,10 @@ export class OkDataTable extends LitElement {
     .title-wrap { display: flex; align-items: baseline; gap: 0.5rem; margin-right: auto; }
     .title { font-size: 15px; font-weight: 600; line-height: 1; margin: 0; }
     .title-count { font-size: 12px; font-weight: 500; color: var(--color-muted); }
-    .bar-end { display: flex; align-items: center; gap: 0.4rem; }
+    /* flex-wrap: en pantallas estrechas los controles (y el slot "toolbar",
+     * p.ej. selects de filtro del host) saltan de línea en vez de desbordar
+     * recortados por el borde derecho (cloud#551). */
+    .bar-end { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
     .bar-end ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
 
     /* Botón de herramienta cuadrado (filtros/import/export), look del Hub: 36×36, badge contador. */
@@ -291,7 +294,9 @@ export class OkDataTable extends LitElement {
     .vsep { width: 1px; align-self: stretch; background: var(--border-color); margin: 0.3rem 0.25rem; }
 
     /* Selector de filas/página en la toolbar (consolidado) */
-    .tk-psize { min-width: 4.25rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
+    /* max-width: ion-select es display:block (sin core.css el host estira a la
+     * línea entera cuando .bar-end hace wrap) — se capa como .tk-cols. */
+    .tk-psize { min-width: 4.25rem; max-width: 5.5rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.6rem; --padding-end: 0.4rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
 
     /* Filtros EN LÍNEA en la toolbar (select / rango de fechas) */
     .tk-filter { min-width: 8.5rem; max-width: 13rem; min-height: 38px; font-size: 13px; background: var(--background); color: var(--color); border: 1px solid var(--control-border); border-radius: 10px; --padding-start: 0.7rem; --padding-end: 0.5rem; --padding-top: 0.35rem; --padding-bottom: 0.35rem; }
