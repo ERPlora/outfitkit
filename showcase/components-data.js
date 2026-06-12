@@ -1139,6 +1139,150 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     ],
   },
   {
+    id: 'ok-grid-recipes',
+    name: 'Grid — casos de uso',
+    category: 'web',
+    desc: 'Recetas reales con la rejilla de layout.css: KPIs de dashboard, master-detail, grid de cards sin breakpoints y container de web pública. La regla: en dashboard (ion-split-pane) NUNCA .ok-container — el ancho lo da el panel; en web pública sí. Las clases .ok-md/lg/xl-* responden al ancho de VENTANA (media queries): en esta preview redimensiona la ventana del navegador, no el selector de viewport.',
+    importPath: "@outfitkit/core/layout.css",
+    example: `<div style="display:flex;flex-direction:column;gap:2rem;width:100%">
+
+  <div>
+    <p style="margin:0 0 .5rem;font-weight:600">1 · KPIs de dashboard — 4/2/1 columnas según ancho</p>
+    <div class="ok-grid">
+      <div class="ok-col ok-md-6 ok-xl-3"><ok-kpi label="Ventas hoy" value="€2.480" delta="+12%" trend="up" icon="cash-outline"></ok-kpi></div>
+      <div class="ok-col ok-md-6 ok-xl-3"><ok-kpi label="Tickets" value="142" delta="+8%" trend="up" icon="receipt-outline"></ok-kpi></div>
+      <div class="ok-col ok-md-6 ok-xl-3"><ok-kpi label="Ticket medio" value="€18,10" delta="estable" trend="flat"></ok-kpi></div>
+      <div class="ok-col ok-md-6 ok-xl-3"><ok-kpi label="Devoluciones" value="4" delta="-2" trend="down" icon="return-down-back-outline"></ok-kpi></div>
+    </div>
+  </div>
+
+  <div>
+    <p style="margin:0 0 .5rem;font-weight:600">2 · Master-detail — contenido 8 + lateral 4</p>
+    <div class="ok-grid">
+      <div class="ok-col ok-md-8">
+        <ion-card style="margin:0;height:100%"><ion-card-header><ion-card-title>Pedido #1042</ion-card-title></ion-card-header>
+        <ion-card-content>Contenido principal (líneas del pedido, tabla, formulario…). Ocupa 8/12 desde 768px; a ancho móvil cae a una columna.</ion-card-content></ion-card>
+      </div>
+      <div class="ok-col ok-md-4">
+        <ion-card style="margin:0;height:100%"><ion-card-header><ion-card-title>Resumen</ion-card-title></ion-card-header>
+        <ion-card-content>Lateral (cliente, totales, acciones). 4/12.</ion-card-content></ion-card>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p style="margin:0 0 .5rem;font-weight:600">3 · .ok-grid-cards — auto-fill, sin clases de breakpoint</p>
+    <div class="ok-grid-cards" style="--ok-card-min:180px">
+      <ion-card style="margin:0"><ion-card-content>Café solo<br><strong>€1,40</strong></ion-card-content></ion-card>
+      <ion-card style="margin:0"><ion-card-content>Cortado<br><strong>€1,50</strong></ion-card-content></ion-card>
+      <ion-card style="margin:0"><ion-card-content>Tostada<br><strong>€2,20</strong></ion-card-content></ion-card>
+      <ion-card style="margin:0"><ion-card-content>Zumo<br><strong>€2,80</strong></ion-card-content></ion-card>
+      <ion-card style="margin:0"><ion-card-content>Croissant<br><strong>€1,90</strong></ion-card-content></ion-card>
+    </div>
+  </div>
+
+  <div>
+    <p style="margin:0 0 .5rem;font-weight:600">4 · .ok-container — solo web pública (centrado con max-width)</p>
+    <div class="ok-container" style="background:var(--ok-surface-2);border-radius:8px;padding-block:1rem;text-align:center">
+      Centrado a --ok-container-max. En dashboard NO: ahí el ancho útil lo da ion-split-pane.
+    </div>
+  </div>
+</div>`,
+    code: `<!-- 1 · Dashboard: KPIs 4/2/1 — dentro de ion-content, SIN .ok-container -->
+<ion-content>
+  <main class="ion-padding">
+    <div class="ok-grid">
+      <div class="ok-col ok-md-6 ok-xl-3"><ok-kpi label="Ventas hoy" value="€2.480"></ok-kpi></div>
+      <div class="ok-col ok-md-6 ok-xl-3">…</div>
+      <div class="ok-col ok-md-6 ok-xl-3">…</div>
+      <div class="ok-col ok-md-6 ok-xl-3">…</div>
+    </div>
+  </main>
+</ion-content>
+
+<!-- 2 · Master-detail: contenido + lateral -->
+<div class="ok-grid">
+  <div class="ok-col ok-md-8"><ion-card>…contenido…</ion-card></div>
+  <div class="ok-col ok-md-4"><ion-card>…resumen…</ion-card></div>
+</div>
+
+<!-- 3 · Grid de cards sin breakpoints (auto-fill; ajusta el mínimo con --ok-card-min) -->
+<div class="ok-grid-cards" style="--ok-card-min:220px">
+  <ion-card>…</ion-card>
+  <ion-card>…</ion-card>
+</div>
+
+<!-- 4 · Web pública: container centrado (en dashboard NO se usa) -->
+<div class="ok-container">…sección de landing…</div>`,
+    api: [
+      { kind: 'prop', name: 'Dashboard', type: 'receta', detail: 'ion-content + .ion-padding + .ok-grid — sin .ok-container (el ancho lo da el split-pane); min-width:0 de .ok-col evita desbordes' },
+      { kind: 'prop', name: 'Spans', type: 'receta', detail: 'Móvil siempre 12 (apilado); .ok-md-N desde 768, .ok-lg-N desde 992, .ok-xl-N desde 1200 — combinables (ok-md-6 ok-xl-3 = 2 col tablet, 4 col desktop)' },
+      { kind: 'prop', name: 'Cards/KPIs', type: 'receta', detail: '.ok-grid-cards cuando todas las celdas son iguales: cero clases de breakpoint, el nº de columnas sale solo de --ok-card-min' },
+      { kind: 'prop', name: 'Web pública', type: 'receta', detail: '.ok-container para centrar secciones a --ok-container-max; .ok-section ya trae su propio centrado (no anidar ambos)' },
+      { kind: 'prop', name: '--ok-grid-gap · --ok-card-min', type: 'CSS var', detail: 'Gap del grid (clamp fluido por defecto) · ancho mínimo de celda en .ok-grid-cards (260px por defecto)' },
+    ],
+  },
+  {
+    id: 'ok-table-stack',
+    name: '.ok-table-stack (layout.css)',
+    category: 'datos',
+    desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una card apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). Funciona con <table> nativa, con divs (.ok-thead/.ok-trow/.ok-tcell) y con ion-grid/ion-row/ion-col.',
+    importPath: "@outfitkit/core/layout.css",
+    example: `<table class="ok-table-stack">
+  <thead>
+    <tr><th>Producto</th><th>SKU</th><th>Precio</th><th>Stock</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td data-title="Producto">Camiseta básica</td>
+      <td data-title="SKU">TSH-001</td>
+      <td data-title="Precio">9,90 €</td>
+      <td data-title="Stock">142</td>
+    </tr>
+    <tr>
+      <td data-title="Producto">Sudadera capucha</td>
+      <td data-title="SKU">HOD-014</td>
+      <td data-title="Precio">29,90 €</td>
+      <td data-title="Stock">38</td>
+    </tr>
+  </tbody>
+</table>`,
+    code: `<link rel="stylesheet" href=".../layout.css">
+
+<!-- 1 · Tabla nativa -->
+<table class="ok-table-stack">
+  <thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead>
+  <tbody>
+    <tr>
+      <td data-title="Producto">Camiseta</td>
+      <td data-title="Precio">9,90 €</td>
+      <td><ion-button size="small">Editar</ion-button></td> <!-- sin data-title: ancho completo en móvil -->
+    </tr>
+  </tbody>
+</table>
+
+<!-- 2 · Divs (o cualquier elemento) -->
+<div class="ok-table-stack">
+  <div class="ok-thead"><div class="ok-tcell">Producto</div><div class="ok-tcell">Precio</div></div>
+  <div class="ok-trow"><div class="ok-tcell" data-title="Producto">Camiseta</div><div class="ok-tcell" data-title="Precio">9,90 €</div></div>
+</div>
+
+<!-- 3 · Ionic -->
+<ion-grid class="ok-table-stack">
+  <ion-row class="ok-thead"><ion-col class="ok-tcell">Producto</ion-col><ion-col class="ok-tcell">Precio</ion-col></ion-row>
+  <ion-row class="ok-trow"><ion-col class="ok-tcell" data-title="Producto">Camiseta</ion-col><ion-col class="ok-tcell" data-title="Precio">9,90 €</ion-col></ion-row>
+</ion-grid>
+
+<!-- Tokens: --ok-table-cols (columnas del markup no-<table>; p.ej. 2fr 1fr auto),
+     --ok-table-label-w (ancho de la etiqueta en móvil, 45%) -->`,
+    api: [
+      { kind: 'prop', name: '.ok-table-stack', type: 'class', detail: 'Contenedor (en <table>, en un div o en ion-grid). Bajo 768px (md de Ionic) las filas se apilan como cards' },
+      { kind: 'prop', name: '.ok-thead · .ok-trow · .ok-tcell', type: 'class', detail: 'Cabecera/fila/celda para markup no-<table> (divs o ion-row/ion-col); en <table> nativa no hacen falta' },
+      { kind: 'prop', name: '[data-title]', type: 'attr', detail: 'Etiqueta de columna que la celda pinta delante en móvil (::before); sin él la celda ocupa el ancho completo (acciones)' },
+      { kind: 'prop', name: '--ok-table-cols · --ok-table-label-w', type: 'CSS var', detail: 'Columnas del grid no-<table> (por defecto partes iguales) · ancho de etiqueta en móvil (45%)' },
+    ],
+  },
+  {
     id: 'ok-menubar',
     name: 'ok-menubar',
     category: 'web',

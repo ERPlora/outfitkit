@@ -168,3 +168,126 @@
   line-height: 1.55;
   color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
 }
+
+/* ===== Tabla apilable (.ok-table-stack) — patrón «no more tables» =====
+ *
+ * Solo CSS, sin web component (para CRUDs ricos usa <ok-data-table>; esto es
+ * para tablas simples/estáticas). En escritorio se ve como tabla; bajo 768px
+ * (breakpoint md de Ionic) cada fila se convierte en una card apilada y cada
+ * celda pinta su etiqueta de columna delante con `content: attr(data-title)`.
+ *
+ * Funciona con tres tipos de markup:
+ *   1) <table class="ok-table-stack"> nativo:
+ *        <td data-title="Precio">9,90 €</td>
+ *   2) divs (o cualquier elemento):
+ *        .ok-table-stack > .ok-thead/.ok-trow > .ok-tcell[data-title]
+ *   3) Ionic:
+ *        ion-grid.ok-table-stack > ion-row.ok-trow > ion-col.ok-tcell
+ *      (los estilos del documento ganan al :host de Ionic, así que el grid
+ *      propio sustituye al flex de ion-row; ::before sí renderiza en hosts
+ *      con shadow DOM)
+ *
+ * Tokens: --ok-table-cols (columnas del markup no-<table>; por defecto
+ * partes iguales) · --ok-table-label-w (ancho de la etiqueta en móvil, 45%).
+ * Celdas sin data-title (p.ej. acciones) ocupan el ancho completo en móvil.
+ */
+
+.ok-table-stack {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+  color: var(--ok-text, var(--ion-text-color, #18181b));
+}
+
+table.ok-table-stack {
+  border-collapse: collapse;
+}
+
+/* Markup no-<table>: cabecera y filas como grid de columnas iguales */
+.ok-table-stack > .ok-thead,
+.ok-table-stack > .ok-trow {
+  display: grid;
+  grid-template-columns: var(--ok-table-cols, repeat(auto-fit, minmax(0, 1fr)));
+  align-items: center;
+}
+
+.ok-table-stack :is(th, td, .ok-tcell) {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.ok-table-stack :is(thead th, .ok-thead .ok-tcell) {
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
+}
+
+.ok-table-stack :is(tr, .ok-trow, .ok-thead) {
+  border-bottom: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 10%, transparent);
+}
+
+@media (max-width: 767px) {
+  /* La tabla nativa deja de comportarse como tabla */
+  table.ok-table-stack,
+  table.ok-table-stack :is(thead, tbody, tfoot, tr, th, td),
+  .ok-table-stack > .ok-trow {
+    display: block;
+  }
+
+  /* Cabecera oculta visualmente, no para lectores de pantalla */
+  .ok-table-stack :is(thead, .ok-thead) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Fila = card */
+  .ok-table-stack :is(tbody tr, .ok-trow) {
+    border: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+
+  /* Celda = par etiqueta/valor */
+  .ok-table-stack :is(td, .ok-tcell) {
+    position: relative;
+    border: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 7%, transparent);
+    padding: 0.55rem 0.75rem;
+    padding-inline-start: calc(var(--ok-table-label-w, 45%) + 0.75rem);
+    white-space: normal;
+    text-align: left;
+  }
+
+  .ok-table-stack :is(td, .ok-tcell):last-child {
+    border-bottom: none;
+  }
+
+  .ok-table-stack :is(td, .ok-tcell)::before {
+    content: attr(data-title);
+    position: absolute;
+    top: 0.55rem;
+    inset-inline-start: 0.75rem;
+    width: calc(var(--ok-table-label-w, 45%) - 1rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
+  }
+
+  /* Celdas sin etiqueta (acciones, etc.): ancho completo, sin ::before */
+  .ok-table-stack :is(td, .ok-tcell):not([data-title]),
+  .ok-table-stack :is(td, .ok-tcell)[data-title=''] {
+    padding-inline-start: 0.75rem;
+  }
+}
