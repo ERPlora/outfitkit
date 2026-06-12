@@ -256,8 +256,12 @@ table.ok-table-stack {
     overflow: hidden;
   }
 
-  /* Celda = par etiqueta/valor */
+  /* Celda = par etiqueta/valor (display/width explícitos: pisan el :host
+     flex de ion-col, que si no se queda con su sizing de columna) */
   .ok-table-stack :is(td, .ok-tcell) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
     position: relative;
     border: none;
     border-bottom: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 7%, transparent);
