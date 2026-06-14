@@ -295,3 +295,44 @@ table.ok-table-stack {
     padding-inline-start: 0.75rem;
   }
 }
+
+/* ===== Masonry (columnas CSS, sin JS) — hueco de Ionic ===== */
+/* Layout de columnas tipo Pinterest: los items fluyen por columnas con
+ * break-inside:avoid. Variantes 2..5 columnas; colapsa a 2 (768px) y 1 (480px).
+ * Para galerías de cards de altura desigual. (Antiguo ux-masonry.) */
+.ok-masonry {
+  --_cols: 3;
+  column-count: var(--_cols);
+  column-gap: var(--ok-grid-gap, 1rem);
+}
+.ok-masonry-2 { --_cols: 2; }
+.ok-masonry-3 { --_cols: 3; }
+.ok-masonry-4 { --_cols: 4; }
+.ok-masonry-5 { --_cols: 5; }
+.ok-masonry > * {
+  break-inside: avoid;
+  margin-bottom: var(--ok-grid-gap, 1rem);
+}
+@media (max-width: 768px) {
+  .ok-masonry { column-count: 2; }
+}
+@media (max-width: 480px) {
+  .ok-masonry { column-count: 1; }
+}
+
+/* ===== Form actions (barra de acciones de pie de formulario/modal) — hueco de Ionic ===== */
+/* Pie estandarizado de formularios: borde superior, gap y alineación de botones.
+ * Más barato como utilidad CSS que como web component. (Antiguo ux-form-actions.)
+ * Uso: <div class="ok-form-actions ok-form-actions-end"><ion-button…/></div> */
+.ok-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--ok-border-color, var(--ion-border-color, rgba(0, 0, 0, 0.1)));
+}
+.ok-form-actions-end { justify-content: flex-end; }
+.ok-form-actions-start { justify-content: flex-start; }
+.ok-form-actions-between { justify-content: space-between; }
