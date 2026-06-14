@@ -224,9 +224,14 @@ export class OkGauge extends LitElement {
   }
 
   // Texto del valor con unidad como superíndice si la hay.
+  // Se envuelve en un único <span> para que el valor y la unidad fluyan inline
+  // como un solo bloque; en el ring el contenedor es grid/place-items y, sin el
+  // wrapper, el número y el <sup> caerían en filas distintas (uno encima de otro).
   private renderValueText(): unknown {
     const n = Number.isInteger(this.value) ? this.value : Number(this.value.toFixed(1));
-    return this.unit ? html`${n}<sup>${this.unit}</sup>` : html`${n}`;
+    return html`<span class="value-text"
+      >${n}${this.unit ? html`<sup>${this.unit}</sup>` : null}</span
+    >`;
   }
 
   // ---- ARC: semicírculo 180° ----

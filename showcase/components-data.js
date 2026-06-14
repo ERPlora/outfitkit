@@ -2582,19 +2582,21 @@ root.querySelector('#ag-sm').avatars = equipo.slice(0, 5);
     id: "ok-org-chart",
     name: "ok-org-chart",
     category: "datos",
-    desc: "Organigrama jerárquico vertical (nodo + conectores en CSS), distinto del ok-tree indentado: raíz resaltada, hover-lift en los hijos y stack de avatares (+N) por tamaño de equipo. Recibe el árbol por la prop `.root` y `maxAvatars`. Presentacional, sin eventos.",
+    desc: "Organigrama jerárquico con render SVG vectorial: layout calculado (tidy-tree), conectores que cuadran centro-a-centro y nodos HTML (avatar imagen o iniciales del nombre, hover-lift, stack de avatares +N por tamaño de equipo). Como un organigrama no cabe a lo ancho, se navega con pan (arrastrar) + zoom (rueda/pinch + botones), centrar y «ajustar a pantalla»; cada rama se puede recoger/expandir. Recibe el árbol por la prop `.root`. Emite `ok-node-toggle`.",
     importPath: "@outfitkit/core/ok-org-chart",
-    example: "<div style=\"overflow-x:auto\"><ok-org-chart id=\"org\" max-avatars=\"3\"></ok-org-chart></div>",
+    example: "<ok-org-chart id=\"org\" max-avatars=\"3\" height=\"460\"></ok-org-chart>",
     setup: (root, ctx) => {
 root.querySelector('#org').root = {
   name: 'Lucía Fernández',
   role: 'Directora General',
   team: 24,
+  avatar: 'https://i.pravatar.cc/80?img=47',
   children: [
     {
       name: 'Carlos Méndez',
       role: 'Jefe de Ventas',
       team: 8,
+      avatar: 'https://i.pravatar.cc/80?img=12',
       children: [
         { name: 'Marta Gil', role: 'Comercial', team: 3 },
         { name: 'Diego Soto', role: 'Comercial' },
@@ -2617,8 +2619,8 @@ root.querySelector('#org').root = {
   ],
 };
     },
-    code: "const org = document.querySelector('ok-org-chart');\norg.maxAvatars = 3;\norg.root = {\n  name: 'Lucía Fernández', role: 'Directora General', team: 24,\n  children: [\n    { name: 'Carlos Méndez', role: 'Jefe de Ventas', team: 8,\n      children: [{ name: 'Marta Gil', role: 'Comercial' }] },\n    { name: 'Ana Belmonte', role: 'Jefa de Operaciones', team: 11 },\n  ],\n};\n// <ok-org-chart max-avatars=\"3\"></ok-org-chart>",
-    api: [{"kind": "prop", "name": ".root", "type": "OrgNode | null", "detail": "Nodo raíz del organigrama (children recursivos: name, role?, avatar?, team?)"}, {"kind": "prop", "name": "maxAvatars", "type": "number", "detail": "Máximo de avatares en el stack antes del «+N» (por defecto 3)"}],
+    code: "const org = document.querySelector('ok-org-chart');\norg.maxAvatars = 3;\norg.root = {\n  name: 'Lucía Fernández', role: 'Directora General', team: 24,\n  avatar: 'https://…/lucia.jpg',           // imagen, o iniciales si falta\n  children: [\n    { name: 'Carlos Méndez', role: 'Jefe de Ventas', team: 8,\n      children: [{ name: 'Marta Gil', role: 'Comercial' }] },\n    { name: 'Ana Belmonte', role: 'Jefa de Operaciones', team: 11 },\n  ],\n};\norg.addEventListener('ok-node-toggle', e => console.log(e.detail));\n// <ok-org-chart max-avatars=\"3\" height=\"460\"></ok-org-chart>",
+    api: [{"kind": "prop", "name": ".root", "type": "OrgNode | null", "detail": "Nodo raíz del organigrama (children recursivos: name, role?, avatar?, team?)"}, {"kind": "prop", "name": "maxAvatars", "type": "number", "detail": "Máximo de avatares en el stack antes del «+N» (por defecto 3)"}, {"kind": "prop", "name": "height", "type": "number", "detail": "Alto del viewport en px (se navega con pan/zoom; por defecto 460)"}, {"kind": "event", "name": "ok-node-toggle", "type": "{ node, collapsed }", "detail": "Al recoger/expandir una rama"}],
   },
 
   {
