@@ -11,9 +11,11 @@
 
 import { html as h } from 'lit';
 import { CATEGORIES, COMPONENTS } from './components-data.js';
+import { PAGES } from './pages-data.js';
 
 const GITHUB_URL = 'https://github.com/ERPlora/outfitkit';
 const BY_ID = new Map(COMPONENTS.map((c) => [c.id, c]));
+const PAGE_BY_ID = new Map(PAGES.map((p) => [p.id, p]));
 
 // ── Paletas de tema ──────────────────────────────────────────────────────────
 // `erplora` = la paleta REAL de erplora.com (azul corporativo, neutros gris; primario distinto en
@@ -114,14 +116,29 @@ function renderSidebarList() {
   const list = document.getElementById('nav-list');
   if (!list) return;
   const q = state.search.trim().toLowerCase();
-  const activeId = currentRoute().id;
+  const route = currentRoute();
+  const activeId = route.kind === 'component' ? route.id : null;
+  const activePage = route.kind === 'page' ? route.id : null;
 
   // Item "Inicio" siempre arriba.
   let htmlStr = `
-    <ion-item button detail="false" data-href="#/" ${!activeId ? 'color="primary"' : ''}>
+    <ion-item button detail="false" data-href="#/" ${route.kind === 'home' ? 'color="primary"' : ''}>
       <ion-icon slot="start" name="home-outline"></ion-icon>
       <ion-label>Inicio</ion-label>
     </ion-item>`;
+
+  // Grupo "Páginas" (plantillas de pantalla completa).
+  const pageItems = PAGES.filter((p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+  if (pageItems.length) {
+    htmlStr += `<ion-list-header><ion-label>Páginas</ion-label></ion-list-header>`;
+    for (const p of pageItems) {
+      htmlStr += `
+        <ion-item button detail="false" data-href="#/p/${p.id}" ${p.id === activePage ? 'color="primary"' : ''}>
+          <ion-icon slot="start" name="${p.icon}"></ion-icon>
+          <ion-label><span class="nav-name">${p.name}</span></ion-label>
+        </ion-item>`;
+    }
+  }
 
   let totalShown = 0;
   for (const cat of CATEGORIES) {
@@ -176,18 +193,26 @@ function escapeHtml(s) {
 // Router
 // ─────────────────────────────────────────────────────────────────────────────
 function currentRoute() {
-  const m = (location.hash || '').match(/^#\/c\/([\w-]+)/);
-  return { id: m ? m[1] : null };
+  const hash = location.hash || '';
+  let m = hash.match(/^#\/p\/([\w-]+)/);
+  if (m) return { kind: 'page', id: m[1] };
+  m = hash.match(/^#\/c\/([\w-]+)/);
+  if (m) return { kind: 'component', id: m[1] };
+  return { kind: 'home', id: null };
 }
 
 function render() {
-  const { id } = currentRoute();
+  const route = currentRoute();
   const titleEl = document.getElementById('topbar-title');
   const content = document.getElementById('view');
   if (!content) return;
 
-  if (id && BY_ID.has(id)) {
-    const comp = BY_ID.get(id);
+  if (route.kind === 'page' && PAGE_BY_ID.has(route.id)) {
+    const pg = PAGE_BY_ID.get(route.id);
+    titleEl.textContent = pg.name;
+    renderPageView(content, pg);
+  } else if (route.kind === 'component' && BY_ID.has(route.id)) {
+    const comp = BY_ID.get(route.id);
     titleEl.textContent = comp.name;
     renderComponentView(content, comp);
   } else {
@@ -196,6 +221,71 @@ function render() {
   }
   renderSidebarList();
   document.getElementById('view').scrollTop = 0;
+}
+
+// ── Vista de página de ejemplo (tabs Preview/Código + iframe a pantalla completa) ──
+function renderPageView(content, pg) {
+  const vp = VIEWPORTS[state.viewport] || VIEWPORTS.desktop;
+  content.innerHTML = `
+    <div class="doc comp-view">
+      <header class="comp-head">
+        <div class="tags"><span class="tag">página</span></div>
+        <h1>${escapeHtml(pg.name)}</h1>
+        <p class="desc">Pantalla completa compuesta con <code>ion-*</code> + <code>ok-*</code>
+          (estructura del prototipo ERPlora UX). La pestaña <strong>Código</strong> es el HTML
+          standalone de la página, listo para copiar y replicar.</p>
+        <pre class="import-line">showcase/${escapeHtml(pg.file)}</pre>
+      </header>
+
+      <ion-segment value="${state.tab}" id="tab-seg">
+        <ion-segment-button value="preview"><ion-label>Preview</ion-label></ion-segment-button>
+        <ion-segment-button value="code"><ion-label>Código</ion-label></ion-segment-button>
+      </ion-segment>
+
+      <section class="tab-panel" data-tab="preview" ${state.tab !== 'preview' ? 'hidden' : ''}>
+        <div class="viewport-stage page-stage" data-viewport="${state.viewport}">
+          <iframe class="page-frame" src="${pg.file}" title="${escapeHtml(pg.name)}"
+                  style="width:100%;max-width:${vp.width};"></iframe>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab="code" ${state.tab !== 'code' ? 'hidden' : ''}>
+        <div class="code-wrap">
+          <button class="copy-btn" id="copy-btn"><ion-icon name="copy-outline"></ion-icon> Copiar</button>
+          <pre class="code" id="code-block">Cargando…</pre>
+        </div>
+      </section>
+    </div>`;
+
+  // Tabs.
+  const seg = content.querySelector('#tab-seg');
+  seg.addEventListener('ionChange', (e) => {
+    state.tab = e.detail.value;
+    content.querySelectorAll('.tab-panel').forEach((p) => {
+      p.hidden = p.getAttribute('data-tab') !== state.tab;
+    });
+  });
+
+  // Código = fuente HTML standalone de la página (fetch same-origin). textContent → seguro.
+  const codeBlock = content.querySelector('#code-block');
+  let source = '';
+  fetch(pg.file)
+    .then((r) => r.text())
+    .then((txt) => { source = txt; codeBlock.textContent = txt; })
+    .catch(() => { codeBlock.textContent = '// No se pudo cargar ' + pg.file; });
+
+  const copyBtn = content.querySelector('#copy-btn');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(source);
+      copyBtn.innerHTML = '<ion-icon name="checkmark-outline"></ion-icon> Copiado';
+      setTimeout(() => {
+        copyBtn.innerHTML = '<ion-icon name="copy-outline"></ion-icon> Copiar';
+      }, 1400);
+    } catch (_) {
+      /* clipboard no disponible */
+    }
+  });
 }
 
 // ── Vista de inicio ──────────────────────────────────────────────────────────
@@ -336,12 +426,16 @@ function setViewport(v) {
   if (seg) seg.value = v;
   const frame = document.getElementById('preview-frame');
   const stage = document.querySelector('.viewport-stage');
+  const w = (VIEWPORTS[v] || VIEWPORTS.desktop).width;
   if (frame) {
     // width:100% + max-width → el marco encoge para CABER siempre; nunca desborda el contenido.
     frame.style.width = '100%';
-    frame.style.maxWidth = (VIEWPORTS[v] || VIEWPORTS.desktop).width;
+    frame.style.maxWidth = w;
     frame.style.marginInline = 'auto';
   }
+  // Páginas de ejemplo: redimensiona el iframe igual que el marco de preview.
+  const pageFrame = document.querySelector('.page-frame');
+  if (pageFrame) { pageFrame.style.width = '100%'; pageFrame.style.maxWidth = w; }
   if (stage) stage.setAttribute('data-viewport', v);
 }
 

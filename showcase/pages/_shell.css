@@ -1,0 +1,57 @@
+/* _shell.css — Pulido del app-shell de las páginas de ejemplo (sobre Ionic).
+ * Solo layout/estructura (la regla del encargo: estructura, no colores). Los
+ * colores salen de los tokens --ion-* del tema cargado (theme.example.css). */
+
+html, body { height: 100%; }
+body { margin: 0; background: var(--ion-background-color); }
+
+/* El atributo [hidden] debe ganar SIEMPRE (si no, .pg-stack{display:flex} u otras
+ * clases con display lo anulan y los paneles de tab ocultos se ven igualmente). */
+[hidden] { display: none !important; }
+
+/* Contenedor central del contenido — limita el ancho como el mock. */
+.page-wrap { max-width: 1120px; margin-inline: auto; width: 100%; }
+
+/* Marca de la sidebar (logo cuadrado + nombre/meta). */
+.cloud-brand { display: inline-flex; align-items: center; gap: .6rem; }
+.cloud-brand__logo {
+  width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+  font-weight: 800; font-size: 13px; letter-spacing: .5px;
+}
+.cloud-brand__txt { display: flex; flex-direction: column; line-height: 1.15; font-size: .9rem; }
+.cloud-brand__txt small { color: var(--ion-color-medium); font-size: .7rem; }
+.cloud-user small { color: var(--ion-color-medium); }
+
+/* Buscador centrado de la topbar (se oculta en móvil estrecho). */
+.topbar-search { max-width: 440px; --background: var(--ion-color-step-50, rgba(127,127,127,.08)); }
+@media (max-width: 640px) { .topbar-search { display: none; } }
+@media (max-width: 992px) { .topbar-back { display: none; } }
+
+/* Tab-bar inferior: SOLO móvil (en desktop manda el split-pane). */
+.mobile-tabbar { display: flex; }
+@media (min-width: 992px) { .mobile-tabbar { display: none; } }
+
+/* ── Utilidades de layout reusables por las páginas ──────────────────────────
+ * Pequeño set de helpers para no repetir style="" en cada página. Geometría
+ * pura (la regla de OutfitKit: geometría → CSS, comportamiento → componente). */
+.pg-grid { display: grid; gap: 16px; }
+.pg-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.pg-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.pg-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.pg-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) {
+  .pg-grid-3, .pg-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .pg-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .pg-grid-2, .pg-grid-3, .pg-grid-4 { grid-template-columns: 1fr; }
+}
+.pg-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pg-toolbar .pg-spacer { flex: 1 1 auto; }
+.pg-stack { display: flex; flex-direction: column; gap: 14px; }
+.pg-row { display: flex; align-items: center; gap: 10px; }
+.pg-muted { color: var(--ion-color-medium); }
+.pg-mb-4 { margin-bottom: 16px; }
+.pg-mt-2 { margin-top: 8px; }

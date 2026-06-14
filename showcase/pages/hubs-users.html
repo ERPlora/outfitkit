@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · acme-prod · Usuarios del hub</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            level="2"
+            heading="acme-prod · Usuarios del hub"
+            description="16 plazas contratadas · filtra por estado (multiselección)">
+            <div slot="actions" class="pg-row">
+              <ion-button fill="outline" size="small">
+                <ion-icon slot="start" name="download-outline"></ion-icon>
+                Exportar CSV
+              </ion-button>
+              <ion-button size="small">
+                <ion-icon slot="start" name="add-outline"></ion-icon>
+                Invitar usuario
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <ok-data-table id="users-dt" fill></ok-data-table>
+        `,
+        setup(doc) {
+          // ── Helpers de celdas (CSP-safe; lit html via `h`) ──────────────────
+          const ROL_TONE = { Admin: 'primary', Manager: 'secondary', Operador: 'tertiary', Viewer: 'medium' };
+
+          const userCell = (r) => h`
+            <span style="display:inline-flex;align-items:center;gap:.6rem;min-width:0">
+              <ok-avatar name=${r.name} email=${r.email} size="sm"></ok-avatar>
+              <span style="min-width:0">
+                <span style="display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                  ${r.name}${r.you ? h` <ion-badge style="--background:color-mix(in srgb, var(--ion-color-primary) 15%, transparent);--color:var(--ion-color-primary);vertical-align:middle">Tú</ion-badge>` : ''}
+                </span>
+                <span style="display:block;font-size:12px;color:var(--ion-color-medium)">${r.email}</span>
+              </span>
+            </span>`;
+
+          const rolBadge = (r) => {
+            const c = ROL_TONE[r.role] ?? 'medium';
+            return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.role}</ion-badge>`;
+          };
+
+          // Estado del usuario → tono del pill (campo real, filtrable por multiselección).
+          const ESTADO_TONE = { Activo: 'success', Pendiente: 'warning', Suspendido: 'medium' };
+          const estadoPill = (r) => h`<ok-status-pill tone=${ESTADO_TONE[r.estado] ?? 'medium'} dot label=${r.estado}></ok-status-pill>`;
+
+          // ── Datos (≈ screenshot acme-prod · usuarios) ──────────────────────
+          const USERS = [
+            { id: 'u1',  name: 'Ioan Beilic',   email: 'ioan@acme.com',    you: true, role: 'Admin',    access: 'Todo el hub',    last: 'en línea',     estado: 'Activo' },
+            { id: 'u2',  name: 'Marina Casals',  email: 'marina@acme.com',  role: 'Manager',  access: 'Todo el hub',    last: 'hace 12 min',  estado: 'Activo' },
+            { id: 'u3',  name: 'Jordi Roca',     email: 'jordi@acme.com',   role: 'Manager',  access: 'Solo backoffice', last: 'hace 2 h',     estado: 'Activo' },
+            { id: 'u4',  name: 'Paula Vives',    email: 'paula@acme.com',   role: 'Operador', access: 'Solo POS',        last: 'hace 5 min',   estado: 'Activo' },
+            { id: 'u5',  name: 'Xavier Puig',    email: 'xavier@acme.com',  role: 'Operador', access: 'Solo POS',        last: 'hace 28 min',  estado: 'Pendiente' },
+            { id: 'u6',  name: 'Laia Soler',     email: 'laia@acme.com',    role: 'Operador', access: 'Solo POS',        last: 'ayer · 18:42', estado: 'Activo' },
+            { id: 'u7',  name: 'Albert Mateu',   email: 'albert@acme.com',  role: 'Operador', access: 'Solo POS',        last: 'hace 3 d',     estado: 'Suspendido' },
+            { id: 'u8',  name: 'Núria Ferrer',   email: 'nuria@acme.com',   role: 'Manager',  access: 'Solo backoffice', last: 'hace 4 h',     estado: 'Activo' },
+            { id: 'u9',  name: 'Carles Riba',    email: 'carles@acme.com',  role: 'Viewer',   access: 'Solo backoffice', last: 'hace 1 d',     estado: 'Pendiente' },
+            { id: 'u10', name: 'Eva Vidal',      email: 'eva@acme.com',     role: 'Operador', access: 'Solo POS',        last: 'hace 16 min',  estado: 'Activo' },
+            { id: 'u11', name: 'Roger Torra',    email: 'roger@acme.com',   role: 'Viewer',   access: 'Todo el hub',     last: 'hace 6 d',     estado: 'Activo' },
+            { id: 'u12', name: 'Berta Massó',    email: 'berta@acme.com',   role: 'Operador', access: 'Solo POS',        last: 'hace 2 h',     estado: 'Activo' },
+          ];
+
+          const dt = doc.getElementById('users-dt');
+          if (!dt) return;
+          dt.rowKey = (r) => r.id;
+          dt.columns = [
+            { key: 'name',   header: 'Usuario',       width: 'minmax(15rem,1.6fr)', render: userCell },
+            { key: 'role',   header: 'Rol',           width: '9rem',  render: rolBadge },
+            { key: 'access', header: 'Acceso',        width: '11rem' },
+            { key: 'last',   header: 'Última sesión', width: '10rem', render: (r) => h`<span style="color:${r.last === 'en línea' ? 'var(--ion-color-success)' : 'var(--ion-color-medium)'}">${r.last}</span>` },
+            { key: 'estado', header: 'Estado',        width: '10rem', sortable: false,
+              filterable: true, filterType: 'multiselect',
+              options: [
+                { value: 'Activo',     label: 'Activo' },
+                { value: 'Pendiente',  label: 'Pendiente' },
+                { value: 'Suspendido', label: 'Suspendido' },
+              ],
+              render: estadoPill },
+          ];
+          dt.rows = USERS;
+          dt.searchKeys = ['name', 'email', 'access', 'estado'];
+          dt.pageSize = 25;
+          dt.pageSizes = [25, 50, 100];
+          dt.actions = [
+            { id: 'view',   label: 'Ver perfil',  icon: 'person-outline' },
+            { id: 'edit',   label: 'Editar rol',  icon: 'create-outline' },
+            { id: 'suspend', label: 'Suspender',  icon: 'pause-outline' },
+            { id: 'remove', label: 'Quitar',      icon: 'trash-outline', color: 'danger' },
+          ];
+        },
+      });
+    </script>
+  </body>
+</html>

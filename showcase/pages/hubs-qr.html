@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Acceso rápido / QR</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+    <style>
+      /* Geometría puntual de la vista QR (estructura, no color). */
+      .qr-card { max-width: 560px; width: 100%; margin: 0 auto 24px; }
+      .qr-card ion-card-content {
+        display: flex; flex-direction: column; align-items: center; gap: 16px;
+        padding: 32px 24px;
+      }
+      .qr-canon {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: .08em; font-size: 12px; color: var(--ion-color-medium);
+        text-transform: uppercase;
+      }
+      .qr-urlrow {
+        display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;
+      }
+      .qr-urlrow ion-input {
+        flex: 1 1 auto;
+        --background: var(--ion-color-step-50, rgba(127,127,127,.08));
+        --padding-start: 12px; --padding-end: 12px;
+        --border-radius: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+      }
+      .qr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .qr-note {
+        font-size: 12px; color: var(--ion-color-medium); text-align: center;
+        max-width: 380px; margin: 0;
+      }
+
+      /* Cabecera de tarjeta con título + acción a la derecha. */
+      .panel-head {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 12px; flex-wrap: wrap;
+      }
+      .panel-head .panel-text { min-width: 0; }
+      .panel-title { font-weight: 600; font-size: 15px; }
+      .panel-sub { color: var(--ion-color-medium); font-size: 12px; margin-top: 2px; }
+
+      /* Lista de escaneos recientes. */
+      .scan-item::part(native) { --inner-padding-end: 0; }
+      .scan-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+      .scan-dot.is-on { background: var(--ion-color-success); }
+      .scan-dot.is-off { background: var(--ion-color-medium); }
+      .scan-text b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .scan-when { color: var(--ion-color-medium); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            level="2"
+            heading="acme-prod · Acceso rápido"
+            description="Comparte el QR con tu equipo o imprímelo en el TPV.">
+          </ok-page-header>
+
+          <!-- Tarjeta central del QR -->
+          <ion-card class="qr-card">
+            <ion-card-content>
+              <ok-qr value="https://acme.erplora.cloud" size="220"></ok-qr>
+              <div class="qr-canon">ACME.ERPLORA.CLOUD</div>
+
+              <div class="qr-urlrow">
+                <ion-input
+                  readonly
+                  value="https://acme.erplora.cloud"
+                  aria-label="URL del hub"></ion-input>
+                <ion-button id="copy-url" fill="solid" size="small">
+                  <ion-icon slot="start" name="copy-outline"></ion-icon>
+                  <span id="copy-label">Copiar</span>
+                </ion-button>
+              </div>
+
+              <div class="qr-actions">
+                <ion-button fill="outline" size="small">
+                  <ion-icon slot="start" name="download-outline"></ion-icon>
+                  Descargar PNG
+                </ion-button>
+                <ion-button fill="outline" size="small">
+                  <ion-icon slot="start" name="print-outline"></ion-icon>
+                  Imprimir
+                </ion-button>
+              </div>
+
+              <p class="qr-note">
+                Escanea con tu móvil para acceder rápido al hub. El QR caduca cada 24 h.
+              </p>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Tokens temporales -->
+          <ion-card class="pg-mb-4">
+            <ion-card-header>
+              <div class="panel-head">
+                <div class="panel-text">
+                  <div class="panel-title">Tokens temporales</div>
+                  <div class="panel-sub">Códigos de un solo uso para acceso desde dispositivos compartidos.</div>
+                </div>
+                <ion-button size="small">
+                  <ion-icon slot="start" name="add-outline"></ion-icon>
+                  Generar token
+                </ion-button>
+              </div>
+            </ion-card-header>
+            <ion-card-content class="pg-mt-2">
+              <ok-data-table id="tokens-dt" style="display:block" fill></ok-data-table>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Escaneos recientes -->
+          <ion-card class="pg-mb-4">
+            <ion-card-header>
+              <div class="panel-head">
+                <div class="panel-text">
+                  <div class="panel-title">Escaneos recientes</div>
+                  <div class="panel-sub">Últimos 7 días · cuentan solo accesos exitosos.</div>
+                </div>
+                <ion-button fill="clear" size="small">Ver auditoría completa</ion-button>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list lines="full" id="scan-list"></ion-list>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Banner final -->
+          <ok-inline-feedback tone="info" heading="Renovación automática">
+            Los QR se renuevan automáticamente cada 24 h por seguridad. Los tokens
+            temporales pueden tener una duración mayor pero siempre son revocables.
+          </ok-inline-feedback>
+
+          <div style="height:24px;"></div>
+        `,
+        setup(doc) {
+          // ── Botón Copiar: feedback visual sin tocar el portapapeles real ──────
+          const copyBtn = doc.getElementById('copy-url');
+          const copyLabel = doc.getElementById('copy-label');
+          if (copyBtn && copyLabel) {
+            copyBtn.addEventListener('click', () => {
+              copyLabel.textContent = 'Copiado ✓';
+              setTimeout(() => { copyLabel.textContent = 'Copiar'; }, 1600);
+            });
+          }
+
+          // ── Tabla de tokens temporales (ok-data-table) ────────────────────────
+          const dt = doc.getElementById('tokens-dt');
+          if (dt) {
+            // Renders de celda con el tagged-template de Lit (como en components-data.js).
+            const labelCell = (r) => h`<span style="display:inline-flex;align-items:center;gap:.5rem;min-width:0">
+              <ion-badge style="--background:color-mix(in srgb, var(--ion-color-primary) 15%, transparent);--color:var(--ion-color-primary);display:inline-flex;align-items:center;gap:4px">
+                <ion-icon name="qr-code-outline" style="font-size:12px"></ion-icon>QR</ion-badge>
+              <span style="font-weight:600">${r.label}</span></span>`;
+            const tokenCell = (r) => h`<code style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px">${r.token}</code>`;
+            const expiresCell = (r) => h`<span style="color:var(--ion-color-${r.tone})">${r.expires}</span>`;
+            const byCell = (r) => h`<span style="color:var(--ion-color-medium)">${r.by}</span>`;
+
+            dt.title = 'Tokens';
+            dt.rowKey = (r) => r.token;
+            dt.columns = [
+              { key: 'label',   header: 'Etiqueta',     width: 'minmax(12rem,1.4fr)', render: labelCell },
+              { key: 'token',   header: 'Token',        width: '10rem', render: tokenCell },
+              { key: 'expires', header: 'Expira en',    width: '10rem', render: expiresCell },
+              { key: 'by',      header: 'Generado por', width: 'minmax(10rem,1fr)', render: byCell },
+            ];
+            dt.rows = [
+              { label: 'TPV Cocina 1',       token: '7K3X-29MD', expires: '22 h 14 min', tone: 'success', by: 'Ioan Beilic' },
+              { label: 'Almacén Sant Cugat', token: 'PL9Q-A1F2', expires: '18 h 02 min', tone: 'success', by: 'Marina Casals' },
+              { label: 'Tablet inventario',  token: '3R4N-K7B8', expires: '2 h 38 min',  tone: 'warning', by: 'Jordi Roca' },
+              { label: 'Auditor externo',    token: 'M5T6-DH9P', expires: '5 d 11 h',    tone: 'success', by: 'Núria Ferrer' },
+            ];
+            dt.searchKeys = ['label', 'token', 'by'];
+            dt.actions = [
+              { id: 'revoke', label: 'Revocar', icon: 'close-circle-outline', color: 'danger' },
+            ];
+          }
+
+          // ── Lista de escaneos recientes ───────────────────────────────────────
+          const scans = [
+            { token: '7K3X-29MD', detail: 'TPV Cocina 1 · iPhone 15 Pro',            when: 'hace 4 min',   on: true },
+            { token: 'PL9Q-A1F2', detail: 'Almacén Sant Cugat · Android · Samsung A54', when: 'hace 38 min', on: true },
+            { token: '3R4N-K7B8', detail: 'Tablet inventario · iPad Air',            when: 'hace 2 h',     on: true },
+            { token: 'M5T6-DH9P', detail: 'Auditor externo · MacBook Pro',           when: 'ayer · 17:21', on: false },
+          ];
+          const list = doc.getElementById('scan-list');
+          if (list) {
+            list.innerHTML = scans.map((s) =>
+              '<ion-item class="scan-item" lines="full">' +
+                '<span slot="start" class="scan-dot ' + (s.on ? 'is-on' : 'is-off') + '"></span>' +
+                '<ion-label class="scan-text">' +
+                  '<b>' + s.token + '</b> · ' + s.detail +
+                '</ion-label>' +
+                '<span slot="end" class="scan-when">' + s.when + '</span>' +
+              '</ion-item>'
+            ).join('');
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

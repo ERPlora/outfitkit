@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Hubs inactivos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Punto verde/medio que precede al nombre del hub en la celda. */
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: 0 0 auto;
+        background: var(--ion-color-medium);
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // Datos de los 5 hubs inactivos (copiados de la referencia UX).
+      const INACTIVE = [
+        {
+          name: 'restaurante-mas-bonet',
+          company: 'Restaurante Mas Bonet S.L.',
+          since: '12 mar 2026',
+          plan: 'Pro',
+          region: 'EU-West-1',
+          reason: 'Sin actividad durante 47 días · 2 terminales suspendidos',
+        },
+        {
+          name: 'tienda-pirineos',
+          company: 'Comercial Pirineos S.A.',
+          since: '28 feb 2026',
+          plan: 'Starter',
+          region: 'EU-Central-1',
+          reason: 'Sin actividad durante 70 días · 1 terminal sin sincronizar',
+        },
+        {
+          name: 'obrador-baleares-test',
+          company: 'Obrador Baleares',
+          since: '04 mar 2026',
+          plan: 'Test',
+          region: 'EU-West-1',
+          reason: 'Hub de pruebas · sin renovación de plan',
+        },
+        {
+          name: 'cafe-central-vella',
+          company: 'Café Central Vella S.L.',
+          since: '19 mar 2026',
+          plan: 'Pro',
+          region: 'EU-West-1',
+          reason: 'Pago fallido · revisar método de pago',
+        },
+        {
+          name: 'jose-mariola-pop-up',
+          company: 'Mariola Pop-Up',
+          since: '02 abr 2026',
+          plan: 'Starter',
+          region: 'EU-West-1',
+          reason: 'Evento estacional finalizado',
+        },
+      ];
+
+      definePage({
+        bare: true,
+        body: [
+          '<ok-inline-feedback class="pg-mb-4" tone="warning" heading="Política de retención">',
+          '  Los hubs cancelados se eliminan automáticamente tras 60 días. Reactiva o exporta los datos antes del vencimiento para no perderlos.',
+          '</ok-inline-feedback>',
+
+          '<ok-page-header heading="Hubs inactivos" description="8 hubs no operativos · revisión periódica recomendada"></ok-page-header>',
+
+          '<ok-data-table id="inactive-dt" style="display:block"></ok-data-table>',
+        ].join('\n'),
+
+        setup(doc) {
+          const dt = doc.getElementById('inactive-dt');
+          if (!dt) return;
+
+          dt.title = 'Hubs inactivos';
+          dt.rowKey = (r) => r.name;
+          dt.searchable = true;
+          dt.searchKeys = ['name', 'company'];
+          dt.csv = true; // "Exportar histórico" ~ Exportar CSV de la toolbar
+          dt.views = ['table', 'cards'];
+
+          const muted = (txt) =>
+            h`<span style="color:var(--ion-color-medium)">${txt}</span>`;
+
+          // Anchos explícitos con UN SOLO track flexible (1fr). Si todas las columnas usan el
+          // ancho por defecto minmax(8rem,1fr), el grid desborda el contenedor overflow-x:auto y
+          // las últimas columnas + acciones quedan fuera de vista. Empresa se apila bajo el nombre.
+          dt.columns = [
+            {
+              key: 'name',
+              header: 'Hub',
+              width: 'minmax(13rem,1.4fr)',
+              render: (r) =>
+                h`<span style="display:flex;flex-direction:column;min-width:0">
+                    <span style="display:inline-flex;align-items:center;gap:.45rem"><span class="dot"></span><code>${r.name}</code></span>
+                    <span style="color:var(--ion-color-medium);font-size:12px;overflow:hidden;text-overflow:ellipsis">${r.company}</span>
+                  </span>`,
+            },
+            {
+              key: 'since',
+              header: 'Inactivo desde',
+              width: '10rem',
+              render: (r) => h`<ion-badge color="warning">${r.since}</ion-badge>`,
+            },
+            { key: 'plan', header: 'Plan', width: '6rem' },
+            { key: 'region', header: 'Región', width: '9rem' },
+            { key: 'reason', header: 'Motivo', width: '16rem', render: (r) => muted(r.reason) },
+          ];
+
+          dt.actions = [
+            { id: 'reactivate', icon: 'refresh-outline', label: 'Reactivar', color: 'primary' },
+            { id: 'delete', icon: 'trash-outline', label: 'Eliminar', color: 'danger' },
+          ];
+
+          dt.rows = INACTIVE;
+
+          // Mock CSP-safe: solo registra la acción de fila en consola.
+          dt.addEventListener('rowAction', (e) => {
+            console.log('[hubs-inactive] rowAction', e.detail);
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

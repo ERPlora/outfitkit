@@ -292,6 +292,25 @@ pre.import-line {
 }
 .viewport-frame > * { max-width: 100%; }
 
+/* ── Páginas de ejemplo (iframe a pantalla completa) ───────────────────────── */
+.page-stage { align-items: flex-start; }
+.page-frame {
+  width: 100%;
+  max-width: 100%;
+  height: calc(100vh - 230px);
+  min-height: 560px;
+  border: 1px solid var(--ok-border);
+  border-radius: 12px;
+  background: var(--ok-bg);
+  transition: width 0.25s ease;
+  display: block;
+}
+.page-stage[data-viewport='tablet'] .page-frame,
+.page-stage[data-viewport='mobile'] .page-frame {
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
 /* ── Código + Copiar ──────────────────────────────────────────────────────── */
 .code-wrap { position: relative; }
 .copy-btn {

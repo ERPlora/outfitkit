@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · acme-prod · Módulos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            level="2"
+            heading="acme-prod · Módulos"
+            description="14 instalados · 87 disponibles en el marketplace">
+          </ok-page-header>
+
+          <div class="pg-grid pg-grid-4 pg-mb-4">
+            <ok-kpi label="Total instalados" value="14" delta="+2 últimos 30 d" trend="up" icon="cube-outline"></ok-kpi>
+            <ok-kpi label="Activos" value="12" delta="2 desactivados" trend="flat" icon="checkmark-circle-outline"></ok-kpi>
+            <ok-kpi label="Actualizaciones" value="3" delta="disponibles" trend="up" icon="arrow-up-circle-outline"></ok-kpi>
+            <ok-kpi label="Espacio usado" value="1,4 GB" delta="de 10 GB" trend="flat" icon="server-outline"></ok-kpi>
+          </div>
+
+          <ok-data-table id="modules-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          const dt = doc.getElementById('modules-dt');
+          if (!dt) return;
+
+          // ── Datos: los 8 módulos instalados ──────────────────────────────
+          const rows = [
+            { name: 'Punto de venta', icon: 'card-outline', version: 'v3.4.1', branch: 'ERPlora Core',
+              desc: 'Caja registradora completa con soporte de turnos, devoluciones y reportes en tiempo real.',
+              active: true, update: false },
+            { name: 'Inventario y stock', icon: 'cube-outline', version: 'v2.8.0', branch: 'ERPlora Core',
+              desc: 'Control multi-almacén, transferencias, lotes y caducidades con alertas configurables.',
+              active: true, update: false },
+            { name: 'Contabilidad', icon: 'bar-chart-outline', version: 'v4.1.2 → 4.2.0', branch: 'ERPlora Core',
+              desc: 'Plan general adaptado a España. Modelo 303, 390 e integración con la AEAT.',
+              active: true, update: true },
+            { name: 'Facturación electrónica', icon: 'document-text-outline', version: 'v1.9.4', branch: 'ERPlora Core',
+              desc: 'Verifactu, Facturae y SII. Validación XML automática y archivo legal 5 años.',
+              active: true, update: false },
+            { name: 'Recursos humanos', icon: 'people-outline', version: 'v2.3.0', branch: 'ERPlora Verticales',
+              desc: 'Fichaje, vacaciones, nóminas y organigrama. Integración con A3 y Sage.',
+              active: true, update: false },
+            { name: 'Manufactura', icon: 'construct-outline', version: 'v1.6.0 → 1.7.1', branch: 'ERPlora Verticales',
+              desc: 'Órdenes de fabricación, BOM, OEE y planificación con Gantt.',
+              active: true, update: true },
+            { name: 'Kitchen Display (KDS)', icon: 'tv-outline', version: 'v2.0.3', branch: 'ERPlora Verticales',
+              desc: 'Pantalla para cocina con tickets en tiempo real, prioridades y tiempos de servicio.',
+              active: true, update: false },
+            { name: 'Reservas y citas', icon: 'calendar-outline', version: 'v1.4.7', branch: 'ERPlora Verticales',
+              desc: 'Calendario de reservas, confirmaciones por SMS y bloqueos automáticos.',
+              active: false, update: false },
+          ];
+
+          // ── Helpers de render (color via tokens Ionic; inline en shadow) ──
+          const stateBadge = (r) => {
+            const c = r.update ? 'warning' : 'success';
+            return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c})">${r.update ? 'Actualización' : 'Instalado'}</ion-badge>`;
+          };
+
+          // ── Tabla rica ───────────────────────────────────────────────────
+          dt.title = 'Módulos instalados';
+          dt.rowKey = (r) => r.name;
+          dt.searchable = true;
+          dt.searchKeys = ['name', 'desc', 'branch'];
+          dt.views = ['cards', 'table'];
+          dt.viewMode = 'cards';
+          dt.primaryAction = { label: 'Instalar módulo', icon: 'add' };
+          dt.actions = [
+            { id: 'config', label: 'Configurar', icon: 'settings-outline' },
+            { id: 'update', label: 'Actualizar', icon: 'arrow-up-circle-outline' },
+          ];
+          dt.menuActions = [
+            { id: 'marketplace', label: 'Ir al marketplace', icon: 'storefront-outline' },
+            { id: 'uninstall', label: 'Desinstalar', icon: 'trash-outline', color: 'danger' },
+          ];
+
+          // ── Vista TABLA ──────────────────────────────────────────────────
+          dt.columns = [
+            { key: 'name', header: 'Módulo', width: 'minmax(13rem,1.6fr)',
+              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:.45rem"><ion-icon name=${r.icon} style="font-size:18px;color:var(--ion-color-medium)"></ion-icon><span style="font-weight:600">${r.name}</span></span>` },
+            { key: 'version', header: 'Versión', width: '11rem' },
+            { key: 'branch', header: 'Rama', width: '11rem', filterable: true, filterType: 'select',
+              options: ['ERPlora Core', 'ERPlora Verticales'].map((v) => ({ value: v, label: v })) },
+            { key: 'state', header: 'Estado', width: '9rem', sortable: false, render: stateBadge },
+            { key: 'active', header: 'Activo', width: '6rem', align: 'center', sortable: false,
+              render: (r) => h`<ion-toggle .checked=${r.active} aria-label=${'Activar ' + r.name}></ion-toggle>` },
+          ];
+
+          // ── Vista TARJETAS (por defecto) ─────────────────────────────────
+          dt.cardIcon = (r) => r.icon;
+          dt.cardTitle = (r) => h`<span style="display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap">${r.name} ${stateBadge(r)}</span>`;
+          dt.renderCard = (r) => h`
+            <div style="font-size:12px;color:var(--ion-color-medium);margin-bottom:.35rem">${r.version} · ${r.branch}</div>
+            <div style="font-size:13px;line-height:1.45;color:var(--ion-color-medium)">${r.desc}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.6rem">
+              <ion-toggle .checked=${r.active} aria-label=${'Activar ' + r.name}></ion-toggle>
+              ${r.update
+                ? h`<ion-button fill="outline" size="small"><ion-icon slot="start" name="arrow-up-circle-outline"></ion-icon>Actualizar</ion-button>`
+                : h`<ion-button fill="clear" size="small">Configurar</ion-button>`}
+            </div>`;
+
+          dt.rows = rows;
+        },
+      });
+    </script>
+  </body>
+</html>
