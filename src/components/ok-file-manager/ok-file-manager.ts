@@ -59,10 +59,12 @@ export interface OkFmCrumb {
 export interface OkFmQuota {
   /** Etiqueta del espacio usado (p.ej. "1,8 GB usados"). */
   usedLabel: string;
-  /** Etiqueta del espacio total (p.ej. "5 GB"). */
-  totalLabel: string;
-  /** Fracción ocupada 0–1 (ancho de la barra). */
-  fraction: number;
+  /** Etiqueta del espacio total (p.ej. "5 GB"). Opcional: ausente ⇒ modo "sin límite". */
+  totalLabel?: string;
+  /** Fracción ocupada 0–1 (ancho de la barra). Ignorada en modo "sin límite". */
+  fraction?: number;
+  /** Sin cuota dura (p.ej. bucket S3 por hub): muestra solo lo usado, sin barra. */
+  unlimited?: boolean;
 }
 
 /** Modo de visualización del área de archivos. */
@@ -90,6 +92,8 @@ export interface OkFmLabels {
   open: string;
   /** Botón de nueva carpeta. */
   newFolder: string;
+  /** Caption del medidor cuando no hay cuota dura. */
+  noLimit: string;
 }
 
 const DEFAULT_LABELS: OkFmLabels = {
@@ -103,6 +107,7 @@ const DEFAULT_LABELS: OkFmLabels = {
   delete: 'Eliminar',
   open: 'Abrir',
   newFolder: 'Nueva carpeta',
+  noLimit: 'Sin límite',
 };
 
 export class OkFileManager extends LitElement {
@@ -922,7 +927,17 @@ export class OkFileManager extends LitElement {
   // ---- Render del medidor de espacio ----
   private renderQuota(): unknown {
     if (!this.quota) return '';
-    const pct = Math.max(0, Math.min(100, this.quota.fraction * 100));
+    // Modo "sin límite" (p.ej. bucket S3 por hub): solo lo usado, sin barra de fracción.
+    const unlimited = this.quota.unlimited || this.quota.totalLabel == null;
+    if (unlimited) {
+      return html`<div class="quota">
+        <div class="eyebrow" style="padding:0 0 6px;">${this.t.space}</div>
+        <div class="quota-meta">
+          <span>${this.quota.usedLabel}</span><span>${this.t.noLimit}</span>
+        </div>
+      </div>`;
+    }
+    const pct = Math.max(0, Math.min(100, (this.quota.fraction ?? 0) * 100));
     return html`<div class="quota">
       <div class="eyebrow" style="padding:0 0 6px;">${this.t.space}</div>
       <div
