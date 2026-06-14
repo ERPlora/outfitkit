@@ -258,22 +258,31 @@ export class OkDataTable extends LitElement {
 
     /* ── Topbar / cabecera (relieve) ─────────────────────────────────────────────────────── */
     .bar { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
+    /* Toolbar CONSOLIDADA: TODOS los controles (buscador, filtros, page-size, vistas, columnas,
+     * CSV, ⋮, alta) son hijos directos de UNA sola fila flex que envuelve ELEMENTO A ELEMENTO
+     * (no por bloques): caben en una línea → una línea; los que no caben bajan a la(s) línea(s)
+     * que hagan falta. El cluster derecho se empuja al borde con .tk-spacer (hueco flexible)
+     * solo cuando todo cabe en una línea; al envolver, el spacer se oculta y todo se apila a la
+     * izquierda. */
     .bar-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-    .title-wrap { display: flex; align-items: baseline; gap: 0.5rem; margin-right: auto; }
+    .bar-main > ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
+    /* Spacer que absorbe el hueco libre en pantallas anchas (empuja el cluster derecho al borde).
+     * Se oculta por debajo de 1024px para que, al envolver, los controles se apilen a la izquierda. */
+    .tk-spacer { flex: 1 1 0; min-width: 0; align-self: stretch; }
+    @media (max-width: 1024px) { .tk-spacer { display: none; } }
+    /* Buscador a ancho completo (línea propia) en móvil; el resto envuelve debajo. */
+    @media (max-width: 640px) { .search { flex-basis: 100%; max-width: none; } }
+    .title-wrap { display: flex; align-items: baseline; gap: 0.5rem; }
     .title { font-size: 15px; font-weight: 600; line-height: 1; margin: 0; }
     .title-count { font-size: 12px; font-weight: 500; color: var(--color-muted); }
-    /* flex-wrap: en pantallas estrechas los controles (y el slot "toolbar",
-     * p.ej. selects de filtro del host) saltan de línea en vez de desbordar
-     * recortados por el borde derecho (cloud#551). */
-    .bar-end { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
-    .bar-end ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
 
     /* Botón de herramienta cuadrado (filtros/import/export), look del Hub: 36×36, badge contador. */
     .toolbtn { position: relative; --padding-start: 0; --padding-end: 0; --border-radius: 10px; width: 36px; height: 36px; margin: 0; }
     .toolbtn .badge { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 999px; background: var(--primary); color: var(--primary-contrast); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; pointer-events: none; }
 
-    /* Buscador (caja con icono + limpiar), look del Hub */
-    .search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
+    /* Buscador (caja con icono + limpiar), look del Hub. No crece (el spacer se queda el hueco);
+     * puede encoger hasta min-width y, por debajo, envuelve. */
+    .search { flex: 0 1 22rem; min-width: 12rem; max-width: 24rem; }
     ion-searchbar { --background: var(--background); --border-radius: 10px; padding: 0; min-height: 36px; }
     /* Flat: el buscador quita borde y elevación vía la clase específica de Ionic 'ion-no-border'.
      * (La regla global de Ionic para .ion-no-border no cruza el Shadow DOM, así que la
@@ -419,8 +428,11 @@ export class OkDataTable extends LitElement {
   /** Modo "llenar el contenedor": la tabla ocupa el alto disponible, las filas hacen scroll DENTRO
    *  (cabecera sticky) y el pager queda SIEMPRE visible. Requiere que el contenedor tenga alto. */
   @property({ type: Boolean, reflect: true }) fill = false;
-  /** Muestra un multiselect (ion-select) en la barra para elegir qué columnas se ven. */
-  @property({ type: Boolean }) columnPicker = false;
+  /** Muestra un multiselect (ion-select) en la barra para elegir qué columnas se ven.
+   *  Default ON (2026-06-14): toda tabla trae el selector de columnas. Para ocultarlo,
+   *  pon la PROPIEDAD a false (`el.columnPicker = false`); el atributo booleano no puede
+   *  apagar un default true (cualquier valor presente cuenta como true en Lit). */
+  @property({ type: Boolean, attribute: 'column-picker' }) columnPicker = true;
   /** Muestra botones de import/export CSV en la barra. Export vacío = solo cabeceras (estructura). */
   @property({ type: Boolean }) csv = false;
   /** Nombre del fichero de export CSV. */
@@ -454,7 +466,7 @@ export class OkDataTable extends LitElement {
   /** (NUEVO) Mostrar el botón de Importar CSV. */
   @property({ type: Boolean }) importable = false;
   /** (NUEVO, alias) Selector de columnas (equivalente a `columnPicker`). */
-  @property({ type: Boolean }) columnSelector = false;
+  @property({ type: Boolean, attribute: 'column-selector' }) columnSelector = false;
   /** (NUEVO, alias) Opciones del selector de "filas por página" (equivalente a `pageSizeOptions`). */
   @property({ attribute: false }) pageSizes?: number[];
 
@@ -1135,9 +1147,9 @@ export class OkDataTable extends LitElement {
                   ${this.title
                     ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2><span class="title-count">${count}</span></div>`
                     : nothing}
-                  ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : (this.title ? nothing : html`<span style="margin-right:auto"></span>`)}
+                  ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : nothing}
                   ${this.inlineFilters ? this.renderInlineFilters() : nothing}
-                  <div class="bar-end">
+                  <span class="tk-spacer"></span>
                     ${this.effPageSizes.length
                       ? html`
                           <ion-select
@@ -1197,7 +1209,6 @@ export class OkDataTable extends LitElement {
                       : nothing}
                     <!-- El módulo proyecta aquí acciones globales adicionales. -->
                     <slot name="toolbar"></slot>
-                  </div>
                 </div>
                 ${this.selectable && selCount > 0
                   ? html`
