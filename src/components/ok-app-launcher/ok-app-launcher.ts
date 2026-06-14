@@ -1,7 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
-import { computeAnchor } from '../../base/anchor.js';
 
 // App (entrada de la rejilla). La aporta el consumidor vía la prop `.apps`.
 export interface OkLauncherApp {
@@ -18,27 +17,32 @@ export interface OkLauncherApp {
 }
 
 // ok-app-launcher — botón estilo "Google apps": un disparador con icono de rejilla 3×3
-// (`apps-outline`) que abre un PANEL/popover propio posicionado bajo el botón, con una REJILLA
-// de apps (icono grande + label). AUTOCONTENIDO: CSS propio en el shadow (sin Ionic salvo
-// `ion-icon`/`ion-button`, que registra el host). Es INLINE (no ancho completo): ocupa solo lo
-// que mide el botón.
+// (`apps-outline`) que abre una HOJA DE ACCIÓN (action sheet) anclada a la parte INFERIOR de la
+// pantalla con una REJILLA de apps (icono grande + label), al estilo del sheet modal de Ionic.
+// AUTOCONTENIDO: scrim + hoja deslizante propios en el shadow (sin Ionic salvo `ion-icon`, que
+// registra el host), por lo que evita el reparenting de los overlays de Ionic y cumple CSP.
 //   • prop `.apps` → Array<OkLauncherApp>
-// Click en una app: si tiene `href` navega; si no, emite `ok-app-select`. Cierra al click fuera o Esc.
+// El disparador es INLINE (ocupa solo lo que mide el botón); la hoja es full-width abajo.
+// Click en una app: si tiene `href` navega; si no, emite `ok-app-select`. Cierra al click en el
+// scrim, al pulsar el icono de cerrar o con Esc.
 // Eventos (bubbles + composed):
 //   • `ok-app-select` detail { id, app }
 //   • `ok-open`        detail { open }
 
 // Textos traducibles (default inglés). Pásalos desde fuera vía la prop `labels`.
 export interface OkAppLauncherLabels {
-  /** aria-label del botón disparador y del panel. */
+  /** aria-label del botón disparador y título de la hoja. */
   apps: string;
   /** Texto mostrado cuando no hay apps. */
   empty: string;
+  /** aria-label del botón de cerrar. */
+  close: string;
 }
 
 const DEFAULT_LABELS: OkAppLauncherLabels = {
   apps: 'Apps',
   empty: 'No apps',
+  close: 'Close',
 };
 
 export class OkAppLauncher extends LitElement {
@@ -53,8 +57,9 @@ export class OkAppLauncher extends LitElement {
       --panel-bg: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #ffffff)));
       --border-color: var(--ok-border, rgba(var(--ion-text-color-rgb, 28, 27, 23), 0.12));
       --border-radius: var(--ok-radius, 12px);
-      --shadow: var(--ok-shadow, 0 8px 28px rgba(0, 0, 0, 0.18));
+      --shadow: var(--ok-shadow, 0 -8px 28px rgba(0, 0, 0, 0.18));
       --font: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+      --scrim: var(--ok-scrim, rgba(0, 0, 0, 0.4));
 
       /* INLINE: solo lo que mide el botón. */
       display: inline-block;
@@ -90,53 +95,111 @@ export class OkAppLauncher extends LitElement {
     .trigger ion-icon {
       font-size: 1.4rem;
     }
-    /* Panel/popover propio. Es position:absolute relativo al host (robusto ante ancestros con
-       transform): por defecto se abre debajo y alineado a la IZQUIERDA del botón. computeAnchor()
-       decide si voltear a la derecha (.end) o hacia arriba (.above) según el espacio del viewport. */
-    .panel {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
+
+    /* Scrim a pantalla completa tras la hoja. */
+    .scrim {
+      position: fixed;
+      inset: 0;
       z-index: 1000;
-      min-width: 280px;
-      max-width: min(360px, calc(100vw - 16px));
-      max-height: calc(100vh - 16px);
-      overflow: auto;
-      padding: 0.75rem;
+      background: var(--scrim);
+      opacity: 0;
+      transition: opacity var(--ok-transition, 200ms ease);
+    }
+    .scrim.shown {
+      opacity: 1;
+    }
+
+    /* Hoja de acción: anclada abajo, full-width, esquinas superiores redondeadas, desliza hacia
+       arriba. position:fixed para cubrir el viewport con independencia de los ancestros. */
+    .sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1001;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 0.5rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
       background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius);
+      border-top-left-radius: var(--ok-sheet-radius, 16px);
+      border-top-right-radius: var(--ok-sheet-radius, 16px);
       box-shadow: var(--shadow);
       box-sizing: border-box;
+      transform: translateY(100%);
+      transition: transform var(--ok-transition, 260ms cubic-bezier(0.32, 0.72, 0, 1));
     }
-    /* Volteo horizontal: alinear el borde derecho del panel con el del botón. */
-    .panel.end {
-      left: auto;
-      right: 0;
+    .sheet.shown {
+      transform: translateY(0);
     }
-    /* Volteo vertical: abrir hacia arriba del botón. */
-    .panel.above {
-      top: auto;
-      bottom: calc(100% + 8px);
+    @media (prefers-reduced-motion: reduce) {
+      .scrim,
+      .sheet {
+        transition: none;
+      }
     }
-    /* Rejilla de apps: 3 columnas fijas, responsive al ancho del panel. */
+    /* Barra/agarre superior, decorativa (estilo sheet modal de Ionic). */
+    .handle {
+      width: 36px;
+      height: 5px;
+      margin: 0.25rem auto 0.5rem;
+      border-radius: 999px;
+      background: var(--border-color);
+    }
+    /* Cabecera de la hoja: título + botón cerrar. */
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0 0.25rem 0.5rem;
+    }
+    .head .title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color);
+    }
+    .close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--color-muted);
+      cursor: pointer;
+      border-radius: 50%;
+      transition: background-color var(--ok-transition, 150ms ease);
+    }
+    @media (hover: hover) {
+      .close-btn:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .close-btn ion-icon {
+      font-size: 1.3rem;
+    }
+
+    /* Rejilla de apps: auto-fit en función del ancho (más columnas en pantallas anchas). */
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      gap: 0.5rem;
+      padding-bottom: 0.25rem;
     }
     .app {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.6rem 0.3rem;
+      padding: 0.75rem 0.3rem;
       border: 0;
       background: none;
       color: inherit;
       font: inherit;
       cursor: pointer;
-      border-radius: 10px;
+      border-radius: 12px;
       text-align: center;
       text-decoration: none;
       transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
@@ -165,14 +228,14 @@ export class OkAppLauncher extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
       background: var(--app-color, var(--primary-color));
       color: var(--primary-contrast);
     }
     .app .box ion-icon {
-      font-size: 1.5rem;
+      font-size: 1.7rem;
     }
     .app .label {
       font-size: 0.78rem;
@@ -184,7 +247,7 @@ export class OkAppLauncher extends LitElement {
       white-space: nowrap;
     }
     .empty {
-      padding: 0.75rem;
+      padding: 1.5rem 0.75rem;
       font-size: 0.85rem;
       color: var(--color-muted);
       text-align: center;
@@ -201,14 +264,10 @@ export class OkAppLauncher extends LitElement {
     return { ...DEFAULT_LABELS, ...this.labels };
   }
 
-  // Estado interno: panel abierto/cerrado.
+  // Estado interno: hoja montada en el DOM.
   @state() private open = false;
-
-  // Handler de click fuera (se enlaza/desenlaza según abre/cierra).
-  private readonly onDocClick = (e: MouseEvent): void => {
-    // Si el click cae fuera del host (composedPath no lo incluye), cierra.
-    if (!e.composedPath().includes(this)) this.close();
-  };
+  // Estado interno: hoja visible (clase para disparar la transición de entrada/salida).
+  @state() private shown = false;
 
   // Handler de tecla (Esc cierra).
   private readonly onKeydown = (e: KeyboardEvent): void => {
@@ -220,46 +279,24 @@ export class OkAppLauncher extends LitElement {
     this.unbind();
   }
 
-  // Reposiciona el panel mientras está abierto (scroll/resize).
-  private readonly reposition = (): void => this.positionPanel();
-
   private bind(): void {
-    document.addEventListener('click', this.onDocClick, true);
     document.addEventListener('keydown', this.onKeydown);
-    window.addEventListener('resize', this.reposition);
-    window.addEventListener('scroll', this.reposition, true);
   }
 
   private unbind(): void {
-    document.removeEventListener('click', this.onDocClick, true);
     document.removeEventListener('keydown', this.onKeydown);
-    window.removeEventListener('resize', this.reposition);
-    window.removeEventListener('scroll', this.reposition, true);
-  }
-
-  // Elige el lado del panel (izq/der, arriba/abajo) según el espacio del viewport y aplica clases.
-  private positionPanel(): void {
-    const trigger = this.renderRoot.querySelector('.trigger') as HTMLElement | null;
-    const panel = this.renderRoot.querySelector('.panel') as HTMLElement | null;
-    if (!trigger || !panel) return;
-    const { end, above } = computeAnchor(trigger, panel);
-    panel.classList.toggle('end', end);
-    panel.classList.toggle('above', above);
-  }
-
-  protected updated(): void {
-    // Tras pintar el panel (cuando open=true), lo posicionamos en el siguiente frame.
-    if (this.open) requestAnimationFrame(() => this.positionPanel());
   }
 
   private toggle(): void {
-    this.open ? this.close() : this.openPanel();
+    this.open ? this.close() : this.openSheet();
   }
 
-  private openPanel(): void {
+  private openSheet(): void {
     if (this.open) return;
     this.open = true;
     this.bind();
+    // Tras montar la hoja, en el siguiente frame activamos la clase para deslizarla hacia arriba.
+    requestAnimationFrame(() => requestAnimationFrame(() => (this.shown = true)));
     this.dispatchEvent(
       new CustomEvent('ok-open', { detail: { open: true }, bubbles: true, composed: true }),
     );
@@ -267,11 +304,25 @@ export class OkAppLauncher extends LitElement {
 
   private close(): void {
     if (!this.open) return;
-    this.open = false;
     this.unbind();
+    // Animamos la salida: quitamos la clase y desmontamos al terminar la transición.
+    this.shown = false;
+    const sheet = this.renderRoot.querySelector('.sheet') as HTMLElement | null;
+    const finish = (): void => {
+      this.open = false;
+    };
+    if (sheet && !this.prefersReducedMotion()) {
+      sheet.addEventListener('transitionend', finish, { once: true });
+    } else {
+      finish();
+    }
     this.dispatchEvent(
       new CustomEvent('ok-open', { detail: { open: false }, bubbles: true, composed: true }),
     );
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   // Selecciona una app: si tiene `href` navega; si no, emite `ok-app-select`. Siempre cierra.
@@ -320,11 +371,33 @@ export class OkAppLauncher extends LitElement {
         <ion-icon name="apps-outline"></ion-icon>
       </button>
       ${this.open
-        ? html`<div class="panel" role="menu" aria-label=${this.t.apps}>
-            ${this.apps.length
-              ? html`<div class="grid">${this.apps.map((app) => this.renderApp(app))}</div>`
-              : html`<div class="empty">${this.t.empty}</div>`}
-          </div>`
+        ? html`
+            <div
+              class="scrim ${this.shown ? 'shown' : ''}"
+              @click=${() => this.close()}
+            ></div>
+            <div
+              class="sheet ${this.shown ? 'shown' : ''}"
+              role="menu"
+              aria-label=${this.t.apps}
+            >
+              <div class="handle"></div>
+              <div class="head">
+                <span class="title">${this.t.apps}</span>
+                <button
+                  type="button"
+                  class="close-btn"
+                  aria-label=${this.t.close}
+                  @click=${() => this.close()}
+                >
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+              ${this.apps.length
+                ? html`<div class="grid">${this.apps.map((app) => this.renderApp(app))}</div>`
+                : html`<div class="empty">${this.t.empty}</div>`}
+            </div>
+          `
         : ''}
     `;
   }
