@@ -120,6 +120,7 @@
     "./ok-event-card": "./dist/ok-event-card.js",
     "./ok-avatar-group": "./dist/ok-avatar-group.js",
     "./ok-org-chart": "./dist/ok-org-chart.js",
+    "./ok-file-manager": "./dist/ok-file-manager.js",
     "./theme.css": "./dist/theme.example.css",
     "./layout.css": "./dist/layout.css",
     "./cdn": "./dist/outfitkit.js"

@@ -103,3 +103,4 @@ import './components/ok-loyalty-card/ok-loyalty-card.js';
 import './components/ok-event-card/ok-event-card.js';
 import './components/ok-avatar-group/ok-avatar-group.js';
 import './components/ok-org-chart/ok-org-chart.js';
+import './components/ok-file-manager/ok-file-manager.js';

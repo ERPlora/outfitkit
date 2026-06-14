@@ -142,6 +142,7 @@ export default defineConfig({
         'ok-event-card': resolve(__dirname, 'src/components/ok-event-card/ok-event-card.ts'),
         'ok-avatar-group': resolve(__dirname, 'src/components/ok-avatar-group/ok-avatar-group.ts'),
         'ok-org-chart': resolve(__dirname, 'src/components/ok-org-chart/ok-org-chart.ts'),
+        'ok-file-manager': resolve(__dirname, 'src/components/ok-file-manager/ok-file-manager.ts'),
       },
     },
     rollupOptions: {

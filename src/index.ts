@@ -186,3 +186,5 @@ export { OkAvatarGroup } from './components/ok-avatar-group/ok-avatar-group.js';
 export type { OkAvatarGroupSize, OkAvatarItem } from './components/ok-avatar-group/ok-avatar-group.js';
 export { OkOrgChart } from './components/ok-org-chart/ok-org-chart.js';
 export type { OrgNode } from './components/ok-org-chart/ok-org-chart.js';
+export { OkFileManager } from './components/ok-file-manager/ok-file-manager.js';
+export type { OkFmFolder, OkFmFile, OkFmCrumb, OkFmQuota, OkFmView, OkFmLabels } from './components/ok-file-manager/ok-file-manager.js';

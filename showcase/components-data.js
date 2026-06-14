@@ -2621,6 +2621,59 @@ root.querySelector('#org').root = {
     api: [{"kind": "prop", "name": ".root", "type": "OrgNode | null", "detail": "Nodo raíz del organigrama (children recursivos: name, role?, avatar?, team?)"}, {"kind": "prop", "name": "maxAvatars", "type": "number", "detail": "Máximo de avatares en el stack antes del «+N» (por defecto 3)"}],
   },
 
+  {
+    id: "ok-file-manager",
+    name: "ok-file-manager",
+    category: "datos",
+    desc: "Gestor de archivos autocontenido: árbol de carpetas con contadores + medidor de espacio, breadcrumb, toolbar (búsqueda, cuadrícula/lista, subir), y rejilla/lista de ficheros con badge por tipo. Zona drag-and-drop de subida. Agnóstico al backend: solo renderiza y emite eventos (el Hub conecta disco local / S3 vía Cloud). Ej.: facturas recibidas y emitidas; los módulos definen su carpeta vía module.json.",
+    importPath: "@outfitkit/core/ok-file-manager",
+    example: "<ok-file-manager id=\"fm\" title=\"Archivos del Hub\" view=\"grid\" style=\"--ok-fm-height:520px\"></ok-file-manager>",
+    setup: (root, ctx) => {
+const fm = root.querySelector('#fm');
+const FOLDERS = [{
+  id: 'tenant', label: 'Cafetería La Rambla', icon: 'business-outline', children: [
+    { id: 'fac-recibidas', label: 'Facturas recibidas', count: 142 },
+    { id: 'fac-emitidas', label: 'Facturas emitidas', count: 98 },
+    { id: 'tickets', label: 'Tickets', count: 3412 },
+    { id: 'exports', label: 'Exports', count: 28 },
+    { id: 'multimedia', label: 'Multimedia', count: 86 },
+    { id: 'backups', label: 'Backups', count: 14 },
+  ],
+}];
+const FILES = {
+  'fac-recibidas': [
+    { id: 'f1', name: 'factura-2026-0412.pdf', ext: 'pdf', sizeLabel: '245 KB', modified: '12/06/2026' },
+    { id: 'f2', name: 'factura-2026-0411.pdf', ext: 'pdf', sizeLabel: '198 KB', modified: '11/06/2026' },
+    { id: 'f3', name: 'albaran-7782.pdf', ext: 'pdf', sizeLabel: '88 KB', modified: '10/06/2026' },
+    { id: 'f4', name: 'distribuciones-lopez.xlsx', ext: 'xlsx', sizeLabel: '54 KB', modified: '09/06/2026' },
+    { id: 'f5', name: 'sello-proveedor.png', ext: 'png', sizeLabel: '1,2 MB', modified: '08/06/2026' },
+    { id: 'f6', name: 'lote-junio.zip', ext: 'zip', sizeLabel: '4,7 MB', modified: '07/06/2026' },
+  ],
+  'fac-emitidas': [
+    { id: 'e1', name: 'F2026-0098.pdf', ext: 'pdf', sizeLabel: '132 KB', modified: '13/06/2026' },
+    { id: 'e2', name: 'F2026-0097.pdf', ext: 'pdf', sizeLabel: '129 KB', modified: '12/06/2026' },
+    { id: 'e3', name: 'export-emitidas-q2.csv', ext: 'csv', sizeLabel: '22 KB', modified: '01/06/2026' },
+  ],
+};
+const LABELS = { 'tenant': 'tenant-rambla', 'fac-recibidas': 'Facturas recibidas', 'fac-emitidas': 'Facturas emitidas', 'tickets': 'Tickets', 'exports': 'Exports', 'multimedia': 'Multimedia', 'backups': 'Backups' };
+function show(id) {
+  fm.selected = id;
+  fm.files = FILES[id] || [];
+  fm.path = [{ id: 'tenant', label: 'tenant-rambla' }, { id, label: LABELS[id] || id }];
+}
+fm.folders = FOLDERS;
+fm.quota = { usedLabel: '1,8 GB', totalLabel: '5 GB', fraction: 0.36 };
+show('fac-recibidas');
+fm.addEventListener('ok-navigate', (e) => show(e.detail.id));
+fm.addEventListener('ok-view-change', (e) => { fm.view = e.detail.view; });
+fm.addEventListener('ok-upload', (e) => {
+  const extra = Array.from(e.detail.files).map((f, i) => ({ id: 'up' + i + Date.now(), name: f.name, ext: (f.name.split('.').pop() || '').toLowerCase(), sizeLabel: Math.max(1, Math.round(f.size / 1024)) + ' KB', modified: 'ahora' }));
+  fm.files = [...extra, ...fm.files];
+});
+    },
+    code: "<ok-file-manager id=\"fm\" title=\"Archivos del Hub\" view=\"grid\"></ok-file-manager>\nconst fm = document.querySelector('#fm');\nfm.folders = [{ id: 'tenant', label: 'Mi Hub', children: [{ id: 'fac', label: 'Facturas', count: 142 }] }];\nfm.files = [{ id: 'f1', name: 'factura-0412.pdf', ext: 'pdf', sizeLabel: '245 KB', modified: '12/06/2026' }];\nfm.quota = { usedLabel: '1,8 GB', totalLabel: '5 GB', fraction: 0.36 };\nfm.addEventListener('ok-navigate', (e) => loadFolder(e.detail.id));\nfm.addEventListener('ok-upload', (e) => uploadToHub(e.detail.files));   // Local: disco · Cloud: S3 vía Cloud\nfm.addEventListener('ok-download', (e) => download(e.detail.id, e.detail.url));",
+    api: [{"kind": "prop", "name": ".folders", "type": "OkFmFolder[]", "detail": "Árbol de carpetas {id,label,icon?,count?,children?}; carpeta activa resaltada"}, {"kind": "prop", "name": ".files", "type": "OkFmFile[]", "detail": "Contenido de la carpeta {id,name,ext?,sizeLabel?,modified?,url?,thumb?}; ext da el color del badge"}, {"kind": "prop", "name": ".path", "type": "OkFmCrumb[]", "detail": "Migas de pan clicables hasta la carpeta actual"}, {"kind": "prop", "name": ".quota", "type": "{usedLabel,totalLabel,fraction}", "detail": "Medidor de almacenamiento bajo el árbol"}, {"kind": "prop", "name": "view · selected", "type": "'grid'|'list' · string", "detail": "Vista cuadrícula/lista · id de carpeta activa"}, {"kind": "event", "name": "ok-navigate", "type": "{id}", "detail": "Click en carpeta del árbol o miga"}, {"kind": "event", "name": "ok-upload", "type": "{files: File[]}", "detail": "Drag-drop o selector; el host los sube (disco local / S3 vía Cloud)"}, {"kind": "event", "name": "ok-download · ok-delete · ok-open", "type": "{id, url?}", "detail": "Acciones por fichero"}],
+  },
 ];
 
 export { CATEGORIES, COMPONENTS };
