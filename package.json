@@ -37,6 +37,7 @@
     "./ok-stat": "./dist/ok-stat.js",
     "./ok-stepper": "./dist/ok-stepper.js",
     "./ok-wizard": "./dist/ok-wizard.js",
+    "./ok-widget-board": "./dist/ok-widget-board.js",
     "./ok-contact-form": "./dist/ok-contact-form.js",
     "./ok-calendar": "./dist/ok-calendar.js",
     "./ok-kanban": "./dist/ok-kanban.js",

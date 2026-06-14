@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Colaboradores del módulo</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // Rol → color Ionic (las clases .ion-color-* NO penetran el shadow → vars inline).
+      const ROL_COLOR = { Owner: 'primary', 'Co-author': 'tertiary', Editor: 'warning', Viewer: 'medium' };
+      const rolBadge = (rol) => {
+        const c = ROL_COLOR[rol] ?? 'medium';
+        return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${rol}</ion-badge>`;
+      };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Colaboradores: POS Caja Registradora Pro"
+            description="4 colaboradores activos · 2 invitaciones pendientes">
+            <ion-button slot="actions">
+              <ion-icon slot="start" name="person-add-outline"></ion-icon>
+              Invitar colaborador
+            </ion-button>
+          </ok-page-header>
+
+          <ok-inline-feedback
+            class="pg-mb-4"
+            tone="info"
+            heading="Reparto de ingresos">
+            Los colaboradores reciben un porcentaje de ingresos según su rol. Configura las divisiones
+            en <strong>Pago &gt; Reparto</strong>. Stripe Connect distribuye los payouts automáticamente cada 15 días.
+          </ok-inline-feedback>
+
+          <!-- Colaboradores activos -->
+          <ok-data-table id="members-dt" class="pg-mb-4" style="display:block"></ok-data-table>
+
+          <!-- Invitaciones pendientes -->
+          <ok-data-table id="inv-dt" class="pg-mb-4" style="display:block"></ok-data-table>
+
+          <!-- Actividad reciente -->
+          <ion-card style="margin:0">
+            <ion-card-header>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <ion-card-title>Actividad de colaboradores</ion-card-title>
+                <ion-button fill="clear" size="small">
+                  Ver registro completo
+                  <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <ok-timeline id="collab-timeline"></ok-timeline>
+            </ion-card-content>
+          </ion-card>
+        `,
+        setup(doc) {
+          // ── ok-data-table: colaboradores activos ──
+          const membersDt = doc.getElementById('members-dt');
+          if (membersDt) {
+            membersDt.title = 'Colaboradores activos';
+            membersDt.rowKey = (r) => r.email;
+            membersDt.columns = [
+              { key: 'name', header: 'Colaborador', width: 'minmax(12rem,1.5fr)', render: (r) =>
+                  h`<span style="display:inline-flex;align-items:center;gap:.6rem">
+                      <ok-avatar name=${r.name} size="sm"></ok-avatar>
+                      <span>
+                        <span style="font-weight:600">${r.name}</span>
+                        <span style="display:block;font-size:.8rem;color:var(--ion-color-medium)">${r.email}</span>
+                      </span>
+                    </span>`
+              },
+              { key: 'rol', header: 'Rol', width: '9rem', render: (r) => rolBadge(r.rol) },
+              { key: 'reparto', header: 'Reparto', width: '6rem', align: 'right', render: (r) =>
+                  h`<span style="font-weight:600;font-variant-numeric:tabular-nums">${r.reparto}</span>`
+              },
+              { key: 'desde', header: 'Desde', width: '9rem' },
+              { key: 'ultimaAct', header: 'Última actividad', width: '10rem' },
+            ];
+            membersDt.rows = [
+              { name: 'Ioan Beilic',     email: 'ioan@erplora.dev',            rol: 'Owner',     reparto: '60%', desde: '22 ene 2026', ultimaAct: 'hoy 14:32' },
+              { name: 'Lucía Domínguez', email: 'lucia.dominguez@erplora.dev', rol: 'Co-author', reparto: '25%', desde: '10 mar 2026', ultimaAct: 'ayer 18:42' },
+              { name: 'Marcos Estévez',  email: 'marcos.estevez@erplora.dev',  rol: 'Editor',    reparto: '10%', desde: '05 abr 2026', ultimaAct: 'hace 3 d' },
+              { name: 'Raquel Cano',     email: 'raquel.cano@erplora.dev',     rol: 'Viewer',    reparto: '5%',  desde: '18 abr 2026', ultimaAct: 'hace 7 d' },
+            ];
+            membersDt.actions = [
+              { id: 'cambiar-rol', label: 'Cambiar rol', icon: 'swap-horizontal-outline' },
+              { id: 'editar-pct',  label: 'Editar %',    icon: 'pencil-outline' },
+              { id: 'eliminar',    label: 'Eliminar',     icon: 'trash-outline', color: 'danger',
+                show: (r) => r.rol !== 'Owner' },
+            ];
+            membersDt.addEventListener('rowAction', (e) => {
+              const { actionId, row } = e.detail || {};
+              const t = document.createElement('ion-toast');
+              t.message = `${actionId} → ${row?.name ?? ''}`;
+              t.duration = 1200; t.position = 'bottom';
+              document.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── ok-data-table: invitaciones pendientes ──
+          const invDt = doc.getElementById('inv-dt');
+          if (invDt) {
+            invDt.title = 'Invitaciones pendientes';
+            invDt.rowKey = (r) => r.email;
+            invDt.columns = [
+              { key: 'email', header: 'Email', width: 'minmax(14rem,1.5fr)', render: (r) => {
+                  const s = document.createElement('strong');
+                  s.textContent = r.email;
+                  return s;
+                }
+              },
+              { key: 'rol', header: 'Rol propuesto', width: '10rem', render: (r) => {
+                  const c = ROL_COLOR[r.rol] ?? 'medium';
+                  return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.rol}</ion-badge>`;
+                }
+              },
+              { key: 'reparto', header: 'Reparto', width: '6rem', align: 'right' },
+              { key: 'enviado', header: 'Enviado', width: '9rem' },
+              { key: 'expira', header: 'Expira', width: '8rem', render: (r) => {
+                  const span = document.createElement('span');
+                  span.textContent = r.expira;
+                  span.style.color = r.expiraUrgente ? 'var(--ion-color-warning)' : 'var(--ion-color-medium)';
+                  span.style.fontWeight = r.expiraUrgente ? '600' : '';
+                  return span;
+                }
+              },
+            ];
+            invDt.rows = [
+              { email: 'diego.morales@nordenbikes.es',     rol: 'Editor', reparto: '5%', enviado: '02 may 2026', expira: 'en 4 días', expiraUrgente: true },
+              { email: 'laura.fernandez@designstudio.com', rol: 'Viewer', reparto: '0%', enviado: '05 may 2026', expira: 'en 7 días', expiraUrgente: false },
+            ];
+            invDt.actions = [
+              { id: 'reenviar', label: 'Reenviar', icon: 'send-outline' },
+              { id: 'cancelar', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
+            ];
+            invDt.addEventListener('rowAction', (e) => {
+              const { actionId, row } = e.detail || {};
+              const t = document.createElement('ion-toast');
+              t.message = `${actionId} → ${row?.email ?? ''}`;
+              t.duration = 1200; t.position = 'bottom';
+              document.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── ok-timeline: actividad de colaboradores ──
+          const tl = doc.getElementById('collab-timeline');
+          if (tl) {
+            tl.items = [
+              {
+                id: 'join-raquel',
+                title: 'Raquel Cano aceptó la invitación como Viewer',
+                description: 'Reparto asignado: 5% · invitada por @ioanb',
+                time: 'hace 7 d · 18 abr 2026',
+                icon: 'person-add-outline',
+                color: 'var(--ion-color-success)',
+                status: 'done',
+              },
+              {
+                id: 'payout-april',
+                title: 'Payout abril · €1 260 distribuido a 4 colaboradores',
+                description: 'Stripe Connect · transferencia ID po_3OqL··· · sin incidencias',
+                time: '15 abr 2026',
+                icon: 'cash-outline',
+                color: 'var(--ion-color-primary)',
+                status: 'done',
+              },
+              {
+                id: 'commit-marcos',
+                title: 'Marcos Estévez contribuyó · v3.1.4 · fix cajón monedas',
+                description: 'Pull request #84 · 3 archivos cambiados · revisado y mergeado',
+                time: '05 abr 2026',
+                icon: 'code-slash-outline',
+                color: 'var(--ion-color-tertiary)',
+                status: 'done',
+              },
+              {
+                id: 'join-marcos',
+                title: 'Marcos Estévez aceptó la invitación como Editor',
+                description: 'Reparto asignado: 10% · invitado por @luciad',
+                time: '05 abr 2026',
+                icon: 'person-add-outline',
+                color: 'var(--ion-color-success)',
+                status: 'done',
+              },
+              {
+                id: 'commit-lucia',
+                title: 'Lucía Domínguez contribuyó · v3.1.0 · turnos múltiples',
+                description: 'PR #61 · 18 archivos cambiados · feature mayor',
+                time: '10 mar 2026',
+                icon: 'code-slash-outline',
+                color: 'var(--ion-color-tertiary)',
+                status: 'done',
+              },
+              {
+                id: 'payout-march',
+                title: 'Payout marzo · €980 distribuido a 2 colaboradores',
+                description: 'Stripe Connect · transferencia ID po_3NnK··· · sin incidencias',
+                time: '15 mar 2026',
+                icon: 'cash-outline',
+                color: 'var(--ion-color-primary)',
+                status: 'done',
+              },
+            ];
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

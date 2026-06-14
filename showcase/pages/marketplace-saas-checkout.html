@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Checkout</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Secciones numeradas del checkout. */
+      .co-section { margin-bottom: 16px; }
+      .co-section ion-card-header { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 0; }
+      .co-section__num {
+        width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
+        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+        display: grid; place-items: center;
+        font-size: 12px; font-weight: 700; font-family: monospace;
+      }
+      .co-section__head-text { display: flex; flex-direction: column; }
+      .co-section__title { font-size: 15px; font-weight: 600; }
+
+      /* Radio cards de dirección / envío. */
+      .co-radio-cards { display: flex; flex-direction: column; gap: 10px; }
+      .co-radio-card { margin: 0; }
+      .co-radio-card ion-radio { width: 100%; }
+      .co-radio-card__title { font-weight: 600; font-size: .9rem; }
+      .co-radio-card__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
+      .co-radio-card__row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px; }
+      .co-radio-card__price { font-family: monospace; font-weight: 600; font-size: .9rem; }
+
+      /* Formulario nueva dirección. */
+      .co-new-addr { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .co-new-addr--full { grid-column: 1 / -1; }
+      @media (max-width: 600px) { .co-new-addr { grid-template-columns: 1fr; } }
+
+      /* Pestañas de método de pago. */
+      .co-pay-tabs {
+        display: flex; gap: 4px; padding: 3px;
+        background: var(--ion-color-step-100, rgba(127,127,127,.1));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 10px;
+      }
+      .co-pay-tab {
+        flex: 1; height: 36px; border: 0; background: transparent;
+        color: var(--ion-color-medium); font: inherit; font-weight: 500;
+        cursor: pointer; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px;
+      }
+      .co-pay-tab.is-active {
+        background: var(--ion-card-background, var(--ion-background-color));
+        color: var(--ion-text-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,.15);
+      }
+      .co-pay-panel { display: flex; flex-direction: column; gap: 12px; }
+      .co-pay-panel[hidden] { display: none !important; }
+
+      /* Formulario de 2 columnas. */
+      .co-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 600px) { .co-form-2 { grid-template-columns: 1fr; } }
+
+      /* Resumen (columna derecha). */
+      .co-summary { display: flex; flex-direction: column; gap: 0; }
+      .co-mini-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+      .co-mini-line { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; }
+      .co-mini-thumb {
+        width: 36px; height: 36px; border-radius: 8px;
+        background: var(--ion-color-step-100, rgba(127,127,127,.1));
+        display: grid; place-items: center;
+        color: var(--ion-color-medium); font-family: monospace; font-size: 9px; font-weight: 700;
+        text-align: center; line-height: 1.2;
+      }
+      .co-mini-name { font-size: 12.5px; font-weight: 500; line-height: 1.3; }
+      .co-mini-qty { font-size: 11px; color: var(--ion-color-medium); }
+      .co-mini-price { font-family: monospace; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .co-divider { border: none; border-top: 1px dashed var(--ion-border-color, rgba(127,127,127,.2)); margin: 10px 0; }
+      .co-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; color: var(--ion-color-medium); font-variant-numeric: tabular-nums; }
+      .co-summary-row b { color: var(--ion-text-color); font-weight: 500; }
+      .co-total-row { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 16px; }
+      .co-total-label { font-size: 13px; color: var(--ion-color-medium); text-transform: uppercase; letter-spacing: .07em; }
+      .co-total-value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+      .co-secure { display: flex; gap: 6px; align-items: center; margin-top: 10px; font-size: 11.5px; color: var(--ion-color-medium); }
+
+      /* Toggle guardar dirección. */
+      .co-toggle-row {
+        display: flex; align-items: center; gap: 12px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 10px; padding: 12px 14px;
+      }
+      .co-toggle-row__text { flex: 1 1 auto; }
+      .co-toggle-row__label { font-weight: 600; font-size: .9rem; }
+      .co-toggle-row__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
+
+      /* Checkbox de términos. */
+      .co-terms { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--ion-color-medium); padding: 2px 0; }
+      .co-terms a { color: var(--ion-color-primary); }
+      .co-terms__req { color: var(--ion-color-danger); }
+
+      /* Layout principal: columnas 8/4 tipo grid. */
+      .co-layout { display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; align-items: start; }
+      @media (max-width: 860px) { .co-layout { grid-template-columns: 1fr; } }
+
+      /* Sidebar sticky. */
+      .co-sidebar { position: sticky; top: 16px; }
+
+      /* Añadir nueva dirección — expandible. */
+      .co-new-addr-wrap { padding-top: 12px; border-top: 1px dashed var(--ion-border-color, rgba(127,127,127,.2)); margin-top: 4px; }
+      .co-new-addr-wrap[hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Checkout"
+            description="Confirma envío y pago para finalizar el pedido · Total €2 286">
+            <div slot="actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <ion-badge color="primary" style="--padding-start:10px;--padding-end:10px;--padding-top:6px;--padding-bottom:6px;">Paso 2 de 3</ion-badge>
+              <ion-button fill="outline" size="small" id="btn-back-cart">
+                <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+                Volver al carrito
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Sub-navegación del marketplace SaaS -->
+          <ion-segment id="checkout-tabs" value="checkout" style="margin-bottom:18px">
+            <ion-segment-button value="shop"><ion-label>Tienda</ion-label></ion-segment-button>
+            <ion-segment-button value="cart"><ion-label>Carrito</ion-label></ion-segment-button>
+            <ion-segment-button value="checkout"><ion-label>Checkout</ion-label></ion-segment-button>
+            <ion-segment-button value="confirm"><ion-label>Confirmación</ion-label></ion-segment-button>
+          </ion-segment>
+
+          <!-- Stepper de progreso -->
+          <ion-card class="pg-mb-4">
+            <ion-card-content>
+              <ok-stepper id="checkout-stepper" current="1"></ok-stepper>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Layout de 2 columnas: formulario + resumen -->
+          <div class="co-layout">
+
+            <!-- COLUMNA IZQUIERDA: secciones del checkout -->
+            <div class="pg-stack">
+
+              <!-- 1. Dirección de envío -->
+              <ion-card class="co-section">
+                <ion-card-header>
+                  <div class="co-section__num">1</div>
+                  <div class="co-section__head-text">
+                    <span class="co-section__title">Dirección de envío</span>
+                    <ion-card-subtitle>Selecciona dónde quieres recibir el pedido</ion-card-subtitle>
+                  </div>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-radio-group value="home" id="addr-group" class="co-radio-cards">
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="home" label-placement="end" justify="start">
+                          <div>
+                            <div class="co-radio-card__title">
+                              Oficina · Madrid
+                              <ion-badge color="primary" style="margin-left:6px;--padding-start:7px;--padding-end:7px;">Predeterminada</ion-badge>
+                            </div>
+                            <div class="co-radio-card__desc">Calle Velázquez 47, 4º izq · 28001 Madrid · España · +34 911 23 45 67</div>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="warehouse" label-placement="end" justify="start">
+                          <div>
+                            <div class="co-radio-card__title">Almacén · Getafe</div>
+                            <div class="co-radio-card__desc">Polígono Los Olivos, Nave 12 · 28906 Getafe (Madrid) · +34 916 88 22 11</div>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="shop" label-placement="end" justify="start">
+                          <div>
+                            <div class="co-radio-card__title">Tienda Barcelona</div>
+                            <div class="co-radio-card__desc">Av. Diagonal 412, local 3 · 08037 Barcelona · +34 931 12 34 56</div>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                  </ion-radio-group>
+
+                  <ion-button fill="clear" size="small" id="btn-add-addr" style="margin-top:10px;">
+                    <ion-icon slot="start" name="add-outline"></ion-icon>
+                    Añadir nueva dirección
+                  </ion-button>
+
+                  <div class="co-new-addr-wrap" id="new-addr-wrap" hidden>
+                    <div class="co-new-addr">
+                      <div class="co-new-addr--full">
+                        <ion-select label="País" label-placement="stacked" fill="outline" value="es">
+                          <ion-select-option value="es">España</ion-select-option>
+                          <ion-select-option value="pt">Portugal</ion-select-option>
+                          <ion-select-option value="fr">Francia</ion-select-option>
+                          <ion-select-option value="de">Alemania</ion-select-option>
+                        </ion-select>
+                      </div>
+                      <div class="co-new-addr--full">
+                        <ion-input label="Dirección" label-placement="stacked" fill="outline" placeholder="Calle, número, piso"></ion-input>
+                      </div>
+                      <ion-input label="Ciudad" label-placement="stacked" fill="outline" placeholder="Madrid"></ion-input>
+                      <ion-input label="Código postal" label-placement="stacked" fill="outline" placeholder="28001" inputmode="numeric"></ion-input>
+                      <div class="co-new-addr--full">
+                        <ion-select label="Provincia" label-placement="stacked" fill="outline" value="madrid">
+                          <ion-select-option value="madrid">Madrid</ion-select-option>
+                          <ion-select-option value="barcelona">Barcelona</ion-select-option>
+                          <ion-select-option value="valencia">Valencia</ion-select-option>
+                          <ion-select-option value="sevilla">Sevilla</ion-select-option>
+                          <ion-select-option value="bilbao">Bilbao</ion-select-option>
+                        </ion-select>
+                      </div>
+                    </div>
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+
+              <!-- 2. Datos de contacto -->
+              <ion-card class="co-section">
+                <ion-card-header>
+                  <div class="co-section__num">2</div>
+                  <div class="co-section__head-text">
+                    <span class="co-section__title">Datos de contacto</span>
+                    <ion-card-subtitle>Para avisos de envío y soporte</ion-card-subtitle>
+                  </div>
+                </ion-card-header>
+                <ion-card-content>
+                  <div class="co-form-2" style="margin-bottom:12px;">
+                    <ion-input label="Nombre" label-placement="stacked" fill="outline" value="Ioan Beilic"></ion-input>
+                    <ion-input label="Email" label-placement="stacked" fill="outline" value="ioan@acme.com" readonly style="opacity:.75;"></ion-input>
+                  </div>
+                  <ok-phone id="contact-phone" label="Teléfono" country="ES" style="max-width:360px;"></ok-phone>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- 3. Método de envío -->
+              <ion-card class="co-section">
+                <ion-card-header>
+                  <div class="co-section__num">3</div>
+                  <div class="co-section__head-text">
+                    <span class="co-section__title">Método de envío</span>
+                    <ion-card-subtitle>Tiempos estimados desde el día siguiente al pago</ion-card-subtitle>
+                  </div>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-radio-group value="std" id="ship-group" class="co-radio-cards">
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="std" label-placement="end" justify="start">
+                          <div class="co-radio-card__row">
+                            <div>
+                              <div class="co-radio-card__title">Estándar · 3-5 días laborables</div>
+                              <div class="co-radio-card__desc">SEUR · Entregas península · Seguimiento en tiempo real</div>
+                            </div>
+                            <ion-badge color="success">Gratis</ion-badge>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="exp" label-placement="end" justify="start">
+                          <div class="co-radio-card__row">
+                            <div>
+                              <div class="co-radio-card__title">Express · 24h</div>
+                              <div class="co-radio-card__desc">UPS · Pedidos antes de 14:00 llegan al día siguiente</div>
+                            </div>
+                            <span class="co-radio-card__price">€12</span>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                    <ion-card class="co-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="pickup" label-placement="end" justify="start">
+                          <div class="co-radio-card__row">
+                            <div>
+                              <div class="co-radio-card__title">Recoger en tienda · Madrid</div>
+                              <div class="co-radio-card__desc">Velázquez 47 · Mañana 12 may a partir de 11:00</div>
+                            </div>
+                            <ion-badge color="tertiary">Gratis</ion-badge>
+                          </div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+
+                  </ion-radio-group>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- 4. Método de pago -->
+              <ion-card class="co-section">
+                <ion-card-header>
+                  <div class="co-section__num">4</div>
+                  <div class="co-section__head-text">
+                    <span class="co-section__title">Método de pago</span>
+                    <ion-card-subtitle>Procesado de forma segura por Stripe</ion-card-subtitle>
+                  </div>
+                </ion-card-header>
+                <ion-card-content>
+
+                  <!-- Pestañas de método -->
+                  <div class="co-pay-tabs" id="pay-tabs" style="margin-bottom:16px;">
+                    <button class="co-pay-tab is-active" data-panel="card">
+                      <ion-icon name="card-outline"></ion-icon>
+                      Tarjeta
+                    </button>
+                    <button class="co-pay-tab" data-panel="sepa">
+                      <ion-icon name="business-outline"></ion-icon>
+                      SEPA
+                    </button>
+                    <button class="co-pay-tab" data-panel="apay">
+                      <ion-icon name="phone-portrait-outline"></ion-icon>
+                      Apple Pay
+                    </button>
+                    <button class="co-pay-tab" data-panel="bank">
+                      <ion-icon name="swap-horizontal-outline"></ion-icon>
+                      Transferencia
+                    </button>
+                  </div>
+
+                  <!-- Panel: Tarjeta -->
+                  <div class="co-pay-panel" id="panel-card">
+                    <ion-input label="Número de tarjeta" label-placement="stacked" fill="outline" placeholder="4242 4242 4242 4242" inputmode="numeric"></ion-input>
+                    <div class="co-form-2">
+                      <ion-input label="Caducidad" label-placement="stacked" fill="outline" placeholder="MM / AA" inputmode="numeric"></ion-input>
+                      <ion-input label="CVC" label-placement="stacked" fill="outline" placeholder="123" inputmode="numeric" maxlength="4"></ion-input>
+                    </div>
+                    <ion-input label="Titular" label-placement="stacked" fill="outline" placeholder="Como aparece en la tarjeta" value="IOAN BEILIC"></ion-input>
+                  </div>
+
+                  <!-- Panel: SEPA -->
+                  <div class="co-pay-panel" id="panel-sepa" hidden>
+                    <ion-input label="IBAN" label-placement="stacked" fill="outline" placeholder="ES12 3456 7890 1234 5678 9012"></ion-input>
+                    <ion-input label="Titular de la cuenta" label-placement="stacked" fill="outline" placeholder="Acme Industries SL"></ion-input>
+                    <ok-inline-feedback tone="info" heading="Débito SEPA">
+                      El cobro se realizará por SEPA Direct Debit. Tarda hasta 3 días hábiles en procesarse.
+                    </ok-inline-feedback>
+                  </div>
+
+                  <!-- Panel: Apple Pay -->
+                  <div class="co-pay-panel" id="panel-apay" hidden>
+                    <ok-inline-feedback tone="info" heading="Apple Pay">
+                      Confirma con Touch ID / Face ID al pulsar el botón final de confirmación.
+                    </ok-inline-feedback>
+                  </div>
+
+                  <!-- Panel: Transferencia -->
+                  <div class="co-pay-panel" id="panel-bank" hidden>
+                    <ok-inline-feedback tone="warning" heading="Pago por transferencia">
+                      El pedido se reservará 5 días hábiles. Recibirás los datos bancarios por email.
+                    </ok-inline-feedback>
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+
+              <!-- 5. Notas para el envío -->
+              <ion-card class="co-section">
+                <ion-card-header>
+                  <div class="co-section__num">5</div>
+                  <div class="co-section__head-text">
+                    <span class="co-section__title">Notas para el envío</span>
+                    <ion-card-subtitle>Opcional · indicaciones para el repartidor</ion-card-subtitle>
+                  </div>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-textarea
+                    fill="outline"
+                    rows="3"
+                    placeholder="Por ejemplo: 'Llamar al telefonillo de Acme · piso 4 izq'."
+                    style="margin-bottom:14px;">
+                  </ion-textarea>
+
+                  <div class="co-toggle-row" style="margin-bottom:14px;">
+                    <div class="co-toggle-row__text">
+                      <div class="co-toggle-row__label">Guardar dirección para próximas compras</div>
+                      <div class="co-toggle-row__desc">Aparecerá automáticamente en el siguiente checkout</div>
+                    </div>
+                    <ion-toggle checked></ion-toggle>
+                  </div>
+
+                  <label class="co-terms">
+                    <ion-checkbox id="terms-check" style="flex:0 0 auto;margin-top:2px;"></ion-checkbox>
+                    <span>
+                      Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a>.
+                      Confirmo que los datos son correctos. <span class="co-terms__req">*</span>
+                    </span>
+                  </label>
+                </ion-card-content>
+              </ion-card>
+
+            </div>
+
+            <!-- COLUMNA DERECHA: resumen del pedido (sticky) -->
+            <div class="co-sidebar">
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Resumen del pedido</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+
+                  <div class="co-mini-list">
+                    <div class="co-mini-line">
+                      <div class="co-mini-thumb">TPV</div>
+                      <div>
+                        <div class="co-mini-name">Terminal POS Modelo X Pro</div>
+                        <div class="co-mini-qty">2 ud · €890</div>
+                      </div>
+                      <div class="co-mini-price">€1 780</div>
+                    </div>
+                    <div class="co-mini-line">
+                      <div class="co-mini-thumb">Air</div>
+                      <div>
+                        <div class="co-mini-name">Lector SumUp Air</div>
+                        <div class="co-mini-qty">1 ud · €39</div>
+                      </div>
+                      <div class="co-mini-price">€39</div>
+                    </div>
+                    <div class="co-mini-line">
+                      <div class="co-mini-thumb">Star</div>
+                      <div>
+                        <div class="co-mini-name">Impresora Star TSP143</div>
+                        <div class="co-mini-qty">1 ud · €229</div>
+                      </div>
+                      <div class="co-mini-price">€229</div>
+                    </div>
+                    <div class="co-mini-line">
+                      <div class="co-mini-thumb">Acc</div>
+                      <div>
+                        <div class="co-mini-name">Bundle accesorios POS</div>
+                        <div class="co-mini-qty">1 ud · €85</div>
+                      </div>
+                      <div class="co-mini-price">€85</div>
+                    </div>
+                    <div class="co-mini-line">
+                      <div class="co-mini-thumb">Sop</div>
+                      <div>
+                        <div class="co-mini-name">Soporte tablet metálico</div>
+                        <div class="co-mini-qty">1 ud · €89</div>
+                      </div>
+                      <div class="co-mini-price">€89</div>
+                    </div>
+                  </div>
+
+                  <hr class="co-divider"/>
+
+                  <div class="co-summary-row"><span>Subtotal</span><b>€2 222</b></div>
+                  <div class="co-summary-row"><span>IVA 21%</span><b>€467</b></div>
+                  <div class="co-summary-row">
+                    <span>Envío</span>
+                    <ion-badge color="success" id="ship-cost-badge">Gratis</ion-badge>
+                  </div>
+                  <div class="co-summary-row">
+                    <span>Descuento (BUNDLE10)</span>
+                    <ion-badge color="success">−€403</ion-badge>
+                  </div>
+
+                  <hr class="co-divider"/>
+
+                  <div class="co-total-row">
+                    <span class="co-total-label">Total</span>
+                    <span class="co-total-value" id="total-value">€2 286</span>
+                  </div>
+
+                  <ion-button expand="block" id="btn-confirm" disabled>
+                    Confirmar pedido (€2 286)
+                    <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+                  </ion-button>
+
+                  <div class="co-secure">
+                    <ion-icon name="shield-checkmark-outline" color="success" style="font-size:14px;flex:0 0 auto;"></ion-icon>
+                    Pago seguro · Cifrado TLS · 30 días devolución
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+            </div>
+
+          </div>
+        `,
+        setup(doc) {
+          // ── Stepper ──────────────────────────────────────────────────────────
+          const stepper = doc.getElementById('checkout-stepper');
+          if (stepper) {
+            stepper.steps = [
+              { label: 'Carrito', description: '5 artículos' },
+              { label: 'Envío y pago', description: 'En curso' },
+              { label: 'Confirmación', description: 'Pedido listo' },
+            ];
+          }
+
+          // ── ok-phone: número inicial ─────────────────────────────────────────
+          const phone = doc.getElementById('contact-phone');
+          if (phone) {
+            phone.setAttribute('value', '611 22 33 44');
+          }
+
+          // ── Añadir nueva dirección (mostrar/ocultar formulario) ───────────────
+          const btnAddAddr = doc.getElementById('btn-add-addr');
+          const newAddrWrap = doc.getElementById('new-addr-wrap');
+          let addrOpen = false;
+          if (btnAddAddr && newAddrWrap) {
+            btnAddAddr.addEventListener('click', () => {
+              addrOpen = !addrOpen;
+              if (addrOpen) {
+                newAddrWrap.removeAttribute('hidden');
+                btnAddAddr.querySelector('ion-icon')?.setAttribute('name', 'remove-outline');
+              } else {
+                newAddrWrap.setAttribute('hidden', '');
+                btnAddAddr.querySelector('ion-icon')?.setAttribute('name', 'add-outline');
+              }
+            });
+          }
+
+          // ── Pestañas de método de pago ────────────────────────────────────────
+          const payTabs = doc.getElementById('pay-tabs');
+          const panels = {
+            card: doc.getElementById('panel-card'),
+            sepa: doc.getElementById('panel-sepa'),
+            apay: doc.getElementById('panel-apay'),
+            bank: doc.getElementById('panel-bank'),
+          };
+          let activePanel = 'card';
+
+          const switchPanel = (id) => {
+            // Actualizar pestañas
+            payTabs.querySelectorAll('.co-pay-tab').forEach((btn) => {
+              if (btn.getAttribute('data-panel') === id) {
+                btn.classList.add('is-active');
+              } else {
+                btn.classList.remove('is-active');
+              }
+            });
+            // Mostrar/ocultar paneles
+            Object.keys(panels).forEach((key) => {
+              if (!panels[key]) return;
+              if (key === id) {
+                panels[key].removeAttribute('hidden');
+              } else {
+                panels[key].setAttribute('hidden', '');
+              }
+            });
+            activePanel = id;
+          };
+
+          if (payTabs) {
+            payTabs.querySelectorAll('.co-pay-tab').forEach((btn) => {
+              btn.addEventListener('click', () => {
+                const panel = btn.getAttribute('data-panel');
+                if (panel) switchPanel(panel);
+              });
+            });
+          }
+
+          // ── Método de envío → actualizar coste en resumen ─────────────────────
+          const shipGroup = doc.getElementById('ship-group');
+          const shipCostBadge = doc.getElementById('ship-cost-badge');
+          const totalValue = doc.getElementById('total-value');
+
+          if (shipGroup) {
+            shipGroup.addEventListener('ionChange', (e) => {
+              const val = (e.detail && e.detail.value) || 'std';
+              if (val === 'exp') {
+                if (shipCostBadge) {
+                  shipCostBadge.textContent = '€12';
+                  shipCostBadge.setAttribute('color', 'medium');
+                }
+                if (totalValue) totalValue.textContent = '€2 298';
+              } else {
+                if (shipCostBadge) {
+                  shipCostBadge.textContent = 'Gratis';
+                  shipCostBadge.setAttribute('color', 'success');
+                }
+                if (totalValue) totalValue.textContent = '€2 286';
+              }
+            });
+          }
+
+          // ── Checkbox términos → habilitar botón confirmar ─────────────────────
+          const termsCheck = doc.getElementById('terms-check');
+          const btnConfirm = doc.getElementById('btn-confirm');
+
+          if (termsCheck && btnConfirm) {
+            termsCheck.addEventListener('ionChange', (e) => {
+              const checked = e.detail && e.detail.checked;
+              if (checked) {
+                btnConfirm.removeAttribute('disabled');
+              } else {
+                btnConfirm.setAttribute('disabled', '');
+              }
+            });
+          }
+
+          // ── Pestañas sub-navegación marketplace ──────────────────────────────
+          const checkoutTabs = doc.getElementById('checkout-tabs');
+          const PAGE_MAP = {
+            shop: 'marketplace-saas-shop.html',
+            cart: 'marketplace-saas-cart.html',
+            checkout: 'marketplace-saas-checkout.html',
+            confirm: 'marketplace-saas-success.html',
+          };
+          if (checkoutTabs) {
+            checkoutTabs.addEventListener('ionChange', (e) => {
+              const val = e.detail && e.detail.value;
+              if (val && val !== 'checkout' && PAGE_MAP[val]) {
+                location.href = PAGE_MAP[val];
+              } else {
+                // Permanecer en esta página
+                requestAnimationFrame(() => { checkoutTabs.value = 'checkout'; });
+              }
+            });
+          }
+
+          // ── Botón volver al carrito ───────────────────────────────────────────
+          const btnBack = doc.getElementById('btn-back-cart');
+          if (btnBack) {
+            btnBack.addEventListener('click', () => {
+              history.back();
+            });
+          }
+
+          // ── Botón confirmar pedido ────────────────────────────────────────────
+          if (btnConfirm) {
+            btnConfirm.addEventListener('click', () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Pedido confirmado. Redirigiendo a confirmación…';
+              toast.duration = 3000;
+              toast.position = 'bottom';
+              toast.color = 'success';
+              document.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

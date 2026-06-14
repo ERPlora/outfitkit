@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Facturación del Hub</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Tarjetas de plan/factura — precio grande */
+      .ui-price-large {
+        font-size: 2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 0 0 4px;
+      }
+      .ui-price-period {
+        font-size: .85rem;
+        font-weight: 400;
+        color: var(--ion-color-medium);
+      }
+      .ui-card-eyebrow {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ion-color-medium);
+        margin: 6px 0 10px;
+      }
+      .ui-feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: .85rem;
+        color: var(--ion-color-medium);
+      }
+      .ui-feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Método de pago */
+      .ui-payment-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .ui-card-brand {
+        width: 48px;
+        height: 32px;
+        border-radius: 5px;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        flex: 0 0 auto;
+      }
+      .ui-card-number {
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.06em;
+        font-size: .95rem;
+      }
+      .ui-card-meta {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+        margin-top: 3px;
+      }
+      .ui-payment-holder {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+        margin-top: 10px;
+      }
+
+      /* Cards plan/factura: footer */
+      .ui-card-foot {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        padding-top: 10px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      SOBRIO como el Hub real (hub/apps/web/src/views/BillingPage.vue):
+      3 tabs (Facturas / Suscripciones / Pagos) + ok-data-table con buscador/CSV propios.
+      SIN chrome inventado: nada de barras de filtros externas, date-range, selectores de
+      estado/tipo alrededor de la tabla, ni botones de export duplicados.
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      /* ── Helpers para celdas de la tabla ── */
+      const ESTADO_TONE = {
+        'Pendiente': 'warning',
+        'Pagada': 'success',
+        'Reembolsada': 'danger',
+        'Fallida': 'danger',
+      };
+      /* ok-status-pill con dot para el estado de la factura. */
+      const estadoPill = (s) => {
+        const tone = ESTADO_TONE[s] ?? 'neutral';
+        return h`<ok-status-pill tone=${tone} dot label=${s} size="sm"></ok-status-pill>`;
+      };
+      /* ok-status-pill con dot para el tipo (Hub = neutral, Módulo = primary). */
+      const tipoPill = (tipo) => {
+        const tone = tipo === 'Módulo' ? 'primary' : 'neutral';
+        return h`<ok-status-pill tone=${tone} dot label=${tipo} size="sm"></ok-status-pill>`;
+      };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Facturación del Hub"
+            description="Suscripción y facturas Stripe · Cafetería La Rambla">
+            <ion-button slot="actions" fill="outline" size="small">Cambiar plan</ion-button>
+            <ion-button slot="actions" size="small">
+              <ion-icon slot="start" name="open-outline"></ion-icon>
+              Abrir portal Stripe
+            </ion-button>
+          </ok-page-header>
+
+          <!-- Sub-secciones de facturación (igual que BillingPage.vue) -->
+          <ion-segment id="billing-tabs" value="facturas" style="margin-bottom:16px;--background:transparent">
+            <ion-segment-button value="facturas">
+              <ion-icon name="receipt-outline"></ion-icon>
+              <ion-label>Facturas</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="suscripciones">
+              <ion-icon name="refresh-outline"></ion-icon>
+              <ion-label>Suscripciones</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="pagos">
+              <ion-icon name="card-outline"></ion-icon>
+              <ion-label>Pagos</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <!-- Banner de factura pendiente -->
+          <ok-inline-feedback
+            id="banner-impago"
+            class="pg-mb-4"
+            tone="warning"
+            heading="Una factura pendiente"
+            dismissible>
+            Factura <strong>#INV-2026-0411</strong> por 29,99 € en estado <strong>Pendiente</strong>.
+            Se reintentará el cobro el 12/05/2026.
+            <ion-button slot="actions" fill="outline" size="small" color="warning">
+              Pagar ahora
+            </ion-button>
+          </ok-inline-feedback>
+
+          <!-- Sección KPIs: Plan / Próxima factura / Método de pago -->
+          <div class="pg-grid pg-grid-3 pg-mb-4" id="cards-area">
+
+            <!-- Plan actual -->
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <ion-card-title>Plan actual</ion-card-title>
+                  <ion-badge color="primary">Starter</ion-badge>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+                <p class="ui-price-large">29,99 €<span class="ui-price-period"> /mes</span></p>
+                <p class="ui-card-eyebrow">Renovación 01/06/2026</p>
+                <ul class="ui-feature-list">
+                  <li>
+                    <ion-icon name="checkmark-circle-outline" style="color:var(--ion-color-success);font-size:14px;flex:0 0 auto"></ion-icon>
+                    1 sede · hasta 5 empleados
+                  </li>
+                  <li>
+                    <ion-icon name="checkmark-circle-outline" style="color:var(--ion-color-success);font-size:14px;flex:0 0 auto"></ion-icon>
+                    POS · Empleados · Inventario
+                  </li>
+                  <li>
+                    <ion-icon name="checkmark-circle-outline" style="color:var(--ion-color-success);font-size:14px;flex:0 0 auto"></ion-icon>
+                    Soporte estándar
+                  </li>
+                </ul>
+                <div class="ui-card-foot">
+                  <ion-button fill="clear" size="small" color="medium">Cancelar plan</ion-button>
+                  <ion-button size="small">Mejorar a Pro</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Próxima factura -->
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <ion-card-title>Próxima factura</ion-card-title>
+                  <ion-badge color="success">Programada</ion-badge>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+                <p class="ui-price-large">29,99 €</p>
+                <p class="ui-card-eyebrow">Emisión 01/06/2026</p>
+                <p style="font-size:.84rem;color:var(--ion-color-medium);margin:10px 0 0;line-height:1.5">
+                  Suscripción Hub Starter · Cafetería La Rambla S.L. · CIF B-65432109.
+                </p>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Método de pago -->
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <ion-card-title>Método de pago</ion-card-title>
+                  <ion-button fill="clear" size="small" id="btn-cambiar-pago">Cambiar</ion-button>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="ui-payment-info">
+                  <div class="ui-card-brand">VISA</div>
+                  <div>
+                    <div class="ui-card-number">•••• 4242</div>
+                    <div class="ui-card-meta">Caduca 09/2027</div>
+                  </div>
+                </div>
+                <p class="ui-payment-holder">
+                  Titular: Joan Castell · Domicilio fiscal en Barcelona.
+                </p>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+          <!-- Historial de facturas (ok-data-table con buscador y CSV propios) -->
+          <ok-data-table id="facturas-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          /* ── Datos ── */
+          const rows = [
+            { id: 'INV-2026-0411', tipo: 'Hub', descripcion: 'Suscripción Hub Starter · abril 2026', fecha: '01/04/2026', importe: '29,99 €', estado: 'Pendiente' },
+            { id: 'INV-2026-0312', tipo: 'Hub', descripcion: 'Suscripción Hub Starter · marzo 2026', fecha: '01/03/2026', importe: '29,99 €', estado: 'Pagada' },
+            { id: 'INV-2026-0307', tipo: 'Módulo', descripcion: 'Verifactu ES · cuota anual', fecha: '15/03/2026', importe: '59,00 €', estado: 'Pagada' },
+            { id: 'INV-2026-0211', tipo: 'Hub', descripcion: 'Suscripción Hub Starter · febrero 2026', fecha: '01/02/2026', importe: '29,99 €', estado: 'Pagada' },
+            { id: 'INV-2026-0114', tipo: 'Hub', descripcion: 'Suscripción Hub Starter · enero 2026', fecha: '01/01/2026', importe: '29,99 €', estado: 'Reembolsada' },
+          ];
+
+          /* ── ok-data-table (buscador y CSV integrados) ── */
+          const dt = doc.getElementById('facturas-dt');
+          if (dt) {
+            dt.title = 'Historial de facturas';
+            dt.rowKey = (r) => r.id;
+            dt.columns = [
+              {
+                key: 'id',
+                header: 'Factura',
+                width: 'minmax(8rem,1fr)',
+                render: (r) => h`<code style="font-variant-numeric:tabular-nums;font-weight:600">${r.id}</code>`,
+              },
+              {
+                key: 'tipo',
+                header: 'Tipo',
+                width: '8rem',
+                render: (r) => tipoPill(r.tipo),
+              },
+              {
+                key: 'descripcion',
+                header: 'Descripción',
+                width: 'minmax(12rem,2fr)',
+              },
+              {
+                key: 'fecha',
+                header: 'Fecha',
+                width: '8rem',
+              },
+              {
+                key: 'importe',
+                header: 'Importe',
+                width: '8rem',
+                align: 'right',
+              },
+              {
+                key: 'estado',
+                header: 'Estado',
+                width: '9rem',
+                render: (r) => estadoPill(r.estado),
+              },
+            ];
+            dt.actions = [{ id: 'download', icon: 'download-outline', label: 'Descargar PDF' }];
+            dt.rows = rows;
+
+            /* ── Descarga PDF por fila ── */
+            dt.addEventListener('rowAction', (e) => {
+              const { actionId, row } = e.detail || {};
+              if (actionId !== 'download') return;
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Descargando PDF de ' + row.id + '…';
+              toast.duration = 2000;
+              toast.position = 'bottom';
+              toast.icon = 'document-outline';
+              document.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          /* ── Botón Cambiar método de pago ── */
+          const btnCambiarPago = doc.getElementById('btn-cambiar-pago');
+          if (btnCambiarPago) {
+            btnCambiarPago.addEventListener('click', async () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Cambiar método de pago';
+              alert.message = 'Serás redirigido al portal seguro de Stripe para gestionar tu método de pago.';
+              alert.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Abrir Stripe', role: 'confirm' },
+              ];
+              document.body.appendChild(alert);
+              await alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+
+          /* ── Botón Pagar ahora (banner) ── */
+          const bannerImpago = doc.getElementById('banner-impago');
+          if (bannerImpago) {
+            const pagarBtn = bannerImpago.querySelector('[slot="actions"] ion-button, ion-button[slot="actions"]');
+            if (pagarBtn) {
+              pagarBtn.addEventListener('click', async () => {
+                const alert = document.createElement('ion-alert');
+                alert.header = 'Pagar factura #INV-2026-0411';
+                alert.message = 'Se cargará 29,99 € a tu tarjeta VISA •••• 4242 de forma inmediata.';
+                alert.buttons = [
+                  { text: 'Cancelar', role: 'cancel' },
+                  { text: 'Pagar', role: 'confirm' },
+                ];
+                document.body.appendChild(alert);
+                await alert.present();
+                alert.addEventListener('didDismiss', () => alert.remove());
+              });
+            }
+          }
+
+          /* ── Botones del card de plan ── */
+          const cardsArea = doc.getElementById('cards-area');
+          if (cardsArea) {
+            // "Mejorar a Pro"
+            const btnPro = Array.from(cardsArea.querySelectorAll('ion-button')).find(
+              (b) => b.textContent.trim() === 'Mejorar a Pro'
+            );
+            if (btnPro) {
+              btnPro.addEventListener('click', () => {
+                const toast = document.createElement('ion-toast');
+                toast.message = 'Redirigiendo al comparador de planes…';
+                toast.duration = 2000;
+                toast.position = 'bottom';
+                toast.color = 'primary';
+                document.body.appendChild(toast);
+                toast.present();
+                toast.addEventListener('didDismiss', () => toast.remove());
+              });
+            }
+            // "Cancelar plan"
+            const btnCancel = Array.from(cardsArea.querySelectorAll('ion-button')).find(
+              (b) => b.textContent.trim() === 'Cancelar plan'
+            );
+            if (btnCancel) {
+              btnCancel.addEventListener('click', async () => {
+                const alert = document.createElement('ion-alert');
+                alert.header = 'Cancelar plan Starter';
+                alert.message = 'Si cancelas, perderás acceso al Hub al final del periodo de facturación actual (01/06/2026). ¿Continuar?';
+                alert.buttons = [
+                  { text: 'Mantener plan', role: 'cancel' },
+                  { text: 'Cancelar plan', role: 'destructive', cssClass: 'alert-button-role-destructive' },
+                ];
+                document.body.appendChild(alert);
+                await alert.present();
+                alert.addEventListener('didDismiss', () => alert.remove());
+              });
+            }
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

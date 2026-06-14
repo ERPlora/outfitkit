@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Mis módulos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      /* ── Datos ─────────────────────────────────────────────────────────────── */
+      const MODULES = [
+        { id: 'm1',  name: 'POS Caja Registradora Pro',  slug: '@ioanb/pos-pro',           version: 'v3.2.1',          versionWarn: false, category: 'POS',              downloads: 2184, revenue: 2480, rating: 4.8, reviews: 124, updated: 'hace 3 d',       status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm2',  name: 'Contabilidad Plus PGC07',    slug: '@ioanb/contabilidad-plus',  version: 'v2.7.0',          versionWarn: false, category: 'Contabilidad',     downloads: 1612, revenue: 1940, rating: 4.6, reviews: 86,  updated: 'hace 6 d',       status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm3',  name: 'Conciliación bancaria SEPA', slug: '@ioanb/sepa-recon',         version: 'v1.4.2 → 1.5.0', versionWarn: true,  category: 'Bancos',           downloads: 1248, revenue: 1320, rating: 4.9, reviews: 74,  updated: 'hace 1 d',       status: 'update',      tab: ['todos','activos']    },
+        { id: 'm4',  name: 'Catálogo productos avanzado',slug: '@ioanb/catalog-pro',        version: 'v2.1.4',          versionWarn: false, category: 'Inventario',       downloads: 948,  revenue: 780,  rating: 4.5, reviews: 52,  updated: 'hace 12 d',      status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm5',  name: 'TPV pantalla doble',         slug: '@ioanb/dual-screen-tpv',   version: 'v1.2.0',          versionWarn: false, category: 'POS',              downloads: 621,  revenue: 480,  rating: 4.4, reviews: 28,  updated: 'hace 18 d',      status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm6',  name: 'Inventario multitienda',     slug: '@ioanb/inventory-multi',    version: 'v3.0.1 → 3.1.0', versionWarn: true,  category: 'Inventario',       downloads: 588,  revenue: 720,  rating: 4.7, reviews: 42,  updated: 'hoy · 10:24',    status: 'update',      tab: ['todos','activos']    },
+        { id: 'm7',  name: 'RRHH Nóminas España',        slug: '@ioanb/rrhh-nominas-es',    version: 'v1.8.3',          versionWarn: false, category: 'RRHH',             downloads: 412,  revenue: 620,  rating: 4.3, reviews: 31,  updated: 'hace 4 d',       status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm8',  name: 'Marketplace integration',    slug: '@ioanb/marketplace-bridge', version: 'v0.9.4 → 1.0.0', versionWarn: true,  category: 'Integraciones',    downloads: 301,  revenue: 380,  rating: 4.2, reviews: 18,  updated: 'hace 9 d',       status: 'update',      tab: ['todos','activos']    },
+        { id: 'm9',  name: 'Pasarela Stripe Avanzada',   slug: '@ioanb/stripe-pro',         version: 'v2.4.1',          versionWarn: false, category: 'Pasarelas de pago',downloads: 288,  revenue: 220,  rating: 4.7, reviews: 22,  updated: 'ayer',           status: 'publicado',   tab: ['todos','activos']    },
+        { id: 'm10', name: 'Reportes contables IRS',     slug: '@ioanb/reports-irs',        version: 'v0.4.0-beta',     versionWarn: false, category: 'Reportes',         downloads: 12,   revenue: 0,    rating: null, reviews: 0,   updated: 'hace 30 d',      status: 'borrador',    tab: ['todos','borrador']   },
+        { id: 'm11', name: 'Backup automático Drive',    slug: '@ioanb/drive-backup',       version: 'v1.0.2',          versionWarn: false, category: 'Utilidades',       downloads: 88,   revenue: 0,    rating: 3.6, reviews: 7,   updated: 'hace 2 m',       status: 'despublicado',tab: ['todos','despublicados']},
+      ];
+
+      /* ── Helpers de render ─────────────────────────────────────────────────── */
+      const statusBadge = (s) => {
+        if (s === 'publicado')    return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-success) 15%,transparent);--color:var(--ion-color-success)">Publicado</ion-badge>`;
+        if (s === 'update')       return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning)">Update pendiente</ion-badge>`;
+        if (s === 'borrador')     return h`<ion-badge color="medium">Borrador</ion-badge>`;
+        if (s === 'despublicado') return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-danger) 15%,transparent);--color:var(--ion-color-danger)">Despublicado</ion-badge>`;
+        return h`<ion-badge color="medium">${s}</ion-badge>`;
+      };
+
+      const versionBadge = (r) => {
+        if (r.versionWarn) return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning);font-size:.7rem">${r.version}</ion-badge>`;
+        return h`<ion-badge color="medium" style="font-size:.7rem">${r.version}</ion-badge>`;
+      };
+
+      const ratingCell = (r) => {
+        if (!r.rating) return h`<span style="color:var(--ion-color-medium)">— sin reseñas</span>`;
+        return h`<span>★ ${r.rating} <span style="font-size:.75rem;color:var(--ion-color-medium)">(${r.reviews})</span></span>`;
+      };
+
+      const modNameCell = (r) => h`
+        <div style="font-weight:600;font-size:.9rem">${r.name}</div>
+        <div style="font-size:.75rem;color:var(--ion-color-medium);margin-top:2px">${r.slug}</div>`;
+
+      /* ── Estado de UI ──────────────────────────────────────────────────────── */
+      let currentTab = 'todos';
+
+      /* ── Filtro de filas por tab ───────────────────────────────────────────── */
+      const filterRows = () => MODULES.filter((m) => m.tab.includes(currentTab));
+
+      /* ── definePage ─────────────────────────────────────────────────────────── */
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Mis módulos"
+            description="12 módulos · 8 420 descargas totales · €8 920 ingresos totales">
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              Exportar
+            </ion-button>
+            <ion-button slot="actions" size="small">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Subir módulo
+            </ion-button>
+          </ok-page-header>
+
+          <!-- Sub-tabs: Todos / Activos / Borradores / Despublicados -->
+          <ion-segment id="mod-tabs" value="todos" style="margin-bottom:14px">
+            <ion-segment-button value="todos">
+              <ion-label>Todos <ion-badge color="primary">12</ion-badge></ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="activos">
+              <ion-label>Activos <ion-badge color="medium">10</ion-badge></ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="borrador">
+              <ion-label>Borradores <ion-badge color="medium">1</ion-badge></ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="despublicados">
+              <ion-label>Despublicados <ion-badge color="medium">1</ion-badge></ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <ok-data-table id="mod-dt" style="display:block"></ok-data-table>
+        `,
+
+        setup(doc) {
+          const dt   = doc.getElementById('mod-dt');
+          const tabs = doc.getElementById('mod-tabs');
+
+          /* ── Configuración de ok-data-table ───────────────────────────────── */
+          dt.rowKey     = (r) => r.id;
+          dt.searchable = true;
+          dt.searchKeys = ['name', 'slug', 'category'];
+          dt.selectable = true;
+          dt.views      = ['table', 'cards'];
+
+          /* ── Columnas (vista tabla) ────────────────────────────────────────── */
+          dt.columns = [
+            { key: 'name',      header: 'Nombre',       width: 'minmax(200px,2fr)', sortable: true,
+              render: (r) => modNameCell(r) },
+            { key: 'version',   header: 'Versión',      width: '9rem',
+              render: (r) => versionBadge(r) },
+            { key: 'category',  header: 'Categoría',    width: 'minmax(100px,1fr)', sortable: true },
+            { key: 'downloads', header: 'Descargas',    width: '8rem', align: 'right', sortable: true,
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${r.downloads.toLocaleString('es')}</span>` },
+            { key: 'revenue',   header: 'Ingresos',     width: '8rem', align: 'right', sortable: true,
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums">€${r.revenue.toLocaleString('es')}</span>` },
+            { key: 'rating',    header: 'Rating',       width: '9rem',
+              render: (r) => ratingCell(r) },
+            { key: 'updated',   header: 'Última act.',  width: '9rem',
+              render: (r) => h`<span style="font-size:.8rem;color:var(--ion-color-medium)">${r.updated}</span>` },
+            { key: 'status',    header: 'Estado',       width: '10rem',
+              render: (r) => statusBadge(r.status) },
+          ];
+
+          /* ── Vista tarjetas ───────────────────────────────────────────────── */
+          dt.cardIcon  = () => 'cube-outline';
+          dt.cardTitle = (r) => h`<span>${r.name}</span>`;
+          dt.renderCard = (r) => h`
+            <div style="font-size:.78rem;color:var(--ion-color-medium);margin-bottom:.5rem">${r.slug} · ${r.category}</div>
+            <div style="display:flex;gap:14px;font-size:.8rem;color:var(--ion-color-medium);margin-bottom:.5rem">
+              <span><b style="color:var(--ion-text-color)">${r.downloads.toLocaleString('es')}</b> descargas</span>
+              <span><b style="color:var(--ion-text-color)">€${r.revenue.toLocaleString('es')}</b> ingresos</span>
+              ${r.rating ? h`<span>★ ${r.rating}</span>` : h`<span>sin reseñas</span>`}
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              ${statusBadge(r.status)}
+              ${versionBadge(r)}
+            </div>`;
+
+          /* ── Menú ⋮ por fila ──────────────────────────────────────────────── */
+          dt.actions = [
+            { id: 'menu', icon: 'ellipsis-vertical', label: 'Acciones' },
+          ];
+
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            if (actionId !== 'menu') return;
+            const sheet = document.createElement('ion-action-sheet');
+            sheet.header = row.name;
+            const isDraft  = row.status === 'borrador';
+            const isUnpub  = row.status === 'despublicado';
+            const buttons  = [];
+            if (!isDraft && !isUnpub) buttons.push({ text: 'Editar',       icon: 'create-outline'        });
+            if (isDraft)              buttons.push({ text: 'Publicar',      icon: 'cloud-upload-outline'  });
+            if (!isUnpub && !isDraft) buttons.push({ text: 'Pausar',        icon: 'pause-circle-outline'  });
+            if (!isUnpub && !isDraft) buttons.push({ text: 'Despublicar',   icon: 'eye-off-outline', role: 'destructive' });
+            if (isUnpub)              buttons.push({ text: 'Republicar',    icon: 'cloud-upload-outline'  });
+            if (isDraft || isUnpub)   buttons.push({ text: 'Editar',        icon: 'create-outline'        });
+            if (isDraft || isUnpub)   buttons.push({ text: 'Eliminar',      icon: 'trash-outline', role: 'destructive' });
+            buttons.push({ text: 'Cancelar', role: 'cancel' });
+            sheet.buttons = buttons;
+            document.body.appendChild(sheet);
+            sheet.present();
+            sheet.addEventListener('didDismiss', () => sheet.remove());
+          });
+
+          /* ── Tabs ──────────────────────────────────────────────────────────── */
+          if (tabs) {
+            tabs.addEventListener('ionChange', (e) => {
+              currentTab = (e.detail && e.detail.value) || 'todos';
+              dt.rows = filterRows();
+            });
+          }
+
+          /* ── Carga inicial ─────────────────────────────────────────────────── */
+          dt.rows = filterRows();
+        },
+      });
+    </script>
+  </body>
+</html>

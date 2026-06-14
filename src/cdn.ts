@@ -16,6 +16,7 @@ import './components/ok-kpi/ok-kpi.js';
 import './components/ok-stat/ok-stat.js';
 import './components/ok-stepper/ok-stepper.js';
 import './components/ok-wizard/ok-wizard.js';
+import './components/ok-widget-board/ok-widget-board.js';
 import './components/ok-contact-form/ok-contact-form.js';
 // Tier 1/2 (2ª oleada)
 import './components/ok-calendar/ok-calendar.js';

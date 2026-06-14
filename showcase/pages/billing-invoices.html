@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Facturas</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <!--
+      SOBRIO como el Hub real (hub/apps/web/src/views/BillingPage.vue) PERO con ok-data-table
+      como componente de listado (política: todo listado de registros usa ok-data-table).
+      SIN chrome inventado: nada de KPIs / chips de filtro / date-range / export popovers.
+      Cabecera + tabs de sección + ok-data-table limpio (estado con ion-badge, descargar por fila).
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const INVOICES = [
+        { number: 'INV-2026-0142', issue: '12 mar 2026', due: '26 mar 2026', amount: '890,00 €',   status: 'paid' },
+        { number: 'INV-2026-0141', issue: '05 mar 2026', due: '19 mar 2026', amount: '340,50 €',   status: 'paid' },
+        { number: 'INV-2026-0140', issue: '01 mar 2026', due: '15 mar 2026', amount: '890,00 €',   status: 'open' },
+        { number: 'INV-2026-0138', issue: '18 feb 2026', due: '04 mar 2026', amount: '120,00 €',   status: 'uncollectible' },
+        { number: 'INV-2026-0136', issue: '12 feb 2026', due: '26 feb 2026', amount: '890,00 €',   status: 'paid' },
+        { number: 'INV-2026-0135', issue: '10 feb 2026', due: '24 feb 2026', amount: '320,00 €',   status: 'open' },
+        { number: 'INV-2026-0132', issue: '02 feb 2026', due: '16 feb 2026', amount: '340,50 €',   status: 'paid' },
+        { number: 'INV-2026-0128', issue: '20 ene 2026', due: '03 feb 2026', amount: '1 240,00 €', status: 'paid' },
+        { number: 'INV-2026-0124', issue: '15 ene 2026', due: '29 ene 2026', amount: '890,00 €',   status: 'paid' },
+        { number: 'INV-2026-0118', issue: '05 ene 2026', due: '19 ene 2026', amount: '45,00 €',    status: 'paid' },
+        { number: 'INV-2026-0114', issue: '02 ene 2026', due: '16 ene 2026', amount: '340,50 €',   status: 'paid' },
+        { number: 'INV-2026-DR01', issue: '—',           due: '—',           amount: '2 460,00 €', status: 'draft' },
+      ];
+
+      // Estado → etiqueta/color Ionic (idéntico a BillingPage.vue del Hub).
+      const STATUS_LABEL = { draft: 'Borrador', open: 'Abierta', paid: 'Pagada', void: 'Anulada', uncollectible: 'Incobrable' };
+      const STATUS_COLOR = { draft: 'medium', open: 'warning', paid: 'success', void: 'medium', uncollectible: 'danger' };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header heading="Facturas"
+            description="32 facturas · ejercicio 2026 · €18 240,50 facturado"></ok-page-header>
+
+          <ion-segment id="billing-tabs" value="invoices" style="margin-bottom:16px">
+            <ion-segment-button value="invoices"><ion-icon name="receipt-outline"></ion-icon><ion-label>Facturas</ion-label></ion-segment-button>
+            <ion-segment-button value="subscriptions"><ion-icon name="refresh-outline"></ion-icon><ion-label>Suscripciones</ion-label></ion-segment-button>
+            <ion-segment-button value="payments"><ion-icon name="card-outline"></ion-icon><ion-label>Pagos</ion-label></ion-segment-button>
+          </ion-segment>
+
+          <ok-data-table id="inv-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          const dt = doc.getElementById('inv-dt');
+          dt.rowKey = (r) => r.number;
+          dt.columns = [
+            { key: 'number', header: 'Factura', width: 'minmax(10rem,1.2fr)', render: (r) => h`<span style="font-weight:600">${r.number}</span>` },
+            { key: 'issue', header: 'Fecha', width: '9rem' },
+            { key: 'due', header: 'Vencimiento', width: '9rem' },
+            { key: 'amount', header: 'Importe', width: '9rem', align: 'right', render: (r) => h`<span style="font-variant-numeric:tabular-nums;font-weight:600">${r.amount}</span>` },
+            { key: 'status', header: 'Estado', width: '8rem', render: (r) => {
+                const c = STATUS_COLOR[r.status];
+                // Las clases .ion-color-* NO penetran el shadow del data-table → vars inline (como hubs-active.html).
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${STATUS_LABEL[r.status]}</ion-badge>`;
+              } },
+          ];
+          dt.actions = [{ id: 'download', icon: 'download-outline', label: 'Descargar PDF', show: (r) => r.status !== 'draft' }];
+          dt.rows = INVOICES;
+
+          dt.addEventListener('rowAction', (e) => {
+            const t = document.createElement('ion-toast');
+            t.message = `Descargando ${e.detail?.row?.number ?? 'factura'}…`;
+            t.duration = 1200; t.position = 'bottom';
+            document.body.appendChild(t); t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

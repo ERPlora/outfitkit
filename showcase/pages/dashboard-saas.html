@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Resumen general</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* ── Lista de hubs activos ── */
+      .ui-hub-row {
+        display: grid;
+        grid-template-columns: 1rem 1fr auto;
+        gap: .75rem;
+        align-items: center;
+        padding: .75rem 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-hub-row:last-child { border-bottom: 0; }
+      .ui-hub-name { font-weight: 500; font-size: .9rem; }
+      .ui-hub-meta { font-size: .75rem; color: var(--ion-color-medium); margin-top: 1px; }
+      .ui-hub-sync { text-align: right; font-size: .75rem; color: var(--ion-color-medium); font-variant-numeric: tabular-nums; }
+      .ui-hub-sync strong { display: block; font-weight: 500; }
+      .ui-hub-sync--warn strong { color: var(--ion-color-warning); }
+      .ui-hub-sync--idle strong { color: var(--ion-color-medium); }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Resumen general"
+            description="Estado de tus organizaciones, hubs y facturación a fecha de 8 mayo 2026.">
+            <div slot="actions">
+              <ion-button>
+                <ion-icon slot="start" name="add"></ion-icon>
+                Nuevo hub
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- KPIs — propósito de esta pantalla de resumen -->
+          <div class="pg-grid pg-grid-4 pg-mb-4">
+            <ok-kpi label="Hubs activos" value="7" delta="+2 este mes" trend="up" icon="cube-outline"></ok-kpi>
+            <ok-kpi label="Facturas mes" value="14" delta="−1 vs abril" trend="down" icon="document-text-outline"></ok-kpi>
+            <ok-kpi label="Compras pendientes" value="€4 280,50" delta="+€1 200 vs abril" trend="up" icon="time-outline"></ok-kpi>
+            <ok-kpi label="Usuarios totales" value="142" delta="+12 nuevos" trend="up" icon="people-outline"></ok-kpi>
+          </div>
+
+          <!-- Actividad reciente + Hubs activos -->
+          <div class="pg-cols pg-mb-4">
+
+            <!-- Actividad reciente -->
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
+                  <div>
+                    <ion-card-title>Actividad reciente</ion-card-title>
+                    <ion-card-subtitle>Últimas 24 horas en todas tus organizaciones</ion-card-subtitle>
+                  </div>
+                  <ion-button fill="clear" size="small">
+                    <ion-icon slot="start" name="list-outline"></ion-icon>
+                    Ver todo
+                  </ion-button>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+                <ok-timeline id="activity-timeline"></ok-timeline>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Hubs activos -->
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
+                  <div>
+                    <ion-card-title>Hubs activos</ion-card-title>
+                    <ion-card-subtitle>5 de 7 con sincronización en tiempo real</ion-card-subtitle>
+                  </div>
+                  <ion-button fill="clear" size="small">
+                    <ion-icon slot="start" name="grid-outline"></ion-icon>
+                    Ver todos
+                  </ion-button>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+
+                <div class="ui-hub-row">
+                  <ok-status-dot tone="ok" pulse label="en línea"></ok-status-dot>
+                  <div>
+                    <div class="ui-hub-name">POS Madrid Centro</div>
+                    <div class="ui-hub-meta">Acme Restaurantes · 4 módulos</div>
+                  </div>
+                  <div class="ui-hub-sync">
+                    <strong>en línea</strong>
+                    hace 12 s
+                  </div>
+                </div>
+
+                <div class="ui-hub-row">
+                  <ok-status-dot tone="ok" pulse label="en línea"></ok-status-dot>
+                  <div>
+                    <div class="ui-hub-name">Almacén Vallecas</div>
+                    <div class="ui-hub-meta">Acme Industries · 6 módulos</div>
+                  </div>
+                  <div class="ui-hub-sync">
+                    <strong>en línea</strong>
+                    hace 1 min
+                  </div>
+                </div>
+
+                <div class="ui-hub-row">
+                  <ok-status-dot tone="ok" pulse label="en línea"></ok-status-dot>
+                  <div>
+                    <div class="ui-hub-name">Boutique Marina · Valencia</div>
+                    <div class="ui-hub-meta">Boutique Marina · 3 módulos</div>
+                  </div>
+                  <div class="ui-hub-sync">
+                    <strong>en línea</strong>
+                    hace 4 min
+                  </div>
+                </div>
+
+                <div class="ui-hub-row">
+                  <ok-status-dot tone="warn" label="latencia alta"></ok-status-dot>
+                  <div>
+                    <div class="ui-hub-name">Taller Norte · Bilbao</div>
+                    <div class="ui-hub-meta">Acme Industries · 5 módulos</div>
+                  </div>
+                  <div class="ui-hub-sync ui-hub-sync--warn">
+                    <strong>latencia alta</strong>
+                    hace 14 min
+                  </div>
+                </div>
+
+                <div class="ui-hub-row">
+                  <ok-status-dot tone="off" label="offline"></ok-status-dot>
+                  <div>
+                    <div class="ui-hub-name">Pop-up Sevilla Feria</div>
+                    <div class="ui-hub-meta">Boutique Marina · 2 módulos</div>
+                  </div>
+                  <div class="ui-hub-sync ui-hub-sync--idle">
+                    <strong>offline</strong>
+                    hace 2 días
+                  </div>
+                </div>
+
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+          <!-- Próximas facturas -->
+          <ion-card>
+            <ion-card-header>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div>
+                  <ion-card-title>Próximas facturas</ion-card-title>
+                  <ion-card-subtitle>Vencimientos en los próximos 14 días</ion-card-subtitle>
+                </div>
+                <ion-button fill="outline" size="small">
+                  <ion-icon slot="start" name="document-text-outline"></ion-icon>
+                  Ver todas
+                </ion-button>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <ok-data-table id="invoices-dt" style="display:block"></ok-data-table>
+            </ion-card-content>
+          </ion-card>
+        `,
+
+        setup(doc) {
+          // ── ok-timeline — actividad reciente ─────────────────────────────────
+          const ACTIVITY = [
+            { id: 'a1',
+              title: 'Hub POS Madrid Centro creado por María Lozano',
+              description: 'Nuevo hub en Acme Restaurantes con 3 módulos preinstalados (POS, KDS, Inventario).',
+              time: 'hace 32 min', icon: 'checkmark-outline', color: 'success', status: 'done' },
+            { id: 'a2',
+              title: 'Módulo warehouse@1.4.2 instalado en hub Almacén Vallecas',
+              description: 'Despliegue automático completado en 2.4 s · 0 errores · 12 endpoints expuestos.',
+              time: 'hace 1 h', icon: 'code-slash-outline', color: 'primary', status: 'done' },
+            { id: 'a3',
+              title: 'Factura F-2026-0314 pagada · €1 248,00',
+              description: 'Boutique Marina (Valencia) · Stripe Connect · cargo automático en tarjeta •••• 4823.',
+              time: 'hace 2 h', icon: 'card-outline', color: 'success', status: 'done' },
+            { id: 'a4',
+              title: '12 usuarios añadidos a Acme Industries desde CSV',
+              description: 'Importación masiva por Carlos Pereda · Departamento Producción · roles: operador, supervisor.',
+              time: 'hace 4 h', icon: 'people-outline', color: 'primary', status: 'done' },
+            { id: 'a5',
+              title: 'Suscripción Pro Annual renovará en 7 días',
+              description: '€2 880,00/año · Boutique Marina · método de pago vigente hasta 09/2027.',
+              time: 'ayer 21:14', icon: 'warning-outline', color: 'warning', status: 'done' },
+            { id: 'a6',
+              title: 'Webhook stripe.invoice.paid reactivado',
+              description: 'Tras 3 reintentos fallidos, el endpoint volvió a responder 200 OK.',
+              time: 'ayer 15:02', icon: 'settings-outline', color: 'medium', status: 'done' },
+          ];
+
+          const timeline = doc.getElementById('activity-timeline');
+          if (timeline) timeline.items = ACTIVITY;
+
+          // ── ok-data-table — próximas facturas ────────────────────────────────
+          const TONE = { due: 'warning', pending: 'info', draft: 'neutral', scheduled: 'success' };
+          const LABEL = { due: 'En 2 días', pending: 'Pendiente', draft: 'Borrador', scheduled: 'Programada' };
+
+          const INVOICES = [
+            { id: 'F-2026-0317', org: 'Acme Restaurantes', hub: 'POS Madrid Centro',   amount: '€2 480,00', due: '10 may 2026', status: 'due' },
+            { id: 'F-2026-0318', org: 'Boutique Marina',   hub: 'Boutique Valencia',   amount: '€1 248,00', due: '12 may 2026', status: 'pending' },
+            { id: 'F-2026-0319', org: 'Acme Industries',   hub: 'Almacén Vallecas',    amount: '€552,30',   due: '15 may 2026', status: 'pending' },
+            { id: 'F-2026-0320', org: 'Acme Restaurantes', hub: 'Cocinas Centrales',   amount: '€890,00',   due: '18 may 2026', status: 'draft' },
+            { id: 'F-2026-0321', org: 'Acme Industries',   hub: 'Taller Norte Bilbao', amount: '€3 120,00', due: '22 may 2026', status: 'scheduled' },
+          ];
+
+          const dt = doc.getElementById('invoices-dt');
+          if (dt) {
+            dt.searchable = false;
+            dt.rowKey = (r) => r.id;
+
+            dt.columns = [
+              {
+                key: 'org', header: 'Organización', width: 'minmax(10rem,1.5fr)',
+                render: (r) => h`
+                  <span style="display:inline-flex;align-items:center;gap:.6rem">
+                    <ok-avatar name=${r.org} size="sm"></ok-avatar>
+                    <span>
+                      <span style="font-weight:500;display:block">${r.org}</span>
+                      <span style="font-size:.75rem;color:var(--ion-color-medium)">${r.id}</span>
+                    </span>
+                  </span>`,
+              },
+              { key: 'hub', header: 'Hub', width: 'minmax(9rem,1fr)' },
+              { key: 'amount', header: 'Importe', width: '8rem', align: 'right',
+                render: (r) => h`<span style="font-variant-numeric:tabular-nums;font-weight:600">${r.amount}</span>` },
+              { key: 'due', header: 'Vencimiento', width: '9rem' },
+              {
+                key: 'status', header: 'Estado', width: '9rem',
+                render: (r) => {
+                  const c = TONE[r.status] === 'info' ? 'primary' : TONE[r.status] === 'neutral' ? 'medium' : TONE[r.status];
+                  // Las clases .ion-color-* NO penetran el shadow del data-table → vars inline.
+                  return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${LABEL[r.status]}</ion-badge>`;
+                },
+              },
+            ];
+
+            dt.actions = [
+              { id: 'pay',  icon: 'card-outline',   label: 'Pagar',  show: (r) => r.status === 'due' || r.status === 'pending' },
+              { id: 'edit', icon: 'pencil-outline',  label: 'Editar', show: (r) => r.status === 'draft' },
+              { id: 'view', icon: 'eye-outline',     label: 'Ver',    show: (r) => r.status === 'scheduled' },
+            ];
+
+            dt.rows = INVOICES;
+
+            dt.addEventListener('rowAction', (e) => {
+              const { actionId, row } = e.detail || {};
+              const msgs = { pay: `Pagando ${row?.id}…`, edit: `Editando ${row?.id}…`, view: `Abriendo ${row?.id}…` };
+              const t = document.createElement('ion-toast');
+              t.message = msgs[actionId] ?? `Acción en ${row?.id}`;
+              t.duration = 1200; t.position = 'bottom';
+              document.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

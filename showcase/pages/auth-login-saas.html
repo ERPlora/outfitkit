@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Iniciar sesión</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Fondo centrado de autenticación con gradiente sutil — colores del tema Ionic. */
+      .auth-wrap {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+        background:
+          radial-gradient(ellipse 80% 60% at 75% -10%,
+            color-mix(in srgb, var(--ion-color-primary) 14%, transparent) 0%,
+            transparent 60%),
+          radial-gradient(ellipse 70% 50% at 20% 110%,
+            color-mix(in srgb, var(--ion-color-tertiary, var(--ion-color-primary)) 10%, transparent) 0%,
+            transparent 60%),
+          var(--ion-background-color);
+      }
+      /* ion-content no debe añadir padding extra al fondo centrado de auth. */
+      ion-app { background: var(--ion-background-color); }
+
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Marca: logo + nombre + subtítulo. */
+      .auth-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+
+      .auth-brand__logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: -0.04em;
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--ion-color-primary) 30%, transparent);
+      }
+
+      .auth-brand__name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -0.02em;
+      }
+
+      .auth-brand__sub {
+        font-size: .82rem;
+        color: var(--ion-color-medium);
+        text-align: center;
+      }
+
+      /* Divisor «o continúa con». */
+      .auth-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: .72rem;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        margin: 8px 0;
+      }
+      .auth-divider::before,
+      .auth-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--ion-border-color, rgba(127,127,127,.22));
+      }
+
+      /* Botones OAuth apilados. */
+      .auth-oauth {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      /* Fila recuérdame / confiar (toggle + texto). */
+      .auth-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+      }
+      .auth-toggle-row__text {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .auth-toggle-row__label {
+        font-size: .9rem;
+        font-weight: 500;
+      }
+      .auth-toggle-row__desc {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* «¿Olvidaste tu contraseña?» alineado a la derecha. */
+      .auth-forgot {
+        display: block;
+        text-align: right;
+        font-size: .82rem;
+        color: var(--ion-color-primary);
+        text-decoration: none;
+        margin-top: 4px;
+      }
+      .auth-forgot:hover { text-decoration: underline; }
+
+      /* Pie de página. */
+      .auth-foot {
+        text-align: center;
+        font-size: .82rem;
+        color: var(--ion-color-medium);
+      }
+      .auth-foot a {
+        color: var(--ion-color-primary);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .auth-foot a:hover { text-decoration: underline; }
+      .auth-foot__copy {
+        display: block;
+        margin-top: 6px;
+        font-size: .72rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Sección OTP centrada. */
+      .auth-otp-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .auth-otp-hint {
+        font-size: .8rem;
+        color: var(--ion-color-medium);
+        text-align: center;
+        max-width: 280px;
+      }
+
+      /* Grupos de botones. */
+      .auth-btn-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+      .auth-btn-row ion-button:last-child {
+        flex: 1;
+      }
+
+      /* Iconos SVG de OAuth (sin fill de marca — se respetan porque son logotipos). */
+      .auth-oauth-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+
+      /* Sobreescritura puntual de ion-card para que ocupe todo el ancho. */
+      .auth-card ion-card {
+        margin: 0;
+        border-radius: 14px;
+      }
+
+      /* ion-input con label apilada dentro de la tarjeta. */
+      .auth-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <div class="auth-wrap">
+            <div class="auth-card">
+
+              <!-- Marca -->
+              <div class="auth-brand">
+                <div class="auth-brand__logo">EX</div>
+                <span class="auth-brand__name">ERPlora Cloud</span>
+                <span class="auth-brand__sub">Plataforma de gestión multi-organización</span>
+              </div>
+
+              <!-- Paso 1: Credenciales -->
+              <ion-card id="step-creds">
+                <ion-card-header>
+                  <ion-card-title>Iniciar sesión</ion-card-title>
+                  <ion-card-subtitle>Accede a tu panel de control de ERPlora</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+
+                  <div class="auth-fields">
+
+                    <ion-input
+                      id="login-email"
+                      type="email"
+                      label="Correo electrónico"
+                      label-placement="stacked"
+                      fill="outline"
+                      placeholder="tu@empresa.com"
+                      autocomplete="email"
+                      value="Ioan@acme.com">
+                    </ion-input>
+
+                    <div>
+                      <ion-input
+                        id="login-pwd"
+                        type="password"
+                        label="Contraseña"
+                        label-placement="stacked"
+                        fill="outline"
+                        placeholder="••••••••"
+                        autocomplete="current-password">
+                      </ion-input>
+                      <a href="#" class="auth-forgot">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <div class="auth-toggle-row">
+                      <div class="auth-toggle-row__text">
+                        <span class="auth-toggle-row__label">Recuérdame en este equipo</span>
+                        <span class="auth-toggle-row__desc">Guarda la sesión durante 30 días</span>
+                      </div>
+                      <ion-toggle id="toggle-remember" checked></ion-toggle>
+                    </div>
+
+                    <ion-button id="btn-continuar" expand="block" size="large">
+                      Continuar
+                      <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+                    </ion-button>
+
+                  </div>
+
+                  <div class="auth-divider">o continúa con</div>
+
+                  <div class="auth-oauth">
+                    <ion-button fill="outline" expand="block">
+                      <svg slot="start" class="auth-oauth-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="#4285F4" d="M22 12.2c0-.7-.06-1.4-.18-2.1H12v4h5.6a4.8 4.8 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.6z"/>
+                        <path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-1 .6-2.2 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7A10 10 0 0 0 12 22z"/>
+                        <path fill="#FBBC05" d="M6.2 13.6a6 6 0 0 1 0-3.8V7H2.7a10 10 0 0 0 0 9l3.5-2.4z"/>
+                        <path fill="#EA4335" d="M12 6c1.5 0 2.9.5 4 1.5l3-3A10 10 0 0 0 2.7 7l3.5 2.7C7 7.3 9.3 5.5 12 5.5z"/>
+                      </svg>
+                      Continuar con Google
+                    </ion-button>
+                    <ion-button fill="outline" expand="block">
+                      <svg slot="start" class="auth-oauth-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="3" width="8" height="8" fill="#F25022"/>
+                        <rect x="13" y="3" width="8" height="8" fill="#7FBA00"/>
+                        <rect x="3" y="13" width="8" height="8" fill="#00A4EF"/>
+                        <rect x="13" y="13" width="8" height="8" fill="#FFB900"/>
+                      </svg>
+                      Continuar con Microsoft
+                    </ion-button>
+                    <ion-button fill="outline" expand="block">
+                      <svg slot="start" class="auth-oauth-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.04 1.53 1.04.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.55 9.55 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.86v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/>
+                      </svg>
+                      Continuar con GitHub
+                    </ion-button>
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Paso 2: Verificación en dos pasos -->
+              <ion-card id="step-2fa" hidden>
+                <ion-card-header>
+                  <ion-card-title>Verificación en dos pasos</ion-card-title>
+                  <ion-card-subtitle>Introduce el código de 6 dígitos de tu app autenticadora</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+
+                  <div class="auth-otp-section">
+
+                    <ok-otp id="otp-input" length="6"></ok-otp>
+
+                    <p class="auth-otp-hint">
+                      El código caduca en <strong>00:42</strong>.
+                      Si no recibes nada, <a href="#">usa un código de respaldo</a>.
+                    </p>
+
+                    <div class="auth-toggle-row" style="width:100%">
+                      <div class="auth-toggle-row__text">
+                        <span class="auth-toggle-row__label">Confiar este dispositivo</span>
+                        <span class="auth-toggle-row__desc">No volverá a pedir 2FA durante 14 días</span>
+                      </div>
+                      <ion-toggle id="toggle-trust"></ion-toggle>
+                    </div>
+
+                    <div class="auth-btn-row">
+                      <ion-button fill="outline" id="btn-volver" size="large">
+                        <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+                        Volver
+                      </ion-button>
+                      <ion-button id="btn-verificar" size="large">
+                        Verificar y continuar
+                        <ion-icon slot="end" name="checkmark-circle-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Pie -->
+              <p class="auth-foot">
+                ¿No tienes cuenta? <a href="#">Regístrate gratis</a>
+                <span class="auth-foot__copy">
+                  © 2026 ERPlora ·
+                  <a href="#">Términos</a> ·
+                  <a href="#">Privacidad</a>
+                </span>
+              </p>
+
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          const stepCreds = doc.getElementById('step-creds');
+          const step2fa   = doc.getElementById('step-2fa');
+          const btnCont   = doc.getElementById('btn-continuar');
+          const btnVolver = doc.getElementById('btn-volver');
+          const btnVerif  = doc.getElementById('btn-verificar');
+          const otpEl     = doc.getElementById('otp-input');
+
+          // Pasar al paso 2FA al pulsar Continuar.
+          if (btnCont) {
+            btnCont.addEventListener('click', () => {
+              if (stepCreds) stepCreds.hidden = true;
+              if (step2fa)   step2fa.hidden   = false;
+              // Foco en el primer campo OTP si ok-otp lo expone.
+              requestAnimationFrame(() => {
+                if (otpEl && typeof otpEl.focus === 'function') otpEl.focus();
+              });
+            });
+          }
+
+          // Volver al paso de credenciales.
+          if (btnVolver) {
+            btnVolver.addEventListener('click', () => {
+              if (step2fa)   step2fa.hidden   = true;
+              if (stepCreds) stepCreds.hidden = false;
+            });
+          }
+
+          // Verificar — en el showcase solo muestra una alerta nativa.
+          if (btnVerif) {
+            btnVerif.addEventListener('click', () => {
+              const code = otpEl ? (otpEl.value || '') : '';
+              const toast = doc.createElement('ion-toast');
+              toast.message = code
+                ? `Código «${code}» verificado correctamente. Redirigiendo…`
+                : 'Introduce el código de 6 dígitos antes de continuar.';
+              toast.duration = 3000;
+              toast.color = code ? 'success' : 'warning';
+              toast.position = 'top';
+              doc.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

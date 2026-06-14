@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Historial de pagos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Método de pago inline en celda */
+      .pay-method {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pay-method__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 20px;
+        border-radius: 3px;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        background: var(--ion-color-light);
+        color: var(--ion-color-medium);
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        font-family: var(--ion-font-family-monospace, monospace);
+      }
+      .pay-method__badge--visa {
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        border-color: var(--ion-color-primary);
+      }
+      .pay-method__badge--sepa {
+        background: color-mix(in srgb, var(--ion-color-tertiary) 20%, transparent);
+        color: var(--ion-color-tertiary);
+        border-color: color-mix(in srgb, var(--ion-color-tertiary) 40%, transparent);
+      }
+      .pay-method__badge--amex {
+        background: var(--ion-color-secondary);
+        color: var(--ion-color-secondary-contrast);
+        border-color: var(--ion-color-secondary);
+      }
+      .pay-method__num {
+        font-size: .78rem;
+        font-family: var(--ion-font-family-monospace, monospace);
+        color: var(--ion-color-medium);
+      }
+
+      /* Concepto: línea principal + sub */
+      .tx-concept { display: flex; flex-direction: column; gap: 2px; }
+      .tx-concept__title { font-weight: 600; font-size: .9rem; }
+      .tx-concept__sub { font-size: .78rem; color: var(--ion-color-medium); }
+
+      /* Importe: tabulado */
+      .tx-amount {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        text-align: right;
+      }
+      .tx-amount--refund {
+        color: var(--ion-color-tertiary);
+      }
+
+      /* ID transacción en mono */
+      .tx-id {
+        font-family: var(--ion-font-family-monospace, monospace);
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      SOBRIO como billing-invoices.html: ok-page-header + ion-segment de sección + ok-data-table limpio.
+      SIN chrome inventado: sin KPIs, sin barra de filtros manual, sin date-range, sin paginación
+      manual (el propio ok-data-table la gestiona), sin gráfica de distribución.
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // ── Helpers de celda ──
+
+      // Método de pago: badge con nombre de red + número enmascarado
+      const payMethod = (tipo, num) => {
+        const cls = tipo.toLowerCase() === 'visa'
+          ? 'pay-method__badge--visa'
+          : tipo.toLowerCase() === 'sepa'
+            ? 'pay-method__badge--sepa'
+            : 'pay-method__badge--amex';
+        return h`<span class="pay-method">
+          <span class="pay-method__badge ${cls}">${tipo}</span>
+          <span class="pay-method__num">${num}</span>
+        </span>`;
+      };
+
+      // Concepto: título + subtítulo
+      const concepto = (titulo, sub) => h`<span class="tx-concept">
+        <span class="tx-concept__title">${titulo}</span>
+        <span class="tx-concept__sub">${sub}</span>
+      </span>`;
+
+      // Badge de estado — vars inline porque .ion-color-* no penetra el shadow del data-table
+      const ESTADO_COLOR = {
+        cobrado:     'success',
+        procesando:  'warning',
+        fallido:     'danger',
+        reembolsado: 'tertiary',
+      };
+      const estadoBadge = (estado) => {
+        const c = ESTADO_COLOR[estado.toLowerCase()] ?? 'medium';
+        return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${estado}</ion-badge>`;
+      };
+
+      // Importe: negativo = reembolso
+      const importe = (val) => {
+        const refund = val.startsWith('−');
+        return h`<span class="tx-amount ${refund ? 'tx-amount--refund' : ''}">${val}</span>`;
+      };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Historial de pagos"
+            description="Movimientos de tu cuenta · suscripciones, pedidos y reembolsos">
+            <div slot="actions">
+              <ion-button fill="outline" size="small">
+                <ion-icon slot="start" name="download-outline"></ion-icon>
+                Exportar CSV
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <ion-segment id="billing-tabs" value="payments" style="margin-bottom:16px">
+            <ion-segment-button value="invoices"><ion-icon name="receipt-outline"></ion-icon><ion-label>Facturas</ion-label></ion-segment-button>
+            <ion-segment-button value="subscriptions"><ion-icon name="refresh-outline"></ion-icon><ion-label>Suscripciones</ion-label></ion-segment-button>
+            <ion-segment-button value="payments"><ion-icon name="card-outline"></ion-icon><ion-label>Pagos</ion-label></ion-segment-button>
+          </ion-segment>
+
+          <ok-data-table id="payments-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          // ── ok-data-table: tabla de transacciones ──
+          const dt = doc.getElementById('payments-dt');
+
+          dt.rowKey = (r) => r.id;
+          dt.csv = true;
+
+          dt.columns = [
+            {
+              key: 'id',
+              header: 'Transaction ID',
+              width: 'minmax(9rem,1fr)',
+              render: (r) => h`<span class="tx-id">${r.id}</span>`,
+            },
+            {
+              key: 'fecha',
+              header: 'Fecha',
+              width: '9rem',
+            },
+            {
+              key: 'concepto',
+              header: 'Concepto',
+              width: 'minmax(14rem,2fr)',
+              render: (r) => concepto(r.concepto, r.sub),
+            },
+            {
+              key: 'metodo',
+              header: 'Método',
+              width: '10rem',
+              render: (r) => payMethod(r.metodo, r.num),
+            },
+            {
+              key: 'importe',
+              header: 'Importe',
+              width: '8rem',
+              align: 'right',
+              render: (r) => importe(r.importe),
+            },
+            {
+              key: 'estado',
+              header: 'Estado',
+              width: '8rem',
+              render: (r) => estadoBadge(r.estado),
+            },
+          ];
+
+          dt.rows = [
+            { id: 'tx_7K2s9aP1Lq', fecha: '8 may · 14:32',  concepto: 'Pedido #PED-2026-0142',          sub: '5 artículos · TPV Modelo X + accesorios',    metodo: 'VISA', num: '••4242',     importe: '€2 286,00', estado: 'Cobrado' },
+            { id: 'tx_3Kp9V2Mn8r', fecha: '6 may · 09:15',  concepto: 'Suscripción acme-prod · mayo',   sub: 'Plan Business · 12 usuarios',                 metodo: 'SEPA', num: 'ES12••9012', importe: '€489,00',   estado: 'Cobrado' },
+            { id: 'tx_9Lp2q1Vn4x', fecha: '5 may · 18:42',  concepto: 'Pedido #PED-2026-0138',          sub: 'Pack 10 rollos térmicos · ×3',                metodo: 'VISA', num: '••4242',     importe: '€54,00',    estado: 'Cobrado' },
+            { id: 'tx_2Hk8j3Rq7t', fecha: '3 may · 11:08',  concepto: 'Pago variable · uso API',        sub: '428 200 calls · abril',                       metodo: 'AMEX', num: '••1004',     importe: '€128,40',   estado: 'Procesando' },
+            { id: 'tx_5Vp2K9z7Lw', fecha: '1 may · 06:00',  concepto: 'Suscripción acme-prod · abril',  sub: 'Plan Business · 11 usuarios',                 metodo: 'SEPA', num: 'ES12••9012', importe: '€448,50',   estado: 'Cobrado' },
+            { id: 'tx_8Ww9p2Nx3v', fecha: '28 abr · 22:14', concepto: 'Pedido #PED-2026-0131',          sub: 'Reembolso · pantalla cliente devuelta',        metodo: 'VISA', num: '••4242',     importe: '−€189,00',  estado: 'Reembolsado' },
+            { id: 'tx_4Hp7q1Mn2k', fecha: '26 abr · 14:55', concepto: 'Pedido #PED-2026-0128',          sub: 'Brother QL-820NWB · ×2',                      metodo: 'VISA', num: '••4242',     importe: '€680,00',   estado: 'Cobrado' },
+            { id: 'tx_6Yh3p9Lk8w', fecha: '22 abr · 09:31', concepto: 'Add-on Reporting Pro',           sub: 'Suscripción mensual',                          metodo: 'SEPA', num: 'ES12••9012', importe: '€39,00',    estado: 'Cobrado' },
+            { id: 'tx_1Lz5w8Pq4j', fecha: '19 abr · 17:08', concepto: 'Pedido #PED-2026-0119',          sub: 'Caja CR-7 · 3 ud',                             metodo: 'VISA', num: '••4242',     importe: '€1 020,00', estado: 'Fallido' },
+            { id: 'tx_3Bg7n2Vp1c', fecha: '17 abr · 11:00', concepto: 'Pedido #PED-2026-0117',          sub: 'Bundle Tienda Básica · ×1',                   metodo: 'AMEX', num: '••1004',     importe: '€1 240,00', estado: 'Cobrado' },
+            { id: 'tx_7Pq8j2Wq5x', fecha: '14 abr · 06:00', concepto: 'Add-on Multitienda · marzo',     sub: '3 tiendas · ajuste prorrateado',               metodo: 'SEPA', num: 'ES12••9012', importe: '€87,00',    estado: 'Cobrado' },
+            { id: 'tx_9Tw3p1Vh6m', fecha: '10 abr · 19:48', concepto: 'Pedido #PED-2026-0106',          sub: 'Lectores SumUp Air · ×6',                      metodo: 'VISA', num: '••4242',     importe: '€234,00',   estado: 'Cobrado' },
+            { id: 'tx_2Mq6n7Lp4x', fecha: '5 abr · 13:22',  concepto: 'Suscripción acme-stage · marzo', sub: 'Plan Pro · entorno staging',                   metodo: 'AMEX', num: '••1004',     importe: '€189,00',   estado: 'Cobrado' },
+            { id: 'tx_4Ng2k9Vw1p', fecha: '1 abr · 06:00',  concepto: 'Suscripción acme-prod · marzo',  sub: 'Plan Business · 11 usuarios',                  metodo: 'SEPA', num: 'ES12••9012', importe: '€448,50',   estado: 'Cobrado' },
+          ];
+
+          dt.actions = [
+            { id: 'receipt', icon: 'receipt-outline',  label: 'Ver detalle' },
+            { id: 'download', icon: 'download-outline', label: 'Descargar recibo' },
+          ];
+
+          // Menú contextual por fila
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            const t = document.createElement('ion-toast');
+            t.message = actionId === 'download'
+              ? `Descargando recibo ${row?.id ?? ''}…`
+              : `Abriendo detalle ${row?.id ?? ''}…`;
+            t.duration = 1200;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

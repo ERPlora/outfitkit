@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Sistema</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Tarjetas de métrica: misma altura, contenido centrado (gauge o stat). */
+      .metric-card {
+        margin: 4px;
+        height: 100%;
+      }
+      .metric-card__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 178px;
+        box-sizing: border-box;
+      }
+      /* Tarjeta de Base de datos: stat centrada (no es un %), alineada con los gauges. */
+      .metric-stat {
+        gap: 4px;
+        text-align: center;
+      }
+      .metric-stat__icon {
+        font-size: 28px;
+        opacity: 0.5;
+        margin-bottom: 4px;
+        color: var(--ion-color-medium);
+      }
+      .metric-stat__label {
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ion-color-medium);
+      }
+      .metric-stat__value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .metric-stat__sub {
+        font-size: 0.8125rem;
+        color: var(--ion-color-medium);
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      SOBRIO como el Hub real (hub/apps/web/src/views/SystemPage.vue).
+      5 tabs: Recursos / Actualizaciones / Documentos / Copias / Registros.
+      Recursos: 4 tarjetas de métrica (ok-gauge x3 + stat BD) + tarjeta Bridge.
+      Documentos/Registros: ok-data-table. Copias: ion-list sobrio.
+      SIN chrome inventado: nada de grids de dispositivos periféricos, formularios
+      de configuración del Bridge, toolbars de filtro ni date-range manuales.
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // ── Umbrales de color de gauge de uso (verde → ámbar → rojo) ──────────
+      const usageThresholds = [
+        { to: 70,  color: '#2dd36f' },
+        { to: 90,  color: '#ffc409' },
+        { to: 100, color: '#eb445a' },
+      ];
+
+      // ── Datos simulados ───────────────────────────────────────────────────
+      const DOCS = [
+        { name: 'factura-2026-0142.pdf', kind: 'PDF',   sizeLabel: '84 KB',  modified: '2026-06-10' },
+        { name: 'backup-2026-06-09.zip', kind: 'ZIP',   sizeLabel: '12,4 MB', modified: '2026-06-09' },
+        { name: 'export-inventario.csv', kind: 'CSV',   sizeLabel: '320 KB', modified: '2026-06-08' },
+        { name: 'contrato-proveedor.docx', kind: 'DOC', sizeLabel: '56 KB',  modified: '2026-06-01' },
+      ];
+
+      const BACKUPS = [
+        { when: '2026-06-10T03:00:00', sizeLabel: '12,4 MB', url: '#' },
+        { when: '2026-06-09T03:00:00', sizeLabel: '11,9 MB', url: '#' },
+        { when: '2026-06-08T03:00:00', sizeLabel: '11,7 MB', url: '#' },
+      ];
+
+      const LOGS = [
+        { when: '2026-06-10T08:42:11', level: 'INFO',  message: 'pos.sale.create',  meta: 'total=42.50' },
+        { when: '2026-06-10T08:39:05', level: 'INFO',  message: 'auth.pin.ok',       meta: 'user=12' },
+        { when: '2026-06-10T07:55:33', level: 'WARN',  message: 'bridge.disconnected', meta: '' },
+        { when: '2026-06-10T07:10:14', level: 'ERROR', message: 'inventory.stock.update failed', meta: 'err=constraint' },
+        { when: '2026-06-10T06:01:00', level: 'INFO',  message: 'backup.completed', meta: 'size=12.4MB' },
+      ];
+
+      // ── Formato de fechas ─────────────────────────────────────────────────
+      function fmtDate(iso) {
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+      function fmtDateTime(iso) {
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+
+      // ── Celda de nivel de log (pill coloreada via vars inline) ────────────
+      function levelPill(row) {
+        const level = String(row.level ?? 'INFO');
+        const c = level === 'ERROR' ? 'danger' : level === 'WARN' ? 'warning' : 'medium';
+        const pill = document.createElement('ok-status-pill');
+        pill.setAttribute('size', 'sm');
+        pill.setAttribute('tone', level === 'ERROR' ? 'danger' : level === 'WARN' ? 'warning' : 'neutral');
+        pill.textContent = level;
+        return pill;
+      }
+
+      // ── HTML de cada sección (inyectado al cambiar tab) ───────────────────
+      function renderResources(doc) {
+        const section = doc.getElementById('tab-content');
+        section.innerHTML = '';
+
+        // Rejilla de métricas (4 tarjetas)
+        const grid = document.createElement('ion-grid');
+        grid.className = 'ion-no-padding';
+        grid.style.marginBottom = '16px';
+        grid.innerHTML = `
+          <ion-row>
+            <ion-col size="6" size-md="3">
+              <ion-card class="metric-card ion-no-margin">
+                <ion-card-content class="metric-card__content">
+                  <ok-gauge id="g-cpu" type="ring" label="CPU" value="48" unit="%"
+                    sublabel="2,4 GHz · 4 núcleos" size="128"></ok-gauge>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+            <ion-col size="6" size-md="3">
+              <ion-card class="metric-card ion-no-margin">
+                <ion-card-content class="metric-card__content">
+                  <ok-gauge id="g-mem" type="ring" label="Memoria" value="63" unit="%"
+                    sublabel="2,5 GB · 4 GB" size="128"></ok-gauge>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+            <ion-col size="6" size-md="3">
+              <ion-card class="metric-card ion-no-margin">
+                <ion-card-content class="metric-card__content metric-stat">
+                  <ion-icon name="cube-outline" class="metric-stat__icon"></ion-icon>
+                  <div class="metric-stat__label">Base de datos</div>
+                  <div class="metric-stat__value">148 MB</div>
+                  <div class="metric-stat__sub">SQLite local</div>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+            <ion-col size="6" size-md="3">
+              <ion-card class="metric-card ion-no-margin">
+                <ion-card-content class="metric-card__content">
+                  <ok-gauge id="g-conn" type="ring" label="Conexiones" value="4" unit="" max="100"
+                    color="var(--ion-color-primary)" sublabel="de 100" size="128"></ok-gauge>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          </ion-row>
+        `;
+        section.appendChild(grid);
+
+        // Definir umbrales en los gauges después de añadirlos al DOM
+        const gCpu = section.querySelector('#g-cpu');
+        const gMem = section.querySelector('#g-mem');
+        if (gCpu) gCpu.thresholds = usageThresholds;
+        if (gMem) gMem.thresholds = usageThresholds;
+
+        // Tarjeta Bridge
+        const bridgeCard = document.createElement('ion-card');
+        bridgeCard.className = 'ion-no-margin';
+        bridgeCard.innerHTML = `
+          <ion-card-content>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h3 style="margin:0;font-weight:600">Conexión Bridge</h3>
+              <div style="display:flex;align-items:center;gap:8px">
+                <ok-status-pill tone="ok" dot show-label label="Conectado"></ok-status-pill>
+                <ion-button fill="clear" size="small" id="btn-refresh-bridge" aria-label="Recomprobar">
+                  <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+            <p style="margin:0 0 12px;font-size:13px;opacity:0.65">
+              Bridge está corriendo en este equipo · v1.4.2.
+              Tus impresoras, cajón y escáneres se gestionan desde aquí.
+            </p>
+          </ion-card-content>
+        `;
+        section.appendChild(bridgeCard);
+
+        const btnRefresh = section.querySelector('#btn-refresh-bridge');
+        if (btnRefresh) {
+          btnRefresh.addEventListener('click', () => {
+            const t = document.createElement('ion-toast');
+            t.message = 'Recomprobando Bridge…';
+            t.duration = 1200;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        }
+      }
+
+      function renderUpdates(doc) {
+        const section = doc.getElementById('tab-content');
+        section.innerHTML = '';
+        const card = document.createElement('ion-card');
+        card.className = 'ion-no-margin';
+        card.innerHTML = `
+          <ion-card-content style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 24px;text-align:center">
+            <ion-icon name="checkmark-circle-outline" style="font-size:48px;color:var(--ion-color-success)"></ion-icon>
+            <strong style="font-size:18px">Estás al día</strong>
+            <p style="margin:0;opacity:0.6;font-family:monospace;font-size:13px">Hub 1.4.2 · comprobado ahora</p>
+            <ion-button fill="outline" id="btn-check-updates">
+              <ion-icon slot="start" name="refresh-outline"></ion-icon>
+              Buscar actualizaciones
+            </ion-button>
+          </ion-card-content>
+        `;
+        section.appendChild(card);
+
+        const btn = section.querySelector('#btn-check-updates');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const t = document.createElement('ion-toast');
+            t.message = 'Buscando actualizaciones…';
+            t.duration = 1200;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        }
+      }
+
+      function renderDocuments(doc) {
+        const section = doc.getElementById('tab-content');
+        section.innerHTML = '';
+        const card = document.createElement('ion-card');
+        card.className = 'ion-no-margin';
+        const cardContent = document.createElement('ion-card-content');
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+        header.innerHTML = `
+          <h3 style="margin:0;font-weight:600">Documentos</h3>
+          <ok-status-pill tone="info">Disco local</ok-status-pill>
+        `;
+        cardContent.appendChild(header);
+
+        const dt = document.createElement('ok-data-table');
+        dt.id = 'docs-dt';
+        dt.style.display = 'block';
+        cardContent.appendChild(dt);
+        card.appendChild(cardContent);
+        section.appendChild(card);
+
+        dt.columns = [
+          { key: 'name', header: 'Nombre', width: 'minmax(12rem,1.5fr)' },
+          { key: 'kind', header: 'Tipo', width: '6rem' },
+          { key: 'sizeLabel', header: 'Tamaño', width: '7rem', align: 'right' },
+          { key: 'modified', header: 'Modificado', width: '9rem', render: (r) => h`<span>${fmtDate(r.modified)}</span>` },
+        ];
+        dt.actions = [{ id: 'download', icon: 'download-outline', label: 'Descargar' }];
+        dt.rows = DOCS;
+
+        dt.addEventListener('rowAction', (e) => {
+          const t = document.createElement('ion-toast');
+          t.message = `Descargando ${e.detail?.row?.name ?? 'archivo'}…`;
+          t.duration = 1200;
+          t.position = 'bottom';
+          document.body.appendChild(t);
+          t.present();
+          t.addEventListener('didDismiss', () => t.remove());
+        });
+      }
+
+      function renderBackups(doc) {
+        const section = doc.getElementById('tab-content');
+        section.innerHTML = '';
+        const card = document.createElement('ion-card');
+        card.className = 'ion-no-margin';
+        const cardContent = document.createElement('ion-card-content');
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:12px';
+        header.innerHTML = `
+          <h3 style="margin:0;font-weight:600">Copias automáticas</h3>
+          <ion-button size="small" id="btn-backup-now">
+            <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+            Copia ahora
+          </ion-button>
+        `;
+        cardContent.appendChild(header);
+
+        // Barra de almacenamiento
+        const storageInfo = document.createElement('div');
+        storageInfo.innerHTML = `
+          <p style="margin:0 0 4px;font-size:13px;opacity:0.65">Almacenamiento usado · 37,0 MB / 1 GB</p>
+          <ion-progress-bar value="0.037" style="margin-bottom:16px"></ion-progress-bar>
+        `;
+        cardContent.appendChild(storageInfo);
+
+        // Lista de copias
+        const list = document.createElement('ion-list');
+        list.inset = false;
+        BACKUPS.forEach((backup, i) => {
+          const item = document.createElement('ion-item');
+          item.lines = i === BACKUPS.length - 1 ? 'none' : 'inset';
+          item.innerHTML = `
+            <ion-icon slot="start" name="server-outline" color="medium"></ion-icon>
+            <ion-label>
+              <h2 style="font-weight:600">Copia</h2>
+              <ion-note style="font-family:monospace;font-size:12px">${fmtDateTime(backup.when)} · ${backup.sizeLabel}</ion-note>
+            </ion-label>
+            <ion-button slot="end" fill="clear" aria-label="Descargar">
+              <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+            </ion-button>
+          `;
+          list.appendChild(item);
+        });
+        cardContent.appendChild(list);
+        card.appendChild(cardContent);
+        section.appendChild(card);
+
+        const btnNow = section.querySelector('#btn-backup-now');
+        if (btnNow) {
+          btnNow.addEventListener('click', () => {
+            const t = document.createElement('ion-toast');
+            t.message = 'Creando copia…';
+            t.duration = 1200;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        }
+      }
+
+      function renderLogs(doc) {
+        const section = doc.getElementById('tab-content');
+        section.innerHTML = '';
+        const card = document.createElement('ion-card');
+        card.className = 'ion-no-margin';
+        const cardContent = document.createElement('ion-card-content');
+
+        const heading = document.createElement('h3');
+        heading.style.cssText = 'margin:0 0 12px;font-weight:600';
+        heading.textContent = 'Registro de eventos';
+        cardContent.appendChild(heading);
+
+        const dt = document.createElement('ok-data-table');
+        dt.style.display = 'block';
+        cardContent.appendChild(dt);
+        card.appendChild(cardContent);
+        section.appendChild(card);
+
+        dt.columns = [
+          { key: 'when', header: 'Hora', width: '10rem', render: (r) => h`<span style="font-family:monospace;font-size:12px">${fmtDateTime(r.when)}</span>` },
+          { key: 'level', header: 'Nivel', width: '7rem', render: (r) => {
+              const c = r.level === 'ERROR' ? 'danger' : r.level === 'WARN' ? 'warning' : 'medium';
+              return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px">${r.level}</ion-badge>`;
+            } },
+          { key: 'message', header: 'Evento', width: 'minmax(10rem,1fr)', render: (r) => h`<span>${r.message}${r.meta ? h` <span style="opacity:0.55;font-size:0.85em"> · ${r.meta}</span>` : ''}</span>` },
+        ];
+        dt.rows = LOGS;
+      }
+
+      // ── Tab activo ─────────────────────────────────────────────────────────
+      const TABS = ['resources', 'updates', 'documents', 'backups', 'logs'];
+      const RENDERERS = {
+        resources:  renderResources,
+        updates:    renderUpdates,
+        documents:  renderDocuments,
+        backups:    renderBackups,
+        logs:       renderLogs,
+      };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Sistema"
+            description="Recursos, actualizaciones y almacenamiento del Hub">
+          </ok-page-header>
+
+          <!-- Tabs de sección (reales del Hub) -->
+          <ion-segment id="sys-tabs" value="resources" scrollable style="margin-bottom:16px">
+            <ion-segment-button value="resources">
+              <ion-icon name="pulse-outline"></ion-icon>
+              <ion-label>Recursos</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="updates">
+              <ion-icon name="refresh-outline"></ion-icon>
+              <ion-label>Actualizaciones</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="documents">
+              <ion-icon name="folder-outline"></ion-icon>
+              <ion-label>Documentos</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="backups">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <ion-label>Copias</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="logs">
+              <ion-icon name="document-text-outline"></ion-icon>
+              <ion-label>Registros</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <!-- Contenedor de sección activa -->
+          <div id="tab-content"></div>
+        `,
+        setup(doc) {
+          // Renderizar la sección inicial
+          renderResources(doc);
+
+          const seg = doc.getElementById('sys-tabs');
+          if (seg) {
+            seg.addEventListener('ionChange', (e) => {
+              const tab = e.detail && e.detail.value;
+              if (tab && RENDERERS[tab]) {
+                RENDERERS[tab](doc);
+              }
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

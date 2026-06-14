@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Usuarios de hubs</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Celda usuario: avatar + nombre + email. */
+      .user-cell { display: inline-flex; align-items: center; gap: 10px; }
+      .user-cell__info { line-height: 1.3; }
+      .user-cell__name { font-weight: 600; font-size: .9rem; }
+      .user-cell__email { font-size: .78rem; color: var(--ion-color-medium); }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      /* ──────────────────────────────────────────────────────
+         Datos de filas. Cada fila tiene:
+           id, name, email, initials, role, hubs (array de slugs),
+           lastConn, status ('active'|'inactive'|'pending'|'suspended')
+         ────────────────────────────────────────────────────── */
+      const USERS = [
+        { id:'u1',  name:'Juan García',    email:'juan.garcia@acme.com',                 initials:'JG', role:'admin',    hubs:['acme-prod','bodegas-casadejus','mariola-tienda-1'], lastConn:'hace 2 min',  status:'active'    },
+        { id:'u2',  name:'María López',    email:'maria.lopez@bodegas-casadejus.com',    initials:'ML', role:'editor',   hubs:['bodegas-casadejus'],                               lastConn:'hace 14 min', status:'active'    },
+        { id:'u3',  name:'Carlos Ruiz',    email:'c.ruiz@logistica-peninsular.es',       initials:'CR', role:'admin',    hubs:['logistica-peninsular','ferreteria-puig'],           lastConn:'hace 32 min', status:'active'    },
+        { id:'u4',  name:'Ana Martín',     email:'ana.martin@mariola.com',               initials:'AM', role:'pos',      hubs:['mariola-tienda-1'],                                lastConn:'hace 1 h',    status:'active'    },
+        { id:'u5',  name:'Sergi Puig',     email:'sergi@ferreteria-puig.cat',            initials:'SP', role:'admin',    hubs:['ferreteria-puig'],                                 lastConn:'hace 1 h',    status:'active'    },
+        { id:'u6',  name:'Núria Roca',     email:'nuria.roca@vinos-roca.es',             initials:'NR', role:'editor',   hubs:['vinos-roca-staging','bodegas-casadejus'],           lastConn:'hace 2 h',    status:'active'    },
+        { id:'u7',  name:'Javier Castaño', email:'j.castano@acme.com',                  initials:'JC', role:'admin',    hubs:['acme-prod','bodegas-casadejus','mariola-tienda-1','ferreteria-puig'], lastConn:'hace 3 h', status:'active' },
+        { id:'u8',  name:'Elena Ferrer',   email:'elena.ferrer@bodegas-casadejus.com',  initials:'EF', role:'viewer',   hubs:['bodegas-casadejus'],                               lastConn:'hace 5 h',    status:'active'    },
+        { id:'u9',  name:'Marta Vidal',    email:'marta.vidal@mariola.com',             initials:'MV', role:'pos',      hubs:['mariola-tienda-1'],                                lastConn:'hace 7 h',    status:'active'    },
+        { id:'u10', name:'Pau Bonet',      email:'pau.bonet@logistica-peninsular.es',   initials:'PB', role:'editor',   hubs:['logistica-peninsular','ferreteria-puig','acme-prod'],lastConn:'hace 1 d',   status:'inactive'  },
+        { id:'u11', name:'Cristina Ortiz', email:'c.ortiz@vinos-roca.es',              initials:'CO', role:'admin',    hubs:['vinos-roca-staging'],                              lastConn:'hace 1 d',    status:'inactive'  },
+        { id:'u12', name:'David Iglesias', email:'david.iglesias@ferreteria-puig.cat',  initials:'DI', role:'viewer',   hubs:['ferreteria-puig'],                                 lastConn:'hace 2 d',    status:'inactive'  },
+        { id:'u13', name:'Rocío Mendoza',  email:'rocio.mendoza@acme.com',              initials:'RM', role:'editor',   hubs:['acme-prod','mariola-tienda-1'],                    lastConn:'hace 4 d',    status:'inactive'  },
+        { id:'u14', name:'Andrés Tovar',   email:'a.tovar@bodegas-casadejus.com',       initials:'AT', role:'pending',  hubs:['bodegas-casadejus'],                               lastConn:'—',           status:'pending'   },
+        { id:'u15', name:'Laura Pérez',    email:'laura.perez@mariola.com',             initials:'LP', role:'pending',  hubs:['mariola-tienda-1'],                                lastConn:'—',           status:'pending'   },
+        { id:'u16', name:'Xavi Fontana',   email:'xavi@vinos-roca.es',                 initials:'XF', role:'editor',   hubs:['vinos-roca-staging','bodegas-casadejus','ferreteria-puig'], lastConn:'hace 14 d', status:'inactive' },
+        { id:'u17', name:'Sara Moreno',    email:'sara.moreno@acme.com',               initials:'SM', role:'viewer',   hubs:['acme-prod'],                                       lastConn:'hace 31 d',   status:'suspended' },
+        { id:'u18', name:'Manuel Ortega',  email:'manuel.ortega@logistica-peninsular.es',initials:'MO',role:'pos',      hubs:['logistica-peninsular','ferreteria-puig'],           lastConn:'hace 42 d',   status:'suspended' },
+      ];
+
+      /* ── helpers de render ── */
+      const ROL_LABEL = { admin:'Admin', editor:'Editor', viewer:'Viewer', pos:'Solo POS', pending:'Pendiente' };
+      const ROL_COLOR = { admin:'primary', editor:'tertiary', viewer:'medium', pos:'medium', pending:'warning' };
+
+      const statusBadge = (status) => {
+        if (status === 'active')    return h`<ok-status-dot tone="ok"     show-label label="Activo"></ok-status-dot>`;
+        if (status === 'inactive')  return h`<ok-status-dot tone="off"    show-label label="Inactivo"></ok-status-dot>`;
+        if (status === 'pending')   return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning);--padding-top:4px;--padding-bottom:4px">Pendiente</ion-badge>`;
+        if (status === 'suspended') return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-danger) 15%,transparent);--color:var(--ion-color-danger);--padding-top:4px;--padding-bottom:4px">Suspendido</ion-badge>`;
+        return null;
+      };
+
+      const hubsCell = (hubs) => {
+        const label = hubs.length === 1 ? '1 hub' : `${hubs.length} hubs`;
+        return h`<ion-chip style="margin:0;font-size:.78rem" title=${hubs.join(' · ')}>
+          <ion-label>${label}</ion-label>
+        </ion-chip>`;
+      };
+
+      const rolBadge = (role) => {
+        const color = ROL_COLOR[role] ?? 'medium';
+        const label = ROL_LABEL[role] ?? role;
+        return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-${color}) 15%,transparent);--color:var(--ion-color-${color});--padding-top:4px;--padding-bottom:4px">${label}</ion-badge>`;
+      };
+
+      const userCell = (r) => h`
+        <span class="user-cell">
+          <ok-avatar name=${r.name} size="sm" tone="auto"></ok-avatar>
+          <span class="user-cell__info">
+            <div class="user-cell__name">${r.name}</div>
+            <div class="user-cell__email">${r.email}</div>
+          </span>
+        </span>`;
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Usuarios de hubs"
+            description="Vista global · todos los usuarios con acceso a uno o más hubs de la organización">
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              Exportar CSV
+            </ion-button>
+            <ion-button slot="actions" size="small" href="users-invite.html">
+              <ion-icon slot="start" name="person-add-outline"></ion-icon>
+              Invitar a hubs
+            </ion-button>
+          </ok-page-header>
+
+          <ok-data-table id="users-dt" style="display:block"></ok-data-table>
+        `,
+
+        setup(doc) {
+          const dt = doc.getElementById('users-dt');
+
+          /* ── Columnas de la tabla ── */
+          dt.columns = [
+            {
+              key: 'name',
+              header: 'Usuario',
+              width: 'minmax(14rem,1.6fr)',
+              render: (r) => userCell(r),
+            },
+            {
+              key: 'hubs',
+              header: 'Hubs accesibles',
+              width: 'minmax(7rem,1fr)',
+              sortable: false,
+              render: (r) => hubsCell(r.hubs),
+            },
+            {
+              key: 'role',
+              header: 'Rol',
+              width: '9rem',
+              render: (r) => rolBadge(r.role),
+            },
+            {
+              key: 'lastConn',
+              header: 'Última conexión',
+              width: '10rem',
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              width: '10rem',
+              render: (r) => statusBadge(r.status),
+            },
+          ];
+
+          dt.rowKey = (r) => r.id;
+          dt.rows = USERS.slice();
+
+          /* Acciones por fila */
+          dt.actions = [
+            { id: 'menu', icon: 'ellipsis-horizontal', label: 'Más acciones' },
+          ];
+
+          /* ── Menú de acciones ⋮ por fila ── */
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            if (actionId !== 'menu') return;
+
+            const isPending   = row.status === 'pending';
+            const isSuspended = row.status === 'suspended';
+
+            const buttons = isPending
+              ? [
+                  { text: 'Reenviar invitación', icon: 'paper-plane-outline' },
+                  { text: 'Cancelar invitación', role: 'destructive', icon: 'close-circle-outline' },
+                  { text: 'Cancelar', role: 'cancel' },
+                ]
+              : isSuspended
+              ? [
+                  { text: 'Reactivar', icon: 'checkmark-circle-outline' },
+                  { text: 'Eliminar acceso', role: 'destructive', icon: 'trash-outline' },
+                  { text: 'Cancelar', role: 'cancel' },
+                ]
+              : [
+                  { text: 'Ver perfil', icon: 'person-outline' },
+                  { text: 'Cambiar rol', icon: 'swap-horizontal-outline' },
+                  { text: 'Suspender', role: 'destructive', icon: 'ban-outline' },
+                  { text: 'Cancelar', role: 'cancel' },
+                ];
+
+            const sheet = document.createElement('ion-action-sheet');
+            sheet.header = row.name;
+            sheet.subHeader = row.email;
+            sheet.buttons = buttons;
+            document.body.appendChild(sheet);
+            sheet.present();
+            sheet.addEventListener('didDismiss', () => sheet.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

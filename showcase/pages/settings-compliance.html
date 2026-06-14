@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Cumplimiento legal</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Fila con toggle (requisito fiscal activable) */
+      .ui-toggle-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-toggle-row:last-of-type { border-bottom: 0; }
+      .ui-toggle-row__text { flex: 1 1 auto; }
+      .ui-toggle-row__label { font-weight: 600; font-size: .9rem; display: block; }
+      .ui-toggle-row__desc  { color: var(--ion-color-medium); font-size: .8rem; margin-top: 3px; display: block; }
+
+      /* Separador horizontal ligero */
+      .ui-hr {
+        border: 0;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        margin: 16px 0;
+      }
+
+      /* Rejilla de 2 columnas para campos de formulario */
+      .ui-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 560px) { .ui-form-row { grid-template-columns: 1fr; } }
+
+      /* Certificado digital: fila de archivo adjunto */
+      .ui-cert-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.04));
+      }
+      .ui-cert-row__meta { flex: 1 1 auto; }
+      .ui-cert-row__name { font-size: 13px; font-weight: 600; }
+      .ui-cert-row__info { font-size: 11px; color: var(--ion-color-medium); margin-top: 2px; }
+
+      /* Ítem descartado en la lista de alertas */
+      .ui-dismissed-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+      }
+      .ui-dismissed-item__left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ui-dismissed-item__label { font-size: 13px; font-weight: 500; }
+
+      /* Hint de campo */
+      .ui-hint { display: block; font-size: .78rem; color: var(--ion-color-medium); margin-top: 6px; }
+
+      /* Label de campo */
+      .ui-label { display: block; font-weight: 600; font-size: .88rem; margin-bottom: 6px; }
+      .ui-label--req::after { content: " *"; color: var(--ion-color-danger); }
+
+      /* Encabezado de tarjeta de país */
+      .ui-country-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .ui-country-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+      }
+      .ui-flag { font-size: 20px; line-height: 1; }
+
+      /* Pie de tarjeta con acciones */
+      .ui-card-foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 12px;
+        margin-top: 4px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+
+      /* Nota informativa (Portugal sin actividad) */
+      .ui-note { font-size: 13px; color: var(--ion-color-medium); margin: 0 0 14px; }
+
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Cumplimiento legal"
+            description="Configura los requisitos fiscales y legales de tu negocio">
+          </ok-page-header>
+
+          <!-- ── ESPAÑA ─────────────────────────────────────────────────── -->
+          <ion-card class="pg-mb-4">
+            <ion-card-content>
+
+              <div class="ui-country-header">
+                <h3 class="ui-country-title">
+                  <span class="ui-flag">🇪🇸</span>
+                  España
+                </h3>
+                <ok-status-pill tone="success" dot label="Activo"></ok-status-pill>
+              </div>
+
+              <!-- Requisitos fiscales -->
+              <div class="ui-toggle-row">
+                <div class="ui-toggle-row__text">
+                  <span class="ui-toggle-row__label">Verifactu (AEAT)</span>
+                  <span class="ui-toggle-row__desc">Remisión automática de facturas a Hacienda según RD 1007/2023.</span>
+                </div>
+                <ion-toggle id="toggle-verifactu" checked></ion-toggle>
+              </div>
+
+              <div class="ui-toggle-row">
+                <div class="ui-toggle-row__text">
+                  <span class="ui-toggle-row__label">SII (IVA)</span>
+                  <span class="ui-toggle-row__desc">Suministro Inmediato de Información de IVA. Solo grandes empresas.</span>
+                </div>
+                <ion-toggle id="toggle-sii"></ion-toggle>
+              </div>
+
+              <div class="ui-toggle-row" style="border-bottom:0">
+                <div class="ui-toggle-row__text">
+                  <span class="ui-toggle-row__label">Modelo 347</span>
+                  <span class="ui-toggle-row__desc">Declaración anual de operaciones con terceros &gt; 3.005,06 €.</span>
+                </div>
+                <ion-toggle id="toggle-m347" checked></ion-toggle>
+              </div>
+
+              <hr class="ui-hr" />
+
+              <!-- Campos CIF / Modelo IVA -->
+              <div class="ui-form-row">
+                <div>
+                  <label class="ui-label ui-label--req">CIF / NIF empresa</label>
+                  <ion-input fill="outline" value="B-65432109"></ion-input>
+                </div>
+                <div>
+                  <label class="ui-label">Modelo de IVA</label>
+                  <ion-select fill="outline" value="general" interface="popover">
+                    <ion-select-option value="general">Régimen general</ion-select-option>
+                    <ion-select-option value="recargo">Recargo de equivalencia</ion-select-option>
+                    <ion-select-option value="simplificado">Régimen simplificado</ion-select-option>
+                    <ion-select-option value="exento">Exento</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <!-- Certificado digital -->
+              <div style="margin-top:16px">
+                <label class="ui-label">Certificado digital (.p12 / FNMT)</label>
+                <div class="ui-cert-row">
+                  <ion-icon name="checkmark-circle-outline" color="success" style="font-size:20px;flex-shrink:0"></ion-icon>
+                  <div class="ui-cert-row__meta">
+                    <div class="ui-cert-row__name">cafeteria-larambla-fnmt.p12</div>
+                    <div class="ui-cert-row__info">Caduca el 14/03/2027 · 2.4 KB</div>
+                  </div>
+                  <ion-button fill="outline" size="small" id="btn-replace-cert">
+                    <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                    Reemplazar
+                  </ion-button>
+                </div>
+                <small class="ui-hint">Necesario para firmar las remisiones a la AEAT.</small>
+              </div>
+
+              <!-- Acción de verificación -->
+              <div class="ui-card-foot">
+                <ion-button fill="outline" size="small" id="btn-test-conn">
+                  <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+                  Probar conexión
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- ── PORTUGAL ────────────────────────────────────────────────── -->
+          <ion-card class="pg-mb-4">
+            <ion-card-content>
+
+              <div class="ui-country-header">
+                <h3 class="ui-country-title">
+                  <span class="ui-flag">🇵🇹</span>
+                  Portugal
+                </h3>
+                <ok-status-pill tone="neutral" dot label="No activo"></ok-status-pill>
+              </div>
+
+              <p class="ui-note" style="margin-top:10px">
+                No tienes operaciones registradas en Portugal. Activa los requisitos si vendes a clientes portugueses.
+              </p>
+
+              <div class="ui-toggle-row">
+                <div class="ui-toggle-row__text">
+                  <span class="ui-toggle-row__label">SAF-T (PT)</span>
+                  <span class="ui-toggle-row__desc">Fichero de auditoría estándar exigido por la Autoridade Tributária.</span>
+                </div>
+                <ion-toggle id="toggle-saft"></ion-toggle>
+              </div>
+
+              <div class="ui-toggle-row" style="border-bottom:0">
+                <div class="ui-toggle-row__text">
+                  <span class="ui-toggle-row__label">Comunicação de Faturas</span>
+                  <span class="ui-toggle-row__desc">Envío mensual a la AT (e-Fatura).</span>
+                </div>
+                <ion-toggle id="toggle-efatura"></ion-toggle>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- ── ALERTAS DESCARTADAS ────────────────────────────────────── -->
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Alertas descartadas</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <p class="ui-note">Alertas de cumplimiento que descartaste y se pueden recuperar.</p>
+              <div class="ui-dismissed-item">
+                <div class="ui-dismissed-item__left">
+                  <ion-icon name="information-circle-outline" color="medium" style="font-size:18px;flex-shrink:0"></ion-icon>
+                  <span class="ui-dismissed-item__label">SII de IVA recomendado</span>
+                </div>
+                <ion-button fill="clear" size="small" id="btn-recover-sii">
+                  <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                  Recuperar
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        `,
+        setup(doc) {
+          // Probar conexión → toast informativo
+          const btnTest = doc.getElementById('btn-test-conn');
+          if (btnTest) {
+            btnTest.addEventListener('click', async () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Conexión AEAT verificada correctamente.';
+              toast.duration = 2500;
+              toast.color = 'success';
+              toast.position = 'bottom';
+              document.body.appendChild(toast);
+              await toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Reemplazar certificado → toast placeholder
+          const btnCert = doc.getElementById('btn-replace-cert');
+          if (btnCert) {
+            btnCert.addEventListener('click', async () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Selecciona un fichero .p12 o .pfx para reemplazar el certificado.';
+              toast.duration = 2500;
+              toast.position = 'bottom';
+              document.body.appendChild(toast);
+              await toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Recuperar alerta descartada → toast informativo
+          const btnRecover = doc.getElementById('btn-recover-sii');
+          if (btnRecover) {
+            btnRecover.addEventListener('click', async () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Alerta «SII de IVA recomendado» restaurada.';
+              toast.duration = 2500;
+              toast.color = 'primary';
+              toast.position = 'bottom';
+              document.body.appendChild(toast);
+              await toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Verifactu toggle → feedback informativo
+          const toggleVerifactu = doc.getElementById('toggle-verifactu');
+          if (toggleVerifactu) {
+            toggleVerifactu.addEventListener('ionChange', async (e) => {
+              const on = e.detail && e.detail.checked;
+              const toast = document.createElement('ion-toast');
+              toast.message = on
+                ? 'Verifactu activado. Las facturas se remitirán automáticamente a la AEAT.'
+                : 'Verifactu desactivado.';
+              toast.duration = 2500;
+              toast.color = on ? 'success' : 'medium';
+              toast.position = 'bottom';
+              document.body.appendChild(toast);
+              await toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

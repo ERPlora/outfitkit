@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Payouts</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Layout dos columnas: tabla + panel lateral */
+      .ui-payouts-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 900px) {
+        .ui-payouts-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Chip de método de pago (dentro de celda de ok-data-table) */
+      .ui-method-chip {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 500;
+        background: color-mix(in srgb, var(--ion-text-color) 8%, transparent);
+        white-space: nowrap;
+      }
+
+      /* Panel de configuración lateral */
+      .ui-config-card {
+        border-radius: 10px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        overflow: hidden;
+      }
+      .ui-config-head {
+        padding: 16px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-config-title { font-size: .95rem; font-weight: 700; margin: 0 0 2px; }
+      .ui-config-sub { font-size: .8rem; color: var(--ion-color-medium); margin: 0; }
+      .ui-config-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+      .ui-config-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Campo de campo (label + contenido) */
+      .ui-field { display: flex; flex-direction: column; gap: 6px; }
+      .ui-field-label {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+      }
+      .ui-field-hint { font-size: .76rem; color: var(--ion-color-medium); margin-top: 4px; }
+
+      /* Radio cards de frecuencia */
+      .ui-freq-cards { display: flex; flex-direction: column; gap: 6px; }
+      .ui-freq-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .ui-freq-card.is-active {
+        border-color: var(--ion-color-primary);
+        background: color-mix(in srgb, var(--ion-color-primary) 8%, transparent);
+      }
+      .ui-freq-card__title { font-weight: 600; font-size: .88rem; }
+      .ui-freq-card__desc { font-size: .76rem; color: var(--ion-color-medium); margin-top: 1px; }
+
+      /* Campo de importe con símbolo */
+      .ui-amount-field {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.25));
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .ui-amount-symbol {
+        padding: 0 10px;
+        font-size: .95rem;
+        color: var(--ion-color-medium);
+        border-right: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-amount-input {
+        flex: 1 1 auto;
+        border: 0;
+        outline: none;
+        padding: 9px 10px;
+        background: transparent;
+        color: var(--ion-text-color);
+        font-size: .95rem;
+      }
+      .ui-amount-currency {
+        padding: 0 10px;
+        font-size: .8rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Cuenta de destino */
+      .ui-bank-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 8px;
+      }
+      .ui-bank-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: .8rem;
+        letter-spacing: .04em;
+        flex: 0 0 auto;
+      }
+      .ui-bank-info { flex: 1 1 auto; min-width: 0; }
+      .ui-bank-name { font-weight: 600; font-size: .88rem; }
+      .ui-bank-iban { font-family: var(--ion-font-family-code, monospace); font-size: .77rem; color: var(--ion-color-medium); }
+      .ui-bank-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+
+      /* Sección de label de grupo */
+      .ui-section-label {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        font-weight: 600;
+        color: var(--ion-color-medium);
+        margin-bottom: 8px;
+      }
+
+      /* Modal de solicitud manual */
+      .ui-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+      .ui-modal {
+        background: var(--ion-background-color, #fff);
+        border-radius: 14px;
+        max-width: 480px;
+        width: calc(100% - 32px);
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+        overflow: hidden;
+      }
+      .ui-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-modal-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        color: var(--ion-color-primary);
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+      }
+      .ui-modal-title { font-size: 1rem; font-weight: 700; margin: 0; }
+      .ui-modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+      .ui-modal-desc { margin: 0; color: var(--ion-color-medium); line-height: 1.55; font-size: .9rem; }
+      .ui-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 16px 20px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+
+      /* Utilidades */
+      .ui-hidden { display: none !important; }
+
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Payouts"
+            description="Pagos recibidos por ventas en el marketplace de módulos">
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              Exportar CSV
+            </ion-button>
+            <ion-button slot="actions" size="small" id="btn-solicitar">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Solicitar pago manual
+            </ion-button>
+          </ok-page-header>
+
+          <!-- Banner Stripe Connect activo -->
+          <ok-inline-feedback
+            class="pg-mb-4"
+            tone="success"
+            heading="Stripe Connect activo"
+            icon="checkmark-circle-outline">
+            Pagos automáticos cada lunes · Última transferencia 6 may 2026 · €1 240,00
+            <ion-button slot="actions" fill="clear" size="small">
+              <ion-icon slot="start" name="settings-outline"></ion-icon>
+              Configuración
+            </ion-button>
+          </ok-inline-feedback>
+
+          <!-- Layout dos columnas: tabla de historial + panel de configuración -->
+          <div class="ui-payouts-layout">
+
+            <!-- Historial de pagos (ok-data-table, criterio A) -->
+            <ok-data-table
+              id="payouts-dt"
+              style="display:block"
+              search-placeholder="Buscar referencia…">
+            </ok-data-table>
+
+            <!-- Panel de configuración (sticky) -->
+            <div class="ui-config-card">
+              <div class="ui-config-head">
+                <h3 class="ui-config-title">Configuración</h3>
+                <p class="ui-config-sub">Programación y cuenta de destino</p>
+              </div>
+              <div class="ui-config-body">
+
+                <!-- Frecuencia -->
+                <div class="ui-field">
+                  <span class="ui-field-label">Frecuencia</span>
+                  <div class="ui-freq-cards" id="freq-cards">
+                    <label class="ui-freq-card is-active" data-freq="weekly">
+                      <input type="radio" name="freq" value="weekly" style="margin-top:2px" />
+                      <div>
+                        <div class="ui-freq-card__title">Semanal</div>
+                        <div class="ui-freq-card__desc">Cada lunes · Recomendado</div>
+                      </div>
+                    </label>
+                    <label class="ui-freq-card" data-freq="monthly">
+                      <input type="radio" name="freq" value="monthly" style="margin-top:2px" />
+                      <div>
+                        <div class="ui-freq-card__title">Mensual</div>
+                        <div class="ui-freq-card__desc">Día 1 de cada mes</div>
+                      </div>
+                    </label>
+                    <label class="ui-freq-card" data-freq="manual">
+                      <input type="radio" name="freq" value="manual" style="margin-top:2px" />
+                      <div>
+                        <div class="ui-freq-card__title">Manual</div>
+                        <div class="ui-freq-card__desc">Solo bajo solicitud</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Día de la semana (visible si semanal) -->
+                <div class="ui-field" id="campo-dia">
+                  <span class="ui-field-label">Día de la semana</span>
+                  <ion-select
+                    fill="outline"
+                    value="lunes"
+                    label=""
+                    interface="popover">
+                    <ion-select-option value="lunes">Lunes</ion-select-option>
+                    <ion-select-option value="martes">Martes</ion-select-option>
+                    <ion-select-option value="miercoles">Miércoles</ion-select-option>
+                    <ion-select-option value="jueves">Jueves</ion-select-option>
+                    <ion-select-option value="viernes">Viernes</ion-select-option>
+                  </ion-select>
+                </div>
+
+                <!-- Importe mínimo -->
+                <div class="ui-field">
+                  <span class="ui-field-label">Importe mínimo</span>
+                  <div class="ui-amount-field">
+                    <span class="ui-amount-symbol">€</span>
+                    <input class="ui-amount-input" type="number" value="100" min="0" />
+                    <span class="ui-amount-currency">EUR</span>
+                  </div>
+                  <span class="ui-field-hint">No se transfiere si el saldo es menor a este importe</span>
+                </div>
+
+                <!-- Cuenta de destino -->
+                <div>
+                  <div class="ui-section-label">Cuenta de destino</div>
+                  <div class="ui-bank-card">
+                    <div class="ui-bank-logo">SAB</div>
+                    <div class="ui-bank-info">
+                      <div class="ui-bank-name">Banco Sabadell</div>
+                      <div class="ui-bank-iban" id="iban-display">ES•• •••• •••• •••• 5547</div>
+                    </div>
+                    <div class="ui-bank-actions">
+                      <ion-button id="btn-toggle-iban" fill="clear" size="small" title="Mostrar IBAN">
+                        <ion-icon slot="icon-only" name="eye-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small">
+                        <ion-icon slot="start" name="swap-horizontal-outline"></ion-icon>
+                        Cambiar
+                      </ion-button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              <div class="ui-config-footer">
+                <span>Cambios aplicables al próximo ciclo</span>
+                <ion-button size="small">
+                  <ion-icon slot="start" name="save-outline"></ion-icon>
+                  Guardar
+                </ion-button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal: solicitar pago manual -->
+          <div id="modal-payout" class="ui-modal-overlay ui-hidden" role="dialog" aria-modal="true" aria-labelledby="modal-payout-title">
+            <div class="ui-modal">
+              <div class="ui-modal-header">
+                <div class="ui-modal-icon">
+                  <ion-icon name="add-outline" style="font-size:18px"></ion-icon>
+                </div>
+                <h3 class="ui-modal-title" id="modal-payout-title">Solicitar pago manual</h3>
+              </div>
+              <div class="ui-modal-body">
+                <p class="ui-modal-desc">
+                  Recibirás el importe solicitado en tu cuenta bancaria registrada en
+                  <strong>Banco Sabadell ES•• 5547</strong> en un plazo aproximado de
+                  <strong>1 día hábil</strong>.
+                </p>
+                <div class="ui-field">
+                  <span class="ui-field-label">Importe a transferir</span>
+                  <div class="ui-amount-field">
+                    <span class="ui-amount-symbol">€</span>
+                    <input id="modal-amount" class="ui-amount-input" type="number" min="0" max="1480" placeholder="0,00" />
+                    <span class="ui-amount-currency">EUR</span>
+                  </div>
+                  <span class="ui-field-hint">Disponible: <strong>€1 480,32</strong></span>
+                </div>
+                <ok-inline-feedback
+                  id="modal-warning"
+                  tone="warning"
+                  heading="Importe superior al saldo disponible"
+                  class="ui-hidden">
+                  El máximo solicitable ahora mismo es €1 480,32.
+                </ok-inline-feedback>
+              </div>
+              <div class="ui-modal-footer">
+                <ion-button id="btn-modal-cancel" fill="outline">
+                  <ion-icon slot="start" name="close-outline"></ion-icon>
+                  Cancelar
+                </ion-button>
+                <ion-button id="btn-modal-confirm">
+                  <ion-icon slot="start" name="send-outline"></ion-icon>
+                  Solicitar transferencia
+                </ion-button>
+              </div>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          // ── Datos de los pagos ──────────────────────────────────────────
+          const pagos = [
+            { fecha: '13 may 2026', importe: '€1 480,32', metodo: 'Stripe · IBAN', estado: 'En tránsito',  ref: 'PAYOUT-2026-0009', recibo: false },
+            { fecha: '7 may 2026',  importe: '€320,00',   metodo: 'Stripe · IBAN', estado: 'Solicitado',   ref: 'PAYOUT-2026-MAN-01', recibo: false },
+            { fecha: '6 may 2026',  importe: '€1 240,00', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0008', recibo: true  },
+            { fecha: '29 abr 2026', importe: '€980,40',   metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0007', recibo: true  },
+            { fecha: '22 abr 2026', importe: '€1 412,80', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0006', recibo: true  },
+            { fecha: '15 abr 2026', importe: '€2 014,20', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0005', recibo: true  },
+            { fecha: '8 abr 2026',  importe: '€885,10',   metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0004', recibo: true  },
+            { fecha: '1 abr 2026',  importe: '€1 175,30', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0003', recibo: true  },
+            { fecha: '25 mar 2026', importe: '€2 350,00', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0002', recibo: true  },
+            { fecha: '18 mar 2026', importe: '€1 080,90', metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0001', recibo: true  },
+            { fecha: '11 mar 2026', importe: '€620,40',   metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-0000', recibo: true  },
+            { fecha: '4 mar 2026',  importe: '€460,80',   metodo: 'Stripe · IBAN', estado: 'Procesado',    ref: 'PAYOUT-2026-INI',  recibo: true  },
+          ];
+
+          // Mapeo estado → color Ionic (badge shadow-safe: vars inline, como billing-invoices.html)
+          const estadoColor = {
+            'Procesado':   'success',
+            'En tránsito': 'primary',
+            'Solicitado':  'warning',
+          };
+
+          // ── ok-data-table: historial de pagos ───────────────────────────
+          const dt = doc.getElementById('payouts-dt');
+          dt.title = 'Historial de pagos';
+          dt.rowKey = (r) => r.ref;
+          dt.searchable = true;
+          dt.searchKeys = ['ref', 'estado', 'fecha'];
+
+          dt.columns = [
+            { key: 'fecha',   header: 'Fecha',      width: 'minmax(8rem,1fr)' },
+            { key: 'importe', header: 'Importe',    width: '8rem', align: 'right',
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums;font-weight:600">${r.importe}</span>` },
+            { key: 'metodo',  header: 'Método',     width: 'minmax(9rem,1fr)',
+              render: (r) => h`<span class="ui-method-chip">${r.metodo}</span>` },
+            { key: 'estado',  header: 'Estado',     width: '9rem',
+              render: (r) => {
+                const c = estadoColor[r.estado] || 'medium';
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.estado}</ion-badge>`;
+              } },
+            { key: 'ref',     header: 'Referencia', width: 'minmax(11rem,1fr)',
+              render: (r) => h`<code style="font-size:.8rem">${r.ref}</code>` },
+            { key: 'recibo',  header: 'Recibo',     width: '6rem', align: 'center',
+              render: (r) => r.recibo
+                ? h`<ion-button fill="clear" size="small" href="#">
+                    <ion-icon slot="start" name="document-outline"></ion-icon>PDF
+                  </ion-button>`
+                : h`<span style="color:var(--ion-color-medium)">—</span>` },
+          ];
+
+          dt.rows = pagos;
+
+          // ── Frecuencia (radio cards) ────────────────────────────────────
+          const freqCards = doc.querySelectorAll('#freq-cards .ui-freq-card');
+          const campoDia = doc.getElementById('campo-dia');
+
+          const actualizarFreq = (val) => {
+            freqCards.forEach((card) => {
+              card.classList.toggle('is-active', card.getAttribute('data-freq') === val);
+            });
+            if (campoDia) {
+              campoDia.style.display = val === 'weekly' ? '' : 'none';
+            }
+          };
+
+          freqCards.forEach((card) => {
+            const input = card.querySelector('input[type="radio"]');
+            if (input) {
+              input.addEventListener('change', () => actualizarFreq(card.getAttribute('data-freq')));
+            }
+            card.addEventListener('click', (e) => {
+              if (e.target.tagName !== 'INPUT') {
+                const input2 = card.querySelector('input[type="radio"]');
+                if (input2) input2.checked = true;
+              }
+              actualizarFreq(card.getAttribute('data-freq'));
+            });
+          });
+
+          // Estado inicial: "semanal" activo, campo día visible
+          actualizarFreq('weekly');
+
+          // ── Revelar/ocultar IBAN ────────────────────────────────────────
+          let ibanVisible = false;
+          const ibanDisplay = doc.getElementById('iban-display');
+          const btnToggleIban = doc.getElementById('btn-toggle-iban');
+
+          if (btnToggleIban && ibanDisplay) {
+            btnToggleIban.addEventListener('click', () => {
+              ibanVisible = !ibanVisible;
+              ibanDisplay.textContent = ibanVisible
+                ? 'ES12 0081 1234 5678 9012 5547'
+                : 'ES•• •••• •••• •••• 5547';
+              const icon = btnToggleIban.querySelector('ion-icon');
+              if (icon) icon.setAttribute('name', ibanVisible ? 'eye-off-outline' : 'eye-outline');
+            });
+          }
+
+          // ── Modal: solicitar pago manual ────────────────────────────────
+          const modal = doc.getElementById('modal-payout');
+          const btnSolicitar = doc.getElementById('btn-solicitar');
+          const btnModalCancel = doc.getElementById('btn-modal-cancel');
+          const btnModalConfirm = doc.getElementById('btn-modal-confirm');
+          const modalAmount = doc.getElementById('modal-amount');
+          const modalWarning = doc.getElementById('modal-warning');
+
+          const abrirModal = () => {
+            if (modal) {
+              modal.classList.remove('ui-hidden');
+              if (modalAmount) { modalAmount.value = ''; }
+              if (modalWarning) modalWarning.classList.add('ui-hidden');
+              if (btnModalConfirm) btnModalConfirm.setAttribute('disabled', 'true');
+            }
+          };
+
+          const cerrarModal = () => {
+            if (modal) modal.classList.add('ui-hidden');
+          };
+
+          if (btnSolicitar) btnSolicitar.addEventListener('click', abrirModal);
+          if (btnModalCancel) btnModalCancel.addEventListener('click', cerrarModal);
+
+          // Cerrar modal al hacer clic en el overlay (fuera del panel)
+          if (modal) {
+            modal.addEventListener('click', (e) => {
+              if (e.target === modal) cerrarModal();
+            });
+          }
+
+          // Validar importe en el modal
+          if (modalAmount) {
+            modalAmount.addEventListener('input', () => {
+              const val = parseFloat(modalAmount.value) || 0;
+              const excede = val > 1480;
+              const valido = val > 0 && !excede;
+              if (modalWarning) modalWarning.classList.toggle('ui-hidden', !excede);
+              if (btnModalConfirm) {
+                if (valido) {
+                  btnModalConfirm.removeAttribute('disabled');
+                } else {
+                  btnModalConfirm.setAttribute('disabled', 'true');
+                }
+              }
+            });
+          }
+
+          if (btnModalConfirm) {
+            btnModalConfirm.addEventListener('click', () => {
+              cerrarModal();
+              if (modalAmount) modalAmount.value = '';
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

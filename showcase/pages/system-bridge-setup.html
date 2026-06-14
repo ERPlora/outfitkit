@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Configurar Bridge</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura; sin colores de marca). */
+
+      /* Wizard card: contenedor principal centrado. */
+      .bwiz {
+        max-width: 860px;
+        margin: 0 auto;
+      }
+
+      /* Cabecera del paso dentro de la tarjeta. */
+      .bwiz__title {
+        margin: 0 0 6px;
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      .bwiz__sub {
+        margin: 0 0 20px;
+        color: var(--ion-color-medium);
+        font-size: .9rem;
+        line-height: 1.55;
+      }
+
+      /* Grid 3 columnas para tarjetas de descarga. */
+      .bwiz__dl-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 4px;
+      }
+      @media (max-width: 640px) {
+        .bwiz__dl-grid { grid-template-columns: 1fr; }
+      }
+
+      /* Tarjeta de descarga (un SO). */
+      .bwiz__dl-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        padding: 20px 14px;
+        cursor: pointer;
+      }
+      .bwiz__dl-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 2px;
+        flex: none;
+      }
+      .bwiz__dl-name { font-weight: 600; font-size: .95rem; }
+      .bwiz__dl-meta { font-size: .78rem; color: var(--ion-color-medium); }
+
+      /* Lista de pasos de instalación (paso 2). */
+      .bwiz__steps-list {
+        display: grid;
+        gap: 14px;
+        margin-top: 4px;
+        padding: 0;
+        list-style: none;
+      }
+      .bwiz__install-step {
+        display: flex;
+        gap: 14px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 12px;
+        padding: 14px;
+        align-items: flex-start;
+      }
+      .bwiz__num {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        flex: none;
+        font-size: .95rem;
+      }
+      .bwiz__install-title { font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+      .bwiz__install-desc { font-size: .8rem; color: var(--ion-color-medium); line-height: 1.5; }
+      code {
+        background: var(--ion-color-step-100, rgba(127,127,127,.12));
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-family: monospace;
+        font-size: .85em;
+      }
+
+      /* Fila de puerto + estado (paso 2). */
+      .bwiz__port-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Banner de escaneo (paso 3). */
+      .bwiz__scan-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 12px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .bwiz__scan-title { font-weight: 600; font-size: .9rem; }
+      .bwiz__scan-meta { font-size: .78rem; color: var(--ion-color-medium); margin-top: 2px; }
+
+      /* Lista de dispositivos detectados (paso 3). */
+      .bwiz__devices {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .bwiz__device {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 12px;
+        cursor: pointer;
+      }
+      .bwiz__device-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .bwiz__device-name { font-weight: 600; font-size: .9rem; }
+      .bwiz__device-addr {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+        font-family: monospace;
+        margin-top: 2px;
+      }
+
+      /* Filas de asignación de roles (paso 4). */
+      .bwiz__assign-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .bwiz__assign-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 12px;
+      }
+      @media (max-width: 640px) {
+        .bwiz__assign-row {
+          grid-template-columns: auto 1fr;
+          grid-template-rows: auto auto;
+        }
+        .bwiz__assign-row > ion-select,
+        .bwiz__assign-row > ok-status-pill {
+          grid-column: 2;
+        }
+      }
+      .bwiz__assign-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .bwiz__assign-name { font-weight: 600; font-size: .9rem; }
+      .bwiz__assign-addr {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+        font-family: monospace;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Configurar ERPlora Bridge"
+            description="Asistente paso a paso para conectar impresoras y periféricos">
+            <ion-button slot="actions" fill="outline" color="medium">Cancelar</ion-button>
+          </ok-page-header>
+
+          <div class="bwiz">
+            <ok-wizard id="bridge-wizard" back-label="← Atrás" next-label="Continuar →" finish-label="Guardar configuración">
+
+              <!-- PASO 1: Descargar Bridge -->
+              <div slot="step-0">
+                <ion-card>
+                  <ion-card-content>
+                    <h2 class="bwiz__title">Descarga ERPlora Bridge</h2>
+                    <p class="bwiz__sub">El Bridge es un pequeño servicio que se ejecuta en el ordenador del TPV. Conecta el navegador con tus periféricos USB, serie y red local sin instalar drivers.</p>
+
+                    <div class="bwiz__dl-grid">
+
+                      <ion-card class="bwiz__dl-card" button>
+                        <div class="bwiz__dl-icon" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent)">
+                          <ion-icon name="desktop-outline" style="font-size:28px;color:var(--ion-color-primary)"></ion-icon>
+                        </div>
+                        <div class="bwiz__dl-name">Windows</div>
+                        <div class="bwiz__dl-meta">erplora-bridge.exe · 28 MB</div>
+                        <ion-button size="small" fill="outline">
+                          <ion-icon slot="start" name="download-outline"></ion-icon>
+                          Descargar
+                        </ion-button>
+                      </ion-card>
+
+                      <ion-card class="bwiz__dl-card" button>
+                        <div class="bwiz__dl-icon" style="background:color-mix(in srgb, var(--ion-color-medium) 14%, transparent)">
+                          <ion-icon name="logo-apple" style="font-size:28px;color:var(--ion-color-dark)"></ion-icon>
+                        </div>
+                        <div class="bwiz__dl-name">macOS</div>
+                        <div class="bwiz__dl-meta">erplora-bridge.dmg · 32 MB</div>
+                        <ion-button size="small" fill="outline">
+                          <ion-icon slot="start" name="download-outline"></ion-icon>
+                          Descargar
+                        </ion-button>
+                      </ion-card>
+
+                      <ion-card class="bwiz__dl-card" button>
+                        <div class="bwiz__dl-icon" style="background:color-mix(in srgb, var(--ion-color-warning) 14%, transparent)">
+                          <ion-icon name="terminal-outline" style="font-size:28px;color:var(--ion-color-warning)"></ion-icon>
+                        </div>
+                        <div class="bwiz__dl-name">Linux</div>
+                        <div class="bwiz__dl-meta">erplora-bridge · 24 MB · AMD64</div>
+                        <ion-button size="small" fill="outline">
+                          <ion-icon slot="start" name="download-outline"></ion-icon>
+                          Descargar
+                        </ion-button>
+                      </ion-card>
+
+                    </div>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- PASO 2: Instalar y arrancar -->
+              <div slot="step-1">
+                <ion-card>
+                  <ion-card-content>
+                    <h2 class="bwiz__title">Instala y arranca el Bridge</h2>
+                    <p class="bwiz__sub">Ejecuta el instalador y deja el Bridge abierto. Quedará escuchando en localhost en el puerto que configures.</p>
+
+                    <ol class="bwiz__steps-list">
+                      <li class="bwiz__install-step">
+                        <div class="bwiz__num" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent); color:var(--ion-color-primary)">1</div>
+                        <div>
+                          <div class="bwiz__install-title">Ejecuta el instalador</div>
+                          <div class="bwiz__install-desc">Doble-click en <code>erplora-bridge.exe</code> (Windows) o monta el <code>.dmg</code> y arrastra a Aplicaciones (macOS).</div>
+                        </div>
+                      </li>
+                      <li class="bwiz__install-step">
+                        <div class="bwiz__num" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent); color:var(--ion-color-primary)">2</div>
+                        <div>
+                          <div class="bwiz__install-title">Permite acceso a la red local</div>
+                          <div class="bwiz__install-desc">El sistema operativo te pedirá autorización para que el Bridge use el puerto local. Acepta para que el Hub pueda comunicarse.</div>
+                        </div>
+                      </li>
+                      <li class="bwiz__install-step">
+                        <div class="bwiz__num" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent); color:var(--ion-color-primary)">3</div>
+                        <div>
+                          <div class="bwiz__install-title">Verifica el puerto</div>
+                          <div class="bwiz__install-desc" style="margin-bottom:10px;">Por defecto 9100. Cambia si tu firewall lo bloquea.</div>
+                          <div class="bwiz__port-row">
+                            <ion-input
+                              id="bridge-port"
+                              type="number"
+                              value="9100"
+                              min="1024"
+                              max="65535"
+                              fill="outline"
+                              style="max-width:140px"></ion-input>
+                            <ok-status-pill id="bridge-status" tone="success" dot label="Bridge detectado"></ok-status-pill>
+                          </div>
+                        </div>
+                      </li>
+                    </ol>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- PASO 3: Detectar dispositivos -->
+              <div slot="step-2">
+                <ion-card>
+                  <ion-card-content>
+                    <h2 class="bwiz__title">Detectar dispositivos</h2>
+                    <p class="bwiz__sub">El Bridge escanea la red local (subred actual) y los puertos USB/serie del equipo.</p>
+
+                    <div class="bwiz__scan-banner">
+                      <div>
+                        <div class="bwiz__scan-title">Escaneo en curso · 192.168.1.0/24</div>
+                        <div class="bwiz__scan-meta">4 dispositivos detectados · escaneo finalizado en 4,2 s</div>
+                      </div>
+                      <ion-button id="btn-rescan" size="small" fill="outline">
+                        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                        Volver a escanear
+                      </ion-button>
+                    </div>
+
+                    <div class="bwiz__devices">
+
+                      <label class="bwiz__device">
+                        <ion-checkbox checked></ion-checkbox>
+                        <div class="bwiz__device-icon" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent)">
+                          <ion-icon name="print-outline" style="font-size:18px;color:var(--ion-color-primary)"></ion-icon>
+                        </div>
+                        <div style="flex:1 1 auto">
+                          <div class="bwiz__device-name">Epson TM-T20III</div>
+                          <div class="bwiz__device-addr">192.168.1.220 · 64:eb:8c:11:22:33</div>
+                        </div>
+                        <ok-status-pill tone="success" dot label="Lista"></ok-status-pill>
+                      </label>
+
+                      <label class="bwiz__device">
+                        <ion-checkbox checked></ion-checkbox>
+                        <div class="bwiz__device-icon" style="background:color-mix(in srgb, var(--ion-color-success) 14%, transparent)">
+                          <ion-icon name="print-outline" style="font-size:18px;color:var(--ion-color-success)"></ion-icon>
+                        </div>
+                        <div style="flex:1 1 auto">
+                          <div class="bwiz__device-name">Star TSP143</div>
+                          <div class="bwiz__device-addr">192.168.1.221 · 00:11:62:aa:bb:cc</div>
+                        </div>
+                        <ok-status-pill tone="success" dot label="Lista"></ok-status-pill>
+                      </label>
+
+                      <label class="bwiz__device">
+                        <ion-checkbox checked></ion-checkbox>
+                        <div class="bwiz__device-icon" style="background:color-mix(in srgb, var(--ion-color-tertiary) 14%, transparent)">
+                          <ion-icon name="barcode-outline" style="font-size:18px;color:var(--ion-color-tertiary)"></ion-icon>
+                        </div>
+                        <div style="flex:1 1 auto">
+                          <div class="bwiz__device-name">Honeywell Voyager 1450g</div>
+                          <div class="bwiz__device-addr">USB HID · /dev/hidraw1</div>
+                        </div>
+                        <ok-status-pill tone="success" dot label="Lista"></ok-status-pill>
+                      </label>
+
+                      <label class="bwiz__device">
+                        <ion-checkbox></ion-checkbox>
+                        <div class="bwiz__device-icon" style="background:color-mix(in srgb, var(--ion-color-warning) 14%, transparent)">
+                          <ion-icon name="scale-outline" style="font-size:18px;color:var(--ion-color-warning)"></ion-icon>
+                        </div>
+                        <div style="flex:1 1 auto">
+                          <div class="bwiz__device-name">Mettler ICS425</div>
+                          <div class="bwiz__device-addr">/dev/ttyUSB0 · 9600 8N1</div>
+                        </div>
+                        <ok-status-pill tone="warning" dot label="Sin firmware"></ok-status-pill>
+                      </label>
+
+                    </div>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- PASO 4: Asignar roles -->
+              <div slot="step-3">
+                <ion-card>
+                  <ion-card-content>
+                    <h2 class="bwiz__title">Asigna roles a cada dispositivo</h2>
+                    <p class="bwiz__sub">Indica para qué se usará cada impresora detectada. Después podrás cambiar la asignación en Configuración → Impresoras.</p>
+
+                    <div class="bwiz__assign-list">
+
+                      <div class="bwiz__assign-row">
+                        <div class="bwiz__assign-icon" style="background:color-mix(in srgb, var(--ion-color-primary) 14%, transparent)">
+                          <ion-icon name="print-outline" style="font-size:20px;color:var(--ion-color-primary)"></ion-icon>
+                        </div>
+                        <div>
+                          <div class="bwiz__assign-name">Epson TM-T20III</div>
+                          <div class="bwiz__assign-addr">192.168.1.220</div>
+                        </div>
+                        <ion-select value="tickets" fill="outline" style="min-width:170px">
+                          <ion-select-option value="tickets">Tickets (mostrador)</ion-select-option>
+                          <ion-select-option value="cocina">Cocina</ion-select-option>
+                          <ion-select-option value="barra">Bebidas / Barra</ion-select-option>
+                          <ion-select-option value="etiquetas">Etiquetas</ion-select-option>
+                        </ion-select>
+                        <ion-select value="80mm" fill="outline" style="min-width:100px">
+                          <ion-select-option value="80mm">80 mm</ion-select-option>
+                          <ion-select-option value="58mm">58 mm</ion-select-option>
+                        </ion-select>
+                      </div>
+
+                      <div class="bwiz__assign-row">
+                        <div class="bwiz__assign-icon" style="background:color-mix(in srgb, var(--ion-color-success) 14%, transparent)">
+                          <ion-icon name="print-outline" style="font-size:20px;color:var(--ion-color-success)"></ion-icon>
+                        </div>
+                        <div>
+                          <div class="bwiz__assign-name">Star TSP143</div>
+                          <div class="bwiz__assign-addr">192.168.1.221</div>
+                        </div>
+                        <ion-select value="cocina" fill="outline" style="min-width:170px">
+                          <ion-select-option value="tickets">Tickets (mostrador)</ion-select-option>
+                          <ion-select-option value="cocina">Cocina</ion-select-option>
+                          <ion-select-option value="barra">Bebidas / Barra</ion-select-option>
+                          <ion-select-option value="etiquetas">Etiquetas</ion-select-option>
+                        </ion-select>
+                        <ion-select value="80mm" fill="outline" style="min-width:100px">
+                          <ion-select-option value="80mm">80 mm</ion-select-option>
+                          <ion-select-option value="58mm">58 mm</ion-select-option>
+                        </ion-select>
+                      </div>
+
+                      <div class="bwiz__assign-row">
+                        <div class="bwiz__assign-icon" style="background:color-mix(in srgb, var(--ion-color-tertiary) 14%, transparent)">
+                          <ion-icon name="barcode-outline" style="font-size:20px;color:var(--ion-color-tertiary)"></ion-icon>
+                        </div>
+                        <div>
+                          <div class="bwiz__assign-name">Honeywell Voyager 1450g</div>
+                          <div class="bwiz__assign-addr">Scanner de barras</div>
+                        </div>
+                        <ion-select value="pos" fill="outline" disabled style="min-width:170px">
+                          <ion-select-option value="pos">POS</ion-select-option>
+                        </ion-select>
+                        <ok-status-pill tone="success" dot label="Listo"></ok-status-pill>
+                      </div>
+
+                    </div>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+            </ok-wizard>
+          </div>
+        `,
+        setup(doc) {
+          // Asigna pasos al ok-wizard.
+          const wizard = doc.getElementById('bridge-wizard');
+          if (wizard) {
+            wizard.steps = [
+              { label: 'Descargar Bridge',     description: 'Windows · macOS · Linux' },
+              { label: 'Instalar y arrancar',  description: 'Servicio en puerto local' },
+              { label: 'Detectar dispositivos', description: 'Escaneo automático' },
+              { label: 'Asignar funciones',    description: 'Tickets, cocina, etiquetas…' },
+            ];
+            // Empieza en el paso 3 (índice 2) para mostrar más contenido en el showcase.
+            wizard.current = 2;
+            wizard.backLabel  = '← Atrás';
+            wizard.nextLabel  = 'Continuar →';
+            wizard.finishLabel = 'Guardar configuración';
+
+            // Escuchar finalización del wizard.
+            wizard.addEventListener('ok-finish', () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Configuración del Bridge guardada correctamente.';
+              toast.duration = 2500;
+              toast.position = 'bottom';
+              toast.color = 'success';
+              document.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Botón "Volver a escanear": simula un re-escaneo con feedback visual.
+          const btnRescan = doc.getElementById('btn-rescan');
+          if (btnRescan) {
+            btnRescan.addEventListener('click', () => {
+              const original = btnRescan.textContent.trim();
+              btnRescan.disabled = true;
+              btnRescan.innerHTML = '<ion-spinner name="dots" style="width:14px;height:14px"></ion-spinner> Escaneando…';
+              setTimeout(() => {
+                btnRescan.disabled = false;
+                btnRescan.innerHTML = '<ion-icon slot="start" name="refresh-outline"></ion-icon> Volver a escanear';
+              }, 1500);
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

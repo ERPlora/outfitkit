@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Sandwich Ibérico · Cafetería La Rambla</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* ── Navbar pública ───────────────────────────────────────────────── */
+      .pub-nav {
+        position: sticky; top: 0; z-index: 100;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; padding: 10px 20px;
+        background: var(--ion-card-background, var(--ion-background-color));
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        backdrop-filter: blur(10px);
+      }
+      .pub-nav__brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        text-decoration: none;
+      }
+      .pub-nav__logo {
+        width: 32px; height: 32px; border-radius: 8px; flex: 0 0 auto;
+        display: grid; place-items: center;
+        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+        font-weight: 800; font-size: 14px;
+      }
+      .pub-nav__name {
+        font-weight: 600; font-size: .95rem;
+      }
+      .pub-nav__cart {
+        position: relative; display: inline-flex; align-items: center;
+        padding: 6px; cursor: pointer; background: none;
+        border: none; color: var(--ion-text-color); border-radius: 6px;
+      }
+      .pub-nav__cart:hover {
+        background: var(--ion-color-step-50, rgba(127,127,127,.08));
+      }
+      .pub-nav__cart-badge {
+        position: absolute; top: 0; right: 0;
+        min-width: 18px; height: 18px; padding: 0 4px;
+        border-radius: 999px;
+        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+        font-size: 10px; font-weight: 700;
+        display: grid; place-items: center;
+        line-height: 1;
+      }
+
+      /* ── Migas de pan ─────────────────────────────────────────────────── */
+      .pub-crumbs {
+        display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+        font-size: .82rem;
+        padding: 12px 0 4px;
+      }
+      .pub-crumbs a {
+        color: var(--ion-color-medium);
+        text-decoration: none;
+      }
+      .pub-crumbs a:hover { text-decoration: underline; }
+      .pub-crumbs__sep { color: var(--ion-color-medium); }
+      .pub-crumbs__current { font-weight: 500; }
+
+      /* ── Contenedor principal PDP ─────────────────────────────────────── */
+      .pdp-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        align-items: start;
+        padding: 16px 0 48px;
+      }
+      @media (max-width: 768px) {
+        .pdp-grid { grid-template-columns: 1fr; gap: 20px; }
+      }
+
+      /* ── Galería ──────────────────────────────────────────────────────── */
+      .pdp-gallery { display: flex; flex-direction: column; gap: 12px; }
+      .pdp-gallery__hero {
+        border-radius: 16px; border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        aspect-ratio: 1; overflow: hidden;
+        background: var(--ion-color-step-100, rgba(127,127,127,.1));
+        display: grid; place-items: center;
+        font-size: 96px;
+        position: relative;
+      }
+      /* Tira de miniaturas */
+      .pdp-gallery__strip {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      }
+      .pdp-gallery__thumb {
+        aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+        border: 2px solid var(--ion-border-color, rgba(127,127,127,.15));
+        background: var(--ion-color-step-50, rgba(127,127,127,.07));
+        display: grid; place-items: center; font-size: 26px;
+        transition: border-color .15s;
+      }
+      .pdp-gallery__thumb:hover {
+        border-color: var(--ion-color-medium);
+      }
+      .pdp-gallery__thumb.is-active {
+        outline: 2px solid var(--ion-color-primary); outline-offset: -2px;
+        border-color: var(--ion-color-primary);
+      }
+
+      /* ── Info ─────────────────────────────────────────────────────────── */
+      .pdp-info { display: flex; flex-direction: column; gap: 16px; }
+      .pdp-info__eyebrow {
+        font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--ion-color-medium);
+      }
+      .pdp-info__name {
+        margin: 4px 0 0; font-size: clamp(1.4rem, 3vw, 2rem);
+        font-weight: 700; letter-spacing: -.015em; line-height: 1.15;
+      }
+      .pdp-info__badges { display: flex; gap: 6px; flex-wrap: wrap; }
+      .pdp-info__desc {
+        font-size: .93rem; line-height: 1.65;
+        color: var(--ion-color-medium);
+        margin: 0;
+      }
+      .pdp-info__price-row {
+        display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      }
+      .pdp-info__price {
+        font-size: 2rem; font-weight: 700; letter-spacing: -.02em;
+        font-variant-numeric: tabular-nums;
+      }
+      .pdp-info__price-orig {
+        font-size: .95rem; font-variant-numeric: tabular-nums;
+        color: var(--ion-color-medium);
+        text-decoration: line-through;
+      }
+
+      /* ── Variantes ────────────────────────────────────────────────────── */
+      .pdp-variants { display: flex; flex-direction: column; gap: 12px; }
+      .pdp-variants__label {
+        display: block; font-size: .72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .08em;
+        color: var(--ion-color-medium); margin-bottom: 6px;
+      }
+      .pdp-variants__opts { display: flex; gap: 6px; flex-wrap: wrap; }
+      ion-chip.var-chip { cursor: pointer; margin: 0; transition: none; }
+      ion-chip.var-chip--active {
+        --background: var(--ion-color-primary); --color: var(--ion-color-primary-contrast);
+      }
+
+      /* ── Alérgenos ────────────────────────────────────────────────────── */
+      .pdp-allergens { display: flex; gap: 6px; flex-wrap: wrap; }
+
+      /* ── CTA row ──────────────────────────────────────────────────────── */
+      .pdp-cta {
+        display: flex; gap: 10px; align-items: center;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        padding-top: 16px; flex-wrap: wrap;
+      }
+      .pdp-cta ion-button { flex: 1 1 auto; }
+
+      /* ── Productos relacionados ───────────────────────────────────────── */
+      .pdp-related { padding-bottom: 56px; }
+      .pdp-related__heading {
+        font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em;
+        margin: 0 0 16px;
+      }
+      .pdp-related__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+      }
+
+      /* ok-product-card no tiene media de imagen por defecto; hack con icono grande */
+      .pdp-rel-icon {
+        font-size: 2.5rem; display: grid; place-items: center;
+        height: 80px; border-radius: 10px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.07));
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <!-- ── Navbar pública ────────────────────────────────────── -->
+          <nav class="pub-nav">
+            <a href="#" class="pub-nav__brand">
+              <span class="pub-nav__logo">L</span>
+              <span class="pub-nav__name">Cafetería La Rambla</span>
+            </a>
+            <button class="pub-nav__cart" id="cart-btn" aria-label="Carrito">
+              <ion-icon name="cart-outline" style="font-size:22px"></ion-icon>
+              <span class="pub-nav__cart-badge" id="cart-count">2</span>
+            </button>
+          </nav>
+
+          <!-- ── Migas de pan ───────────────────────────────────── -->
+          <nav class="pub-crumbs" aria-label="Navegación">
+            <a href="#">Inicio</a>
+            <span class="pub-crumbs__sep">/</span>
+            <a href="#">Carta</a>
+            <span class="pub-crumbs__sep">/</span>
+            <span class="pub-crumbs__current">Sandwich Ibérico</span>
+          </nav>
+
+          <!-- ── PDP principal ──────────────────────────────────── -->
+          <div class="pdp-grid">
+
+            <!-- Columna izquierda: galería -->
+            <div class="pdp-gallery">
+              <div class="pdp-gallery__hero" aria-label="Sandwich Ibérico con tomate" id="gallery-hero">
+                🥪
+              </div>
+              <!-- Tira de miniaturas -->
+              <div class="pdp-gallery__strip" id="gallery-strip">
+                <button class="pdp-gallery__thumb is-active" data-emoji="🥪" aria-label="Imagen 1">🥪</button>
+                <button class="pdp-gallery__thumb" data-emoji="🥖" aria-label="Imagen 2">🥖</button>
+                <button class="pdp-gallery__thumb" data-emoji="🍅" aria-label="Imagen 3">🍅</button>
+                <button class="pdp-gallery__thumb" data-emoji="🧀" aria-label="Imagen 4">🧀</button>
+              </div>
+            </div>
+
+            <!-- Columna derecha: info del producto -->
+            <div class="pdp-info">
+
+              <!-- Categoría + nombre -->
+              <div>
+                <div class="pdp-info__eyebrow">Bocadillos</div>
+                <h1 class="pdp-info__name">Sandwich Ibérico con tomate</h1>
+              </div>
+
+              <!-- Badges de estado -->
+              <div class="pdp-info__badges">
+                <ok-status-pill tone="success" dot label="En stock"></ok-status-pill>
+                <ok-status-pill tone="info" label="Listo en 8 min" icon="time-outline"></ok-status-pill>
+                <ion-badge color="medium">Veggie no</ion-badge>
+              </div>
+
+              <!-- Descripción -->
+              <p class="pdp-info__desc">
+                Pan rústico de masa madre tostado, tomate rallado fresco, jamón ibérico de bellota
+                curado 36 meses, AOVE arbequina y un toque de sal en escamas. Servido caliente.
+              </p>
+
+              <!-- Precio -->
+              <div class="pdp-info__price-row">
+                <span class="pdp-info__price">€5,90</span>
+                <span class="pdp-info__price-orig">€6,50</span>
+                <ion-badge color="danger">−9%</ion-badge>
+              </div>
+
+              <!-- Variantes: Tamaño -->
+              <div class="pdp-variants">
+
+                <div>
+                  <span class="pdp-variants__label">Tamaño</span>
+                  <div class="pdp-variants__opts" id="size-opts">
+                    <ion-chip class="var-chip" data-size="sm" data-price="4.90">Pequeño · €4,90</ion-chip>
+                    <ion-chip class="var-chip var-chip--active" data-size="med" data-price="5.90">Mediano · €5,90</ion-chip>
+                    <ion-chip class="var-chip" data-size="lg" data-price="7.90">Grande · €7,90</ion-chip>
+                  </div>
+                </div>
+
+                <!-- Variantes: Pan -->
+                <div>
+                  <span class="pdp-variants__label">Pan</span>
+                  <div class="pdp-variants__opts" id="bread-opts">
+                    <ion-chip class="var-chip var-chip--active" data-bread="rustic">Rústico</ion-chip>
+                    <ion-chip class="var-chip" data-bread="baguette">Baguette</ion-chip>
+                    <ion-chip class="var-chip" data-bread="gluten-free">Sin gluten · +€0,80</ion-chip>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Alérgenos -->
+              <div>
+                <div class="pdp-variants__label">Alérgenos</div>
+                <div class="pdp-allergens">
+                  <ion-chip color="warning" outline>
+                    <ion-icon name="warning-outline" slot="start"></ion-icon>
+                    <ion-label>Gluten</ion-label>
+                  </ion-chip>
+                  <ion-chip color="warning" outline>
+                    <ion-icon name="warning-outline" slot="start"></ion-icon>
+                    <ion-label>Lácteos</ion-label>
+                  </ion-chip>
+                  <ion-chip color="warning" outline>
+                    <ion-icon name="warning-outline" slot="start"></ion-icon>
+                    <ion-label>Sulfitos</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+
+              <!-- CTA: cantidad + añadir al carrito -->
+              <div class="pdp-cta">
+                <ok-qty-stepper id="qty-stepper" value="1" min="1" max="20"></ok-qty-stepper>
+                <ion-button id="add-cart-btn" style="flex:1 1 200px">
+                  <ion-icon slot="start" name="cart-outline"></ion-icon>
+                  Añadir al carrito · <span id="cta-total" style="margin-left:4px">€5,90</span>
+                </ion-button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── Productos relacionados ─────────────────────────── -->
+          <section class="pdp-related">
+            <h2 class="pdp-related__heading">También te puede gustar</h2>
+            <div class="pdp-related__grid">
+
+              <ok-product-card
+                name="Cortado"
+                category="Bebidas"
+                price="€1,80"
+                href="#"
+                icon="ion:cafe-outline">
+                Café espresso suavizado con una pizca de leche caliente.
+              </ok-product-card>
+
+              <ok-product-card
+                name="Croissant artesano"
+                category="Bollería"
+                price="€2,50"
+                href="#"
+                icon="ion:restaurant-outline">
+                Hojaldre mantequilloso elaborado diariamente en nuestro obrador.
+              </ok-product-card>
+
+              <ok-product-card
+                name="Zumo naranja natural"
+                category="Bebidas"
+                price="€3,20"
+                href="#"
+                icon="ion:leaf-outline">
+                Naranjas valencianas exprimidas al momento, sin azúcar añadido.
+              </ok-product-card>
+
+              <ok-product-card
+                name="Tarta zanahoria"
+                category="Postres"
+                price="€3,80"
+                href="#"
+                icon="ion:ice-cream-outline">
+                Bizcocho húmedo de zanahoria con frosting de queso crema.
+              </ok-product-card>
+
+            </div>
+          </section>
+        `,
+
+        setup(doc) {
+          // ── Estado reactivo ──────────────────────────────────────────────
+          const state = {
+            qty: 1,
+            sizePx: 5.90,
+            cartCount: 2,
+          };
+
+          // ── Galería: tira de miniaturas ──────────────────────────────────
+          const heroEl = doc.getElementById('gallery-hero');
+          doc.querySelectorAll('#gallery-strip .pdp-gallery__thumb').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              doc.querySelectorAll('#gallery-strip .pdp-gallery__thumb').forEach((b) => {
+                b.classList.remove('is-active');
+              });
+              btn.classList.add('is-active');
+              if (heroEl) heroEl.textContent = btn.getAttribute('data-emoji') || '🥪';
+            });
+          });
+
+          // ── Actualizar total del CTA ─────────────────────────────────────
+          const totalEl = doc.getElementById('cta-total');
+          const updateTotal = () => {
+            if (totalEl) {
+              const t = (state.qty * state.sizePx).toFixed(2).replace('.', ',');
+              totalEl.textContent = '€' + t;
+            }
+          };
+
+          // ── Selector de cantidad ─────────────────────────────────────────
+          const stepper = doc.getElementById('qty-stepper');
+          if (stepper) {
+            stepper.addEventListener('ok-change', (e) => {
+              state.qty = (e.detail && e.detail.value != null) ? e.detail.value : state.qty;
+              updateTotal();
+            });
+          }
+
+          // ── Variantes de tamaño ─────────────────────────────────────────
+          doc.querySelectorAll('#size-opts .var-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+              doc.querySelectorAll('#size-opts .var-chip').forEach((c) => {
+                c.classList.remove('var-chip--active');
+              });
+              chip.classList.add('var-chip--active');
+              state.sizePx = parseFloat(chip.getAttribute('data-price') || '5.90');
+              updateTotal();
+            });
+          });
+
+          // ── Variantes de pan ────────────────────────────────────────────
+          doc.querySelectorAll('#bread-opts .var-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+              doc.querySelectorAll('#bread-opts .var-chip').forEach((c) => {
+                c.classList.remove('var-chip--active');
+              });
+              chip.classList.add('var-chip--active');
+            });
+          });
+
+          // ── Botón "Añadir al carrito" ───────────────────────────────────
+          const addBtn = doc.getElementById('add-cart-btn');
+          const cartCountEl = doc.getElementById('cart-count');
+          if (addBtn) {
+            addBtn.addEventListener('click', () => {
+              state.cartCount += state.qty;
+              if (cartCountEl) cartCountEl.textContent = String(state.cartCount);
+
+              // Toast de confirmación
+              const toast = document.createElement('ion-toast');
+              toast.message = state.qty + ' × Sandwich Ibérico añadido al carrito';
+              toast.duration = 2500;
+              toast.position = 'bottom';
+              toast.color = 'success';
+              toast.icon = 'checkmark-circle-outline';
+              document.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // ── Estado inicial del total ────────────────────────────────────
+          updateTotal();
+        },
+      });
+    </script>
+  </body>
+</html>

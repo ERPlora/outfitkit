@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Ajustes del Hub</title>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Panel tabs (show/hide) */
+      .ui-tab-panels > .ui-tab-panel { display: none; }
+      .ui-tab-panels > .ui-tab-panel.is-active { display: block; }
+
+      /* Zona de peligro */
+      .ui-danger-card {
+        border: 1px solid var(--ion-color-danger);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      /* Logo placeholder */
+      .ui-logo-placeholder {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 20px;
+        flex: 0 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const API_TOKENS = [
+        { name: 'Shopify integration', preview: 'erpl_••••••••3a9k', created: '12/03/26', status: 'active' },
+        { name: 'BI connector',        preview: 'erpl_••••••••7b2m', created: '01/02/26', status: 'active' },
+      ];
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Ajustes del Hub"
+            description="Configuración general, apariencia y mantenimiento">
+          </ok-page-header>
+
+          <!-- Tabs de sección -->
+          <ion-segment id="hub-settings-tabs" value="general" style="margin-bottom:20px;">
+            <ion-segment-button value="general">
+              <ion-icon name="settings-outline"></ion-icon>
+              <ion-label>General</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="appearance">
+              <ion-icon name="color-palette-outline"></ion-icon>
+              <ion-label>Apariencia</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="notifications">
+              <ion-icon name="notifications-outline"></ion-icon>
+              <ion-label>Notificaciones</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="backup">
+              <ion-icon name="cloud-download-outline"></ion-icon>
+              <ion-label>Backup</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="advanced">
+              <ion-icon name="code-slash-outline"></ion-icon>
+              <ion-label>Avanzado</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="api">
+              <ion-icon name="globe-outline"></ion-icon>
+              <ion-label>API</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <div class="ui-tab-panels" id="hub-tab-panels" style="max-width:760px;">
+
+            <!-- ══ PANEL: GENERAL ══ -->
+            <div class="ui-tab-panel is-active" data-panel="general">
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Datos del negocio</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="inset">
+                    <ion-item>
+                      <ion-icon name="storefront-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Nombre comercial</h2></ion-label>
+                      <ion-input
+                        slot="end"
+                        value="Cafetería La Rambla"
+                        aria-label="Nombre comercial"
+                        text-align="right">
+                      </ion-input>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="card-outline" slot="start"></ion-icon>
+                      <ion-label><h2>CIF / NIF</h2></ion-label>
+                      <ion-input
+                        slot="end"
+                        value="B-65432109"
+                        aria-label="CIF / NIF"
+                        text-align="right">
+                      </ion-input>
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-icon name="location-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Dirección fiscal</h2></ion-label>
+                      <ion-input
+                        slot="end"
+                        value="Carrer Provença 287, 08008 Barcelona"
+                        aria-label="Dirección fiscal"
+                        text-align="right">
+                      </ion-input>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Regional</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="inset">
+                    <ion-item>
+                      <ion-icon name="language-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Idioma del Hub</h2></ion-label>
+                      <ion-select value="es" interface="popover" aria-label="Idioma" slot="end">
+                        <ion-select-option value="ca">Català</ion-select-option>
+                        <ion-select-option value="es">Español</ion-select-option>
+                        <ion-select-option value="en">English</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="time-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Zona horaria</h2></ion-label>
+                      <ion-select value="Europe/Madrid" interface="popover" aria-label="Zona horaria" slot="end">
+                        <ion-select-option value="Europe/Madrid">Europe/Madrid</ion-select-option>
+                        <ion-select-option value="Europe/Lisbon">Europe/Lisbon</ion-select-option>
+                        <ion-select-option value="Atlantic/Canary">Atlantic/Canary</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="cash-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Moneda</h2></ion-label>
+                      <ion-select value="EUR" interface="popover" aria-label="Moneda" slot="end">
+                        <ion-select-option value="EUR">EUR — Euro</ion-select-option>
+                        <ion-select-option value="USD">USD — Dólar</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="calendar-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Formato de fecha</h2></ion-label>
+                      <ion-select value="dmy" interface="popover" aria-label="Formato de fecha" slot="end">
+                        <ion-select-option value="dmy">DD/MM/YYYY</ion-select-option>
+                        <ion-select-option value="iso">YYYY-MM-DD</ion-select-option>
+                        <ion-select-option value="mdy">MM/DD/YYYY</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-icon name="today-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Primer día de semana</h2></ion-label>
+                      <ion-select value="monday" interface="popover" aria-label="Primer día de semana" slot="end">
+                        <ion-select-option value="monday">Lunes</ion-select-option>
+                        <ion-select-option value="sunday">Domingo</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-button expand="block" id="btn-save-general">
+                <ion-icon slot="start" name="save-outline"></ion-icon>
+                Guardar ajustes
+              </ion-button>
+
+            </div><!-- /general -->
+
+            <!-- ══ PANEL: APARIENCIA ══ -->
+            <div class="ui-tab-panel" data-panel="appearance">
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Apariencia</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="inset">
+                    <ion-item>
+                      <ion-icon name="color-palette-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Tema</h2>
+                        <p>Modo de color de la interfaz</p>
+                      </ion-label>
+                      <ion-select value="dark" interface="popover" aria-label="Tema" slot="end">
+                        <ion-select-option value="light">Claro</ion-select-option>
+                        <ion-select-option value="dark">Oscuro (terracota)</ion-select-option>
+                        <ion-select-option value="auto">Auto (sistema)</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-icon name="image-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Logotipo</h2>
+                        <p>PNG / SVG · mín 200×200 · máx 1 MB</p>
+                      </ion-label>
+                      <div slot="end" style="display:flex;align-items:center;gap:12px;">
+                        <div class="ui-logo-placeholder">LR</div>
+                        <ion-button fill="outline" size="small" id="btn-change-logo">
+                          <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                          Cambiar
+                        </ion-button>
+                        <input type="file" id="logo-file-input" accept="image/png,image/svg+xml" hidden />
+                      </div>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+            </div><!-- /appearance -->
+
+            <!-- ══ PANEL: NOTIFICACIONES ══ -->
+            <div class="ui-tab-panel" data-panel="notifications">
+
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Canales</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="inset">
+                    <ion-item>
+                      <ion-icon name="mail-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Email</h2>
+                        <p>joan@larambla.es</p>
+                      </ion-label>
+                      <ion-toggle checked slot="end"></ion-toggle>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="phone-portrait-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Push (PWA)</h2>
+                        <p>Notificaciones del navegador en escritorio y móvil</p>
+                      </ion-label>
+                      <ion-toggle checked slot="end"></ion-toggle>
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-icon name="chatbubble-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Toast en la app</h2>
+                        <p>Avisos durante la operación dentro del Hub</p>
+                      </ion-label>
+                      <ion-toggle checked slot="end"></ion-toggle>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+            </div><!-- /notifications -->
+
+            <!-- ══ PANEL: BACKUP ══ -->
+            <div class="ui-tab-panel" data-panel="backup">
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>
+                    Backups automáticos
+                    <ion-badge color="success" style="margin-left:10px;vertical-align:middle;">Activado</ion-badge>
+                  </ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="inset">
+                    <ion-item>
+                      <ion-icon name="repeat-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Frecuencia</h2></ion-label>
+                      <ion-select value="daily" interface="popover" aria-label="Frecuencia" slot="end">
+                        <ion-select-option value="daily">Diaria</ion-select-option>
+                        <ion-select-option value="12h">Cada 12 h</ion-select-option>
+                        <ion-select-option value="weekly">Semanal</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="time-outline" slot="start"></ion-icon>
+                      <ion-label><h2>Hora</h2></ion-label>
+                      <ion-input slot="end" type="time" value="02:00" aria-label="Hora de backup" text-align="right"></ion-input>
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-icon name="archive-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Retención</h2>
+                        <p>Días que se conservan las copias</p>
+                      </ion-label>
+                      <ion-input slot="end" type="number" value="30" aria-label="Retención en días" text-align="right" style="max-width:80px"></ion-input>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-button fill="outline" id="btn-backup-now">
+                <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                Backup ahora
+              </ion-button>
+
+            </div><!-- /backup -->
+
+            <!-- ══ PANEL: AVANZADO ══ -->
+            <div class="ui-tab-panel" data-panel="advanced">
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Modo desarrollador</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="none">
+                    <ion-item>
+                      <ion-icon name="terminal-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Activar modo desarrollador</h2>
+                        <p>Logs detallados, panel de signals y endpoints de debug.</p>
+                      </ion-label>
+                      <ion-toggle id="dev-mode-toggle" slot="end"></ion-toggle>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Mantenimiento de BD</ion-card-title>
+                </ion-card-header>
+                <ion-card-content class="p-0">
+                  <ion-list lines="none">
+                    <ion-item>
+                      <ion-icon name="construct-outline" slot="start"></ion-icon>
+                      <ion-label>
+                        <h2>Datos huérfanos</h2>
+                        <p>Limpia registros de módulos desinstalados.</p>
+                      </ion-label>
+                      <ion-button fill="outline" size="small" slot="end" id="btn-scan-orphans">
+                        <ion-icon slot="start" name="search-outline"></ion-icon>
+                        Escanear
+                      </ion-button>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Zona de peligro -->
+              <div class="ui-danger-card">
+                <ion-card style="margin:0;border-radius:0;box-shadow:none;">
+                  <ion-card-header>
+                    <ion-card-title color="danger">Zona de peligro</ion-card-title>
+                  </ion-card-header>
+                  <ion-card-content class="p-0">
+                    <ion-list lines="none">
+                      <ion-item>
+                        <ion-icon name="warning-outline" slot="start" color="danger"></ion-icon>
+                        <ion-label>
+                          <h2>Resetear el Hub</h2>
+                          <p>Borra todos los datos y vuelve al setup inicial. Solo administradores.</p>
+                        </ion-label>
+                        <ion-button color="danger" size="small" slot="end" id="btn-reset-hub">
+                          <ion-icon slot="start" name="warning-outline"></ion-icon>
+                          Resetear
+                        </ion-button>
+                      </ion-item>
+                    </ion-list>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+            </div><!-- /advanced -->
+
+            <!-- ══ PANEL: API ══ -->
+            <div class="ui-tab-panel" data-panel="api">
+
+              <ion-card class="pg-mb-4">
+                <ion-card-header>
+                  <ion-card-title>Conexión con Cloud</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                  <ok-detail-list id="cloud-info-dl"></ok-detail-list>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-card>
+                <ion-card-header style="display:flex;align-items:center;justify-content:space-between;">
+                  <ion-card-title>API Tokens</ion-card-title>
+                  <ion-button fill="outline" size="small" id="btn-new-token">
+                    <ion-icon slot="start" name="add-outline"></ion-icon>
+                    Nuevo token
+                  </ion-button>
+                </ion-card-header>
+                <ion-card-content style="padding:0;">
+                  <ok-data-table id="tokens-dt" style="display:block"></ok-data-table>
+                </ion-card-content>
+              </ion-card>
+
+            </div><!-- /api -->
+
+          </div><!-- /tab-panels -->
+        `,
+        setup(doc) {
+          // ── Conexión Cloud: ok-detail-list ──
+          const cloudDl = doc.getElementById('cloud-info-dl');
+          if (cloudDl) {
+            cloudDl.items = [
+              { label: 'Cloud URL',   value: 'https://erplora.com' },
+              { label: 'Hub ID',      value: 'hub_2nA4qLbzG8xK' },
+              { label: 'Estado', html: true, value: '<ok-status-pill tone="success" dot label="Conectado"></ok-status-pill>' },
+              { label: 'Versión Hub', value: 'v0.9.4' },
+            ];
+          }
+
+          // ── API Tokens: ok-data-table ──
+          const dt = doc.getElementById('tokens-dt');
+          if (dt) {
+            dt.rowKey = (r) => r.name;
+            dt.columns = [
+              { key: 'name',    header: 'Nombre',  width: 'minmax(10rem,1.5fr)', render: (r) => h`<span style="font-weight:600">${r.name}</span>` },
+              { key: 'preview', header: 'Token',   width: 'minmax(10rem,1.2fr)', render: (r) => h`<span style="font-family:monospace;font-size:.85rem;color:var(--ion-color-medium)">${r.preview}</span>` },
+              { key: 'created', header: 'Creado',  width: '8rem' },
+              { key: 'status',  header: 'Estado',  width: '7rem', render: (r) => {
+                  const c = r.status === 'active' ? 'success' : 'medium';
+                  return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.status === 'active' ? 'Activo' : 'Revocado'}</ion-badge>`;
+                } },
+            ];
+            dt.actions = [{ id: 'revoke', icon: 'trash-outline', label: 'Revocar', color: 'danger' }];
+            dt.rows = API_TOKENS;
+
+            dt.addEventListener('rowAction', (e) => {
+              const row = e.detail && e.detail.row;
+              if (!row) return;
+              const a = document.createElement('ion-alert');
+              a.header = 'Revocar token';
+              a.message = `¿Revocar «${row.name}»? Las integraciones que lo usen dejarán de funcionar.`;
+              a.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Revocar', role: 'destructive' },
+              ];
+              document.body.appendChild(a);
+              a.present();
+              a.addEventListener('didDismiss', () => a.remove());
+            });
+          }
+
+          // ── Tabs: switching between panels ──
+          const seg = doc.getElementById('hub-settings-tabs');
+          const panels = doc.querySelectorAll('#hub-tab-panels .ui-tab-panel');
+
+          const showPanel = (value) => {
+            panels.forEach((p) => {
+              if (p.getAttribute('data-panel') === value) {
+                p.classList.add('is-active');
+              } else {
+                p.classList.remove('is-active');
+              }
+            });
+          };
+
+          if (seg) {
+            seg.addEventListener('ionChange', (e) => {
+              showPanel((e.detail && e.detail.value) || 'general');
+            });
+          }
+
+          // ── Logo upload button → trigger file input ──
+          const btnLogo = doc.getElementById('btn-change-logo');
+          const logoInput = doc.getElementById('logo-file-input');
+          if (btnLogo && logoInput) {
+            btnLogo.addEventListener('click', () => logoInput.click());
+          }
+
+          // ── Guardar ajustes generales ──
+          const btnSave = doc.getElementById('btn-save-general');
+          if (btnSave) {
+            btnSave.addEventListener('click', () => {
+              const t = document.createElement('ion-toast');
+              t.message = 'Ajustes guardados correctamente.';
+              t.duration = 2000;
+              t.color = 'success';
+              t.position = 'bottom';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── Backup ahora ──
+          const btnBackup = doc.getElementById('btn-backup-now');
+          if (btnBackup) {
+            btnBackup.addEventListener('click', () => {
+              const t = document.createElement('ion-toast');
+              t.message = 'Backup iniciado. Recibirás una notificación al completarse.';
+              t.duration = 3000;
+              t.color = 'primary';
+              t.position = 'bottom';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── Scan orphans → toast ──
+          const btnScan = doc.getElementById('btn-scan-orphans');
+          if (btnScan) {
+            btnScan.addEventListener('click', () => {
+              const t = document.createElement('ion-toast');
+              t.message = 'Escaneo completado · 0 registros huérfanos encontrados.';
+              t.duration = 3000;
+              t.color = 'success';
+              t.position = 'bottom';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── Reset hub → confirm alert ──
+          const btnReset = doc.getElementById('btn-reset-hub');
+          if (btnReset) {
+            btnReset.addEventListener('click', () => {
+              const a = document.createElement('ion-alert');
+              a.header = 'Resetear Hub';
+              a.message = '¿Seguro? Esta acción borrará todos los datos y es irreversible.';
+              a.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Resetear', role: 'destructive', cssClass: 'ion-color-danger' },
+              ];
+              document.body.appendChild(a);
+              a.present();
+              a.addEventListener('didDismiss', () => a.remove());
+            });
+          }
+
+          // ── Nuevo token → toast placeholder ──
+          const btnNew = doc.getElementById('btn-new-token');
+          if (btnNew) {
+            btnNew.addEventListener('click', () => {
+              const t = document.createElement('ion-toast');
+              t.message = 'Funcionalidad disponible en producción.';
+              t.duration = 2000;
+              t.position = 'bottom';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // ── Developer mode toggle → toast ──
+          const devToggle = doc.getElementById('dev-mode-toggle');
+          if (devToggle) {
+            devToggle.addEventListener('ionChange', (e) => {
+              const on = e.detail && e.detail.checked;
+              const t = document.createElement('ion-toast');
+              t.message = on
+                ? 'Modo desarrollador activado. Logs y endpoints de debug disponibles.'
+                : 'Modo desarrollador desactivado.';
+              t.duration = 2500;
+              t.position = 'bottom';
+              t.color = on ? 'warning' : 'medium';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

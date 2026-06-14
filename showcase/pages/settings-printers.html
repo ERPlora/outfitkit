@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Impresoras</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const PRINTERS = [
+        { id: 'tm-t20iii',      name: 'TM-T20III · Mostrador',   brand: 'Epson',          type: 'tickets',   conn: 'network', addr: '192.168.1.220:9100', location: 'Mostrador principal', status: 'online'  },
+        { id: 'star-tsp143',    name: 'Star TSP143 · Cocina',     brand: 'Star Micronics', type: 'cocina',    conn: 'network', addr: '192.168.1.221:9100', location: 'Cocina caliente',     status: 'online'  },
+        { id: 'bixolon-srp330', name: 'Bixolon SRP-330 · Barra',  brand: 'Bixolon',       type: 'bebidas',   conn: 'usb',     addr: '/dev/usb/lp0',       location: 'Barra',               status: 'online'  },
+        { id: 'brother-ql820',  name: 'Brother QL-820 · Etiq.',   brand: 'Brother',        type: 'etiquetas', conn: 'network', addr: '192.168.1.225:9100', location: 'Almacén',             status: 'offline' },
+      ];
+
+      const TYPE_LABEL = { tickets: 'Tickets', cocina: 'Cocina', bebidas: 'Bebidas', etiquetas: 'Etiquetas', a4: 'A4' };
+      const CONN_LABEL = { network: 'Red TCP/IP', usb: 'USB', bluetooth: 'Bluetooth' };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Impresoras"
+            description="3 conectadas vía Bridge · 1 desconectada">
+            <ion-button slot="actions" size="small" id="btn-add-printer">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Añadir impresora
+            </ion-button>
+          </ok-page-header>
+
+          <ok-inline-feedback
+            id="bridge-banner"
+            class="pg-mb-4"
+            tone="success"
+            heading="ERPlora Bridge conectado">
+            Puerto 9100 · 4 dispositivos detectados en 192.168.1.0/24
+          </ok-inline-feedback>
+
+          <ok-data-table id="printers-dt" style="display:block"></ok-data-table>
+
+          <!-- Modal Añadir / Editar impresora -->
+          <ion-modal id="modal-printer">
+            <ion-header>
+              <ion-toolbar>
+                <ion-title id="modal-printer-title">Añadir impresora</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button id="btn-modal-close">
+                    <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+
+              <ion-segment value="auto" id="seg-mode" style="margin-bottom:16px">
+                <ion-segment-button value="auto">
+                  <ion-label>Auto-detectar en red</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="manual">
+                  <ion-label>Manual (IP)</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+
+              <!-- Panel auto-detección -->
+              <div id="panel-auto">
+                <p style="font-size:.82rem;color:var(--ion-color-medium);margin:0 0 12px">
+                  Escaneando 192.168.1.0/24 vía ERPlora Bridge…
+                </p>
+                <ion-list lines="inset">
+                  <ion-radio-group name="auto-printer">
+                    <ion-item>
+                      <ion-icon slot="start" name="print-outline"></ion-icon>
+                      <ion-label>
+                        <h2>Epson TM-T88VI</h2>
+                        <p style="font-family:monospace">192.168.1.230 · 64:eb:8c:11:22:33</p>
+                      </ion-label>
+                      <ok-status-pill slot="end" tone="success" dot label="Lista" size="sm"></ok-status-pill>
+                      <ion-radio slot="end" value="epson-tm-t88vi"></ion-radio>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon slot="start" name="print-outline"></ion-icon>
+                      <ion-label>
+                        <h2>Star mC-Print3</h2>
+                        <p style="font-family:monospace">192.168.1.231 · 00:11:62:aa:bb:cc</p>
+                      </ion-label>
+                      <ok-status-pill slot="end" tone="success" dot label="Lista" size="sm"></ok-status-pill>
+                      <ion-radio slot="end" value="star-mc-print3"></ion-radio>
+                    </ion-item>
+                  </ion-radio-group>
+                </ion-list>
+                <ion-button fill="outline" size="small" style="margin-top:12px" id="btn-rescan">
+                  <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                  Volver a escanear
+                </ion-button>
+              </div>
+
+              <!-- Panel configuración manual -->
+              <div id="panel-manual" hidden>
+                <ion-list lines="none">
+                  <ion-item>
+                    <ion-input
+                      id="f-name"
+                      fill="outline"
+                      placeholder="ej. Impresora terraza"
+                      label="Nombre *"
+                      label-placement="stacked">
+                    </ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-select id="f-tipo" fill="outline" label="Tipo" label-placement="stacked" value="tickets">
+                      <ion-select-option value="tickets">Tickets</ion-select-option>
+                      <ion-select-option value="cocina">Cocina</ion-select-option>
+                      <ion-select-option value="bebidas">Bebidas</ion-select-option>
+                      <ion-select-option value="etiquetas">Etiquetas</ion-select-option>
+                      <ion-select-option value="a4">A4</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                  <ion-item>
+                    <ion-select id="f-conn" fill="outline" label="Conexión" label-placement="stacked" value="network">
+                      <ion-select-option value="network">Red TCP/IP</ion-select-option>
+                      <ion-select-option value="usb">USB</ion-select-option>
+                      <ion-select-option value="bluetooth">Bluetooth</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                  <ion-item id="item-address">
+                    <ion-input
+                      id="f-address"
+                      fill="outline"
+                      placeholder="192.168.1.220:9100"
+                      label="IP : Puerto *"
+                      label-placement="stacked">
+                    </ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-input
+                      id="f-location"
+                      fill="outline"
+                      placeholder="ej. Mostrador, Cocina, Barra"
+                      label="Ubicación"
+                      label-placement="stacked">
+                    </ion-input>
+                  </ion-item>
+                  <ion-item lines="none">
+                    <ion-icon slot="start" name="star-outline"></ion-icon>
+                    <ion-label>
+                      <h2>Marcar como predeterminada</h2>
+                      <p>Se usará para tickets si no se especifica otra.</p>
+                    </ion-label>
+                    <ion-toggle id="toggle-default" slot="end"></ion-toggle>
+                  </ion-item>
+                </ion-list>
+              </div>
+
+            </ion-content>
+            <ion-footer class="ion-no-border">
+              <ion-toolbar>
+                <ion-buttons slot="end">
+                  <ion-button fill="outline" id="btn-test-modal">
+                    <ion-icon slot="start" name="print-outline"></ion-icon>
+                    Test print
+                  </ion-button>
+                  <ion-button fill="solid" id="btn-save-printer">
+                    <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                    Guardar
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-footer>
+          </ion-modal>
+        `,
+
+        setup(doc) {
+          const modal     = doc.getElementById('modal-printer');
+          const segMode   = doc.getElementById('seg-mode');
+          const panelAuto = doc.getElementById('panel-auto');
+          const panelMnl  = doc.getElementById('panel-manual');
+          const fConn     = doc.getElementById('f-conn');
+          const itemAddr  = doc.getElementById('item-address');
+
+          // ── ok-data-table ──────────────────────────────────────────────
+          const dt = doc.getElementById('printers-dt');
+          dt.rowKey = (r) => r.id;
+
+          dt.columns = [
+            { key: 'name',   header: 'Impresora', width: 'minmax(12rem,1.5fr)', render: (r) => h`<span style="font-weight:600">${r.name}</span>` },
+            { key: 'brand',  header: 'Marca',     width: '10rem' },
+            { key: 'type',   header: 'Tipo',      width: '8rem',  render: (r) => h`${TYPE_LABEL[r.type] ?? r.type}` },
+            { key: 'conn',   header: 'Conexión',  width: '9rem',  render: (r) => h`${CONN_LABEL[r.conn] ?? r.conn}` },
+            { key: 'addr',   header: 'Dirección', width: 'minmax(10rem,1fr)', render: (r) => h`<code style="font-size:.82rem">${r.addr}</code>` },
+            { key: 'status', header: 'Estado',    width: '8rem',  render: (r) => {
+                const c   = r.status === 'online' ? 'success' : 'danger';
+                const lbl = r.status === 'online' ? 'Online'  : 'Offline';
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${lbl}</ion-badge>`;
+              }
+            },
+          ];
+
+          dt.actions = [
+            { id: 'test',  icon: 'print-outline',  label: 'Test print', show: (r) => r.status === 'online'  },
+            { id: 'retry', icon: 'refresh-outline', label: 'Reintentar', show: (r) => r.status === 'offline' },
+            { id: 'edit',  icon: 'pencil-outline',  label: 'Editar' },
+          ];
+
+          dt.rows = PRINTERS;
+
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            const toast = doc.createElement('ion-toast');
+            toast.position = 'bottom'; toast.duration = 2200;
+
+            if (actionId === 'test') {
+              toast.message = `Enviando página de prueba a ${row.name}…`;
+              toast.color = 'dark';
+              doc.body.appendChild(toast); toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            } else if (actionId === 'retry') {
+              toast.message = `Reintentando conexión con ${row.name}…`;
+              toast.color = 'primary';
+              doc.body.appendChild(toast); toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            } else if (actionId === 'edit') {
+              const title = doc.getElementById('modal-printer-title');
+              if (title) title.textContent = 'Editar impresora';
+              if (segMode) segMode.value = 'manual';
+              showPanel('manual');
+              if (modal) modal.isOpen = true;
+            }
+          });
+
+          // ── Modal ────────────────────────────────────────────────────────
+          const openModal = () => {
+            const title = doc.getElementById('modal-printer-title');
+            if (title) title.textContent = 'Añadir impresora';
+            if (segMode) segMode.value = 'auto';
+            showPanel('auto');
+            if (modal) modal.isOpen = true;
+          };
+          const closeModal = () => { if (modal) modal.isOpen = false; };
+
+          const btnAdd = doc.getElementById('btn-add-printer');
+          if (btnAdd) btnAdd.addEventListener('click', openModal);
+
+          const btnClose = doc.getElementById('btn-modal-close');
+          if (btnClose) btnClose.addEventListener('click', closeModal);
+
+          // Panel auto / manual
+          const showPanel = (mode) => {
+            if (!panelAuto || !panelMnl) return;
+            if (mode === 'manual') {
+              panelAuto.setAttribute('hidden', '');
+              panelMnl.removeAttribute('hidden');
+            } else {
+              panelMnl.setAttribute('hidden', '');
+              panelAuto.removeAttribute('hidden');
+            }
+          };
+
+          if (segMode) {
+            segMode.addEventListener('ionChange', (e) => {
+              showPanel((e.detail && e.detail.value) || 'auto');
+            });
+          }
+
+          // Mostrar/ocultar campo dirección según tipo de conexión
+          if (fConn) {
+            fConn.addEventListener('ionChange', (e) => {
+              const val = (e.detail && e.detail.value) || 'network';
+              if (itemAddr) {
+                if (val === 'network') itemAddr.removeAttribute('hidden');
+                else itemAddr.setAttribute('hidden', '');
+              }
+            });
+          }
+
+          // Test print desde modal
+          const btnTestModal = doc.getElementById('btn-test-modal');
+          if (btnTestModal) {
+            btnTestModal.addEventListener('click', () => {
+              const t = doc.createElement('ion-toast');
+              t.message = 'Página de prueba enviada.';
+              t.duration = 2000; t.position = 'bottom'; t.color = 'dark';
+              doc.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+
+          // Guardar
+          const btnSave = doc.getElementById('btn-save-printer');
+          if (btnSave) {
+            btnSave.addEventListener('click', () => {
+              closeModal();
+              const t = doc.createElement('ion-toast');
+              t.message = 'Impresora guardada correctamente.';
+              t.duration = 2500; t.position = 'bottom'; t.color = 'success';
+              doc.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

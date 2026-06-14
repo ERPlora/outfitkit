@@ -44,6 +44,8 @@ const LS = {
   theme: 'ok-showcase-theme',
   viewport: 'ok-showcase-viewport',
   dark: 'ok-showcase-dark',
+  secComponents: 'ok-showcase-sec-components',
+  secPages: 'ok-showcase-sec-pages',
 };
 
 const state = {
@@ -52,6 +54,12 @@ const state = {
   dark: localStorage.getItem(LS.dark) === '1',
   tab: 'preview',
   search: '',
+  // Estado de plegado de las dos secciones de primer nivel de la sidebar.
+  // Por defecto «Componentes» desplegada y «Páginas» plegada; se persiste en localStorage.
+  collapsed: {
+    components: localStorage.getItem(LS.secComponents) === '1',
+    pages: localStorage.getItem(LS.secPages) !== '0',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,6 +120,20 @@ function applyDark() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar (lista de componentes agrupada + buscador)
 // ─────────────────────────────────────────────────────────────────────────────
+// Cabecera plegable de una sección de primer nivel (Componentes / Páginas).
+// CSP-safe: es un <ion-item button> con data-section; el listener lo cablea renderSidebarList.
+function sectionHeaderHtml(key, label, icon, collapsed, count) {
+  return `
+    <ion-item button detail="false" class="nav-section-head" data-section="${key}"
+      aria-expanded="${collapsed ? 'false' : 'true'}">
+      <ion-icon slot="start" name="${icon}"></ion-icon>
+      <ion-label>${label}</ion-label>
+      ${count != null ? `<ion-note slot="end" class="nav-section-count">${count}</ion-note>` : ''}
+      <ion-icon slot="end" class="nav-section-caret"
+        name="${collapsed ? 'chevron-forward-outline' : 'chevron-down-outline'}"></ion-icon>
+    </ion-item>`;
+}
+
 function renderSidebarList() {
   const list = document.getElementById('nav-list');
   if (!list) return;
@@ -120,6 +142,17 @@ function renderSidebarList() {
   const activeId = route.kind === 'component' ? route.id : null;
   const activePage = route.kind === 'page' ? route.id : null;
 
+  // Filtros de búsqueda.
+  const matchPage = (p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+  const matchComp = (c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+  const pageMatches = PAGES.filter(matchPage);
+  const compMatches = COMPONENTS.filter(matchComp);
+
+  // Con búsqueda activa las secciones con resultados se auto-despliegan (para no esconderlos).
+  const searching = q.length > 0;
+  const compCollapsed = searching ? compMatches.length === 0 : state.collapsed.components;
+  const pagesCollapsed = searching ? pageMatches.length === 0 : state.collapsed.pages;
+
   // Item "Inicio" siempre arriba.
   let htmlStr = `
     <ion-item button detail="false" data-href="#/" ${route.kind === 'home' ? 'color="primary"' : ''}>
@@ -127,40 +160,52 @@ function renderSidebarList() {
       <ion-label>Inicio</ion-label>
     </ion-item>`;
 
-  // Grupo "Páginas" (plantillas de pantalla completa).
-  const pageItems = PAGES.filter((p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
-  if (pageItems.length) {
-    htmlStr += `<ion-list-header><ion-label>Páginas</ion-label></ion-list-header>`;
-    for (const p of pageItems) {
-      htmlStr += `
-        <ion-item button detail="false" data-href="#/p/${p.id}" ${p.id === activePage ? 'color="primary"' : ''}>
-          <ion-icon slot="start" name="${p.icon}"></ion-icon>
-          <ion-label><span class="nav-name">${p.name}</span></ion-label>
-        </ion-item>`;
+  // ── Sección «Componentes» (CATEGORIES → COMPONENTS) ──
+  htmlStr += sectionHeaderHtml('components', 'Componentes', 'cube-outline', compCollapsed, compMatches.length);
+  if (!compCollapsed) {
+    if (compMatches.length === 0) {
+      htmlStr += `<div class="nav-empty">Sin componentes para «${escapeHtml(state.search)}»</div>`;
+    } else {
+      for (const cat of CATEGORIES) {
+        const items = compMatches.filter((c) => c.category === cat.id);
+        if (items.length === 0) continue;
+        htmlStr += `<ion-list-header class="nav-subhead"><ion-label>${cat.label}</ion-label></ion-list-header>`;
+        for (const c of items) {
+          htmlStr += `
+            <ion-item button detail="false" class="nav-sub-item" data-href="#/c/${c.id}" ${c.id === activeId ? 'color="primary"' : ''}>
+              <ion-label><span class="nav-name">${c.name}</span></ion-label>
+            </ion-item>`;
+        }
+      }
     }
   }
 
-  let totalShown = 0;
-  for (const cat of CATEGORIES) {
-    const items = COMPONENTS.filter(
-      (c) => c.category === cat.id && (!q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)),
-    );
-    if (items.length === 0) continue;
-    totalShown += items.length;
-    htmlStr += `<ion-list-header><ion-label>${cat.label}</ion-label></ion-list-header>`;
-    for (const c of items) {
-      const active = c.id === activeId;
-      htmlStr += `
-        <ion-item button detail="false" data-href="#/c/${c.id}" ${active ? 'color="primary"' : ''}>
-          <ion-label>
-            <span class="nav-name">${c.name}</span>
-          </ion-label>
-        </ion-item>`;
+  // ── Sección «Páginas» (group → PAGES) ──
+  htmlStr += sectionHeaderHtml('pages', 'Páginas', 'documents-outline', pagesCollapsed, pageMatches.length);
+  if (!pagesCollapsed) {
+    if (pageMatches.length === 0) {
+      htmlStr += `<div class="nav-empty">Sin páginas para «${escapeHtml(state.search)}»</div>`;
+    } else {
+      // Orden de grupos = primera aparición en PAGES (estable).
+      const groups = [];
+      for (const p of pageMatches) {
+        const g = p.group || 'Otras';
+        if (!groups.includes(g)) groups.push(g);
+      }
+      for (const g of groups) {
+        const items = pageMatches.filter((p) => (p.group || 'Otras') === g);
+        htmlStr += `<ion-list-header class="nav-subhead"><ion-label>${escapeHtml(g)}</ion-label></ion-list-header>`;
+        for (const p of items) {
+          htmlStr += `
+            <ion-item button detail="false" class="nav-sub-item" data-href="#/p/${p.id}" ${p.id === activePage ? 'color="primary"' : ''}>
+              <ion-icon slot="start" name="${p.icon}"></ion-icon>
+              <ion-label><span class="nav-name">${p.name}</span></ion-label>
+            </ion-item>`;
+        }
+      }
     }
   }
-  if (totalShown === 0) {
-    htmlStr += `<div class="nav-empty">Sin resultados para «${escapeHtml(state.search)}»</div>`;
-  }
+
   list.innerHTML = htmlStr;
 
   // Cablear navegación (CSP-safe: listeners, no handlers inline).
@@ -170,6 +215,19 @@ function renderSidebarList() {
       if (location.hash !== href) location.hash = href;
       else render(); // mismo hash → fuerza re-render
       closeMenuOnMobile();
+    });
+  });
+
+  // Cablear plegado de las secciones de primer nivel.
+  list.querySelectorAll('[data-section]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const key = el.getAttribute('data-section');
+      state.collapsed[key] = !state.collapsed[key];
+      localStorage.setItem(
+        key === 'components' ? LS.secComponents : LS.secPages,
+        state.collapsed[key] ? '1' : '0',
+      );
+      renderSidebarList();
     });
   });
 }
@@ -491,7 +549,7 @@ function buildChrome() {
     <ion-app>
       <ion-split-pane content-id="main" when="lg">
         <ion-menu content-id="main">
-          <ion-header class="ion-no-border">
+          <ion-header>
             <ion-toolbar>
               <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
             </ion-toolbar>
@@ -505,7 +563,7 @@ function buildChrome() {
         </ion-menu>
 
         <div class="ion-page" id="main">
-          <ion-header class="ion-no-border">
+          <ion-header>
             <ion-toolbar>
               <ion-buttons slot="start"><ion-menu-button></ion-menu-button></ion-buttons>
               <ion-title id="topbar-title">Inicio</ion-title>

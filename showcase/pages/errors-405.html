@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · 405 — Método no permitido</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-error-page
+            id="err-405"
+            variant="warn"
+            code="405 · Method Not Allowed"
+            title="Operación no permitida en este recurso"
+            message="El recurso al que estás intentando acceder no admite esta acción. Si llegaste aquí desde un enlace, vuelve atrás y prueba de nuevo."
+            details-label="Detalles técnicos"
+            meta="trace · 9c81-4f2a-3b81 · 2026-05-08 14:32 UTC">
+
+            <ion-button slot="actions" fill="outline" id="btn-back">
+              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+              Atrás
+            </ion-button>
+            <ion-button slot="actions" href="/">
+              <ion-icon slot="start" name="home-outline"></ion-icon>
+              Volver al inicio
+            </ion-button>
+
+          </ok-error-page>
+        `,
+        setup(doc) {
+          const errPage = doc.getElementById('err-405');
+          if (errPage) {
+            // Traza técnica — asignada por prop (CSP-safe, no inline).
+            errPage.trace = [
+              'Method:    POST',
+              'Resource:  /api/v1/invoices/INV-2026-0142',
+              'Allowed:   GET, PATCH, DELETE',
+              'Origin:    https://acme.erplora.cloud',
+              'Trace ID:  9c81-4f2a-3b81',
+            ].join('\n');
+
+            // Tiles de atajo.
+            errPage.shortcuts = [
+              {
+                title: 'Volver al inicio',
+                desc: 'Ir al panel principal',
+                href: '/',
+                icon: 'home-outline',
+              },
+              {
+                title: 'Ver factura',
+                desc: 'Abrir INV-2026-0142 en modo lectura',
+                href: '/billing/invoices/INV-2026-0142/',
+                icon: 'document-text-outline',
+              },
+              {
+                title: 'Documentación de la API',
+                desc: 'Métodos permitidos por recurso',
+                href: '/help/api/',
+                icon: 'code-slash-outline',
+              },
+            ];
+          }
+
+          // Botón "Atrás" — navega usando history.back() (CSP-safe, sin inline handler).
+          const btnBack = doc.getElementById('btn-back');
+          if (btnBack) {
+            btnBack.addEventListener('click', () => {
+              history.back();
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

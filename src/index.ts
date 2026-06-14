@@ -31,6 +31,8 @@ export { OkStat } from './components/ok-stat/ok-stat.js';
 export { OkStepper } from './components/ok-stepper/ok-stepper.js';
 export type { OkStep } from './components/ok-stepper/ok-stepper.js';
 export { OkWizard } from './components/ok-wizard/ok-wizard.js';
+export { OkWidgetBoard } from './components/ok-widget-board/ok-widget-board.js';
+export type { WidgetDef, WidgetPreset, WidgetSize, OkWidgetBoardLabels } from './components/ok-widget-board/ok-widget-board.js';
 export { OkContactForm } from './components/ok-contact-form/ok-contact-form.js';
 export { OkCalendar } from './components/ok-calendar/ok-calendar.js';
 export type { OkCalendarEvent, OkCalendarView } from './components/ok-calendar/ok-calendar.js';

@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Nuevo rol</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual — estructura sin colores de marca. */
+
+      .ui-field-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .ui-field-row > * { flex: 1 1 200px; }
+
+      .ui-label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+      .ui-label--req::after { content: " *"; color: var(--ion-color-danger); }
+      .ui-hint { display: block; margin-top: 6px; font-size: .78rem; color: var(--ion-color-medium); }
+
+      /* Módulo de permisos */
+      .ui-perm-module {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-perm-module:last-child { border-bottom: 0; }
+
+      .ui-module-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .ui-module-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .ui-module-name { font-weight: 600; font-size: .95rem; }
+      .ui-module-desc { color: var(--ion-color-medium); font-size: .78rem; margin-top: 2px; }
+
+      .ui-perm-checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+      }
+      .ui-perm-check {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .85rem;
+        cursor: pointer;
+        user-select: none;
+      }
+      .ui-perm-check input[type="checkbox"] {
+        accent-color: var(--ion-color-primary);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+      }
+      .ui-perm-code {
+        font-family: var(--ion-font-family-monospace, monospace);
+        font-size: .8rem;
+        color: var(--ion-color-dark);
+      }
+
+      /* Vista previa sidebar */
+      .ui-preview-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+      }
+
+      .ui-preview-name {
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 0 0 4px;
+      }
+      .ui-preview-desc {
+        font-size: .82rem;
+        color: var(--ion-color-medium);
+        text-align: center;
+        margin: 0 0 12px;
+      }
+      .ui-preview-id-label {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ion-color-medium);
+        margin-bottom: 6px;
+      }
+      .ui-preview-code {
+        font-family: var(--ion-font-family-monospace, monospace);
+        font-size: .82rem;
+        background: var(--ion-color-step-50, rgba(127,127,127,.07));
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        padding: 3px 8px;
+        border-radius: 4px;
+        display: inline-block;
+      }
+      .ui-perm-summary {
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: .82rem;
+      }
+      .ui-perm-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .ui-perm-summary-mod { color: var(--ion-color-medium); }
+      .ui-perm-summary-count { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      /* Colores de módulo via CSS-only — evita hex hardcoded, usa vars Ionic. */
+      .ui-mod-sales  { background: color-mix(in srgb, var(--ion-color-primary)   15%, transparent); color: var(--ion-color-primary); }
+      .ui-mod-pos    { background: color-mix(in srgb, var(--ion-color-tertiary)   15%, transparent); color: var(--ion-color-tertiary); }
+      .ui-mod-inv    { background: color-mix(in srgb, var(--ion-color-warning)    18%, transparent); color: var(--ion-color-warning); }
+      .ui-mod-kds    { background: color-mix(in srgb, var(--ion-color-success)    15%, transparent); color: var(--ion-color-success); }
+      .ui-mod-admin  { background: var(--ion-color-step-100, rgba(127,127,127,.1)); color: var(--ion-color-medium); }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Nuevo rol"
+            description="Define nombre, descripción y matriz de permisos por módulo">
+            <span slot="actions">
+              <ion-button fill="outline" size="small" id="btn-cancel">Cancelar</ion-button>
+              <ion-button size="small" id="btn-save">
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                Crear rol
+              </ion-button>
+            </span>
+          </ok-page-header>
+
+          <div class="pg-cols">
+
+            <!-- IZQUIERDA · formulario -->
+            <div class="pg-stack">
+
+              <!-- Información básica -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Información</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                  <div class="ui-field-row" style="margin-bottom:16px">
+                    <div>
+                      <label class="ui-label ui-label--req">Identificador interno</label>
+                      <ion-input
+                        id="field-name"
+                        fill="outline"
+                        placeholder="warehouse_staff"
+                        pattern="[a-z_]+"
+                        autocomplete="off">
+                      </ion-input>
+                      <small class="ui-hint">Solo minúsculas y guion bajo. No se puede cambiar después.</small>
+                    </div>
+                    <div>
+                      <label class="ui-label ui-label--req">Nombre visible</label>
+                      <ion-input
+                        id="field-display"
+                        fill="outline"
+                        placeholder="Personal de almacén">
+                      </ion-input>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="ui-label">Descripción</label>
+                    <ion-textarea
+                      id="field-desc"
+                      fill="outline"
+                      rows="3"
+                      placeholder="Qué puede hacer este rol…">
+                    </ion-textarea>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Matriz de permisos -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title style="display:flex;align-items:center;gap:8px">
+                    Matriz de permisos
+                    <ion-badge color="primary">5 módulos</ion-badge>
+                  </ion-card-title>
+                </ion-card-header>
+
+                <!-- Sales -->
+                <div class="ui-perm-module">
+                  <div class="ui-module-header">
+                    <div class="ui-module-icon ui-mod-sales">
+                      <ion-icon name="cart-outline" style="font-size:16px"></ion-icon>
+                    </div>
+                    <div>
+                      <div class="ui-module-name">Sales</div>
+                      <div class="ui-module-desc">Tickets, pedidos y devoluciones</div>
+                    </div>
+                  </div>
+                  <div class="ui-perm-checks">
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-sales-view" checked>
+                      <span class="ui-perm-code">sales.view</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-sales-create" checked>
+                      <span class="ui-perm-code">sales.create</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-sales-delete">
+                      <span class="ui-perm-code">sales.delete</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-sales-export">
+                      <span class="ui-perm-code">sales.export</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- POS -->
+                <div class="ui-perm-module">
+                  <div class="ui-module-header">
+                    <div class="ui-module-icon ui-mod-pos">
+                      <ion-icon name="tablet-landscape-outline" style="font-size:16px"></ion-icon>
+                    </div>
+                    <div>
+                      <div class="ui-module-name">POS</div>
+                      <div class="ui-module-desc">TPV, caja, comandero</div>
+                    </div>
+                  </div>
+                  <div class="ui-perm-checks">
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-pos-use" checked>
+                      <span class="ui-perm-code">pos.use</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-pos-refund">
+                      <span class="ui-perm-code">pos.refund</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-pos-cash-close">
+                      <span class="ui-perm-code">pos.cash_close</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-pos-discount">
+                      <span class="ui-perm-code">pos.discount</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Inventory -->
+                <div class="ui-perm-module">
+                  <div class="ui-module-header">
+                    <div class="ui-module-icon ui-mod-inv">
+                      <ion-icon name="cube-outline" style="font-size:16px"></ion-icon>
+                    </div>
+                    <div>
+                      <div class="ui-module-name">Inventory</div>
+                      <div class="ui-module-desc">Stock y almacenes</div>
+                    </div>
+                  </div>
+                  <div class="ui-perm-checks">
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-inv-view">
+                      <span class="ui-perm-code">inventory.view</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-inv-edit">
+                      <span class="ui-perm-code">inventory.edit</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-inv-transfer">
+                      <span class="ui-perm-code">inventory.transfer</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-inv-adjust">
+                      <span class="ui-perm-code">inventory.adjust</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- KDS -->
+                <div class="ui-perm-module">
+                  <div class="ui-module-header">
+                    <div class="ui-module-icon ui-mod-kds">
+                      <ion-icon name="restaurant-outline" style="font-size:16px"></ion-icon>
+                    </div>
+                    <div>
+                      <div class="ui-module-name">KDS</div>
+                      <div class="ui-module-desc">Pantalla de cocina</div>
+                    </div>
+                  </div>
+                  <div class="ui-perm-checks">
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-kds-view" checked>
+                      <span class="ui-perm-code">kds.view</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-kds-complete" checked>
+                      <span class="ui-perm-code">kds.complete</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Administración -->
+                <div class="ui-perm-module">
+                  <div class="ui-module-header">
+                    <div class="ui-module-icon ui-mod-admin">
+                      <ion-icon name="settings-outline" style="font-size:16px"></ion-icon>
+                    </div>
+                    <div>
+                      <div class="ui-module-name">Administración</div>
+                      <div class="ui-module-desc">Empleados, módulos, ajustes</div>
+                    </div>
+                  </div>
+                  <div class="ui-perm-checks">
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-emp-view">
+                      <span class="ui-perm-code">employees.view</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-emp-edit">
+                      <span class="ui-perm-code">employees.edit</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-billing-view">
+                      <span class="ui-perm-code">billing.view</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-modules-install">
+                      <span class="ui-perm-code">modules.install</span>
+                    </label>
+                    <label class="ui-perm-check">
+                      <input type="checkbox" id="perm-settings-edit">
+                      <span class="ui-perm-code">settings.edit</span>
+                    </label>
+                  </div>
+                </div>
+
+              </ion-card>
+
+            </div>
+
+            <!-- DERECHA · vista previa -->
+            <div class="pg-stack">
+
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Vista previa</ion-card-title>
+                </ion-card-header>
+                <ion-card-content style="text-align:center">
+                  <div class="ui-preview-avatar">
+                    <ok-avatar id="preview-avatar" name="Nuevo rol" size="lg" tone="primary"></ok-avatar>
+                  </div>
+                  <p id="preview-name" class="ui-preview-name">Nombre del rol</p>
+                  <p id="preview-desc" class="ui-preview-desc">Descripción del rol…</p>
+                  <ion-badge color="medium">Custom</ion-badge>
+                </ion-card-content>
+                <ion-card-content style="border-top:1px solid var(--ion-border-color, rgba(127,127,127,.2))">
+                  <div class="ui-preview-id-label">Identificador</div>
+                  <code id="preview-id" class="ui-preview-code">sin_definir</code>
+
+                  <div class="ui-preview-id-label" style="margin-top:14px">Permisos resumen</div>
+                  <div class="ui-perm-summary">
+                    <div class="ui-perm-summary-row">
+                      <span class="ui-perm-summary-mod">Sales</span>
+                      <span class="ui-perm-summary-count" id="sum-sales">2 / 4</span>
+                    </div>
+                    <div class="ui-perm-summary-row">
+                      <span class="ui-perm-summary-mod">POS</span>
+                      <span class="ui-perm-summary-count" id="sum-pos">1 / 4</span>
+                    </div>
+                    <div class="ui-perm-summary-row">
+                      <span class="ui-perm-summary-mod">Inventory</span>
+                      <span class="ui-perm-summary-count" id="sum-inv">0 / 4</span>
+                    </div>
+                    <div class="ui-perm-summary-row">
+                      <span class="ui-perm-summary-mod">KDS</span>
+                      <span class="ui-perm-summary-count" id="sum-kds">2 / 2</span>
+                    </div>
+                    <div class="ui-perm-summary-row">
+                      <span class="ui-perm-summary-mod">Admin</span>
+                      <span class="ui-perm-summary-count" id="sum-admin">0 / 5</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <ok-inline-feedback tone="info" heading="Rol personalizado">
+                Este rol se aplicará a los empleados que lo tengan asignado. Puedes editarlo desde la lista de roles.
+              </ok-inline-feedback>
+
+            </div>
+
+          </div>
+        `,
+        setup(doc) {
+          // Estado reactivo del formulario.
+          const state = {
+            name: 'sala',
+            display: 'Personal de sala',
+            desc: 'Toma comandas y atiende mesas',
+            perms: {
+              'sales-view': true,
+              'sales-create': true,
+              'sales-delete': false,
+              'sales-export': false,
+              'pos-use': true,
+              'pos-refund': false,
+              'pos-cash-close': false,
+              'pos-discount': false,
+              'inv-view': false,
+              'inv-edit': false,
+              'inv-transfer': false,
+              'inv-adjust': false,
+              'kds-view': true,
+              'kds-complete': true,
+              'emp-view': false,
+              'emp-edit': false,
+              'billing-view': false,
+              'modules-install': false,
+              'settings-edit': false,
+            },
+          };
+
+          // Helpers para contar permisos activos en cada módulo.
+          const countPerms = (keys) => keys.filter((k) => state.perms[k]).length;
+
+          const PERM_GROUPS = {
+            sales: ['sales-view', 'sales-create', 'sales-delete', 'sales-export'],
+            pos:   ['pos-use', 'pos-refund', 'pos-cash-close', 'pos-discount'],
+            inv:   ['inv-view', 'inv-edit', 'inv-transfer', 'inv-adjust'],
+            kds:   ['kds-view', 'kds-complete'],
+            admin: ['emp-view', 'emp-edit', 'billing-view', 'modules-install', 'settings-edit'],
+          };
+          const GROUP_TOTAL = { sales: 4, pos: 4, inv: 4, kds: 2, admin: 5 };
+
+          // Refresca la vista previa del sidebar.
+          const refresh = () => {
+            const nameEl    = doc.getElementById('preview-name');
+            const descEl    = doc.getElementById('preview-desc');
+            const idEl      = doc.getElementById('preview-id');
+            const avatarEl  = doc.getElementById('preview-avatar');
+
+            if (nameEl)   nameEl.textContent   = state.display || 'Nombre del rol';
+            if (descEl)   descEl.textContent   = state.desc    || 'Descripción del rol…';
+            if (idEl)     idEl.textContent     = state.name    || 'sin_definir';
+            if (avatarEl) avatarEl.setAttribute('name', state.display || 'Nuevo rol');
+
+            for (const [grp, keys] of Object.entries(PERM_GROUPS)) {
+              const el = doc.getElementById('sum-' + grp);
+              if (el) el.textContent = countPerms(keys) + ' / ' + GROUP_TOTAL[grp];
+            }
+          };
+
+          // Sincroniza el estado inicial de los checkboxes según state.perms.
+          Object.entries(state.perms).forEach(([key, val]) => {
+            const cb = doc.getElementById('perm-' + key);
+            if (cb) cb.checked = val;
+          });
+
+          // Inicializa los inputs con los valores de state.
+          const fieldName = doc.getElementById('field-name');
+          const fieldDisplay = doc.getElementById('field-display');
+          const fieldDesc = doc.getElementById('field-desc');
+
+          if (fieldName) fieldName.value = state.name;
+          if (fieldDisplay) fieldDisplay.value = state.display;
+          if (fieldDesc) fieldDesc.value = state.desc;
+
+          // Listeners de inputs (ion-input/ion-textarea emiten ionInput).
+          if (fieldName) {
+            fieldName.addEventListener('ionInput', (e) => {
+              state.name = (e.detail && e.detail.value != null) ? e.detail.value : (fieldName.value || '');
+              refresh();
+            });
+          }
+          if (fieldDisplay) {
+            fieldDisplay.addEventListener('ionInput', (e) => {
+              state.display = (e.detail && e.detail.value != null) ? e.detail.value : (fieldDisplay.value || '');
+              refresh();
+            });
+          }
+          if (fieldDesc) {
+            fieldDesc.addEventListener('ionInput', (e) => {
+              state.desc = (e.detail && e.detail.value != null) ? e.detail.value : (fieldDesc.value || '');
+              refresh();
+            });
+          }
+
+          // Listeners de checkboxes de permisos.
+          Object.keys(state.perms).forEach((key) => {
+            const cb = doc.getElementById('perm-' + key);
+            if (!cb) return;
+            cb.addEventListener('change', () => {
+              state.perms[key] = cb.checked;
+              refresh();
+            });
+          });
+
+          // Pintado inicial.
+          refresh();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Mis compras</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const ORDERS = [
+        { id: 'PED-2026-0042', description: 'Terminales POS · primer trimestre', date: '28 abr 2026', total: '1 240,00 €', status: 'transit' },
+        { id: 'PED-2026-0038', description: 'Caja registradora compacta',         date: '14 abr 2026', total:   '540,00 €', status: 'received' },
+        { id: 'PED-2026-0031', description: 'Equipamiento Bodegas Mariola',        date: '28 mar 2026', total:   '820,00 €', status: 'received' },
+        { id: 'PED-2026-0029', description: 'Mobiliario hub Distribuidora Norte',  date: '22 abr 2026', total: '1 080,00 €', status: 'transit' },
+        { id: 'PED-2026-0026', description: 'Add-ons soporte premium',             date: '06 may 2026', total:   '240,00 €', status: 'processing' },
+        { id: 'PED-2026-0019', description: 'Lector de códigos Zebra DS2208',      date: '18 feb 2026', total:   '360,00 €', status: 'received' },
+      ];
+
+      // Estado → etiqueta / color Ionic
+      const STATUS_LABEL = { transit: 'En tránsito', received: 'Recibido', processing: 'Procesando' };
+      const STATUS_COLOR = { transit: 'primary',      received: 'success',  processing: 'warning' };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Mis compras"
+            description="Equipamiento, terminales y módulos pedidos">
+          </ok-page-header>
+
+          <ion-segment id="tab-segment" value="all" style="margin-bottom:16px">
+            <ion-segment-button value="all">
+              <ion-label>Todas</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="received">
+              <ion-label>Recibidas</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="transit">
+              <ion-label>En tránsito</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="processing">
+              <ion-label>Procesando</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <ok-data-table id="orders-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          const dt = doc.getElementById('orders-dt');
+          dt.rowKey = (r) => r.id;
+
+          dt.columns = [
+            {
+              key: 'id',
+              header: 'Pedido',
+              width: 'minmax(9rem,1fr)',
+              render: (r) => h`<span style="font-family:var(--ion-font-family-mono,monospace);font-weight:600;font-size:.88rem">${r.id}</span>`,
+            },
+            { key: 'description', header: 'Descripción', width: 'minmax(14rem,2fr)' },
+            { key: 'date', header: 'Fecha', width: '10rem' },
+            {
+              key: 'total',
+              header: 'Importe',
+              width: '9rem',
+              align: 'right',
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums;font-weight:700">${r.total}</span>`,
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              width: '9rem',
+              render: (r) => {
+                const c = STATUS_COLOR[r.status] ?? 'medium';
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${STATUS_LABEL[r.status] ?? r.status}</ion-badge>`;
+              },
+            },
+          ];
+
+          dt.actions = [{ id: 'detail', icon: 'eye-outline', label: 'Ver detalles' }];
+
+          let activeTab = 'all';
+
+          function applyFilter() {
+            dt.rows = activeTab === 'all'
+              ? ORDERS
+              : ORDERS.filter((r) => r.status === activeTab);
+          }
+
+          applyFilter();
+
+          const segment = doc.getElementById('tab-segment');
+          if (segment) {
+            segment.addEventListener('ionChange', (e) => {
+              activeTab = (e.detail && e.detail.value) || 'all';
+              applyFilter();
+            });
+          }
+
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            if (actionId !== 'detail') return;
+            const t = document.createElement('ion-toast');
+            t.message = `Abriendo detalles de ${row?.id ?? 'pedido'}…`;
+            t.duration = 1200;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

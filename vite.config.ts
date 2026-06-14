@@ -55,6 +55,7 @@ export default defineConfig({
         'ok-stat': resolve(__dirname, 'src/components/ok-stat/ok-stat.ts'),
         'ok-stepper': resolve(__dirname, 'src/components/ok-stepper/ok-stepper.ts'),
         'ok-wizard': resolve(__dirname, 'src/components/ok-wizard/ok-wizard.ts'),
+        'ok-widget-board': resolve(__dirname, 'src/components/ok-widget-board/ok-widget-board.ts'),
         'ok-contact-form': resolve(__dirname, 'src/components/ok-contact-form/ok-contact-form.ts'),
         // Tier 1/2 (2ª oleada)
         'ok-calendar': resolve(__dirname, 'src/components/ok-calendar/ok-calendar.ts'),

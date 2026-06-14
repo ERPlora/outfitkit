@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Vendor Dashboard</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Grilla 2 col para charts: más ancha izq, sidebar der */
+      .ui-charts-row {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      @media (max-width: 900px) { .ui-charts-row { grid-template-columns: 1fr; } }
+
+      /* Cabecera de tarjeta de gráfico */
+      .ui-chart-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+      .ui-chart-title {
+        font-size: .95rem;
+        font-weight: 700;
+        margin: 0 0 2px;
+      }
+      .ui-chart-sub {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+        margin: 0;
+      }
+      .ui-chart-big {
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .ui-chart-delta {
+        font-size: .75rem;
+        text-align: right;
+      }
+      .ui-chart-delta--up { color: var(--ion-color-success); }
+
+      /* Tarjeta Stripe Connect */
+      .ui-stripe-card {
+        display: grid;
+        grid-template-columns: 48px 1fr auto;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 20px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.18));
+        border-radius: 12px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.04));
+        margin-bottom: 16px;
+      }
+      @media (max-width: 640px) {
+        .ui-stripe-card {
+          grid-template-columns: 48px 1fr;
+          gap: 12px;
+        }
+        .ui-stripe-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+      }
+      .ui-stripe-logo {
+        width: 48px; height: 48px; border-radius: 10px;
+        background: #635bff;
+        color: #fff;
+        display: grid; place-items: center;
+        font-weight: 800; font-size: 20px; letter-spacing: .5px;
+        flex: 0 0 auto;
+      }
+      .ui-stripe-name {
+        font-weight: 600; font-size: .95rem; margin-bottom: 4px;
+      }
+      .ui-stripe-meta {
+        font-size: .8rem;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+      }
+      .ui-stripe-code {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: .8rem;
+      }
+      .ui-stripe-actions { display: flex; gap: 8px; align-items: center; }
+
+      /* Tarjeta payout */
+      .ui-payout-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: center;
+        padding: 22px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.18));
+        border-radius: 12px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.04));
+        margin-bottom: 16px;
+      }
+      @media (max-width: 560px) {
+        .ui-payout-card { grid-template-columns: 1fr; }
+        .ui-payout-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-start; }
+      }
+      .ui-payout-eyebrow {
+        font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+        color: var(--ion-color-medium); font-weight: 500; margin-bottom: 6px;
+      }
+      .ui-payout-amount {
+        font-size: 2.2rem; font-weight: 700; font-variant-numeric: tabular-nums;
+        letter-spacing: -.04em; line-height: 1; margin-bottom: 6px;
+      }
+      .ui-payout-meta {
+        font-size: .8rem; color: var(--ion-color-medium);
+      }
+      .ui-payout-meta strong { color: var(--ion-text-color); }
+      .ui-payout-meta a { color: var(--ion-color-primary); text-decoration: none; }
+      .ui-payout-actions {
+        display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+      }
+
+      /* Sección de movimientos */
+      .ui-section-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; margin-bottom: 14px;
+      }
+      .ui-section-title {
+        font-size: 1rem; font-weight: 700; margin: 0 0 2px;
+      }
+      .ui-section-sub {
+        font-size: .8rem; color: var(--ion-color-medium); margin: 0;
+      }
+
+      /* Celda rica (módulo + referencia) */
+      .ui-cell-main { font-size: .88rem; font-weight: 600; }
+      .ui-cell-sub {
+        font-size: .75rem; color: var(--ion-color-medium);
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      }
+
+      /* Columna de importe: tabular + alineación derecha */
+      .ui-amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+      .ui-amt--pos { color: var(--ion-color-success); }
+      .ui-amt--neg { color: var(--ion-color-danger); }
+      .ui-amt--neu { color: var(--ion-color-tertiary); }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      /* ── Datos de movimientos ────────────────────────────────────────────── */
+      const movimientos = [
+        { fecha: '06 may 2026 · 14:22', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'contabilidad-pro', ref: 'tx_8721',      hub: 'acme-prod',      importe: '+89,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '06 may 2026 · 11:08', tipo: 'Comisión',   tipoCfg: ['medium',  'Comisión'],     modulo: 'contabilidad-pro', ref: 'fee_8721',     hub: 'acme-prod',      importe: '−26,70 €',      color: 'neg', estado: ['success', 'Liquidado'] },
+        { fecha: '05 may 2026 · 18:44', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'vinedos-erp',      ref: 'tx_8714',      hub: 'mariola-prod',   importe: '+159,00 €',     color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '04 may 2026 · 09:12', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'facturae-export',  ref: 'tx_8702',      hub: 'norte-prod',     importe: '+49,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '02 may 2026 · 16:30', tipo: 'Renovación', tipoCfg: ['tertiary','Renovación'],  modulo: 'stock-multi-sede', ref: 'renew_8688',   hub: 'rambla-prod',    importe: '+45,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '30 abr 2026 · 14:05', tipo: 'Payout',     tipoCfg: ['tertiary','Payout'],      modulo: 'Payout abril 2026',ref: 'po_4421',      hub: '—',              importe: '−1 320,00 €',   color: 'neu', estado: ['success', 'Pagado'] },
+        { fecha: '28 abr 2026 · 11:14', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'pos-tickets-bono', ref: 'tx_8612',      hub: 'rambla-prod',    importe: '+29,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '26 abr 2026 · 08:50', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'contabilidad-pro', ref: 'tx_8580',      hub: 'acme-prod',      importe: '+89,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+        { fecha: '22 abr 2026 · 17:22', tipo: 'Reembolso',  tipoCfg: ['warning', 'Reembolso'],   modulo: 'vinedos-erp',      ref: 'refund_8501',  hub: 'lola-prod',      importe: '−159,00 €',     color: 'neg', estado: ['warning', 'Procesado'] },
+        { fecha: '20 abr 2026 · 10:11', tipo: 'Venta',      tipoCfg: ['success', 'Venta'],       modulo: 'facturae-export',  ref: 'tx_8482',      hub: 'acme-prod',      importe: '+49,00 €',      color: 'pos', estado: ['success', 'Liquidado'] },
+      ];
+
+      definePage({
+        bare: true,
+        body: `
+          <!-- Cabecera de página -->
+          <ok-page-header
+            heading="Vendor Dashboard"
+            description="Tus módulos publicados en el Marketplace · 12 activos">
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="grid-outline"></ion-icon>
+              Ver módulos
+            </ion-button>
+            <ion-button slot="actions" size="small">
+              <ion-icon slot="start" name="cash-outline"></ion-icon>
+              Solicitar payout
+            </ion-button>
+          </ok-page-header>
+
+          <!-- KPIs -->
+          <div class="pg-grid pg-grid-4 pg-mb-4">
+            <ok-kpi
+              label="Ingresos totales"
+              value="8 240 €"
+              delta="desde el inicio · 2024"
+              trend="flat">
+            </ok-kpi>
+            <ok-kpi
+              label="Este mes"
+              value="1 480 €"
+              delta="+18% vs abril"
+              trend="up">
+            </ok-kpi>
+            <ok-kpi
+              label="Módulos activos"
+              value="12"
+              delta="3 publicados en 2026"
+              trend="flat">
+            </ok-kpi>
+            <ok-kpi
+              label="Descargas mes"
+              value="3 240"
+              delta="+412 vs abril"
+              trend="up">
+            </ok-kpi>
+          </div>
+
+          <!-- Gráficos: línea de ingresos + top módulos -->
+          <div class="ui-charts-row">
+
+            <!-- Gráfico de línea: ingresos 12 meses -->
+            <ion-card>
+              <ion-card-content>
+                <div class="ui-chart-head">
+                  <div>
+                    <p class="ui-chart-title">Ingresos · últimos 12 meses</p>
+                    <p class="ui-chart-sub">Net mensual tras comisiones</p>
+                  </div>
+                  <div>
+                    <div class="ui-chart-big">8 240 €</div>
+                    <div class="ui-chart-delta ui-chart-delta--up">+18% YoY</div>
+                  </div>
+                </div>
+                <ok-chart
+                  id="chart-ingresos"
+                  type="area"
+                  height="200"
+                  gridlines>
+                </ok-chart>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Top 5 módulos · ingresos -->
+            <ion-card>
+              <ion-card-content>
+                <div class="ui-chart-head">
+                  <div>
+                    <p class="ui-chart-title">Top 5 módulos · ingresos</p>
+                    <p class="ui-chart-sub">Marzo–mayo 2026</p>
+                  </div>
+                </div>
+                <ok-bar-list
+                  id="bar-modulos"
+                  value-format="currency"
+                  locale="es-ES"
+                  currency="EUR">
+                </ok-bar-list>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+          <!-- Stripe Connect -->
+          <div class="ui-stripe-card">
+            <div class="ui-stripe-logo">S</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                <span class="ui-stripe-name">Stripe Connect</span>
+                <ok-status-pill tone="success" dot label="Conectado" size="sm"></ok-status-pill>
+              </div>
+              <p class="ui-stripe-meta">
+                Cuenta <span class="ui-stripe-code">acct_••••••••3F2A</span> ·
+                IBAN <span class="ui-stripe-code">ES•• •••• •••• ••42</span><br/>
+                Pagos automáticos cada lunes · próximo: 13 may 2026
+              </p>
+            </div>
+            <div class="ui-stripe-actions">
+              <ion-button fill="outline" size="small">
+                <ion-icon slot="start" name="settings-outline"></ion-icon>
+                Configurar
+              </ion-button>
+              <ion-button fill="clear" size="small">
+                Stripe Dashboard
+                <ion-icon slot="end" name="open-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- Próximo payout -->
+          <div class="ui-payout-card">
+            <div>
+              <p class="ui-payout-eyebrow">Próximo payout</p>
+              <div class="ui-payout-amount">1 240,00 €</div>
+              <p class="ui-payout-meta">
+                Llegará el <strong>13 may 2026</strong> · 28 movimientos ·
+                <a href="#">ver desglose</a>
+              </p>
+            </div>
+            <div class="ui-payout-actions">
+              <ok-status-pill tone="info" dot label="Programado" size="sm"></ok-status-pill>
+              <ion-button size="small">
+                <ion-icon slot="start" name="flash-outline"></ion-icon>
+                Adelantar payout
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- Movimientos recientes -->
+          <section>
+            <div class="ui-section-head">
+              <div>
+                <p class="ui-section-title">Movimientos recientes</p>
+                <p class="ui-section-sub">Últimos 10 movimientos en tu cuenta vendor</p>
+              </div>
+              <ion-button fill="clear" size="small">
+                Ver todos
+                <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+              </ion-button>
+            </div>
+            <ok-data-table
+              id="dt-movimientos"
+              style="display:block">
+            </ok-data-table>
+          </section>
+        `,
+        setup(doc) {
+          /* ── ok-chart: ingresos 12 meses (área) ─────────────────────────── */
+          const chartEl = doc.getElementById('chart-ingresos');
+          if (chartEl) {
+            chartEl.labels = ['jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic', 'ene', 'feb', 'mar', 'abr', 'may'];
+            chartEl.axis   = ['2 000', '1 500', '1 000', '500'];
+            chartEl.series = [
+              {
+                name: 'Ingresos netos',
+                data: [380, 420, 460, 520, 640, 590, 660, 750, 830, 770, 870, 960],
+              },
+            ];
+          }
+
+          /* ── ok-bar-list: top 5 módulos ──────────────────────────────────── */
+          const barEl = doc.getElementById('bar-modulos');
+          if (barEl) {
+            barEl.items = [
+              { label: 'contabilidad-pro', value: 1240, color: 'brand' },
+              { label: 'vinedos-erp',      value:  920, color: 'leaf'  },
+              { label: 'facturae-export',  value:  710, color: 'info'  },
+              { label: 'stock-multi-sede', value:  520, color: 'warn'  },
+              { label: 'pos-tickets-bono', value:  300, color: 'brand' },
+            ];
+          }
+
+          /* ── ok-data-table: movimientos recientes ────────────────────────── */
+          const dt = doc.getElementById('dt-movimientos');
+          if (dt) {
+            dt.searchable = false;
+            dt.csv = false;
+
+            dt.columns = [
+              {
+                key: 'fecha',
+                header: 'Fecha',
+                width: 'minmax(10rem,1fr)',
+              },
+              {
+                key: 'tipo',
+                header: 'Tipo',
+                width: '8rem',
+                render: (r) => {
+                  const [color, label] = r.tipoCfg;
+                  /* Las clases .ion-color-* NO penetran el shadow → vars inline (patrón billing-invoices). */
+                  return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${color}) 15%, transparent);--color:var(--ion-color-${color});--padding-top:5px;--padding-bottom:5px">${label}</ion-badge>`;
+                },
+              },
+              {
+                key: 'modulo',
+                header: 'Módulo / referencia',
+                width: 'minmax(11rem,1.4fr)',
+                render: (r) => {
+                  const wrap = document.createElement('div');
+                  wrap.innerHTML = `<div class="ui-cell-main">${r.modulo}</div><div class="ui-cell-sub">${r.ref}</div>`;
+                  return wrap;
+                },
+              },
+              {
+                key: 'hub',
+                header: 'Hub comprador',
+                width: 'minmax(8rem,1fr)',
+                render: (r) => {
+                  const span = document.createElement('span');
+                  span.textContent = r.hub;
+                  span.style.color = 'var(--ion-color-medium)';
+                  span.style.fontSize = '.85rem';
+                  return span;
+                },
+              },
+              {
+                key: 'importe',
+                header: 'Importe',
+                align: 'right',
+                width: '8rem',
+                render: (r) => {
+                  const span = document.createElement('span');
+                  span.textContent = r.importe;
+                  span.className = 'ui-amt';
+                  if (r.color === 'pos') span.classList.add('ui-amt--pos');
+                  else if (r.color === 'neg') span.classList.add('ui-amt--neg');
+                  else span.classList.add('ui-amt--neu');
+                  return span;
+                },
+              },
+              {
+                key: 'estado',
+                header: 'Estado',
+                width: '8rem',
+                render: (r) => {
+                  const [tone, label] = r.estado;
+                  const el = document.createElement('ok-status-pill');
+                  el.setAttribute('tone', tone === 'warning' ? 'warning' : tone === 'success' ? 'success' : 'info');
+                  el.setAttribute('dot', '');
+                  el.setAttribute('label', label);
+                  el.setAttribute('size', 'sm');
+                  return el;
+                },
+              },
+            ];
+
+            dt.rows = movimientos;
+
+            /* Paginador informativo debajo (pie de tabla) */
+            dt.pageSize = 10;
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

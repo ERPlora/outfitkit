@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Tareas programadas</title>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // ── Datos de las tareas ────────────────────────────────────────────────
+      const TAREAS = [
+        {
+          id: 'verifactu-remision',
+          nombre: 'Remisión Verifactu',
+          desc: 'Envía facturas pendientes a la AEAT',
+          modulo: 'verifactu',
+          cron: '*/15 * * * *',
+          ultima: 'hoy 14:30',
+          proxima: 'hoy 14:45',
+          estado: 'activa',
+        },
+        {
+          id: 'backup-db',
+          nombre: 'Backup base de datos',
+          desc: 'Snapshot diario a S3',
+          modulo: 'backups',
+          cron: '0 2 * * *',
+          ultima: 'hoy 02:00',
+          proxima: 'mañana 02:00',
+          estado: 'activa',
+        },
+        {
+          id: 'cierre-caja',
+          nombre: 'Cierre diario de caja',
+          desc: 'Genera arqueo y exporta a contabilidad',
+          modulo: 'sales',
+          cron: '0 23 * * *',
+          ultima: 'ayer 23:00',
+          proxima: 'hoy 23:00',
+          estado: 'activa',
+        },
+        {
+          id: 'sync-catalogo',
+          nombre: 'Sincronización catálogo Cloud',
+          desc: 'Actualiza sectores, business types y assets',
+          modulo: 'main',
+          cron: '0 */6 * * *',
+          ultima: 'hoy 12:00',
+          proxima: 'hoy 18:00',
+          estado: 'activa',
+        },
+        {
+          id: 'limpieza-logs',
+          nombre: 'Limpieza de logs antiguos',
+          desc: 'Borra logs > 90 días',
+          modulo: 'main',
+          cron: '0 3 * * 0',
+          ultima: 'dom 03:00',
+          proxima: 'dom 03:00',
+          estado: 'activa',
+        },
+        {
+          id: 'notif-inventario',
+          nombre: 'Notificaciones inventario bajo',
+          desc: 'Avisa por email si stock < 10 uds',
+          modulo: 'inventory',
+          cron: '0 9 * * 1-5',
+          ultima: '—',
+          proxima: '—',
+          estado: 'pausada',
+        },
+        {
+          id: 'modelo-347',
+          nombre: 'Modelo 347 (anual)',
+          desc: 'Genera fichero AEAT en febrero',
+          modulo: 'verifactu',
+          cron: '0 4 1 2 *',
+          ultima: '01/02/26 04:00',
+          proxima: '01/02/27 04:00',
+          estado: 'activa',
+        },
+      ];
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Tareas programadas"
+            description="7 tareas registradas · 5 activas · 0 con error">
+            <ion-button slot="actions" fill="outline" size="small" id="btn-pausar-todas">
+              <ion-icon slot="start" name="pause-circle-outline"></ion-icon>
+              Pausar todas
+            </ion-button>
+            <ion-button slot="actions" size="small" id="btn-nueva-tarea">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Nueva tarea
+            </ion-button>
+          </ok-page-header>
+
+          <ok-inline-feedback
+            class="pg-mb-4"
+            tone="info"
+            heading="EventBridge despierta el Hub cada 15 minutos">
+            Las tareas se ejecutan en el siguiente despertar del Hub si la hora cron coincide. Para ejecuciones precisas usa "Run now".
+          </ok-inline-feedback>
+
+          <ok-data-table id="tasks-dt" style="display:block"></ok-data-table>
+        `,
+
+        setup(doc) {
+          const dt = doc.getElementById('tasks-dt');
+
+          // Render de módulo como badge
+          const moduloBadge = (r) => {
+            const c = r.modulo === 'verifactu' ? 'primary' : 'medium';
+            return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px">${r.modulo}</ion-badge>`;
+          };
+
+          // Render de nombre + descripción
+          const nombreCell = (r) => h`<span style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-weight:600;opacity:${r.estado === 'pausada' ? '0.65' : '1'}">${r.nombre}</span>
+            <span style="font-size:.78rem;color:var(--ion-color-medium)">${r.desc}</span>
+          </span>`;
+
+          // Render de código cron
+          const cronCell = (r) => h`<code style="font-family:ui-monospace,'Cascadia Code',Menlo,monospace;font-size:.8rem;background:color-mix(in srgb, var(--ion-text-color) 7%, transparent);border:1px solid color-mix(in srgb, var(--ion-text-color) 12%, transparent);border-radius:4px;padding:2px 6px;white-space:nowrap">${r.cron}</code>`;
+
+          // Render de estado
+          const estadoCell = (r) => r.estado === 'pausada'
+            ? h`<ok-status-pill tone="neutral" dot label="Pausada"></ok-status-pill>`
+            : h`<ok-status-pill tone="success" dot label="Activa"></ok-status-pill>`;
+
+          dt.title = 'Tareas programadas';
+          dt.rowKey = (r) => r.id;
+          dt.searchable = true;
+          dt.searchKeys = ['nombre', 'modulo', 'desc'];
+          dt.inlineFilters = true;
+          dt.views = ['table'];
+
+          dt.columns = [
+            { key: 'nombre', header: 'Tarea', width: 'minmax(14rem,1.5fr)', render: nombreCell },
+            {
+              key: 'modulo', header: 'Módulo', width: '9rem',
+              filterable: true, filterType: 'select',
+              options: ['verifactu', 'sales', 'main', 'backups', 'inventory'].map((v) => ({ value: v, label: v })),
+              render: moduloBadge,
+            },
+            { key: 'cron', header: 'Schedule (cron)', width: '11rem', render: cronCell },
+            { key: 'ultima', header: 'Última ejecución', width: '10rem' },
+            { key: 'proxima', header: 'Próxima', width: '10rem' },
+            {
+              key: 'estado', header: 'Estado', width: '8rem',
+              filterable: true, filterType: 'select',
+              options: [
+                { value: 'activa', label: 'Activas' },
+                { value: 'pausada', label: 'Pausadas' },
+                { value: 'error', label: 'Con error' },
+              ],
+              render: estadoCell,
+            },
+          ];
+
+          dt.rows = TAREAS;
+
+          // Acciones de fila: ejecutar ahora, pausar/reanudar (toggle), editar
+          dt.actions = [
+            { id: 'ejecutar', icon: 'play-circle-outline', label: 'Ejecutar ahora', color: 'primary' },
+            { id: 'toggle', icon: 'pause-outline', label: 'Pausar / Reanudar' },
+            { id: 'editar', icon: 'create-outline', label: 'Editar' },
+          ];
+
+          dt.primaryAction = { label: 'Nueva tarea', icon: 'add' };
+
+          // Helper para mostrar toast
+          const showToast = (message, color = 'medium') => {
+            const toast = document.createElement('ion-toast');
+            toast.message = message;
+            toast.duration = 2200;
+            toast.color = color;
+            toast.position = 'bottom';
+            document.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
+          };
+
+          // Acción primaria (desde toolbar del data-table)
+          dt.addEventListener('primaryAction', () => {
+            const alert = document.createElement('ion-alert');
+            alert.header = 'Nueva tarea programada';
+            alert.message = 'La creación de tareas personalizadas estará disponible en la próxima versión.';
+            alert.buttons = ['Entendido'];
+            document.body.appendChild(alert);
+            alert.present();
+            alert.addEventListener('didDismiss', () => alert.remove());
+          });
+
+          // Acciones de fila
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            const tarea = TAREAS.find((t) => t.id === row.id);
+            if (!tarea) return;
+
+            if (actionId === 'ejecutar') {
+              if (tarea.estado === 'pausada') {
+                showToast(`La tarea "${tarea.nombre}" está pausada. Reanúdala primero.`, 'warning');
+                return;
+              }
+              showToast(`Tarea "${tarea.nombre}" enviada a ejecutar.`, 'success');
+            }
+
+            if (actionId === 'toggle') {
+              const eraPausada = tarea.estado === 'pausada';
+              tarea.estado = eraPausada ? 'activa' : 'pausada';
+              dt.rows = [...TAREAS];
+              showToast(eraPausada
+                ? `Tarea "${tarea.nombre}" reanudada.`
+                : `Tarea "${tarea.nombre}" pausada.`);
+            }
+
+            if (actionId === 'editar') {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Editar tarea';
+              alert.message = `"${tarea.nombre}" — Edición de tareas disponible en la próxima versión.`;
+              alert.buttons = ['Cerrar'];
+              document.body.appendChild(alert);
+              alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            }
+          });
+
+          // Botón "Pausar todas"
+          const btnPausarTodas = doc.getElementById('btn-pausar-todas');
+          if (btnPausarTodas) {
+            btnPausarTodas.addEventListener('click', () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Pausar todas las tareas';
+              alert.message = '¿Seguro que quieres pausar todas las tareas programadas?';
+              alert.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                {
+                  text: 'Pausar todas',
+                  role: 'destructive',
+                  handler: () => {
+                    TAREAS.forEach((t) => { t.estado = 'pausada'; });
+                    dt.rows = [...TAREAS];
+                  },
+                },
+              ];
+              document.body.appendChild(alert);
+              alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+
+          // Botón "Nueva tarea" del page-header
+          const btnNueva = doc.getElementById('btn-nueva-tarea');
+          if (btnNueva) {
+            btnNueva.addEventListener('click', () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Nueva tarea programada';
+              alert.message = 'La creación de tareas personalizadas estará disponible en la próxima versión.';
+              alert.buttons = ['Entendido'];
+              document.body.appendChild(alert);
+              alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

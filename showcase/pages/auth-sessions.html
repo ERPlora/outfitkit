@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Sesiones activas</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Sub-tabs de seguridad */
+      .ui-subtabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+      .ui-subtab {
+        padding: 10px 18px;
+        font-size: .9rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+        cursor: pointer;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        text-decoration: none;
+      }
+      .ui-subtab[aria-current="page"] {
+        color: var(--ion-color-primary);
+        border-bottom-color: var(--ion-color-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const SESSIONS = [
+        { id: 's1', device: 'MacBook Pro M4 · oficina',      icon: 'desktop-outline',         browser: 'Chrome 142 · macOS 15.4',    loc: 'Madrid, ES',    ip: '91.117.42.8',   last: 'Ahora',      status: 'current',  tone: 'success' },
+        { id: 's2', device: 'iPhone 16 Pro · personal',      icon: 'phone-portrait-outline',  browser: 'ERPlora App 4.8.2 · iOS 18.4', loc: 'Madrid, ES',  ip: '81.40.119.244', last: 'hace 12 min', status: 'active',   tone: 'success' },
+        { id: 's3', device: 'ThinkPad X1 · viaje',           icon: 'laptop-outline',          browser: 'Firefox 130 · Ubuntu 24.04', loc: 'Berlin, DE',    ip: '89.245.71.12',  last: 'hace 2 h',   status: 'warning',  tone: 'warning' },
+        { id: 's4', device: 'iPad Air · sofá',               icon: 'tablet-portrait-outline', browser: 'Safari 18 · iPadOS 18.3',    loc: 'Valencia, ES',  ip: '80.58.114.22',  last: 'hace 2 días', status: 'inactive', tone: 'warning' },
+        { id: 's5', device: 'Pixel 9 · backup',              icon: 'phone-portrait-outline',  browser: 'ERPlora App 4.7.0 · Android 15', loc: 'Bilbao, ES', ip: '88.7.201.33',   last: 'hace 4 días', status: 'inactive', tone: 'warning' },
+      ];
+
+      const STATUS_LABEL = { current: 'Esta sesión', active: 'Activa', warning: 'Nueva ubicación', inactive: 'Inactiva' };
+
+      const HISTORY = [
+        { ts: '2026-05-08 09:14:22', loc: 'Madrid, ES',    ip: '91.117.42.8',   dev: 'MacBook Pro M4 · Chrome 142',  status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-08 08:51:03', loc: 'Madrid, ES',    ip: '81.40.119.244', dev: 'iPhone 16 Pro · iOS App',       status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-07 22:08:44', loc: 'Berlin, DE',    ip: '89.245.71.12',  dev: 'ThinkPad X1 · Firefox 130',    status: '2FA reto', tone: 'warning' },
+        { ts: '2026-05-07 22:07:51', loc: 'Berlin, DE',    ip: '89.245.71.12',  dev: 'ThinkPad X1 · Firefox 130',    status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-07 16:32:18', loc: 'Madrid, ES',    ip: '91.117.42.8',   dev: 'MacBook Pro M4 · Chrome 142',  status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-06 11:04:09', loc: 'Sevilla, ES',   ip: '37.11.88.201',  dev: 'desconocido · Chrome 141',     status: 'Fallido',  tone: 'danger'  },
+        { ts: '2026-05-06 11:03:48', loc: 'Sevilla, ES',   ip: '37.11.88.201',  dev: 'desconocido · Chrome 141',     status: 'Fallido',  tone: 'danger'  },
+        { ts: '2026-05-06 09:18:32', loc: 'Madrid, ES',    ip: '91.117.42.8',   dev: 'MacBook Pro M4 · Chrome 142',  status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-04 19:22:04', loc: 'Barcelona, ES', ip: '85.49.214.9',   dev: 'iPhone 16 Pro · iOS App',      status: 'Éxito',    tone: 'success' },
+        { ts: '2026-05-03 08:44:11', loc: 'Madrid, ES',    ip: '91.117.42.8',   dev: 'MacBook Pro M4 · Chrome 142',  status: 'Éxito',    tone: 'success' },
+      ];
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Sesiones activas"
+            description="Revisa y revoca cualquier sesión que no reconozcas. Las sesiones inactivas más de 30 días caducan automáticamente.">
+            <ion-button slot="actions" fill="outline" color="danger" size="default">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              Cerrar otras sesiones
+            </ion-button>
+          </ok-page-header>
+
+          <!-- Sub-tabs de seguridad de cuenta -->
+          <nav class="ui-subtabs" aria-label="Sub-secciones de seguridad de cuenta">
+            <button class="ui-subtab">Contraseña</button>
+            <button class="ui-subtab" aria-current="page">Sesiones</button>
+            <button class="ui-subtab">Dispositivos</button>
+            <button class="ui-subtab">Eliminar cuenta</button>
+          </nav>
+
+          <!-- Sesiones activas -->
+          <ok-data-table id="sessions-dt" style="display:block;margin-bottom:16px"></ok-data-table>
+
+          <!-- Historial de logins -->
+          <ok-data-table id="history-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          // ── Sesiones activas ──────────────────────────────────────────────
+          const sessdt = doc.getElementById('sessions-dt');
+          sessdt.title = 'Sesiones activas';
+          sessdt.rowKey = (r) => r.id;
+          sessdt.searchable = false;
+          sessdt.columns = [
+            { key: 'device', header: 'Dispositivo', width: 'minmax(13rem,2fr)',
+              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:.6rem">
+                <ion-icon name=${r.icon} style="font-size:18px;flex-shrink:0"></ion-icon>
+                <span style="font-weight:600">${r.device}</span>
+              </span>` },
+            { key: 'browser', header: 'Navegador / App', width: 'minmax(12rem,1.5fr)' },
+            { key: 'loc', header: 'Ubicación', width: 'minmax(8rem,1fr)' },
+            { key: 'ip', header: 'IP',  width: '9rem',
+              render: (r) => h`<span style="font-family:monospace;font-size:.82rem">${r.ip}</span>` },
+            { key: 'last', header: 'Última actividad', width: '9rem' },
+            { key: 'status', header: 'Estado', width: '9rem',
+              render: (r) => h`<ok-status-pill tone=${r.tone} dot label=${STATUS_LABEL[r.status]} size="sm"></ok-status-pill>` },
+          ];
+          sessdt.actions = [
+            { id: 'close', icon: 'close-circle-outline', label: 'Cerrar sesión', color: 'danger',
+              show: (r) => r.status !== 'current' },
+          ];
+          sessdt.rows = SESSIONS;
+
+          sessdt.addEventListener('rowAction', (e) => {
+            const { row } = e.detail || {};
+            if (!row) return;
+            const t = document.createElement('ion-toast');
+            t.message = `Sesión "${row.device}" cerrada.`;
+            t.duration = 1500; t.position = 'bottom';
+            document.body.appendChild(t); t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+
+          // ── Historial de logins ───────────────────────────────────────────
+          const histDt = doc.getElementById('history-dt');
+          histDt.title = 'Historial de logins';
+          histDt.rowKey = (r) => r.ts;
+          histDt.searchable = false;
+          histDt.csv = true;
+          histDt.columns = [
+            { key: 'ts',  header: 'Timestamp',   width: 'minmax(11rem,1.2fr)',
+              render: (r) => h`<span style="font-family:monospace;font-size:.82rem">${r.ts}</span>` },
+            { key: 'loc', header: 'Ubicación',   width: 'minmax(9rem,1fr)' },
+            { key: 'ip',  header: 'IP',           width: 'minmax(9rem,1fr)',
+              render: (r) => h`<span style="font-family:monospace;font-size:.82rem">${r.ip}</span>` },
+            { key: 'dev', header: 'Dispositivo',  width: 'minmax(13rem,2fr)' },
+            { key: 'status', header: 'Estado',    width: '8rem',
+              render: (r) => h`<ok-status-pill tone=${r.tone} dot label=${r.status} size="sm"></ok-status-pill>` },
+          ];
+          histDt.rows = HISTORY;
+        },
+      });
+    </script>
+  </body>
+</html>

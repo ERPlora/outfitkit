@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Ingresos de vendor</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Celda de módulo con icono coloreado */
+      .ui-module-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ui-module-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .ui-module-name {
+        font-size: 0.88rem;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      SOBRIO: solo ok-page-header + ok-data-table.
+      SIN chrome inventado: ni KPIs, ni gráficos, ni toolbar de filtros manuales,
+      ni paginador manual, ni export popover. El buscador/columnas/csv del
+      propio ok-data-table son suficientes.
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const fmt    = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+      const fmtNeg = (n) => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+      // Tipo → color Ionic (las clases .ion-color-* NO penetran el shadow → vars inline).
+      const TIPO_COLOR = { 'Compra': 'success', 'Renovación': 'tertiary', 'Expansión': 'warning' };
+
+      const ROWS = [
+        { fecha: '30 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'acme-prod',    tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
+        { fecha: '28 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Renovación', bruto: 159.00, fees: -52.11, net: 106.89 },
+        { fecha: '26 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'norte-prod',   tipo: 'Compra',     bruto: 49.00,  fees: -16.12, net: 32.88 },
+        { fecha: '24 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'acme-prod',    tipo: 'Expansión',  bruto: 240.00, fees: -78.82, net: 161.18 },
+        { fecha: '22 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'rambla-prod',  tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
+        { fecha: '20 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Expansión',  bruto: 159.00, fees: -52.11, net: 106.89 },
+        { fecha: '18 mar 2026', modulo: 'pos-tickets-bono', moduloColor: 'medium',   hub: 'rambla-prod',  tipo: 'Compra',     bruto: 29.00,  fees: -9.57,  net: 19.43 },
+        { fecha: '16 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'acme-prod',    tipo: 'Renovación', bruto: 49.00,  fees: -16.12, net: 32.88 },
+        { fecha: '14 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'norte-prod',   tipo: 'Compra',     bruto: 95.00,  fees: -31.21, net: 63.79 },
+        { fecha: '12 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'acme-prod',    tipo: 'Renovación', bruto: 89.00,  fees: -29.28, net: 59.72 },
+        { fecha: '10 mar 2026', modulo: 'pos-tickets-bono', moduloColor: 'medium',   hub: 'lola-prod',    tipo: 'Compra',     bruto: 29.00,  fees: -9.57,  net: 19.43 },
+        { fecha: '08 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Compra',     bruto: 159.00, fees: -52.11, net: 106.89 },
+        { fecha: '06 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'rambla-prod',  tipo: 'Compra',     bruto: 95.00,  fees: -31.21, net: 63.79 },
+        { fecha: '04 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'norte-prod',   tipo: 'Compra',     bruto: 49.00,  fees: -16.12, net: 32.88 },
+        { fecha: '02 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'mariola-prod', tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
+      ];
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Ingresos de vendor"
+            description="15 movimientos · marzo 2026 · net 1 456,00 €">
+            <div slot="actions">
+              <ion-button size="small" id="btn-payout">
+                <ion-icon slot="start" name="cash-outline"></ion-icon>
+                Solicitar payout
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <ok-data-table id="earn-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          const dt = doc.getElementById('earn-dt');
+          if (!dt) return;
+
+          dt.rowKey     = (r) => r.fecha + r.modulo + r.hub;
+          dt.csv        = true;
+          dt.searchable = true;
+          dt.searchKeys = ['modulo', 'hub', 'tipo', 'fecha'];
+
+          dt.columns = [
+            { key: 'fecha',  header: 'Fecha',   width: 'minmax(8rem,1fr)',    sortable: true },
+            {
+              key: 'modulo', header: 'Módulo',  width: 'minmax(11rem,1.4fr)',
+              render: (r) => h`
+                <span class="ui-module-cell">
+                  <span class="ui-module-icon"
+                    style="background:color-mix(in srgb, var(--ion-color-${r.moduloColor}) 20%, transparent);color:var(--ion-color-${r.moduloColor})">
+                    <ion-icon name="grid-outline" style="font-size:11px"></ion-icon>
+                  </span>
+                  <span class="ui-module-name">${r.modulo}</span>
+                </span>`,
+            },
+            {
+              key: 'hub',    header: 'Hub',     width: 'minmax(8rem,1fr)',
+              render: (r) => h`<span style="color:var(--ion-color-medium);font-size:.85rem">${r.hub}</span>`,
+            },
+            {
+              key: 'tipo',   header: 'Tipo',    width: '8rem',
+              render: (r) => {
+                const c = TIPO_COLOR[r.tipo] ?? 'medium';
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px">${r.tipo}</ion-badge>`;
+              },
+            },
+            {
+              key: 'bruto',  header: 'Bruto',   width: '7rem', align: 'right', sortable: true,
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${fmt(r.bruto)}</span>`,
+            },
+            {
+              key: 'fees',   header: 'Fees',    width: '7rem', align: 'right',
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums;color:var(--ion-color-medium)">${fmtNeg(r.fees)}</span>`,
+            },
+            {
+              key: 'net',    header: 'Net',     width: '7rem', align: 'right', sortable: true,
+              render: (r) => h`<span style="font-variant-numeric:tabular-nums;color:var(--ion-color-success);font-weight:700">${fmt(r.net)}</span>`,
+            },
+          ];
+
+          dt.rows = ROWS;
+
+          // Acción de solicitar payout desde la cabecera.
+          doc.getElementById('btn-payout')?.addEventListener('click', () => {
+            const t = document.createElement('ion-toast');
+            t.message  = 'Solicitud de payout enviada.';
+            t.duration = 1500;
+            t.position = 'bottom';
+            document.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

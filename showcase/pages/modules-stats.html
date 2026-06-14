@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Estadísticas del módulo</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* ── Geometría puntual de esta vista (estructura, sin colores de marca) ── */
+
+      /* Cabecera de card de gráfico */
+      .ui-chart-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+      .ui-chart-title {
+        font-size: .9rem;
+        font-weight: 700;
+        margin: 0 0 2px;
+      }
+      .ui-chart-sub {
+        font-size: .75rem;
+        color: var(--ion-color-medium);
+        margin: 0;
+      }
+      .ui-chart-big {
+        font-size: 1.6rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        line-height: 1;
+      }
+      .ui-chart-delta {
+        font-size: .75rem;
+        color: var(--ion-color-success);
+        text-align: right;
+        margin-top: 2px;
+      }
+
+      /* Reviews */
+      .ui-review {
+        display: flex;
+        gap: 12px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-review:last-child { border-bottom: 0; padding-bottom: 0; }
+      .ui-review__body { flex: 1 1 auto; min-width: 0; }
+      .ui-review__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 2px;
+      }
+      .ui-review__author { font-weight: 600; font-size: .9rem; }
+      .ui-review__meta { font-size: .75rem; color: var(--ion-color-medium); margin-left: 6px; }
+      .ui-review__date { font-size: .75rem; color: var(--ion-color-medium); }
+      .ui-review__text { font-size: .85rem; line-height: 1.55; margin: 6px 0 8px; }
+      .ui-review__actions { display: flex; gap: 12px; align-items: center; font-size: .75rem; color: var(--ion-color-medium); }
+
+      /* Respuesta del autor */
+      .ui-author-reply {
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        border-left: 3px solid var(--ion-color-primary);
+        border-radius: 6px;
+      }
+      .ui-author-reply__meta { font-size: .72rem; color: var(--ion-color-medium); margin-bottom: 4px; }
+      .ui-author-reply__text { font-size: .82rem; color: var(--ion-color-medium-shade); line-height: 1.5; }
+
+      /* Card footer */
+      .ui-card-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      definePage({
+        bare: true,
+        body: `
+          <!-- ── Cabecera de página ── -->
+          <ok-page-header
+            heading="Estadísticas: POS Caja Registradora Pro"
+            description="Datos hasta 8 may 2026 · actualizado hace 12 min">
+          </ok-page-header>
+
+          <!-- ── KPIs (4 columnas) ── -->
+          <div class="pg-grid pg-grid-4 pg-mb-4">
+            <ok-kpi
+              label="Descargas totales"
+              value="8 420"
+              delta="+24% vs año anterior"
+              trend="up"
+              icon="cloud-download-outline">
+            </ok-kpi>
+            <ok-kpi
+              label="Mes actual"
+              value="892"
+              delta="+18% vs abril"
+              trend="up"
+              icon="trending-up-outline">
+            </ok-kpi>
+            <ok-kpi
+              label="Hubs activos"
+              value="412"
+              delta="+12 esta semana · 5 churn"
+              trend="flat"
+              icon="cube-outline">
+            </ok-kpi>
+            <ok-kpi
+              label="Rating"
+              value="4.8 / 5"
+              delta="124 reseñas · 3 nuevas"
+              trend="flat"
+              icon="star-outline">
+            </ok-kpi>
+          </div>
+
+          <!-- ── Gráfico de área: descargas 12 meses ── -->
+          <ion-card class="pg-mb-4">
+            <ion-card-content>
+              <div class="ui-chart-head">
+                <div>
+                  <h3 class="ui-chart-title">Descargas últimos 12 meses</h3>
+                  <p class="ui-chart-sub">Real vs previsión · oct 2025 — may 2026</p>
+                </div>
+                <div>
+                  <div class="ui-chart-big">8 420</div>
+                  <div class="ui-chart-delta">▲ +24% YoY</div>
+                </div>
+              </div>
+              <ok-chart
+                id="downloads-chart"
+                type="area"
+                height="200"
+                endpoint>
+              </ok-chart>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- ── Tres columnas: Por país / Por tipo / Heatmap ── -->
+          <div class="pg-grid pg-grid-3 pg-mb-4">
+
+            <!-- Por país -->
+            <ion-card>
+              <ion-card-content>
+                <div class="ui-chart-head">
+                  <div>
+                    <h3 class="ui-chart-title">Por país</h3>
+                    <p class="ui-chart-sub">Top 5 + Otros</p>
+                  </div>
+                </div>
+                <ok-donut
+                  id="country-donut"
+                  center-value="8 420"
+                  center-label="DESCARGAS"
+                  size="130">
+                </ok-donut>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Por business type -->
+            <ion-card>
+              <ion-card-content>
+                <div class="ui-chart-head">
+                  <div>
+                    <h3 class="ui-chart-title">Por business type</h3>
+                    <p class="ui-chart-sub">Hubs activos</p>
+                  </div>
+                </div>
+                <ok-bar-list id="business-bars"></ok-bar-list>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Heatmap día/hora -->
+            <ion-card>
+              <ion-card-content>
+                <div class="ui-chart-head">
+                  <div>
+                    <h3 class="ui-chart-title">Actividad por día/hora</h3>
+                    <p class="ui-chart-sub">Eventos / 30 días</p>
+                  </div>
+                </div>
+                <ok-heatmap id="activity-heat" legend cell-size="11"></ok-heatmap>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+          <!-- ── Top 10 hubs por uso ── -->
+          <ok-data-table
+            id="top-hubs-dt"
+            style="display:block"
+            class="pg-mb-4">
+          </ok-data-table>
+
+          <!-- ── Reseñas recientes ── -->
+          <ion-card>
+            <ion-card-header>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div>
+                  <ion-card-title>Reseñas recientes</ion-card-title>
+                  <div style="font-size:.78rem;color:var(--ion-color-medium);margin-top:2px">
+                    5 reseñas · 124 totales
+                  </div>
+                </div>
+                <ion-select id="reviews-sort" value="recent" interface="popover" style="font-size:.85rem">
+                  <ion-select-option value="recent">Más recientes</ion-select-option>
+                  <ion-select-option value="best">Mejor valoradas</ion-select-option>
+                  <ion-select-option value="worst">Peor valoradas</ion-select-option>
+                </ion-select>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <div id="reviews-list" class="pg-stack">
+                <!-- Reseñas insertadas por setup() -->
+              </div>
+              <div class="ui-card-foot" style="margin-top:16px">
+                <span>Mostrando 5 de 124</span>
+                <ion-button fill="outline" size="small">Ver todas las reseñas</ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        `,
+
+        setup(doc) {
+          // ── Gráfico de área: descargas 12 meses ──
+          const chart = doc.getElementById('downloads-chart');
+          if (chart) {
+            chart.labels = ['Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'];
+            chart.series = [
+              {
+                name: 'Descargas reales',
+                data: [420, 465, 510, 540, 590, 620, 660, 700, 730, 760, 800, 892],
+              },
+              {
+                name: 'Previsión',
+                data: [400, 445, 490, 520, 565, 595, 635, 670, 700, 725, 765, 850],
+                dashed: true,
+              },
+            ];
+            chart.endpointLabel = '892';
+          }
+
+          // ── Donut: distribución por país ──
+          const donut = doc.getElementById('country-donut');
+          if (donut) {
+            donut.slices = [
+              { label: 'España',   value: 4631 },
+              { label: 'Portugal', value: 1684 },
+              { label: 'México',   value: 1010 },
+              { label: 'Argentina', value: 589 },
+              { label: 'Otros',    value: 506 },
+            ];
+          }
+
+          // ── Bar-list: por business type ──
+          const bars = doc.getElementById('business-bars');
+          if (bars) {
+            bars.items = [
+              { label: 'Retail',        value: 182, color: 'brand' },
+              { label: 'Restauración',  value: 128, color: 'leaf'  },
+              { label: 'Hostelería',    value: 78,  color: 'info'  },
+              { label: 'Servicios',     value: 24,  color: 'warn'  },
+            ];
+          }
+
+          // ── Heatmap: actividad por día/hora (70 celdas con nivel explícito) ──
+          const heat = doc.getElementById('activity-heat');
+          if (heat) {
+            const levels = [
+              0,1,2,3,2,1,0,
+              1,2,3,4,3,2,1,
+              2,3,4,4,4,3,2,
+              2,4,4,4,4,3,2,
+              1,3,4,4,4,3,2,
+              1,2,3,4,3,2,1,
+              0,1,2,3,2,1,0,
+              1,2,3,4,4,3,1,
+              2,3,4,4,4,3,2,
+              3,4,4,4,4,4,3,
+            ];
+            heat.data = levels.map((level, i) => ({ key: String(i), level }));
+          }
+
+          // ── Top 10 hubs por uso: ok-data-table ──
+          const dt = doc.getElementById('top-hubs-dt');
+          if (dt) {
+            dt.title = 'Top 10 hubs por uso';
+            dt.description = 'Ordenado por tickets emitidos · últimos 30 días';
+            dt.views = ['table'];
+            dt.viewMode = 'table';
+            dt.searchable = false;
+            dt.columns = [
+              { key: 'pos',     header: '#',             width: '3rem',
+                render: (r) => h`<span style="color:var(--ion-color-medium)">${r.pos}</span>` },
+              { key: 'hub',     header: 'Hub',            width: 'minmax(12rem,1.4fr)',
+                render: (r) => h`<code style="font-weight:600">${r.hub}</code>` },
+              { key: 'org',     header: 'Organización',  width: 'minmax(11rem,1fr)' },
+              { key: 'plan',    header: 'Plan',           width: '8rem',
+                render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.planColor}) 15%, transparent);--color:var(--ion-color-${r.planColor});--padding-top:5px;--padding-bottom:5px">${r.plan}</ion-badge>` },
+              { key: 'tickets', header: 'Tickets',        width: '7rem', align: 'right' },
+              { key: 'volume',  header: 'Volumen',        width: '7rem', align: 'right' },
+              { key: 'last',    header: 'Última act.',    width: '8rem',
+                render: (r) => h`<span style="color:var(--ion-color-medium)">${r.last}</span>` },
+            ];
+            dt.actions = [
+              { id: 'open', icon: 'open-outline', label: 'Ver hub', color: 'primary' },
+            ];
+            dt.rows = [
+              { pos: 1,  hub: 'bodegas-casadejus',    org: 'Bodegas Casadejus',    plan: 'Pro',        planColor: 'primary',  tickets: '12 482', volume: '€48 920', last: 'hace 4 min' },
+              { pos: 2,  hub: 'acme-industries',       org: 'Acme Industries SL',   plan: 'Business',   planColor: 'tertiary', tickets: '9 218',  volume: '€32 140', last: 'hace 12 min' },
+              { pos: 3,  hub: 'pasteleria-mariola',    org: 'Pastelerías Mariola',  plan: 'Pro',        planColor: 'primary',  tickets: '7 821',  volume: '€21 480', last: 'hace 22 min' },
+              { pos: 4,  hub: 'logistica-peninsular',  org: 'Logística Peninsular', plan: 'Enterprise', planColor: 'dark',     tickets: '6 412',  volume: '€18 920', last: 'hace 1 h' },
+              { pos: 5,  hub: 'nordenbikes-store',     org: 'Norden Bikes',         plan: 'Pro',        planColor: 'primary',  tickets: '5 928',  volume: '€15 240', last: 'hace 2 h' },
+              { pos: 6,  hub: 'cafeteria-velazquez',   org: 'Cafetería Velázquez',  plan: 'Pro',        planColor: 'primary',  tickets: '5 124',  volume: '€12 820', last: 'hace 3 h' },
+              { pos: 7,  hub: 'libreria-cervantes',    org: 'Librería Cervantes',   plan: 'Starter',    planColor: 'medium',   tickets: '4 218',  volume: '€9 220',  last: 'hace 5 h' },
+              { pos: 8,  hub: 'frutas-mediterraneo',   org: 'Frutas Mediterráneo',  plan: 'Pro',        planColor: 'primary',  tickets: '3 921',  volume: '€8 480',  last: 'hace 7 h' },
+              { pos: 9,  hub: 'ferreteria-ramirez',    org: 'Ferretería Ramírez',   plan: 'Business',   planColor: 'tertiary', tickets: '3 412',  volume: '€7 120',  last: 'ayer' },
+              { pos: 10, hub: 'panaderia-laaurora',    org: 'Panadería La Aurora',  plan: 'Starter',    planColor: 'medium',   tickets: '2 928',  volume: '€5 480',  last: 'ayer' },
+            ];
+          }
+
+          // ── Reseñas ──
+          const reviews = [
+            {
+              initials: 'CM', name: 'Carlos Méndez',   meta: '@bodegas-casadejus · Pro',    date: '5 may 2026',   rating: 5,
+              text: 'Llevamos 8 meses con el módulo en 3 tiendas y es una maravilla. La integración con la impresora Epson TM-T20III funcionó a la primera y los turnos múltiples nos han salvado mucho tiempo. Soporte rápido del autor.',
+              helpful: 12, reply: null,
+            },
+            {
+              initials: 'AS', name: 'Ana Soriano',      meta: '@cafeteria-velazquez · Pro',  date: '3 may 2026',   rating: 5,
+              text: 'Perfecto para hostelería. La pantalla cliente secundaria que añadieron en la v3.2 nos diferenció bastante. La generación de Verifactu va sin problemas con la AEAT.',
+              helpful: 8, reply: null,
+            },
+            {
+              initials: 'MR', name: 'Mateo Ramírez',   meta: '@ferreteria-ramirez · Business', date: '29 abr 2026', rating: 4,
+              text: 'Muy completo, aunque echo en falta un export de tickets en CSV nativo (lo hago via API). Por lo demás, lo recomiendo. Precio justo.',
+              helpful: 5,
+              reply: { author: '@ioanb', date: '30 abr 2026', text: '¡Gracias por el feedback Mateo! El export CSV nativo está confirmado para la v3.3 (junio 2026).' },
+            },
+            {
+              initials: 'PL', name: 'Patricia López',  meta: '@pasteleria-mariola · Pro',   date: '22 abr 2026',  rating: 3,
+              text: 'El producto es bueno pero la curva de aprendizaje fue alta. Quizá un onboarding más guiado ayudaría a equipos pequeños.',
+              helpful: 3, reply: null,
+            },
+            {
+              initials: 'JN', name: 'Javier Núñez',    meta: '@nordenbikes-store · Pro',    date: '14 abr 2026',  rating: 5,
+              text: 'Migración desde otro POS sin perder histórico. Excelente. La integración con Stripe funciona como un reloj.',
+              helpful: 7, reply: null,
+            },
+          ];
+
+          const reviewsList = doc.getElementById('reviews-list');
+          if (reviewsList) {
+            reviewsList.innerHTML = reviews.map((r) => `
+              <div class="ui-review">
+                <ok-avatar name="${r.name}" size="md"></ok-avatar>
+                <div class="ui-review__body">
+                  <div class="ui-review__top">
+                    <div>
+                      <span class="ui-review__author">${r.name}</span>
+                      <span class="ui-review__meta">${r.meta}</span>
+                    </div>
+                    <span class="ui-review__date">${r.date}</span>
+                  </div>
+                  <ok-rating value="${r.rating}" max="5" readonly style="font-size:.9rem;margin-bottom:4px;display:block"></ok-rating>
+                  <p class="ui-review__text">${r.text}</p>
+                  <div class="ui-review__actions">
+                    <span style="display:inline-flex;align-items:center;gap:4px"><ion-icon name="thumbs-up-outline"></ion-icon> ${r.helpful} útiles</span>
+                    <ion-button fill="clear" size="small">
+                      <ion-icon slot="start" name="chatbubble-outline"></ion-icon>
+                      Responder
+                    </ion-button>
+                  </div>
+                  ${r.reply ? `
+                    <div class="ui-author-reply">
+                      <div class="ui-author-reply__meta"><strong>${r.reply.author}</strong> · respuesta del autor · ${r.reply.date}</div>
+                      <div class="ui-author-reply__text">${r.reply.text}</div>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('');
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

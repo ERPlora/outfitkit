@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Hub · Checkout suscripción</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* ── Cabecera del diálogo de checkout ─────────────────────────────────── */
+      .co-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding-bottom: 0;
+      }
+      .co-header__icon {
+        width: 42px; height: 42px; border-radius: 10px; flex: 0 0 auto;
+        background: color-mix(in srgb, var(--ion-color-primary) 15%, transparent);
+        color: var(--ion-color-primary);
+        display: grid; place-items: center;
+      }
+      .co-header__text { flex: 1 1 auto; }
+      .co-header__title { font-size: 1.15rem; font-weight: 700; margin: 0 0 3px; }
+      .co-header__sub { margin: 0; color: var(--ion-color-medium); font-size: .88rem; }
+
+      /* ── Layout dos columnas: resumen | formulario ────────────────────────── */
+      .co-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 760px) { .co-grid { grid-template-columns: 1fr; } }
+
+      /* ── Resumen del pedido ───────────────────────────────────────────────── */
+      .co-section-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ion-color-medium);
+        font-weight: 600;
+        margin: 0 0 10px;
+      }
+
+      .co-product {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-bottom: 10px;
+      }
+      .co-product__icon {
+        width: 40px; height: 40px; border-radius: 9px; flex: 0 0 auto;
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        color: var(--ion-color-primary);
+        display: grid; place-items: center;
+      }
+      .co-product__name { font-weight: 600; font-size: .95rem; margin: 0 0 2px; }
+      .co-product__desc { color: var(--ion-color-medium); font-size: .78rem; margin: 0; }
+
+      .co-price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        font-size: .83rem;
+      }
+      .co-price-row__label { color: var(--ion-color-medium); }
+      .co-price-row__val { font-weight: 500; }
+      .co-price-row__val--free { color: var(--ion-color-success); }
+
+      .co-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 0 0;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-top: 8px;
+      }
+      .co-total__label { font-size: .85rem; font-weight: 500; }
+      .co-total__amount {
+        font-size: 1.55rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.02em;
+      }
+
+      /* ── Formulario de pago ────────────────────────────────────────────────── */
+      .co-form { display: flex; flex-direction: column; gap: 12px; }
+      .co-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      @media (max-width: 400px) { .co-form-2 { grid-template-columns: 1fr; } }
+
+      /* ── Terms ────────────────────────────────────────────────────────────── */
+      .co-terms {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: .8rem;
+        color: var(--ion-color-medium);
+        padding: 4px 0 0;
+      }
+      .co-terms ion-checkbox { flex: 0 0 auto; margin-top: 1px; }
+      .co-terms a { color: var(--ion-color-primary); }
+
+      /* ── Pie del modal ─────────────────────────────────────────────────────── */
+      .co-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding-top: 16px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-top: 4px;
+      }
+      .co-footer__secure {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: .75rem;
+        color: var(--ion-color-medium);
+      }
+      .co-footer__actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 520px) {
+        .co-footer { flex-direction: column; align-items: stretch; }
+        .co-footer__actions { flex-direction: column; }
+        .co-footer__actions ion-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Suscribir VeriFactu"
+            description="15 días de prueba gratis — cancela cuando quieras">
+            <div slot="actions">
+              <ion-button fill="clear" size="small" id="btn-close-checkout" aria-label="Cerrar">
+                <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Cuerpo del checkout: dos columnas -->
+          <ion-card>
+            <ion-card-content>
+
+              <div class="co-grid">
+
+                <!-- ── COLUMNA IZQUIERDA: resumen del pedido ──────────────── -->
+                <div>
+                  <p class="co-section-label">Resumen del pedido</p>
+
+                  <!-- Producto -->
+                  <div class="co-product">
+                    <div class="co-product__icon">
+                      <ion-icon name="shield-checkmark-outline" style="font-size:20px;"></ion-icon>
+                    </div>
+                    <div>
+                      <p class="co-product__name">VeriFactu</p>
+                      <p class="co-product__desc">Plan mensual · facturación recurrente</p>
+                    </div>
+                  </div>
+
+                  <!-- Filas de precio -->
+                  <div class="co-price-row">
+                    <span class="co-price-row__label">Suscripción mensual</span>
+                    <span class="co-price-row__val">€9,99</span>
+                  </div>
+                  <div class="co-price-row">
+                    <span class="co-price-row__label">Prueba gratuita</span>
+                    <span class="co-price-row__val co-price-row__val--free">15 días</span>
+                  </div>
+                  <div class="co-price-row">
+                    <span class="co-price-row__label">IVA aplicable</span>
+                    <span class="co-price-row__val">incluido</span>
+                  </div>
+                  <div class="co-price-row">
+                    <span class="co-price-row__label">Primer cobro</span>
+                    <span class="co-price-row__val">23 may 2026</span>
+                  </div>
+
+                  <!-- Total -->
+                  <div class="co-total">
+                    <span class="co-total__label">Hoy pagas</span>
+                    <span class="co-total__amount">€0,00</span>
+                  </div>
+
+                  <!-- Aviso sin permanencia -->
+                  <ok-inline-feedback
+                    tone="info"
+                    heading="Sin permanencia"
+                    style="margin-top:14px;display:block;">
+                    Cancela en cualquier momento desde Mis compras. Si cancelas durante la prueba no se realiza ningún cargo.
+                  </ok-inline-feedback>
+                </div>
+
+                <!-- ── COLUMNA DERECHA: formulario de pago ──────────────── -->
+                <div>
+                  <p class="co-section-label">Datos de pago</p>
+
+                  <div class="co-form">
+
+                    <ion-input
+                      id="co-email"
+                      label="Email para recibo"
+                      label-placement="stacked"
+                      fill="outline"
+                      type="email"
+                      value="ioan@erplora.com"
+                      placeholder="tu@email.com">
+                    </ion-input>
+
+                    <ion-input
+                      label="Nombre del titular"
+                      label-placement="stacked"
+                      fill="outline"
+                      placeholder="Como aparece en la tarjeta">
+                    </ion-input>
+
+                    <ion-input
+                      label="Número de tarjeta"
+                      label-placement="stacked"
+                      fill="outline"
+                      placeholder="1234 5678 9012 3456"
+                      inputmode="numeric">
+                      <ion-icon slot="end" name="card-outline"></ion-icon>
+                    </ion-input>
+
+                    <div class="co-form-2">
+                      <ion-input
+                        label="Caducidad"
+                        label-placement="stacked"
+                        fill="outline"
+                        placeholder="MM/AA"
+                        inputmode="numeric">
+                      </ion-input>
+                      <ion-input
+                        label="CVC"
+                        label-placement="stacked"
+                        fill="outline"
+                        placeholder="123"
+                        inputmode="numeric"
+                        maxlength="4">
+                      </ion-input>
+                    </div>
+
+                    <ion-select
+                      label="País / región fiscal"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="es">
+                      <ion-select-option value="es">España</ion-select-option>
+                      <ion-select-option value="pt">Portugal</ion-select-option>
+                      <ion-select-option value="fr">Francia</ion-select-option>
+                      <ion-select-option value="ad">Andorra</ion-select-option>
+                    </ion-select>
+
+                    <label class="co-terms">
+                      <ion-checkbox id="co-terms-check" style="flex:0 0 auto;margin-top:1px;"></ion-checkbox>
+                      <span>
+                        Acepto los <a href="#">términos del servicio</a> y la <a href="#">política de privacidad</a> de ERPlora.
+                      </span>
+                    </label>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- ── Pie del modal ──────────────────────────────────────────── -->
+              <div class="co-footer">
+                <span class="co-footer__secure">
+                  <ion-icon name="lock-closed-outline" style="font-size:13px;flex:0 0 auto;"></ion-icon>
+                  Pago seguro vía Stripe · cifrado TLS 1.3
+                </span>
+                <div class="co-footer__actions">
+                  <ion-button fill="outline" id="btn-cancel-checkout">
+                    <ion-icon slot="start" name="close-outline"></ion-icon>
+                    Cancelar
+                  </ion-button>
+                  <ion-button id="btn-start-trial" disabled>
+                    <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                    Empezar prueba
+                  </ion-button>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+        `,
+        setup(doc) {
+          // ── Checkbox de términos → habilitar botón ────────────────────────────
+          const termsCheck = doc.getElementById('co-terms-check');
+          const btnStart = doc.getElementById('btn-start-trial');
+
+          if (termsCheck && btnStart) {
+            termsCheck.addEventListener('ionChange', (e) => {
+              const checked = !!(e.detail && e.detail.checked);
+              if (checked) {
+                btnStart.removeAttribute('disabled');
+              } else {
+                btnStart.setAttribute('disabled', '');
+              }
+            });
+          }
+
+          // ── Botón Empezar prueba → toast de confirmación ─────────────────────
+          if (btnStart) {
+            btnStart.addEventListener('click', () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Suscripción activada. Prueba gratuita de 15 días iniciada.';
+              toast.duration = 3500;
+              toast.position = 'bottom';
+              toast.color = 'success';
+              document.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // ── Botón Cerrar / Cancelar → toast informativo ───────────────────────
+          const dismiss = () => {
+            const toast = document.createElement('ion-toast');
+            toast.message = 'Checkout cancelado.';
+            toast.duration = 2000;
+            toast.position = 'bottom';
+            document.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
+          };
+
+          const btnClose = doc.getElementById('btn-close-checkout');
+          const btnCancel = doc.getElementById('btn-cancel-checkout');
+          if (btnClose) btnClose.addEventListener('click', dismiss);
+          if (btnCancel) btnCancel.addEventListener('click', dismiss);
+        },
+      });
+    </script>
+  </body>
+</html>

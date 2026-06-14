@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Añadir empleado</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Sección de formulario */
+      .ui-section { margin-bottom: 28px; }
+      .ui-section__title {
+        margin: 0 0 4px;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      .ui-section__desc {
+        margin: 0 0 18px;
+        color: var(--ion-color-medium);
+        font-size: .88rem;
+      }
+
+      /* Rejilla de campos en dos columnas */
+      .ui-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      @media (max-width: 600px) {
+        .ui-form-row { grid-template-columns: 1fr; }
+      }
+
+      /* Labels e hints */
+      .ui-label {
+        display: block;
+        font-weight: 600;
+        font-size: .88rem;
+        margin-bottom: 6px;
+      }
+      .ui-label--req::after { content: " *"; color: var(--ion-color-danger); }
+      .ui-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Foto de perfil */
+      .ui-avatar-upload {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+
+      /* Radio-cards de rol */
+      .ui-radio-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 600px) {
+        .ui-radio-cards { grid-template-columns: 1fr; }
+      }
+      .ui-radio-card { margin: 0; }
+      .ui-radio-card ion-radio { width: 100%; }
+      .ui-radio-card__title { font-weight: 600; }
+      .ui-radio-card__desc {
+        color: var(--ion-color-medium);
+        font-size: .82rem;
+        margin-top: 3px;
+      }
+
+      /* Footer de acciones */
+      .ui-foot {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        padding-top: 16px;
+        justify-content: flex-end;
+      }
+      @media (max-width: 600px) {
+        .ui-foot { flex-direction: column; }
+        .ui-foot ion-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Añadir empleado"
+            description="Crea una cuenta con PIN para que el equipo entre al Hub.">
+            <ion-button slot="actions" fill="outline" size="small" id="btn-cancel">
+              Cancelar
+            </ion-button>
+            <ion-button slot="actions" size="small" id="btn-submit">
+              <ion-icon slot="start" name="person-add-outline"></ion-icon>
+              Crear empleado
+            </ion-button>
+          </ok-page-header>
+
+          <ion-card style="max-width:760px;">
+            <ion-card-content>
+
+              <!-- ── Información personal ── -->
+              <div class="ui-section">
+                <h3 class="ui-section__title">Información personal</h3>
+                <p class="ui-section__desc">Datos visibles para el equipo y registros internos.</p>
+
+                <div class="ui-form-row">
+                  <div>
+                    <label class="ui-label ui-label--req">Nombre completo</label>
+                    <ion-input
+                      id="emp-name"
+                      fill="outline"
+                      placeholder="Joan Castell"
+                      autocomplete="name"
+                      autofocus>
+                    </ion-input>
+                  </div>
+                  <div>
+                    <label class="ui-label ui-label--req">Email</label>
+                    <ion-input
+                      id="emp-email"
+                      fill="outline"
+                      type="email"
+                      placeholder="joan@larambla.es"
+                      autocomplete="email">
+                    </ion-input>
+                    <small class="ui-hint">Se usará para iniciar sesión y recibir códigos de verificación.</small>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="ui-label">Foto de perfil</label>
+                  <div class="ui-avatar-upload">
+                    <ok-avatar id="emp-avatar" name="+" size="lg"></ok-avatar>
+                    <ion-button fill="outline" size="small" id="btn-upload">
+                      <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                      Subir foto
+                    </ion-button>
+                    <input type="file" id="file-photo" accept="image/*" hidden />
+                  </div>
+                  <small class="ui-hint">JPG o PNG · máx. 2 MB</small>
+                </div>
+              </div>
+
+              <!-- ── Acceso al Hub ── -->
+              <div class="ui-section">
+                <h3 class="ui-section__title">Acceso al Hub</h3>
+                <p class="ui-section__desc">PIN de 4 cifras para acceso rápido en TPV y dispositivos del local.</p>
+
+                <div class="ui-form-row">
+                  <div>
+                    <label class="ui-label ui-label--req">PIN inicial</label>
+                    <ion-input
+                      id="emp-pin"
+                      fill="outline"
+                      type="password"
+                      inputmode="numeric"
+                      maxlength="4"
+                      placeholder="••••">
+                    </ion-input>
+                    <small class="ui-hint">El empleado podrá cambiarlo desde su perfil.</small>
+                  </div>
+                  <div>
+                    <label class="ui-label">Idioma de la interfaz</label>
+                    <ion-select id="emp-lang" fill="outline" value="es" interface="popover">
+                      <ion-select-option value="ca">Català</ion-select-option>
+                      <ion-select-option value="es">Español</ion-select-option>
+                      <ion-select-option value="en">English</ion-select-option>
+                      <ion-select-option value="gl">Galego</ion-select-option>
+                      <ion-select-option value="eu">Euskara</ion-select-option>
+                      <ion-select-option value="pt">Português</ion-select-option>
+                    </ion-select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Rol y permisos ── -->
+              <div class="ui-section">
+                <h3 class="ui-section__title">Rol y permisos</h3>
+                <p class="ui-section__desc">El rol determina qué módulos y acciones puede ejecutar.</p>
+
+                <ion-radio-group value="manager" id="emp-role">
+                  <div class="ui-radio-cards">
+                    <ion-card class="ui-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="admin" label-placement="end" justify="start">
+                          <div class="ui-radio-card__title">Admin</div>
+                          <div class="ui-radio-card__desc">Acceso total al Hub, módulos, facturación y empleados.</div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+                    <ion-card class="ui-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="manager" label-placement="end" justify="start">
+                          <div class="ui-radio-card__title">Manager</div>
+                          <div class="ui-radio-card__desc">Ventas, inventario, empleados (sin facturación ni configuración crítica).</div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+                    <ion-card class="ui-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="cajero" label-placement="end" justify="start">
+                          <div class="ui-radio-card__title">Cajero</div>
+                          <div class="ui-radio-card__desc">POS, tickets y caja. Sin acceso a costes ni stock.</div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+                    <ion-card class="ui-radio-card">
+                      <ion-card-content>
+                        <ion-radio value="cocinero" label-placement="end" justify="start">
+                          <div class="ui-radio-card__title">Cocinero</div>
+                          <div class="ui-radio-card__desc">Solo KDS y comandas. Sin acceso a precios ni clientes.</div>
+                        </ion-radio>
+                      </ion-card-content>
+                    </ion-card>
+                  </div>
+                </ion-radio-group>
+              </div>
+
+              <!-- Feedback de validación (oculto por defecto) -->
+              <ok-inline-feedback id="emp-feedback" tone="danger" heading="Campos requeridos" hidden>
+                Por favor completa todos los campos obligatorios.
+              </ok-inline-feedback>
+
+              <!-- Footer de acciones -->
+              <div class="ui-foot">
+                <ion-button fill="outline" id="btn-cancel-2">Cancelar</ion-button>
+                <ion-button id="btn-submit-2">
+                  <ion-icon slot="start" name="person-add-outline"></ion-icon>
+                  Crear empleado
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+        `,
+        setup(doc) {
+          // Botón "Subir foto" → dispara el file input oculto
+          const btnUpload = doc.getElementById('btn-upload');
+          const filePhoto = doc.getElementById('file-photo');
+          const empAvatar = doc.getElementById('emp-avatar');
+          const empName   = doc.getElementById('emp-name');
+
+          if (btnUpload && filePhoto) {
+            btnUpload.addEventListener('click', () => filePhoto.click());
+          }
+
+          // Actualizar avatar con la foto elegida
+          if (filePhoto && empAvatar) {
+            filePhoto.addEventListener('change', (e) => {
+              const file = e.target.files && e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                empAvatar.setAttribute('src', ev.target.result);
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+
+          // Actualizar avatar con las iniciales del nombre en tiempo real
+          if (empName && empAvatar) {
+            empName.addEventListener('ionInput', (e) => {
+              const val = (e.detail && e.detail.value) || '';
+              empAvatar.setAttribute('name', val || '+');
+            });
+          }
+
+          // Botones de cancelar (dos instancias: header + footer)
+          const handleCancel = () => {
+            window.history.length > 1 ? window.history.back() : null;
+          };
+          const btnCancel = doc.getElementById('btn-cancel');
+          const btnCancel2 = doc.getElementById('btn-cancel-2');
+          if (btnCancel)  btnCancel.addEventListener('click', handleCancel);
+          if (btnCancel2) btnCancel2.addEventListener('click', handleCancel);
+
+          // Feedback de validación (ok-inline-feedback en lugar de window.alert)
+          const feedback = doc.getElementById('emp-feedback');
+          const showFeedback = (msg, tone = 'danger') => {
+            if (!feedback) return;
+            feedback.setAttribute('tone', tone);
+            feedback.textContent = msg;
+            feedback.removeAttribute('hidden');
+            feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          };
+          const hideFeedback = () => { if (feedback) feedback.setAttribute('hidden', ''); };
+
+          // Validación y envío del formulario
+          const handleSubmit = () => {
+            const name  = empName && empName.value;
+            const email = doc.getElementById('emp-email') && doc.getElementById('emp-email').value;
+            const pin   = doc.getElementById('emp-pin')   && doc.getElementById('emp-pin').value;
+
+            if (!name || !email || !pin) {
+              showFeedback('Por favor completa los campos obligatorios: Nombre, Email y PIN.');
+              return;
+            }
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+              showFeedback('El PIN debe tener exactamente 4 dígitos.');
+              return;
+            }
+            // Éxito (demo)
+            hideFeedback();
+            showFeedback('Empleado creado correctamente (demo).', 'success');
+          };
+
+          const btnSubmit  = doc.getElementById('btn-submit');
+          const btnSubmit2 = doc.getElementById('btn-submit-2');
+          if (btnSubmit)  btnSubmit.addEventListener('click', handleSubmit);
+          if (btnSubmit2) btnSubmit2.addEventListener('click', handleSubmit);
+        },
+      });
+    </script>
+  </body>
+</html>

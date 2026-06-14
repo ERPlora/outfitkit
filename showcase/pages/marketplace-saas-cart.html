@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Carrito</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* ── Geometría puntual de esta vista — sin colores de marca ── */
+
+      /* Línea de artículo del carrito */
+      .cart-line {
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 16px;
+        padding: 16px;
+        align-items: start;
+      }
+      @media (max-width: 560px) {
+        .cart-line { grid-template-columns: 64px 1fr; }
+        .cart-line__price { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+      }
+
+      /* Miniatura del producto */
+      .cart-thumb {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--ion-color-step-100, rgba(127,127,127,.1));
+        flex-shrink: 0;
+      }
+      @media (max-width: 560px) { .cart-thumb { width: 64px; height: 64px; } }
+
+      /* Info: nombre + meta + controles */
+      .cart-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .cart-info__name { font-weight: 700; font-size: .97rem; }
+      .cart-info__meta { font-size: .78rem; color: var(--ion-color-medium); }
+      .cart-info__controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+
+      /* Bloque de precio (columna derecha) */
+      .cart-price {
+        text-align: right;
+        min-width: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+      }
+      .cart-price__unit { font-size: .75rem; color: var(--ion-color-medium); }
+      .cart-price__total {
+        font-size: 1.15rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.02em;
+      }
+
+      /* Indicador de disponibilidad */
+      .stock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: .75rem;
+      }
+      .stock-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .stock-dot--ok { background: var(--ion-color-success); }
+      .stock-dot--low { background: var(--ion-color-warning); }
+
+      /* Tarjeta resumen */
+      .summary-block { display: flex; flex-direction: column; gap: 0; }
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 0;
+        font-size: .87rem;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .summary-row:last-of-type { border-bottom: none; }
+      .summary-row__label { color: var(--ion-color-medium); }
+      .summary-row__val { font-weight: 600; font-variant-numeric: tabular-nums; }
+      .summary-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin: 14px 0 16px;
+      }
+      .summary-total__label {
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--ion-color-medium);
+      }
+      .summary-total__val {
+        font-size: 1.7rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.03em;
+      }
+
+      /* Iconos de métodos de pago */
+      .pay-methods {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .pay-method {
+        height: 24px;
+        padding: 0 7px;
+        border-radius: 4px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        background: var(--ion-color-step-50, rgba(127,127,127,.05));
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        display: grid;
+        place-items: center;
+        color: var(--ion-color-medium);
+      }
+
+      /* Línea de confianza */
+      .trust-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .72rem;
+        color: var(--ion-color-medium);
+        margin-top: 10px;
+      }
+
+      /* Campo cupón */
+      .coupon-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .coupon-row ion-input { flex: 1 1 auto; }
+
+      /* Icono de thumbnail (placeholder) */
+      .thumb-icon {
+        color: var(--ion-color-medium);
+        opacity: .45;
+      }
+
+      /* Ficha stepper wrapper */
+      .stepper-wrap {
+        padding: 14px 18px;
+        margin-bottom: 18px;
+      }
+
+      /* Separador cupón */
+      .summary-divider {
+        border: none;
+        border-top: 1px dashed var(--ion-border-color, rgba(127,127,127,.2));
+        margin: 10px 0;
+      }
+
+      /* Columna sticky del resumen en desktop */
+      @media (min-width: 900px) {
+        .summary-sticky { position: sticky; top: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      /* ── Estado reactivo del carrito (cantidades) ── */
+      const state = {
+        q1: 2,  // Terminal POS Modelo X Pro  · €890/ud
+        q2: 1,  // Lector SumUp Air            · €39/ud
+        q3: 1,  // Impresora Star TSP143 III   · €229/ud
+        q4: 1,  // Bundle accesorios POS       · €85/ud
+      };
+      const PRICES = { q1: 890, q2: 39, q3: 229, q4: 85 };
+
+      /* Calcula subtotal, IVA y total a partir del estado. */
+      function calcSubtotal() {
+        return state.q1 * PRICES.q1 + state.q2 * PRICES.q2 + state.q3 * PRICES.q3 + state.q4 * PRICES.q4;
+      }
+      function fmtEur(n) {
+        return '€' + Math.round(n).toLocaleString('es-ES');
+      }
+
+      definePage({
+        bare: true,
+        search: 'Buscar terminales, lectores…',
+
+        body: `
+          <!-- ── Cabecera de página ── -->
+          <ok-page-header
+            id="cart-header"
+            heading="Tu carrito"
+            description="5 artículos · subtotal €2 049">
+            <ion-chip slot="actions" color="medium" style="--background:transparent;border:1px solid var(--ion-border-color,rgba(127,127,127,.25))">
+              Paso 1 de 3
+            </ion-chip>
+            <ion-button slot="actions" fill="clear" size="small" id="btn-seguir">
+              <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+              Seguir comprando
+            </ion-button>
+          </ok-page-header>
+
+          <!-- ── Stepper de progreso ── -->
+          <ion-card class="stepper-wrap pg-mb-4">
+            <ion-card-content>
+              <ok-stepper id="cart-stepper" current="0"></ok-stepper>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- ── Layout dos columnas: artículos + resumen ── -->
+          <div class="pg-cols" style="align-items:start">
+
+            <!-- COLUMNA IZQUIERDA: artículos del carrito -->
+            <div class="pg-stack">
+
+              <!-- Artículo 1: Terminal POS Modelo X Pro -->
+              <ion-card>
+                <ion-card-content>
+                  <div class="cart-line">
+                    <div class="cart-thumb">
+                      <ion-icon class="thumb-icon" name="tablet-landscape-outline" style="font-size:2rem"></ion-icon>
+                    </div>
+                    <div class="cart-info">
+                      <div class="cart-info__name">Terminal POS Modelo X Pro</div>
+                      <div class="cart-info__meta">SKU: ERP-TPV-X-PRO · Color: negro · Garantía 2 años</div>
+                      <div class="cart-info__controls">
+                        <ok-qty-stepper id="qty1" value="2" min="1"></ok-qty-stepper>
+                        <span class="stock-badge">
+                          <span class="stock-dot stock-dot--ok"></span>En stock
+                        </span>
+                        <ion-button id="rm1" fill="clear" size="small" color="medium">
+                          <ion-icon slot="start" name="trash-outline"></ion-icon>
+                          Quitar
+                        </ion-button>
+                        <ion-button fill="clear" size="small" color="medium">
+                          <ion-icon slot="start" name="heart-outline"></ion-icon>
+                          Guardar
+                        </ion-button>
+                      </div>
+                    </div>
+                    <div class="cart-price">
+                      <span class="cart-price__unit">€890 · ud</span>
+                      <span class="cart-price__total" id="total1">€1 780</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Artículo 2: Lector SumUp Air -->
+              <ion-card>
+                <ion-card-content>
+                  <div class="cart-line">
+                    <div class="cart-thumb">
+                      <ion-icon class="thumb-icon" name="card-outline" style="font-size:2rem"></ion-icon>
+                    </div>
+                    <div class="cart-info">
+                      <div class="cart-info__name">Lector SumUp Air contactless</div>
+                      <div class="cart-info__meta">SKU: SUMUP-AIR-EU · Bluetooth + 4G</div>
+                      <div class="cart-info__controls">
+                        <ok-qty-stepper id="qty2" value="1" min="1"></ok-qty-stepper>
+                        <span class="stock-badge">
+                          <span class="stock-dot stock-dot--ok"></span>Llega en 24h
+                        </span>
+                        <ion-button id="rm2" fill="clear" size="small" color="medium">
+                          <ion-icon slot="start" name="trash-outline"></ion-icon>
+                          Quitar
+                        </ion-button>
+                      </div>
+                    </div>
+                    <div class="cart-price">
+                      <span class="cart-price__unit">€39 · ud</span>
+                      <span class="cart-price__total" id="total2">€39</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Artículo 3: Impresora Star TSP143 III -->
+              <ion-card>
+                <ion-card-content>
+                  <div class="cart-line">
+                    <div class="cart-thumb">
+                      <ion-icon class="thumb-icon" name="print-outline" style="font-size:2rem"></ion-icon>
+                    </div>
+                    <div class="cart-info">
+                      <div class="cart-info__name">Impresora térmica Star TSP143 III</div>
+                      <div class="cart-info__meta">SKU: STAR-TSP143-III · USB + Ethernet · Cable incluido</div>
+                      <div class="cart-info__controls">
+                        <ok-qty-stepper id="qty3" value="1" min="1"></ok-qty-stepper>
+                        <span class="stock-badge">
+                          <span class="stock-dot stock-dot--low"></span>Quedan 4
+                        </span>
+                        <ion-button id="rm3" fill="clear" size="small" color="medium">
+                          <ion-icon slot="start" name="trash-outline"></ion-icon>
+                          Quitar
+                        </ion-button>
+                      </div>
+                    </div>
+                    <div class="cart-price">
+                      <span class="cart-price__unit">€229 · ud</span>
+                      <span class="cart-price__total" id="total3">€229</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Artículo 4: Bundle accesorios POS -->
+              <ion-card>
+                <ion-card-content>
+                  <div class="cart-line">
+                    <div class="cart-thumb">
+                      <ion-icon class="thumb-icon" name="cube-outline" style="font-size:2rem"></ion-icon>
+                    </div>
+                    <div class="cart-info">
+                      <div class="cart-info__name">Bundle accesorios POS · 8 piezas</div>
+                      <div class="cart-info__meta">SKU: ERP-ACC-BUNDLE-8 · Cables, soportes, rollos térmicos</div>
+                      <div class="cart-info__controls">
+                        <ok-qty-stepper id="qty4" value="1" min="1"></ok-qty-stepper>
+                        <span class="stock-badge">
+                          <span class="stock-dot stock-dot--ok"></span>En stock
+                        </span>
+                        <ion-button id="rm4" fill="clear" size="small" color="medium">
+                          <ion-icon slot="start" name="trash-outline"></ion-icon>
+                          Quitar
+                        </ion-button>
+                      </div>
+                    </div>
+                    <div class="cart-price">
+                      <span class="cart-price__unit">€85 · ud</span>
+                      <span class="cart-price__total" id="total4">€85</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+            </div><!-- /pg-stack artículos -->
+
+            <!-- COLUMNA DERECHA: resumen y checkout (sticky en desktop) -->
+            <div class="summary-sticky">
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title style="font-size:1rem;font-weight:700">Resumen del pedido</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+
+                  <div class="summary-block">
+                    <div class="summary-row">
+                      <span class="summary-row__label">Subtotal (5 artículos)</span>
+                      <span class="summary-row__val" id="sum-subtotal">€2 133</span>
+                    </div>
+                    <div class="summary-row">
+                      <span class="summary-row__label">IVA 21%</span>
+                      <span class="summary-row__val" id="sum-iva">€448</span>
+                    </div>
+                    <div class="summary-row">
+                      <span class="summary-row__label">Envío</span>
+                      <ion-badge color="success" style="--padding-top:4px;--padding-bottom:4px;font-size:.72rem">Gratis · desde €200</ion-badge>
+                    </div>
+                  </div>
+
+                  <hr class="summary-divider" />
+
+                  <!-- Campo de cupón -->
+                  <div class="coupon-row">
+                    <ion-input
+                      id="coupon-input"
+                      fill="outline"
+                      placeholder="Código de cupón"
+                      label="Cupón"
+                      label-placement="floating"
+                      style="--border-radius:8px"></ion-input>
+                    <ion-button fill="outline" size="small" id="btn-coupon">Aplicar</ion-button>
+                  </div>
+
+                  <hr class="summary-divider" />
+
+                  <div class="summary-total">
+                    <span class="summary-total__label">Total</span>
+                    <span class="summary-total__val" id="sum-total">€2 581</span>
+                  </div>
+
+                  <ion-button expand="block" size="large" id="btn-checkout">
+                    Continuar al envío
+                    <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+                  </ion-button>
+
+                  <!-- Métodos de pago aceptados -->
+                  <div class="pay-methods">
+                    <span class="pay-method" title="Visa">VISA</span>
+                    <span class="pay-method" title="Mastercard">MC</span>
+                    <span class="pay-method" title="Amex">AMEX</span>
+                    <span class="pay-method" title="Apple Pay">APay</span>
+                    <span class="pay-method" title="Google Pay">GPay</span>
+                    <span class="pay-method" title="SEPA">SEPA</span>
+                  </div>
+
+                  <!-- Línea de confianza -->
+                  <div class="trust-line">
+                    <ion-icon name="shield-checkmark-outline" color="success" style="font-size:1rem;flex-shrink:0"></ion-icon>
+                    Compra segura · 30 días para devolver · Soporte 24/7
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+            </div><!-- /summary-sticky -->
+
+          </div><!-- /pg-cols -->
+
+        `,
+
+        setup(doc) {
+          /* ── 1. Stepper de progreso ── */
+          const stepper = doc.getElementById('cart-stepper');
+          if (stepper) {
+            stepper.steps = [
+              { label: 'Carrito',       description: 'Revisa los artículos' },
+              { label: 'Envío',         description: 'Dirección y entrega' },
+              { label: 'Pago',          description: 'Tarjeta o transferencia' },
+              { label: 'Confirmación',  description: 'Resumen del pedido' },
+            ];
+            stepper.current = 0;
+          }
+
+          /* ── 2. Funciones de recálculo de totales ── */
+          function updateTotals() {
+            const sub = state.q1 * 890 + state.q2 * 39 + state.q3 * 229 + state.q4 * 85;
+            const iva = Math.round(sub * 0.21);
+            const total = sub + iva;
+
+            const t1 = doc.getElementById('total1');
+            const t2 = doc.getElementById('total2');
+            const t3 = doc.getElementById('total3');
+            const t4 = doc.getElementById('total4');
+            const sumSub = doc.getElementById('sum-subtotal');
+            const sumIva = doc.getElementById('sum-iva');
+            const sumTot = doc.getElementById('sum-total');
+
+            if (t1) t1.textContent = fmtEur(state.q1 * 890);
+            if (t2) t2.textContent = fmtEur(state.q2 * 39);
+            if (t3) t3.textContent = fmtEur(state.q3 * 229);
+            if (t4) t4.textContent = fmtEur(state.q4 * 85);
+            if (sumSub) sumSub.textContent = fmtEur(sub);
+            if (sumIva) sumIva.textContent = fmtEur(iva);
+            if (sumTot) sumTot.textContent = fmtEur(total);
+          }
+
+          /* ── 3. Conectar ok-qty-stepper a cada artículo ── */
+          const qty1 = doc.getElementById('qty1');
+          const qty2 = doc.getElementById('qty2');
+          const qty3 = doc.getElementById('qty3');
+          const qty4 = doc.getElementById('qty4');
+
+          if (qty1) qty1.addEventListener('ok-change', (e) => { state.q1 = e.detail.value; updateTotals(); });
+          if (qty2) qty2.addEventListener('ok-change', (e) => { state.q2 = e.detail.value; updateTotals(); });
+          if (qty3) qty3.addEventListener('ok-change', (e) => { state.q3 = e.detail.value; updateTotals(); });
+          if (qty4) qty4.addEventListener('ok-change', (e) => { state.q4 = e.detail.value; updateTotals(); });
+
+          /* ── 4. Botones "Quitar" (toast de feedback) ── */
+          function showToast(msg) {
+            const t = doc.createElement('ion-toast');
+            t.message = msg;
+            t.duration = 2200;
+            t.position = 'bottom';
+            doc.body.appendChild(t);
+            t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          }
+
+          const rm1 = doc.getElementById('rm1');
+          const rm2 = doc.getElementById('rm2');
+          const rm3 = doc.getElementById('rm3');
+          const rm4 = doc.getElementById('rm4');
+          if (rm1) rm1.addEventListener('click', () => showToast('Terminal POS eliminado del carrito'));
+          if (rm2) rm2.addEventListener('click', () => showToast('Lector SumUp eliminado del carrito'));
+          if (rm3) rm3.addEventListener('click', () => showToast('Impresora eliminada del carrito'));
+          if (rm4) rm4.addEventListener('click', () => showToast('Bundle accesorios eliminado del carrito'));
+
+          /* ── 5. Botón cupón ── */
+          const btnCoupon = doc.getElementById('btn-coupon');
+          if (btnCoupon) {
+            btnCoupon.addEventListener('click', () => {
+              const input = doc.getElementById('coupon-input');
+              const code = (input && input.value) ? String(input.value).trim() : '';
+              showToast(code ? `Cupón "${code}" no válido o ya aplicado.` : 'Introduce un código de cupón.');
+            });
+          }
+
+          /* ── 6. Botón checkout ── */
+          const btnCheckout = doc.getElementById('btn-checkout');
+          if (btnCheckout) {
+            btnCheckout.addEventListener('click', () => showToast('Continuando al envío…'));
+          }
+
+          /* ── 7. Calcular totales iniciales ── */
+          updateTotals();
+        },
+      });
+    </script>
+  </body>
+</html>

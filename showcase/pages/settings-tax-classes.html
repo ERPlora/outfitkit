@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Clases de impuestos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      // ── Datos de clases de impuestos ───────────────────────────────────────────
+      const TAXES = [
+        {
+          id: '1',
+          name: 'IVA general',
+          desc: 'Tasa estándar para hostelería',
+          rate: 21.00,
+          code: 'S1-21',
+          country: 'ES',
+          isDefault: true,
+          active: true,
+        },
+        {
+          id: '2',
+          name: 'IVA reducido',
+          desc: 'Comida para llevar, bebidas no alcohólicas',
+          rate: 10.00,
+          code: 'S2-10',
+          country: 'ES',
+          isDefault: false,
+          active: true,
+        },
+        {
+          id: '3',
+          name: 'IVA superreducido',
+          desc: 'Pan, leche, fruta, libros',
+          rate: 4.00,
+          code: 'S3-04',
+          country: 'ES',
+          isDefault: false,
+          active: true,
+        },
+        {
+          id: '4',
+          name: 'Exento',
+          desc: 'Operaciones exentas (art. 20 LIVA)',
+          rate: 0.00,
+          code: 'EX-00',
+          country: 'ES',
+          isDefault: false,
+          active: true,
+        },
+        {
+          id: '5',
+          name: 'IGIC general',
+          desc: 'Canarias · desactivado',
+          rate: 7.00,
+          code: 'IG1-07',
+          country: 'ES-CN',
+          isDefault: false,
+          active: false,
+        },
+      ];
+
+      const formatRate = (rate) =>
+        rate.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Clases de impuestos"
+            description="IVA español aplicado a productos del catálogo (AEAT · VeriFactu)">
+            <div slot="actions">
+              <ion-button fill="outline" size="small" id="btn-import">
+                <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                Importar plantilla
+              </ion-button>
+              <ion-button size="small" id="btn-nueva">
+                <ion-icon slot="start" name="add-outline"></ion-icon>
+                Nueva clase
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Banner de contexto fiscal -->
+          <ok-inline-feedback
+            class="pg-mb-4"
+            tone="info"
+            heading="Régimen fiscal: General · España (ES)">
+            Las tasas se sincronizan con VeriFactu. Cambios afectan a productos a partir de la fecha efectiva.
+          </ok-inline-feedback>
+
+          <!-- Tabla de clases de impuestos -->
+          <ok-data-table id="tax-dt" style="display:block"></ok-data-table>
+
+          <!-- Modal nueva / editar clase -->
+          <ion-modal id="tax-modal">
+            <ion-header>
+              <ion-toolbar>
+                <ion-title id="modal-title">Nueva clase de impuesto</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button id="modal-close" fill="clear">
+                    <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <p style="color:var(--ion-color-medium);font-size:0.85rem;margin-top:0">
+                Tasa aplicada a productos asignados.
+              </p>
+              <!-- Nombre -->
+              <ion-input
+                id="f-name"
+                fill="outline"
+                label="Nombre"
+                label-placement="stacked"
+                placeholder="ej. IVA general"
+                class="ion-margin-bottom">
+              </ion-input>
+              <!-- Tasa + Código -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                <ion-input
+                  id="f-rate"
+                  fill="outline"
+                  label="Tasa (%)"
+                  label-placement="stacked"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  placeholder="21,00">
+                </ion-input>
+                <ion-input
+                  id="f-code"
+                  fill="outline"
+                  label="Código fiscal"
+                  label-placement="stacked"
+                  placeholder="S1-21">
+                </ion-input>
+              </div>
+              <!-- Países -->
+              <ion-select
+                id="f-paises"
+                fill="outline"
+                label="Países aplicables"
+                label-placement="stacked"
+                multiple="true"
+                placeholder="Seleccionar países…"
+                class="ion-margin-bottom">
+                <ion-select-option value="ES">España (ES)</ion-select-option>
+                <ion-select-option value="ES-CN">Canarias (ES-CN)</ion-select-option>
+                <ion-select-option value="ES-CE">Ceuta y Melilla (ES-CE/ML)</ion-select-option>
+                <ion-select-option value="PT">Portugal (PT)</ion-select-option>
+              </ion-select>
+              <!-- Toggle activo -->
+              <ion-item lines="none" style="margin-top:8px;--padding-start:0">
+                <ion-label>
+                  <h3>Activo</h3>
+                  <p>Disponible para asignar a productos.</p>
+                </ion-label>
+                <ion-toggle id="f-active" slot="end" checked></ion-toggle>
+              </ion-item>
+            </ion-content>
+            <ion-footer>
+              <ion-toolbar>
+                <ion-buttons slot="start">
+                  <ion-button fill="outline" id="modal-cancel">Cancelar</ion-button>
+                </ion-buttons>
+                <ion-buttons slot="end">
+                  <ion-button id="modal-submit" fill="solid">Crear clase</ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-footer>
+          </ion-modal>
+        `,
+        setup(doc) {
+          const dt = doc.getElementById('tax-dt');
+
+          dt.labels = {
+            search: 'Buscar clase…',
+            empty: 'No hay clases de impuestos',
+            actions: 'Acciones',
+            add: 'Nueva clase',
+            exportCsv: 'Exportar CSV',
+            selected: '{n} seleccionadas',
+            clear: 'Limpiar',
+            apply: 'Aplicar',
+            filters: 'Filtros',
+            importCsv: 'Importar CSV',
+            moreActions: 'Más acciones',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            viewList: 'Vista lista',
+            viewCards: 'Vista tarjetas',
+            columnsVisible: 'Columnas visibles',
+            columns: 'Columnas',
+            close: 'Cerrar',
+            newRecord: 'Nueva clase',
+            form: 'Formulario',
+            filterPlaceholder: 'Filtrar…',
+            from: 'Desde',
+            to: 'Hasta',
+            fromOf: '{label} desde',
+            toOf: '{label} hasta',
+            gte: '≥',
+            lte: '≤',
+            noValues: 'Sin valores',
+            selectAll: 'Seleccionar todo',
+            selectRow: 'Seleccionar fila',
+            select: 'Seleccionar',
+            showing: 'Mostrando {from}–{to} de',
+            recordSingular: 'registro',
+            recordPlural: 'registros',
+          };
+
+          dt.rowKey = (r) => r.id;
+          dt.searchable = true;
+          dt.searchKeys = ['name', 'code', 'country'];
+
+          // ── Columnas ──────────────────────────────────────────────────────────
+          dt.columns = [
+            {
+              key: 'name',
+              header: 'Nombre',
+              width: 'minmax(11rem,1.6fr)',
+              render: (r) => h`
+                <div>
+                  <div style="font-weight:500;color:${r.active ? 'inherit' : 'var(--ion-color-medium)'}">
+                    ${r.name}
+                  </div>
+                  <div style="font-size:0.75rem;color:var(--ion-color-medium);margin-top:2px">
+                    ${r.desc}
+                  </div>
+                </div>`,
+            },
+            {
+              key: 'rate',
+              header: 'Tasa',
+              width: '7rem',
+              align: 'right',
+              render: (r) => h`
+                <span style="font-variant-numeric:tabular-nums;font-weight:${r.active ? '700' : '400'};color:${r.active ? 'inherit' : 'var(--ion-color-medium)'}">
+                  ${formatRate(r.rate)}
+                </span>`,
+            },
+            {
+              key: 'code',
+              header: 'Código fiscal',
+              width: '8rem',
+              render: (r) => h`<code style="font-size:0.83rem">${r.code}</code>`,
+            },
+            {
+              key: 'country',
+              header: 'Países',
+              width: '7rem',
+              render: (r) => h`
+                <ion-badge style="--background:color-mix(in srgb,var(--ion-color-medium) 18%,transparent);--color:var(--ion-color-medium);font-family:monospace">
+                  ${r.country}
+                </ion-badge>`,
+            },
+            {
+              key: 'isDefault',
+              header: 'Por defecto',
+              width: '9rem',
+              render: (r) => {
+                if (r.isDefault) {
+                  return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-primary) 15%,transparent);--color:var(--ion-color-primary)">Predet.</ion-badge>`;
+                }
+                if (r.active) {
+                  return h`<ion-button fill="outline" size="small" data-action="set-default" data-id="${r.id}"
+                    style="font-size:11px;height:24px;--padding-start:6px;--padding-end:6px">
+                    Hacer predet.
+                  </ion-button>`;
+                }
+                return h`<span style="color:var(--ion-color-medium)">—</span>`;
+              },
+            },
+            {
+              key: 'active',
+              header: 'Estado',
+              width: '8rem',
+              render: (r) => r.active
+                ? h`<ok-status-pill tone="success" dot label="Activo"></ok-status-pill>`
+                : h`<ok-status-pill tone="neutral" dot label="Inactivo"></ok-status-pill>`,
+            },
+          ];
+
+          // ── Acciones de fila ─────────────────────────────────────────────────
+          // Activas: Ver + Editar + (si no predet.) Eliminar
+          // Inactivas: Activar + Eliminar
+          dt.actions = [
+            { id: 'view',    icon: 'eye-outline',     label: 'Ver' },
+            { id: 'edit',    icon: 'create-outline',  label: 'Editar' },
+            { id: 'activate',icon: 'checkmark-circle-outline', label: 'Activar', color: 'success' },
+            { id: 'delete',  icon: 'trash-outline',   label: 'Eliminar', color: 'danger' },
+          ];
+
+          // ── Filas ────────────────────────────────────────────────────────────
+          dt.rows = TAXES;
+
+          // ── rowAction ────────────────────────────────────────────────────────
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+
+            if (actionId === 'view') {
+              const toast = doc.createElement('ion-toast');
+              toast.message = `Ver detalle: ${row.name}`;
+              toast.duration = 1500;
+              toast.position = 'top';
+              doc.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+              return;
+            }
+
+            if (actionId === 'edit') {
+              openModal(row);
+              return;
+            }
+
+            if (actionId === 'activate') {
+              const toast = doc.createElement('ion-toast');
+              toast.message = `"${row.name}" activada.`;
+              toast.duration = 1800;
+              toast.color = 'success';
+              toast.position = 'top';
+              doc.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+              return;
+            }
+
+            if (actionId === 'delete') {
+              const alert = doc.createElement('ion-alert');
+              alert.header = 'Eliminar clase';
+              alert.message = `¿Eliminar "${row.name}"? Esta acción no se puede deshacer.`;
+              alert.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                {
+                  text: 'Eliminar',
+                  role: 'destructive',
+                  handler: () => {
+                    const idx = TAXES.findIndex((t) => t.id === row.id);
+                    if (idx !== -1) TAXES.splice(idx, 1);
+                    dt.rows = [...TAXES];
+                  },
+                },
+              ];
+              doc.body.appendChild(alert);
+              alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+              return;
+            }
+          });
+
+          // ── Modal ─────────────────────────────────────────────────────────────
+          const modal = doc.getElementById('tax-modal');
+          const modalTitle = doc.getElementById('modal-title');
+          const modalSubmit = doc.getElementById('modal-submit');
+          const fName = doc.getElementById('f-name');
+          const fRate = doc.getElementById('f-rate');
+          const fCode = doc.getElementById('f-code');
+          const fActive = doc.getElementById('f-active');
+
+          // Configurar modal: sin breakpoints (no hoja inferior, es diálogo centrado)
+          modal.isOpen = false;
+
+          let editingId = null;
+
+          const openModal = (tax) => {
+            editingId = tax ? tax.id : null;
+            if (modalTitle) modalTitle.textContent = tax ? 'Editar clase de impuesto' : 'Nueva clase de impuesto';
+            if (modalSubmit) modalSubmit.textContent = tax ? 'Guardar cambios' : 'Crear clase';
+            if (fName) fName.value = tax ? tax.name : '';
+            if (fRate) fRate.value = tax ? String(tax.rate) : '';
+            if (fCode) fCode.value = tax ? tax.code : '';
+            if (fActive) fActive.checked = tax ? tax.active : true;
+            modal.isOpen = true;
+          };
+
+          const closeModal = () => {
+            modal.isOpen = false;
+            editingId = null;
+          };
+
+          // Botón "Nueva clase"
+          const btnNueva = doc.getElementById('btn-nueva');
+          if (btnNueva) {
+            btnNueva.addEventListener('click', () => openModal(null));
+          }
+
+          // Botón "Importar plantilla"
+          const btnImport = doc.getElementById('btn-import');
+          if (btnImport) {
+            btnImport.addEventListener('click', () => {
+              const toast = doc.createElement('ion-toast');
+              toast.message = 'Importar plantilla: funcionalidad en desarrollo.';
+              toast.duration = 2000;
+              toast.position = 'top';
+              doc.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Cerrar modal
+          const modalClose = doc.getElementById('modal-close');
+          if (modalClose) modalClose.addEventListener('click', closeModal);
+          const modalCancel = doc.getElementById('modal-cancel');
+          if (modalCancel) modalCancel.addEventListener('click', closeModal);
+
+          // Submit modal (demo: cierra con toast)
+          if (modalSubmit) {
+            modalSubmit.addEventListener('click', () => {
+              const toast = doc.createElement('ion-toast');
+              toast.message = editingId ? 'Clase de impuesto actualizada.' : 'Clase de impuesto creada.';
+              toast.duration = 2000;
+              toast.color = 'success';
+              toast.position = 'top';
+              doc.body.appendChild(toast);
+              toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+              closeModal();
+            });
+          }
+
+          // "Hacer predet." — delegación desde celdas render de ok-data-table
+          dt.addEventListener('click', (e) => {
+            const el = e.target.closest('[data-action="set-default"]');
+            if (!el) return;
+            const taxId = el.dataset.id;
+            const tax = TAXES.find((t) => t.id === taxId);
+            if (!tax) return;
+            const toast = doc.createElement('ion-toast');
+            toast.message = `"${tax.name}" marcada como predeterminada.`;
+            toast.duration = 1800;
+            toast.color = 'success';
+            toast.position = 'top';
+            doc.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

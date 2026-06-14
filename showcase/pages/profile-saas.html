@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Mi perfil</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (sin colores de marca). */
+
+      /* Grid avatar (320px) + datos (1fr). Colapsa en móvil. */
+      .profile-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 900px) {
+        .profile-grid { grid-template-columns: 1fr; }
+      }
+
+      /* Tarjeta avatar: columna centrada. */
+      .avatar-card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 14px;
+        padding: 24px 18px;
+      }
+      .avatar-name {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .avatar-email {
+        font-size: .82rem;
+        color: var(--ion-color-medium);
+        margin-top: 2px;
+      }
+      .avatar-chips {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .avatar-divider {
+        width: 100%;
+        height: 1px;
+        background: var(--ion-border-color, rgba(127,127,127,.2));
+        margin: 4px 0;
+      }
+      .avatar-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+      }
+      .avatar-hint {
+        font-size: .72rem;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+        text-align: center;
+      }
+
+      /* Formulario de datos personales. */
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 560px) {
+        .form-row { grid-template-columns: 1fr; }
+      }
+      .form-stack { display: flex; flex-direction: column; gap: 18px; }
+      .form-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-top: 6px;
+      }
+      .form-footer-hint {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Sección seguridad: título + sub. */
+      .section-head {
+        margin-bottom: 14px;
+      }
+      .section-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0 0 2px;
+      }
+      .section-sub {
+        font-size: .85rem;
+        color: var(--ion-color-medium);
+        margin: 0;
+      }
+
+      /* Tarjetas de seguridad: fila icono + texto + botón. */
+      .security-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+      }
+      .security-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--ion-color-step-100, rgba(127,127,127,.12));
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .security-icon--brand {
+        background: color-mix(in srgb, var(--ion-color-primary) 14%, transparent);
+        color: var(--ion-color-primary);
+      }
+      .security-icon--danger {
+        background: color-mix(in srgb, var(--ion-color-danger) 14%, transparent);
+        color: var(--ion-color-danger);
+      }
+      .security-text { flex: 1 1 auto; min-width: 0; }
+      .security-label { font-weight: 600; font-size: .9rem; }
+      .security-desc { font-size: .78rem; color: var(--ion-color-medium); margin-top: 2px; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Mi perfil"
+            description="Datos personales, idioma y preferencias visuales de tu cuenta de ERPlora Cloud.">
+            <ion-button slot="actions" fill="outline">Cancelar</ion-button>
+            <ion-button slot="actions">Guardar cambios</ion-button>
+          </ok-page-header>
+
+          <!-- Sub-navegación: SaaS vs Hub -->
+          <div style="margin-bottom:16px">
+            <ion-segment value="saas" id="profile-tabs">
+              <ion-segment-button value="saas">
+                <ion-label>Perfil (SaaS)</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="hub">
+                <ion-label>Perfil (Hub)</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+          </div>
+
+          <!-- Cuadrícula: avatar (izq) + datos personales (der) -->
+          <div class="profile-grid">
+
+            <!-- Columna izquierda: avatar card -->
+            <ion-card>
+              <ion-card-content class="avatar-card-body">
+
+                <ok-avatar name="Ioan Beilic" size="xl" tone="primary"></ok-avatar>
+
+                <div>
+                  <h2 class="avatar-name">Ioan Beilic</h2>
+                  <div class="avatar-email">ioan@acme.com</div>
+                  <div class="avatar-chips">
+                    <ion-chip color="primary" style="margin:0">
+                      <ion-icon name="shield-checkmark-outline"></ion-icon>
+                      <ion-label>Administrador</ion-label>
+                    </ion-chip>
+                    <ion-chip style="margin:0">
+                      <ion-label>Acme Industries</ion-label>
+                    </ion-chip>
+                  </div>
+                </div>
+
+                <div class="avatar-divider"></div>
+
+                <div class="avatar-actions">
+                  <ion-button fill="outline" expand="block">
+                    <ion-icon slot="start" name="image-outline"></ion-icon>
+                    Cambiar foto
+                  </ion-button>
+                  <ion-button fill="clear" expand="block" color="medium">
+                    Eliminar foto
+                  </ion-button>
+                </div>
+
+                <p class="avatar-hint">JPG, PNG o GIF · máx 2 MB · cuadrada recomendada</p>
+
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Columna derecha: datos personales -->
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Datos personales</ion-card-title>
+                <ion-card-subtitle>Esta información aparece en facturas, comentarios y notificaciones.</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="form-stack">
+
+                  <div class="form-row">
+                    <ion-input
+                      id="p-first"
+                      label="Nombre"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="Ioan">
+                    </ion-input>
+                    <ion-input
+                      id="p-last"
+                      label="Apellidos"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="Beilic">
+                    </ion-input>
+                  </div>
+
+                  <ion-input
+                    id="p-email"
+                    type="email"
+                    label="Correo electrónico"
+                    label-placement="stacked"
+                    fill="outline"
+                    value="ioan@acme.com"
+                    helper-text="El cambio de email requerirá verificación en la nueva dirección.">
+                    <ion-icon slot="start" name="mail-outline"></ion-icon>
+                  </ion-input>
+
+                  <div class="form-row">
+                    <ion-select
+                      id="p-lang"
+                      label="Idioma"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="es">
+                      <ion-select-option value="es">Español (España)</ion-select-option>
+                      <ion-select-option value="en">English (US)</ion-select-option>
+                      <ion-select-option value="fr">Français</ion-select-option>
+                      <ion-select-option value="de">Deutsch</ion-select-option>
+                    </ion-select>
+                    <ion-select
+                      id="p-tz"
+                      label="Zona horaria"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="Europe/Madrid">
+                      <ion-select-option value="Europe/Madrid">Europe/Madrid (UTC+2)</ion-select-option>
+                      <ion-select-option value="Europe/Lisbon">Europe/Lisbon (UTC+1)</ion-select-option>
+                      <ion-select-option value="Europe/London">Europe/London (UTC+1)</ion-select-option>
+                      <ion-select-option value="America/New_York">America/New_York (UTC−4)</ion-select-option>
+                      <ion-select-option value="America/Mexico_City">America/Mexico_City (UTC−6)</ion-select-option>
+                    </ion-select>
+                  </div>
+
+                  <div class="form-row">
+                    <ion-select
+                      id="p-theme"
+                      label="Tema preferido"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="auto">
+                      <ion-select-option value="auto">Automático (sistema)</ion-select-option>
+                      <ion-select-option value="dark">Oscuro · ERPlora</ion-select-option>
+                      <ion-select-option value="light">Claro · ERPlora Light</ion-select-option>
+                      <ion-select-option value="ocean">Ocean · cian</ion-select-option>
+                      <ion-select-option value="forest">Forest · verde</ion-select-option>
+                    </ion-select>
+                    <ion-select
+                      id="p-currency"
+                      label="Moneda"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="EUR">
+                      <ion-select-option value="EUR">EUR · Euro (€)</ion-select-option>
+                      <ion-select-option value="USD">USD · Dólar ($)</ion-select-option>
+                      <ion-select-option value="GBP">GBP · Libra (£)</ion-select-option>
+                    </ion-select>
+                  </div>
+
+                  <ion-textarea
+                    id="p-bio"
+                    label="Biografía corta"
+                    label-placement="stacked"
+                    fill="outline"
+                    rows="4"
+                    helper-text="Visible para otros administradores de tu organización."
+                    value="Líder de plataforma en Acme Industries. Coordino la implantación de ERPlora Cloud en los 7 hubs operativos del grupo.">
+                  </ion-textarea>
+
+                  <div class="form-footer">
+                    <span class="form-footer-hint">Guardado automático en cada cambio · última edición: hace 14 min</span>
+                    <ion-button>Guardar cambios</ion-button>
+                  </div>
+
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+          <!-- Sección: Seguridad de la cuenta -->
+          <div>
+            <div class="section-head">
+              <h2 class="section-title">Seguridad de la cuenta</h2>
+              <p class="section-sub">Contraseña, sesiones activas y eliminación de cuenta.</p>
+            </div>
+
+            <div class="pg-grid pg-grid-3 pg-mb-4">
+
+              <!-- Cambiar contraseña -->
+              <ion-card>
+                <div class="security-row">
+                  <div class="security-icon security-icon--brand">
+                    <ion-icon name="lock-closed-outline" style="font-size:18px"></ion-icon>
+                  </div>
+                  <div class="security-text">
+                    <div class="security-label">Cambiar contraseña</div>
+                    <div class="security-desc">Última actualización: 11 enero 2026 · 117 días</div>
+                  </div>
+                  <ion-button fill="clear" size="small" id="btn-password">
+                    Cambiar
+                    <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-card>
+
+              <!-- Sesiones activas -->
+              <ion-card>
+                <div class="security-row">
+                  <div class="security-icon">
+                    <ion-icon name="desktop-outline" style="font-size:18px"></ion-icon>
+                  </div>
+                  <div class="security-text">
+                    <div class="security-label">Sesiones activas</div>
+                    <div class="security-desc">3 dispositivos · Madrid, Barcelona, Sevilla</div>
+                  </div>
+                  <ion-button fill="clear" size="small" id="btn-sessions">
+                    Ver detalles
+                    <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-card>
+
+              <!-- Eliminar cuenta -->
+              <ion-card style="--border-color: color-mix(in srgb, var(--ion-color-danger) 30%, var(--ion-border-color, rgba(127,127,127,.2)))">
+                <div class="security-row">
+                  <div class="security-icon security-icon--danger">
+                    <ion-icon name="trash-outline" style="font-size:18px"></ion-icon>
+                  </div>
+                  <div class="security-text">
+                    <div class="security-label" style="color:var(--ion-color-danger)">Eliminar cuenta</div>
+                    <div class="security-desc">Borrado permanente · sin recuperación posible</div>
+                  </div>
+                  <ion-button fill="clear" size="small" color="danger" id="btn-delete">
+                    Eliminar
+                    <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-card>
+
+            </div>
+
+            <ok-inline-feedback
+              tone="info"
+              heading="Recomendación de seguridad">
+              Activa la <strong>verificación en dos pasos</strong> para proteger tu cuenta.
+              Tienes 4 dispositivos autorizados y 3 sesiones activas en este momento.
+            </ok-inline-feedback>
+          </div>
+        `,
+        setup(doc) {
+          // Sub-navegación: cambiar a la pestaña Hub navega a profile-hub.html.
+          const profileTabs = doc.getElementById('profile-tabs');
+          if (profileTabs) {
+            profileTabs.addEventListener('ionChange', (e) => {
+              if (e.detail.value === 'hub') {
+                location.href = 'profile-hub.html';
+              }
+            });
+          }
+
+          // Botón «Cambiar contraseña» → alert de demostración.
+          const btnPassword = doc.getElementById('btn-password');
+          if (btnPassword) {
+            btnPassword.addEventListener('click', async () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Cambiar contraseña';
+              alert.message = 'Se enviará un enlace de restablecimiento a ian@acme.com.';
+              alert.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Enviar enlace', role: 'confirm' },
+              ];
+              document.body.appendChild(alert);
+              await alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+
+          // Botón «Ver detalles» de sesiones → action sheet.
+          const btnSessions = doc.getElementById('btn-sessions');
+          if (btnSessions) {
+            btnSessions.addEventListener('click', async () => {
+              const sheet = document.createElement('ion-action-sheet');
+              sheet.header = 'Sesiones activas';
+              sheet.subHeader = '3 dispositivos conectados';
+              sheet.buttons = [
+                { text: 'Madrid · Chrome · Mac', icon: 'desktop-outline' },
+                { text: 'Barcelona · Safari · iPhone', icon: 'phone-portrait-outline' },
+                { text: 'Sevilla · Firefox · Windows', icon: 'laptop-outline' },
+                { text: 'Cerrar todas las sesiones', role: 'destructive', icon: 'log-out-outline' },
+                { text: 'Cancelar', role: 'cancel' },
+              ];
+              document.body.appendChild(sheet);
+              await sheet.present();
+              sheet.addEventListener('didDismiss', () => sheet.remove());
+            });
+          }
+
+          // Botón «Eliminar» → alert de confirmación con danger.
+          const btnDelete = doc.getElementById('btn-delete');
+          if (btnDelete) {
+            btnDelete.addEventListener('click', async () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = 'Eliminar cuenta';
+              alert.message = 'Esta acción es permanente e irreversible. Todos tus datos, hubs y suscripciones quedarán eliminados.';
+              alert.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Eliminar mi cuenta', role: 'destructive', cssClass: 'ion-color-danger' },
+              ];
+              document.body.appendChild(alert);
+              await alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+
+          // Botones «Guardar cambios» / «Cancelar» del page-header y del form-footer
+          // (en un prototipo solo muestran toast de confirmación).
+          doc.querySelectorAll('ion-button').forEach((btn) => {
+            const label = btn.textContent.trim();
+            if (label === 'Guardar cambios') {
+              btn.addEventListener('click', async () => {
+                const toast = document.createElement('ion-toast');
+                toast.message = 'Cambios guardados correctamente.';
+                toast.duration = 2200;
+                toast.color = 'success';
+                toast.position = 'bottom';
+                toast.icon = 'checkmark-circle-outline';
+                document.body.appendChild(toast);
+                await toast.present();
+                toast.addEventListener('didDismiss', () => toast.remove());
+              });
+            }
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

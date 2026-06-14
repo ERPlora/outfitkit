@@ -27,38 +27,23 @@ export class OkIconTile extends LitElement {
       /* Inline atom: no ocupa el ancho del contenedor. */
       display: inline-flex;
       /* Tokens propios estilo Ionic (overridables): --ok-* → --ion-* → hex. */
-      --bg: var(--ok-surface-variant, var(--ion-color-light, #f4f5f8));
       --fg: var(--ok-text-color, var(--ion-text-color, #1f2933));
+      /* Fondo SOFT derivado del PROPIO color del icono (lavado ~13%), no del --ion-color-*-tint
+       * del tema (que suele ser saturado y tapaba el icono). Así el icono va a color pleno (--fg)
+       * sobre un lavado apenas perceptible y SIEMPRE se ve. Override con --bg si se quiere otro. */
+      --bg: color-mix(in srgb, var(--fg) 13%, transparent);
       --size: 2rem; /* 32px (md) */
       --radius: 0.5rem; /* 8px */
       --icon-size: 1.125rem; /* 18px */
     }
 
-    /* Pares color soft + fg, encadenando --ok-* → --ion-* → hex. */
-    :host([color='brand']) {
-      --bg: var(--ok-brand-soft, var(--ion-color-primary-tint, #e9eefb));
-      --fg: var(--ok-brand, var(--ion-color-primary, #3880ff));
-    }
-    :host([color='leaf']) {
-      --bg: var(--ok-leaf-soft, var(--ion-color-success-tint, #e4f4ea));
-      --fg: var(--ok-leaf, var(--ion-color-success, #2dad62));
-    }
-    :host([color='warn']) {
-      --bg: var(--ok-warn-soft, var(--ion-color-warning-tint, #fbf1da));
-      --fg: var(--ok-warn, var(--ion-color-warning, #c79100));
-    }
-    :host([color='danger']) {
-      --bg: var(--ok-danger-soft, var(--ion-color-danger-tint, #fbe4e0));
-      --fg: var(--ok-danger, var(--ion-color-danger, #d8553f));
-    }
-    :host([color='info']) {
-      --bg: var(--ok-info-soft, var(--ion-color-tertiary-tint, #e6eef9));
-      --fg: var(--ok-info, var(--ion-color-tertiary, #5b8cd9));
-    }
-    :host([color='neutral']) {
-      --bg: var(--ok-surface-variant, var(--ion-color-light, #f4f5f8));
-      --fg: var(--ok-color-medium, var(--ion-color-medium, #6b7280));
-    }
+    /* Solo el color del icono (--fg); el fondo se deriva del lavado soft del propio --fg (arriba). */
+    :host([color='brand'])   { --fg: var(--ok-brand,  var(--ion-color-primary,  #3880ff)); }
+    :host([color='leaf'])    { --fg: var(--ok-leaf,   var(--ion-color-success,  #2dad62)); }
+    :host([color='warn'])    { --fg: var(--ok-warn,   var(--ion-color-warning,  #c79100)); }
+    :host([color='danger'])  { --fg: var(--ok-danger, var(--ion-color-danger,   #d8553f)); }
+    :host([color='info'])    { --fg: var(--ok-info,   var(--ion-color-tertiary, #5b8cd9)); }
+    :host([color='neutral']) { --fg: var(--ok-color-medium, var(--ion-color-medium, #6b7280)); }
 
     /* Tamaños. */
     :host([size='lg']) {

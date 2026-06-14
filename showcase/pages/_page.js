@@ -10,6 +10,26 @@
  * CSP-safe: cero handlers inline; el wiring va en el callback `setup(document)`.
  */
 
+// ── i18n del ok-data-table (default del componente = inglés; el showcase es español) ──
+// `.labels` es additivo: solo se pasan los textos visibles; el resto cae a su default.
+const ES_DT_LABELS = {
+  search: 'Buscar…', empty: 'Sin resultados', filters: 'Filtros', clear: 'Limpiar', apply: 'Aplicar',
+  selected: '{n} seleccionados', importCsv: 'Importar CSV', exportCsv: 'Exportar CSV', add: 'Añadir',
+  moreActions: 'Más acciones', rowsPerPage: 'Filas por página', perPageShort: '{n} / pág.',
+  viewList: 'Ver como lista', viewCards: 'Ver como tarjetas', columnsVisible: 'Columnas visibles',
+  columns: 'Columnas', actions: 'Acciones', close: 'Cerrar', newRecord: 'Nuevo', form: 'Formulario',
+  filterPlaceholder: 'Filtrar…', from: 'Desde', to: 'Hasta', fromOf: '{label} desde', toOf: '{label} hasta',
+  noValues: 'Sin valores', selectAll: 'Seleccionar todo', selectRow: 'Seleccionar fila', select: 'Seleccionar',
+  showing: 'Mostrando {from}–{to} de', recordSingular: 'registro', recordPlural: 'registros',
+};
+
+/** Aplica los labels ES a todo ok-data-table de `root` que no traiga ya `.labels` propios. */
+function localizeDataTables(root) {
+  root.querySelectorAll('ok-data-table').forEach((dt) => {
+    dt.labels = { ...ES_DT_LABELS, ...(dt.labels || {}) };
+  });
+}
+
 // ── Navegación de la sidebar (mock ERPlora Cloud) ────────────────────────────
 const NAV = [
   { group: 'Principal', items: [
@@ -80,11 +100,10 @@ export function definePage({ active = 'hubs', search = 'Buscar…', body = '', s
           <div class="page-wrap">${body}</div>
         </ion-content>
       </ion-app>`;
-    if (typeof setup === 'function') {
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        try { setup(document); } catch (err) { console.error('[page setup]', err); }
-      }));
-    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { if (typeof setup === 'function') setup(document); } catch (err) { console.error('[page setup]', err); }
+      localizeDataTables(document);
+    }));
     return;
   }
 
@@ -93,7 +112,7 @@ export function definePage({ active = 'hubs', search = 'Buscar…', body = '', s
     <ion-split-pane content-id="main" when="lg">
 
       <ion-menu content-id="main" type="overlay">
-        <ion-header class="ion-no-border">
+        <ion-header>
           <ion-toolbar>
             <ion-title>
               <span class="cloud-brand">
@@ -106,7 +125,7 @@ export function definePage({ active = 'hubs', search = 'Buscar…', body = '', s
         <ion-content>
           <ion-list lines="none">${sidebarHtml(active)}</ion-list>
         </ion-content>
-        <ion-footer class="ion-no-border">
+        <ion-footer>
           <ion-toolbar>
             <ion-item lines="none" class="cloud-user">
               <ok-avatar slot="start" name="Ioan Beilic" size="sm"></ok-avatar>
@@ -117,7 +136,7 @@ export function definePage({ active = 'hubs', search = 'Buscar…', body = '', s
       </ion-menu>
 
       <div class="ion-page" id="main">
-        <ion-header class="ion-no-border">
+        <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
               <ion-menu-button></ion-menu-button>
@@ -150,9 +169,8 @@ export function definePage({ active = 'hubs', search = 'Buscar…', body = '', s
   if (back) back.addEventListener('click', () => { if (history.length > 1) history.back(); });
 
   // `setup` corre tras dos frames para que Ionic haya hidratado los ion-* / ok-*.
-  if (typeof setup === 'function') {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      try { setup(document); } catch (err) { console.error('[page setup]', err); }
-    }));
-  }
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try { if (typeof setup === 'function') setup(document); } catch (err) { console.error('[page setup]', err); }
+    localizeDataTables(document);
+  }));
 }

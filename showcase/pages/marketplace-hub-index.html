@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora · Marketplace</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Tarjetas de módulo */
+      .mp-card {
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s;
+        background: var(--ion-card-background, var(--ion-color-step-50));
+      }
+      .mp-card:hover {
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      }
+      .mp-card__head {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .mp-card__icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        color: var(--ion-color-primary);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .mp-card__icon ion-icon {
+        font-size: 20px;
+      }
+      .mp-card__meta {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mp-card__name {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0 0 2px;
+      }
+      .mp-card__cat {
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+      }
+      .mp-card__desc {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+        margin: 0;
+        flex: 1 1 auto;
+      }
+      .mp-card__foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: auto;
+      }
+      .mp-card__price {
+        font-size: 14px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .mp-card__price--free {
+        color: var(--ion-color-success);
+      }
+      .mp-card__price-unit {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--ion-color-medium);
+      }
+
+      /* Grid de tarjetas de módulos */
+      .mp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      /* Buscador */
+      .mp-search-row ion-searchbar {
+        padding: 0;
+        --padding-start: 0;
+        --padding-end: 0;
+      }
+
+      /* Tabs internos */
+      .mp-tabs {
+        margin-bottom: 20px;
+      }
+
+      /* Sección tab */
+      .mp-section { display: none; }
+      .mp-section.active { display: block; }
+
+      /* Estado vacío de tabs secundarios */
+      .mp-empty-tab {
+        padding: 40px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      // Datos de módulos (29 módulos del catálogo)
+      const MODULES = [
+        { id: 'sales', name: 'Ventas', cat: 'Ventas · v1.4.2', desc: 'Motor universal de ventas con presupuestos, pedidos y facturación integrada.', price: null, status: 'installed', badge: 'Instalado', badgeColor: 'success', icon: 'cart-outline' },
+        { id: 'pos', name: 'TPV / POS', cat: 'Ventas · v2.0.1', desc: 'Terminal punto de venta para barra, mesa y mostrador con soporte offline.', price: null, status: 'active', badge: 'Activo', badgeColor: 'success', icon: 'laptop-outline' },
+        { id: 'customers', name: 'Clientes', cat: 'Ventas · v1.2.0', desc: 'CRM ligero con segmentación, historial de compras y notas comerciales.', price: null, status: 'active', badge: 'Activo', badgeColor: 'success', icon: 'people-outline' },
+        { id: 'products', name: 'Productos', cat: 'Ventas · v1.3.0', desc: 'Catálogo central de productos, variantes, precios y unidades de medida.', price: null, status: 'active', badge: 'Activo', badgeColor: 'success', icon: 'cube-outline' },
+        { id: 'purchases', name: 'Compras', cat: 'Operaciones · v1.1.0', desc: 'Pedidos a proveedor, recepción de mercancía y conciliación con facturas.', price: null, status: null, icon: 'bag-outline' },
+        { id: 'employees', name: 'Empleados', cat: 'RRHH · v1.0.4', desc: 'Fichas de empleado, contratos y documentación obligatoria.', price: null, status: null, icon: 'person-outline' },
+        { id: 'hr', name: 'Recursos Humanos', cat: 'RRHH · v1.2.0', desc: 'Vacaciones, ausencias, fichaje horario y aprobaciones.', price: null, status: null, icon: 'calendar-outline' },
+        { id: 'payroll_es', name: 'Nóminas (ES)', cat: 'RRHH · v0.9.1', desc: 'Cálculo de nóminas con IRPF, SS y modelo 111 para España.', price: '€19,99', status: null, icon: 'card-outline' },
+        { id: 'verifactu', name: 'VeriFactu', cat: 'Cumplimiento · v1.0.0', desc: 'Sistema verificable de facturación AEAT — obligatorio en España desde 2026.', price: '€9,99', status: null, badge: 'Recomendado', badgeColor: 'primary', icon: 'shield-checkmark-outline' },
+        { id: 'fiscal_es', name: 'Fiscal España', cat: 'Cumplimiento · v1.1.0', desc: 'Modelos 303, 390, 347 y 349 con presentación telemática.', price: null, status: null, icon: 'document-text-outline' },
+        { id: 'gestoria_es', name: 'Gestoría', cat: 'Cumplimiento · v0.7.3', desc: 'Conexión directa con tu gestor: envío automático mensual de libros y nóminas.', price: '€49,99', status: null, icon: 'cloud-upload-outline' },
+        { id: 'billing', name: 'Facturación', cat: 'Finanzas · v1.5.0', desc: 'Facturas, presupuestos y abonos con plantillas personalizables.', price: null, status: 'active', badge: 'Activo', badgeColor: 'success', icon: 'receipt-outline' },
+        { id: 'accounting', name: 'Contabilidad', cat: 'Finanzas · v1.0.0', desc: 'Plan general contable, asientos automáticos y cuentas anuales.', price: '€14,99', status: null, icon: 'trending-up-outline' },
+        { id: 'inventory', name: 'Inventario', cat: 'Operaciones · v1.2.1', desc: 'Stock en tiempo real, lotes, caducidades y trazabilidad.', price: null, status: null, icon: 'archive-outline' },
+        { id: 'warehouses', name: 'Almacenes', cat: 'Operaciones · v0.8.0', desc: 'Multi-almacén con ubicaciones, traspasos y picking optimizado.', price: '€7,99', status: null, icon: 'business-outline' },
+        { id: 'kitchen', name: 'Cocina (KDS)', cat: 'Operaciones · v1.0.5', desc: 'Pantalla de cocina con tickets en tiempo real y gestión de tiempos.', price: null, status: null, icon: 'fast-food-outline' },
+        { id: 'reports', name: 'Informes', cat: 'Análisis · v1.0.0', desc: 'Informes preconfigurados con exportación a PDF y Excel.', price: null, status: null, icon: 'bar-chart-outline' },
+        { id: 'analytics', name: 'Analytics', cat: 'Análisis · v0.6.0', desc: 'Dashboards interactivos con KPIs en tiempo real y alertas.', price: '€24,99', status: null, icon: 'analytics-outline' },
+        { id: 'marketing', name: 'Marketing', cat: 'Marketing · v0.7.2', desc: 'Campañas email, segmentos y automatizaciones por evento.', price: '€19,99', status: null, icon: 'send-outline' },
+        { id: 'whatsapp_inbox', name: 'WhatsApp Inbox', cat: 'Marketing · v0.5.0', desc: 'Bandeja unificada de WhatsApp Business con bot GPT y plantillas.', price: '€29,99', status: null, badge: 'Nuevo', badgeColor: 'tertiary', icon: 'chatbubble-ellipses-outline' },
+        { id: 'shopify_sync', name: 'Shopify Sync', cat: 'Integraciones · v1.0.2', desc: 'Sincroniza productos, stock y pedidos con tu tienda Shopify.', price: '€14,99', status: null, icon: 'swap-horizontal-outline' },
+        { id: 'woo_sync', name: 'WooCommerce Sync', cat: 'Integraciones · v1.0.1', desc: 'Conector bidireccional con WooCommerce — productos, pedidos, stock.', price: '€14,99', status: null, icon: 'swap-horizontal-outline' },
+        { id: 'magento_sync', name: 'Magento Sync', cat: 'Integraciones · v0.9.0', desc: 'Integración con Magento 2 — catálogo y pedidos en tiempo real.', price: '€19,99', status: null, icon: 'swap-horizontal-outline' },
+        { id: 'tpv_hardware', name: 'TPV Hardware', cat: 'Hardware · v1.0.0', desc: 'Drivers para impresoras, cajón portamonedas, balanzas y escáneres.', price: null, status: null, icon: 'print-outline' },
+        { id: 'payments_stripe', name: 'Pagos Stripe', cat: 'Hardware · v1.2.0', desc: 'Cobros con tarjeta presencial y online vía Stripe Terminal.', price: null, status: null, icon: 'card-outline' },
+        { id: 'ai_assistant_pro', name: 'AI Assistant Pro', cat: 'IA / Soporte · v0.4.0', desc: 'Asistente avanzado con GPT-5, herramientas y memoria de conversación.', price: '€39,99', status: null, badge: 'Pro', badgeColor: 'warning', icon: 'sparkles-outline' },
+        { id: 'backup_cloud', name: 'Backup Cloud', cat: 'IA / Soporte · v1.0.0', desc: 'Backup diario cifrado en la nube con retención de 90 días.', price: '€9,99', status: null, icon: 'cloud-outline' },
+        { id: 'support_priority', name: 'Soporte Prioritario', cat: 'IA / Soporte · v1.0.0', desc: 'Respuesta en menos de 4 horas, llamada incluida y gestor dedicado.', price: '€29,99', status: null, icon: 'help-buoy-outline' },
+        { id: 'training', name: 'Formación', cat: 'IA / Soporte · v1.0.0', desc: 'Pack onboarding 8 horas en remoto + manuales personalizados.', price: '€199', priceUnit: ' · pago único', status: null, icon: 'school-outline', actionLabel: 'Comprar' },
+      ];
+
+      /** Renderiza una tarjeta de módulo como HTML string */
+      function renderCard(m) {
+        const btnLabel = m.status === 'active' || m.status === 'installed'
+          ? 'Ver'
+          : (m.actionLabel || 'Instalar');
+        const btnFill = m.status === 'active' || m.status === 'installed'
+          ? 'outline'
+          : 'solid';
+
+        const badgeHtml = m.badge
+          ? `<ion-badge color="${m.badgeColor || 'medium'}" style="margin-left:auto;flex-shrink:0">${m.badge}</ion-badge>`
+          : '';
+
+        const priceHtml = m.price
+          ? `<span class="mp-card__price">${m.price}<span class="mp-card__price-unit">${m.priceUnit || '/mes'}</span></span>`
+          : `<span class="mp-card__price mp-card__price--free">Gratis</span>`;
+
+        const btnIcon = m.status === 'active' || m.status === 'installed'
+          ? 'eye-outline'
+          : (m.actionLabel ? 'cart-outline' : 'download-outline');
+
+        return `
+          <div class="mp-card" data-module="${m.id}">
+            <div class="mp-card__head">
+              <div class="mp-card__icon">
+                <ion-icon name="${m.icon}"></ion-icon>
+              </div>
+              <div class="mp-card__meta">
+                <div class="mp-card__name">${m.name}</div>
+                <div class="mp-card__cat">${m.cat}</div>
+              </div>
+              ${badgeHtml}
+            </div>
+            <p class="mp-card__desc">${m.desc}</p>
+            <div class="mp-card__foot">
+              ${priceHtml}
+              <ion-button fill="${btnFill}" size="small">
+                <ion-icon slot="start" name="${btnIcon}"></ion-icon>
+                ${btnLabel}
+              </ion-button>
+            </div>
+          </div>`;
+      }
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Marketplace"
+            description="Descubre módulos, soluciones por sector y cumplimiento legal para tu negocio">
+            <div slot="actions">
+              <ion-button fill="outline" size="small">
+                <ion-icon slot="start" name="document-outline"></ion-icon>
+                Mis facturas
+              </ion-button>
+              <ion-button size="small">
+                <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                Solicitar módulo
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Tabs internos: Catálogo / Soluciones / Tipos de negocio / Cumplimiento / Mis compras -->
+          <ion-segment id="mp-segment" value="catalog" class="mp-tabs">
+            <ion-segment-button value="catalog">
+              <ion-icon name="cube-outline"></ion-icon>
+              <ion-label>Catálogo <ion-badge>29</ion-badge></ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="solutions">
+              <ion-icon name="grid-outline"></ion-icon>
+              <ion-label>Soluciones <ion-badge>5</ion-badge></ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="business">
+              <ion-icon name="storefront-outline"></ion-icon>
+              <ion-label>Tipos de negocio</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="compliance">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <ion-label>Cumplimiento</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="purchases">
+              <ion-icon name="bag-outline"></ion-icon>
+              <ion-label>Mis compras <ion-badge>7</ion-badge></ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <!-- ── CATÁLOGO ── -->
+          <div id="tab-catalog" class="mp-section active">
+
+            <!-- Buscador -->
+            <div class="mp-search-row">
+              <ion-searchbar
+                id="mp-search"
+                placeholder="Buscar módulos…"
+                debounce="200"
+                animated="false">
+              </ion-searchbar>
+            </div>
+
+            <!-- Grid de módulos -->
+            <div id="mp-grid" class="mp-grid">
+              <!-- Relleno por JS en setup() -->
+            </div>
+
+            <!-- Estado vacío de búsqueda -->
+            <div id="mp-empty" style="display:none;padding:40px 0">
+              <ok-empty-state
+                icon="search-outline"
+                heading="Sin resultados"
+                message="Prueba con otros términos.">
+              </ok-empty-state>
+            </div>
+
+          </div>
+
+          <!-- ── SOLUCIONES ── -->
+          <div id="tab-solutions" class="mp-section">
+            <div class="mp-empty-tab">
+              <ok-empty-state
+                icon="grid-outline"
+                heading="Soluciones por sector"
+                message="5 packs sectoriales: Restaurante, Retail, Servicios, eCommerce e Industrial. Ver la vista dedicada marketplace/hub-solutions.">
+              </ok-empty-state>
+            </div>
+          </div>
+
+          <!-- ── TIPOS DE NEGOCIO ── -->
+          <div id="tab-business" class="mp-section">
+            <div class="mp-empty-tab">
+              <ok-empty-state
+                icon="storefront-outline"
+                heading="Tipos de negocio"
+                message="Explora módulos agrupados por tipo de negocio. Ver la vista dedicada marketplace/hub-business-types.">
+              </ok-empty-state>
+            </div>
+          </div>
+
+          <!-- ── CUMPLIMIENTO ── -->
+          <div id="tab-compliance" class="mp-section">
+            <div class="mp-empty-tab">
+              <ok-empty-state
+                icon="shield-checkmark-outline"
+                heading="Cumplimiento legal"
+                message="Cobertura legal por país: VeriFactu, modelos fiscales y normativa sectorial. Ver la vista dedicada marketplace/hub-compliance.">
+              </ok-empty-state>
+            </div>
+          </div>
+
+          <!-- ── MIS COMPRAS ── -->
+          <div id="tab-purchases" class="mp-section">
+            <div class="mp-empty-tab">
+              <ok-empty-state
+                icon="bag-outline"
+                heading="Mis compras"
+                message="7 módulos y servicios adquiridos con sus suscripciones activas. Ver la vista dedicada marketplace/hub-my-purchases.">
+              </ok-empty-state>
+            </div>
+          </div>
+        `,
+
+        setup(doc) {
+          // ── Estado de búsqueda ──
+          const state = { search: '' };
+
+          const grid = doc.getElementById('mp-grid');
+          const emptyMsg = doc.getElementById('mp-empty');
+
+          function matchesSearch(m) {
+            const s = state.search.toLowerCase();
+            if (!s) return true;
+            return m.name.toLowerCase().includes(s) || m.desc.toLowerCase().includes(s) || m.cat.toLowerCase().includes(s);
+          }
+
+          function renderModules() {
+            const visible = MODULES.filter(matchesSearch);
+            if (!grid) return;
+            if (visible.length === 0) {
+              grid.innerHTML = '';
+              if (emptyMsg) emptyMsg.style.display = 'block';
+              return;
+            }
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            grid.innerHTML = visible.map(renderCard).join('');
+          }
+
+          // Render inicial
+          renderModules();
+
+          // ── Buscador ──
+          const searchEl = doc.getElementById('mp-search');
+          if (searchEl) {
+            searchEl.addEventListener('ionInput', (e) => {
+              state.search = (e.detail && e.detail.value) || '';
+              renderModules();
+            });
+            searchEl.addEventListener('ionClear', () => {
+              state.search = '';
+              renderModules();
+            });
+          }
+
+          // ── Tabs internos ──
+          const segment = doc.getElementById('mp-segment');
+          const TABS = ['catalog', 'solutions', 'business', 'compliance', 'purchases'];
+
+          function activateTab(val) {
+            TABS.forEach((id) => {
+              const el = doc.getElementById('tab-' + id);
+              if (el) el.classList.toggle('active', id === val);
+            });
+          }
+
+          if (segment) {
+            segment.addEventListener('ionChange', (e) => {
+              const val = (e.detail && e.detail.value) || 'catalog';
+              activateTab(val);
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

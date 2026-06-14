@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Marketplace · Soluciones por sector</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Tarjetas de solución — geometría estructural, sin colores de marca. */
+      .sol-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 8px;
+      }
+
+      .sol-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        cursor: pointer;
+        transition: transform .15s;
+      }
+      .sol-card:hover { transform: translateY(-2px); }
+
+      .sol-card ion-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        height: 100%;
+      }
+
+      /* Cabecera de la tarjeta: icono + nombre + badge */
+      .sol-head {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .sol-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        color: var(--ion-color-primary);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+
+      .sol-meta { flex: 1 1 auto; min-width: 0; }
+
+      .sol-name {
+        margin: 0 0 3px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -.01em;
+      }
+
+      .sol-sub {
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Descripción */
+      .sol-desc {
+        margin: 0;
+        font-size: .875rem;
+        line-height: 1.55;
+        color: var(--ion-color-step-650, var(--ion-text-color));
+        flex: 1 1 auto;
+      }
+
+      /* Lista de módulos incluidos */
+      .sol-modules {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px;
+        background: color-mix(in srgb, var(--ion-text-color) 4%, transparent);
+        border-radius: 10px;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+
+      .sol-mod-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: .8rem;
+        color: var(--ion-color-step-650, var(--ion-text-color));
+      }
+
+      .sol-mod-item ion-icon {
+        color: var(--ion-color-success);
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      /* Pie de tarjeta: precio + botón */
+      .sol-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-top: auto;
+      }
+
+      .sol-price {
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .sol-price-unit {
+        font-size: .75rem;
+        font-weight: 400;
+        color: var(--ion-color-medium);
+      }
+
+      .sol-save {
+        font-size: .72rem;
+        color: var(--ion-color-success);
+        margin-top: 2px;
+      }
+
+      /* Breadcrumb nav */
+      .sol-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+        font-size: .85rem;
+        color: var(--ion-color-medium);
+      }
+
+      .sol-breadcrumb ion-button {
+        margin: 0;
+        --padding-start: 0;
+        --padding-end: 4px;
+      }
+
+      @media (max-width: 600px) {
+        .sol-grid { grid-template-columns: 1fr; }
+        .sol-foot { flex-direction: column; align-items: flex-start; }
+        .sol-foot ion-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <!-- Breadcrumb -->
+          <div class="sol-breadcrumb">
+            <ion-button fill="clear" size="small" id="btn-back">
+              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+              Marketplace
+            </ion-button>
+            <ion-icon name="chevron-forward-outline" style="font-size:12px"></ion-icon>
+            <span>Soluciones</span>
+          </div>
+
+          <ok-page-header
+            heading="Soluciones por sector"
+            description="Packs de módulos pre-configurados para arrancar rápido en tu sector">
+          </ok-page-header>
+
+          <!-- Grid de tarjetas -->
+          <div class="sol-grid">
+
+            <!-- Restaurante -->
+            <ion-card class="sol-card" id="sol-restaurante">
+              <ion-card-content>
+                <div class="sol-head">
+                  <div class="sol-icon">
+                    <ion-icon name="restaurant-outline" style="font-size:26px"></ion-icon>
+                  </div>
+                  <div class="sol-meta">
+                    <h2 class="sol-name">Restaurante</h2>
+                    <div class="sol-sub">Bar · cafetería · restaurante</div>
+                  </div>
+                  <ion-badge color="primary">Popular</ion-badge>
+                </div>
+
+                <p class="sol-desc">Solución completa para hostelería: TPV en barra y mesa, cocina con KDS, inventario de bebidas y comida, y facturación cumpliendo VeriFactu.</p>
+
+                <div class="sol-modules">
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>TPV / POS</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Cocina (KDS)</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Inventario</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Facturación + VeriFactu</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Empleados + Nóminas ES</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>TPV Hardware + Pagos Stripe</div>
+                </div>
+
+                <div class="sol-foot">
+                  <div>
+                    <div class="sol-price">€29,98<span class="sol-price-unit">/mes</span></div>
+                    <div class="sol-save">Ahorras €5/mes vs. módulos sueltos</div>
+                  </div>
+                  <ion-button size="small" data-sol="restaurante">Activar pack</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Retail -->
+            <ion-card class="sol-card" id="sol-retail">
+              <ion-card-content>
+                <div class="sol-head">
+                  <div class="sol-icon">
+                    <ion-icon name="bag-handle-outline" style="font-size:26px"></ion-icon>
+                  </div>
+                  <div class="sol-meta">
+                    <h2 class="sol-name">Retail</h2>
+                    <div class="sol-sub">Tienda · multi-tienda</div>
+                  </div>
+                </div>
+
+                <p class="sol-desc">Punto de venta moderno con catálogo unificado, gestión de stock por tienda y conexión opcional con tu eCommerce.</p>
+
+                <div class="sol-modules">
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>TPV / POS</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Productos + Inventario</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Almacenes</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Clientes + Marketing</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Facturación + VeriFactu</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>TPV Hardware</div>
+                </div>
+
+                <div class="sol-foot">
+                  <div>
+                    <div class="sol-price">€57,97<span class="sol-price-unit">/mes</span></div>
+                    <div class="sol-save">Ahorras €8/mes vs. módulos sueltos</div>
+                  </div>
+                  <ion-button size="small" data-sol="retail">Activar pack</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Servicios profesionales -->
+            <ion-card class="sol-card" id="sol-servicios">
+              <ion-card-content>
+                <div class="sol-head">
+                  <div class="sol-icon">
+                    <ion-icon name="construct-outline" style="font-size:26px"></ion-icon>
+                  </div>
+                  <div class="sol-meta">
+                    <h2 class="sol-name">Servicios profesionales</h2>
+                    <div class="sol-sub">Consultoría · agencias · técnicos</div>
+                  </div>
+                </div>
+
+                <p class="sol-desc">Para profesionales que facturan por horas o proyectos: presupuestos, partes de trabajo y facturación recurrente.</p>
+
+                <div class="sol-modules">
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Ventas + Clientes</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Facturación + VeriFactu</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Empleados + RRHH</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Contabilidad</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Informes + Analytics</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>WhatsApp Inbox</div>
+                </div>
+
+                <div class="sol-foot">
+                  <div>
+                    <div class="sol-price">€78,96<span class="sol-price-unit">/mes</span></div>
+                    <div class="sol-save">Ahorras €12/mes vs. módulos sueltos</div>
+                  </div>
+                  <ion-button size="small" data-sol="servicios">Activar pack</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- eCommerce -->
+            <ion-card class="sol-card" id="sol-ecommerce">
+              <ion-card-content>
+                <div class="sol-head">
+                  <div class="sol-icon">
+                    <ion-icon name="cart-outline" style="font-size:26px"></ion-icon>
+                  </div>
+                  <div class="sol-meta">
+                    <h2 class="sol-name">eCommerce</h2>
+                    <div class="sol-sub">Online + integraciones CMS</div>
+                  </div>
+                  <ion-badge color="tertiary">Premium</ion-badge>
+                </div>
+
+                <p class="sol-desc">Sincronización bidireccional con Shopify, WooCommerce o Magento, gestión de pedidos online y trazabilidad de inventario.</p>
+
+                <div class="sol-modules">
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Productos + Inventario</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Shopify Sync (1 incluido)</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Almacenes + Compras</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Clientes + Marketing</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Facturación + VeriFactu</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Analytics + Pagos Stripe</div>
+                </div>
+
+                <div class="sol-foot">
+                  <div>
+                    <div class="sol-price">€89,95<span class="sol-price-unit">/mes</span></div>
+                    <div class="sol-save">Ahorras €18/mes vs. módulos sueltos</div>
+                  </div>
+                  <ion-button size="small" data-sol="ecommerce">Activar pack</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Industrial / B2B -->
+            <ion-card class="sol-card" id="sol-industrial">
+              <ion-card-content>
+                <div class="sol-head">
+                  <div class="sol-icon">
+                    <ion-icon name="business-outline" style="font-size:26px"></ion-icon>
+                  </div>
+                  <div class="sol-meta">
+                    <h2 class="sol-name">Industrial / B2B</h2>
+                    <div class="sol-sub">Fabricantes · distribuidores</div>
+                  </div>
+                </div>
+
+                <p class="sol-desc">Gestión de pedidos B2B con descuentos por volumen, multi-almacén, contabilidad analítica y cumplimiento fiscal completo.</p>
+
+                <div class="sol-modules">
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Ventas + Compras + Clientes</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Productos + Inventario + Almacenes</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Facturación + VeriFactu + Fiscal ES</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Contabilidad + Gestoría</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Empleados + RRHH + Nóminas</div>
+                  <div class="sol-mod-item"><ion-icon name="checkmark-outline"></ion-icon>Analytics + Backup Cloud</div>
+                </div>
+
+                <div class="sol-foot">
+                  <div>
+                    <div class="sol-price">€149,90<span class="sol-price-unit">/mes</span></div>
+                    <div class="sol-save">Ahorras €32/mes vs. módulos sueltos</div>
+                  </div>
+                  <ion-button size="small" data-sol="industrial">Activar pack</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+        `,
+        setup(doc) {
+          // Volver al marketplace al pulsar el breadcrumb.
+          const btnBack = doc.getElementById('btn-back');
+          if (btnBack) {
+            btnBack.addEventListener('click', () => {
+              history.back();
+            });
+          }
+
+          // Botones "Activar pack" — abren un action sheet de confirmación.
+          const PACK_NAMES = {
+            restaurante: 'Restaurante',
+            retail: 'Retail',
+            servicios: 'Servicios profesionales',
+            ecommerce: 'eCommerce',
+            industrial: 'Industrial / B2B',
+          };
+
+          doc.querySelectorAll('[data-sol]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              // Evitar que el click burbujee y abra el drawer de la tarjeta.
+              e.stopPropagation();
+
+              const sol = btn.getAttribute('data-sol');
+              const name = PACK_NAMES[sol] || sol;
+
+              const sheet = document.createElement('ion-action-sheet');
+              sheet.header = 'Activar pack · ' + name;
+              sheet.subHeader = 'El pack se añadirá a tu suscripción actual.';
+              sheet.buttons = [
+                { text: 'Confirmar activación', icon: 'checkmark-circle-outline' },
+                { text: 'Ver detalle de módulos', icon: 'list-outline' },
+                { text: 'Cancelar', role: 'cancel' },
+              ];
+              document.body.appendChild(sheet);
+              sheet.present();
+              sheet.addEventListener('didDismiss', () => sheet.remove());
+            });
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

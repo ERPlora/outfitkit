@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Tienda de equipos</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (sin colores de marca). */
+      .shop-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .shop-layout { grid-template-columns: 1fr; }
+      }
+
+      /* Filtros laterales */
+      .shop-filters {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .shop-filter-section { display: flex; flex-direction: column; gap: 8px; }
+      .shop-filter-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ion-color-medium);
+        margin: 0 0 4px;
+      }
+
+      /* Chips de categoría */
+      .shop-cat-chips {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .shop-cat-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--ion-text-color);
+        text-align: left;
+        transition: background 120ms;
+      }
+      .shop-cat-chip:hover { background: color-mix(in srgb, var(--ion-color-primary) 8%, transparent); }
+      .shop-cat-chip.is-active {
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        color: var(--ion-color-primary);
+        font-weight: 600;
+      }
+      .shop-cat-chip__count {
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        font-variant-numeric: tabular-nums;
+      }
+      .shop-cat-chip.is-active .shop-cat-chip__count { color: var(--ion-color-primary); }
+
+      /* Marcas (checkboxes) */
+      .shop-brand-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        padding: 2px 0;
+      }
+      .shop-brand-row span { margin-left: auto; font-size: 11px; color: var(--ion-color-medium); font-variant-numeric: tabular-nums; }
+
+      /* Disponibilidad toggle group */
+      .shop-avail {
+        display: flex;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .shop-avail__opt {
+        flex: 1 1 auto;
+        padding: 7px 4px;
+        font-size: 12px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--ion-color-medium);
+        transition: background 120ms, color 120ms;
+      }
+      .shop-avail__opt.is-active {
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+      }
+
+      /* Hero carousel */
+      .shop-hero {
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 16px;
+      }
+      .shop-hero__track {
+        display: flex;
+        transition: transform 350ms ease;
+      }
+      .shop-hero__slide {
+        min-width: 100%;
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 20px;
+        align-items: center;
+        padding: 28px 32px;
+        box-sizing: border-box;
+      }
+      @media (max-width: 640px) {
+        .shop-hero__slide { grid-template-columns: 1fr; }
+        .shop-hero__art { display: none; }
+      }
+      .shop-hero__slide--a { background: color-mix(in srgb, var(--ion-color-primary) 12%, var(--ion-card-background, #fff)); }
+      .shop-hero__slide--b { background: color-mix(in srgb, var(--ion-color-tertiary) 10%, var(--ion-card-background, #fff)); }
+      .shop-hero__slide--c { background: color-mix(in srgb, var(--ion-color-success) 10%, var(--ion-card-background, #fff)); }
+      .shop-hero__kicker {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ion-color-primary);
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .shop-hero__title {
+        font-size: clamp(18px, 2.5vw, 26px);
+        font-weight: 700;
+        line-height: 1.15;
+        margin: 0 0 8px;
+      }
+      .shop-hero__sub {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+        margin: 0 0 14px;
+        max-width: 420px;
+      }
+      .shop-hero__price-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .shop-hero__orig {
+        text-decoration: line-through;
+        color: var(--ion-color-medium);
+        font-size: 13px;
+      }
+      .shop-hero__art {
+        aspect-ratio: 16 / 10;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--ion-color-primary) 20%, var(--ion-color-step-100, #f1f2f4));
+        display: grid;
+        place-items: center;
+        color: var(--ion-color-medium);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+      .shop-hero__nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--ion-card-background, #fff);
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: opacity 120ms;
+        padding: 0;
+      }
+      .shop-hero__nav:hover { opacity: 1; }
+      .shop-hero__nav--prev { left: 10px; }
+      .shop-hero__nav--next { right: 10px; }
+      .shop-hero__dots {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+      }
+      .shop-hero__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--ion-color-medium);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: background 150ms, transform 150ms;
+      }
+      .shop-hero__dot.is-active {
+        background: var(--ion-color-primary);
+        transform: scale(1.3);
+      }
+
+      /* Grid de productos */
+      .shop-products-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      @media (max-width: 1100px) { .shop-products-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 580px)  { .shop-products-grid { grid-template-columns: 1fr; } }
+
+      /* Tarjeta de producto */
+      .shop-product {
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--ion-card-background, #fff);
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 150ms;
+      }
+      .shop-product:hover { box-shadow: 0 8px 24px -8px rgba(0,0,0,.15); }
+      .shop-product.is-out { opacity: 0.7; }
+
+      .shop-product__media {
+        position: relative;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+      }
+      .shop-product__art {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: rgba(255,255,255,0.7);
+      }
+      .shop-product__art--a { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-danger) 40%, #000), color-mix(in srgb, var(--ion-color-danger) 20%, #000)); }
+      .shop-product__art--b { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-primary) 40%, #000), color-mix(in srgb, var(--ion-color-primary) 20%, #000)); }
+      .shop-product__art--c { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-success) 40%, #000), color-mix(in srgb, var(--ion-color-success) 20%, #000)); }
+      .shop-product__art--d { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-tertiary) 40%, #000), color-mix(in srgb, var(--ion-color-tertiary) 20%, #000)); }
+      .shop-product__art--e { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-warning) 40%, #000), color-mix(in srgb, var(--ion-color-warning) 20%, #000)); }
+      .shop-product__art--f { background: linear-gradient(135deg, color-mix(in srgb, var(--ion-color-medium) 60%, #000), color-mix(in srgb, var(--ion-color-medium) 30%, #000)); }
+
+      .shop-product__badges {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        display: flex;
+        gap: 4px;
+      }
+      .shop-product__badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .shop-product__badge--top { background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); }
+      .shop-product__badge--new { background: var(--ion-color-success); color: var(--ion-color-success-contrast); }
+      .shop-product__badge--sale { background: var(--ion-color-danger); color: var(--ion-color-danger-contrast); }
+      .shop-product__badge--bundle { background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); }
+
+      .shop-product__wish {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: var(--ion-card-background, #fff);
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        padding: 0;
+        color: var(--ion-color-medium);
+        transition: color 150ms;
+      }
+      .shop-product__wish.is-wishlisted { color: var(--ion-color-danger); }
+      .shop-product__wish ion-icon { font-size: 16px; }
+
+      .shop-product__body {
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        gap: 4px;
+      }
+      .shop-product__brand {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ion-color-medium);
+        font-weight: 600;
+      }
+      .shop-product__name {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.3;
+      }
+      .shop-product__rating {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .shop-product__rating ion-icon { color: var(--ion-color-warning); font-size: 12px; }
+      .shop-product__price-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .shop-product__price {
+        font-size: 17px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .shop-product__price-orig {
+        font-size: 13px;
+        text-decoration: line-through;
+        color: var(--ion-color-medium);
+        font-variant-numeric: tabular-nums;
+      }
+      .shop-product__actions { margin-top: 8px; }
+
+      /* Barra de acciones (ordenar, vista) */
+      .shop-grid-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .shop-grid-count {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+      }
+      .shop-grid-count b { color: var(--ion-text-color); font-weight: 600; }
+      .shop-view-toggle {
+        display: flex;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .shop-view-btn {
+        padding: 7px 10px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--ion-color-medium);
+        display: grid;
+        place-items: center;
+        transition: background 120ms, color 120ms;
+      }
+      .shop-view-btn.is-active {
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+      }
+
+
+      /* Segment de sección */
+      #shop-tabs { margin-bottom: 20px; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Tienda de equipos"
+            description="Hardware certificado para tu hub · Envío a toda España">
+            <div slot="actions">
+              <ion-button fill="outline" size="small">
+                <ion-icon slot="start" name="server-outline"></ion-icon>
+                Mi inventario
+              </ion-button>
+              <ion-button size="small">
+                <ion-icon slot="start" name="cart-outline"></ion-icon>
+                Ver carrito (4)
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Sub-navegación de sección -->
+          <ion-segment id="shop-tabs" value="tienda">
+            <ion-segment-button value="tienda">
+              <ion-icon name="storefront-outline"></ion-icon>
+              <ion-label>Tienda</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="carrito">
+              <ion-icon name="cart-outline"></ion-icon>
+              <ion-label>Carrito</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="checkout">
+              <ion-icon name="card-outline"></ion-icon>
+              <ion-label>Checkout</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="confirmacion">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <ion-label>Confirmación</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <!-- Hero carousel -->
+          <div class="shop-hero pg-mb-4" id="hero">
+            <div class="shop-hero__track" id="hero-track">
+
+              <div class="shop-hero__slide shop-hero__slide--a">
+                <div>
+                  <div class="shop-hero__kicker">Bundle Modelo X · -16%</div>
+                  <h2 class="shop-hero__title">Pack TPV Modelo X Pro listo para tu tienda</h2>
+                  <p class="shop-hero__sub">Terminal táctil 15.6'', impresora térmica, lector contactless y cajón monedero. Pre-configurado y enviado en 24-48 h.</p>
+                  <div class="shop-hero__price-row">
+                    <ion-badge color="primary" style="--padding-top:6px;--padding-bottom:6px;font-size:14px">€1 240</ion-badge>
+                    <span class="shop-hero__orig">€1 480</span>
+                    <ion-button size="small" style="margin-left:8px">Ver bundle</ion-button>
+                  </div>
+                </div>
+                <div class="shop-hero__art">[Bundle Modelo X · render]</div>
+              </div>
+
+              <div class="shop-hero__slide shop-hero__slide--b">
+                <div>
+                  <div class="shop-hero__kicker">Lector contactless</div>
+                  <h2 class="shop-hero__title">SumUp Air · €39 · Acepta tarjeta y móvil</h2>
+                  <p class="shop-hero__sub">Bluetooth + 4G, hasta 500 cobros por carga. Compatible con todos los hubs ERPlora.</p>
+                  <div class="shop-hero__price-row">
+                    <ion-badge color="tertiary" style="--padding-top:6px;--padding-bottom:6px">Llega en 24h</ion-badge>
+                    <ion-button size="small" style="margin-left:8px">Comprar ahora</ion-button>
+                  </div>
+                </div>
+                <div class="shop-hero__art">[SumUp Air · render]</div>
+              </div>
+
+              <div class="shop-hero__slide shop-hero__slide--c">
+                <div>
+                  <div class="shop-hero__kicker">Impresión recibos</div>
+                  <h2 class="shop-hero__title">Impresora térmica Star TSP143 · €229</h2>
+                  <p class="shop-hero__sub">USB + Ethernet, corte automático, recibos a 80 mm. Plug &amp; play con cualquier terminal del catálogo.</p>
+                  <div class="shop-hero__price-row">
+                    <ion-badge color="success" style="--padding-top:6px;--padding-bottom:6px">En stock</ion-badge>
+                    <ion-button size="small" style="margin-left:8px">Ver ficha</ion-button>
+                  </div>
+                </div>
+                <div class="shop-hero__art">[Star TSP143 · render]</div>
+              </div>
+
+            </div>
+            <button class="shop-hero__nav shop-hero__nav--prev" id="hero-prev" aria-label="Anterior">
+              <ion-icon name="chevron-back-outline" style="font-size:18px"></ion-icon>
+            </button>
+            <button class="shop-hero__nav shop-hero__nav--next" id="hero-next" aria-label="Siguiente">
+              <ion-icon name="chevron-forward-outline" style="font-size:18px"></ion-icon>
+            </button>
+            <div class="shop-hero__dots" id="hero-dots">
+              <button class="shop-hero__dot is-active" data-slide="0" aria-label="Slide 1"></button>
+              <button class="shop-hero__dot" data-slide="1" aria-label="Slide 2"></button>
+              <button class="shop-hero__dot" data-slide="2" aria-label="Slide 3"></button>
+            </div>
+          </div>
+
+          <!-- Dos columnas: filtros + productos -->
+          <div class="shop-layout">
+
+            <!-- Panel de filtros -->
+            <ion-card>
+              <ion-card-content>
+                <div class="shop-filters">
+
+                  <!-- Categoría -->
+                  <div class="shop-filter-section">
+                    <div class="shop-filter-label">Categoría</div>
+                    <div class="shop-cat-chips" id="cat-chips">
+                      <button class="shop-cat-chip is-active" data-cat="todos">
+                        <span>Todos</span>
+                        <span class="shop-cat-chip__count">47</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="cajas">
+                        <span>Cajas</span>
+                        <span class="shop-cat-chip__count">8</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="lectores">
+                        <span>Lectores</span>
+                        <span class="shop-cat-chip__count">11</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="impresoras">
+                        <span>Impresoras</span>
+                        <span class="shop-cat-chip__count">6</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="perif">
+                        <span>Periféricos</span>
+                        <span class="shop-cat-chip__count">9</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="bundles">
+                        <span>Bundles</span>
+                        <span class="shop-cat-chip__count">5</span>
+                      </button>
+                      <button class="shop-cat-chip" data-cat="access">
+                        <span>Accesorios</span>
+                        <span class="shop-cat-chip__count">8</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Marca -->
+                  <div class="shop-filter-section">
+                    <div class="shop-filter-label">Marca</div>
+                    <label class="shop-brand-row">
+                      <ion-checkbox checked></ion-checkbox>
+                      SumUp
+                      <span>14</span>
+                    </label>
+                    <label class="shop-brand-row">
+                      <ion-checkbox checked></ion-checkbox>
+                      Star Micronics
+                      <span>9</span>
+                    </label>
+                    <label class="shop-brand-row">
+                      <ion-checkbox></ion-checkbox>
+                      Brother
+                      <span>6</span>
+                    </label>
+                    <label class="shop-brand-row">
+                      <ion-checkbox></ion-checkbox>
+                      Honeywell
+                      <span>4</span>
+                    </label>
+                  </div>
+
+                  <!-- Precio -->
+                  <div class="shop-filter-section">
+                    <div class="shop-filter-label">Precio</div>
+                    <ok-range-dual
+                      id="price-range"
+                      min="0"
+                      max="2000"
+                      low="39"
+                      high="1240"
+                      prefix="€"
+                      label="Rango de precio">
+                    </ok-range-dual>
+                  </div>
+
+                  <!-- Disponibilidad -->
+                  <div class="shop-filter-section">
+                    <div class="shop-filter-label">Disponibilidad</div>
+                    <div class="shop-avail" id="avail-toggle">
+                      <button class="shop-avail__opt" data-avail="true">En stock</button>
+                      <button class="shop-avail__opt" data-avail="out">Agotado</button>
+                      <button class="shop-avail__opt is-active" data-avail="all">Todos</button>
+                    </div>
+                  </div>
+
+                  <ion-button fill="clear" size="small" color="medium">
+                    <ion-icon slot="start" name="trash-outline"></ion-icon>
+                    Limpiar filtros
+                  </ion-button>
+
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Cuadrícula de productos -->
+            <section>
+
+              <div class="shop-grid-toolbar">
+                <div class="shop-grid-count"><b>32</b> productos · ordenados por <b id="sort-label">relevancia</b></div>
+                <div style="flex:1 1 auto"></div>
+
+                <!-- Ordenar -->
+                <ion-select
+                  id="sort-select"
+                  value="rel"
+                  interface="popover"
+                  aria-label="Ordenar por"
+                  style="font-size:13px;border:1px solid var(--ion-border-color,rgba(127,127,127,.2));border-radius:8px;padding:4px 8px;">
+                  <ion-select-option value="rel">Relevancia</ion-select-option>
+                  <ion-select-option value="asc">Precio: menor a mayor</ion-select-option>
+                  <ion-select-option value="desc">Precio: mayor a menor</ion-select-option>
+                  <ion-select-option value="pop">Más vendidos</ion-select-option>
+                  <ion-select-option value="new">Novedades</ion-select-option>
+                </ion-select>
+
+                <!-- Vista grid/lista -->
+                <div class="shop-view-toggle" id="view-toggle">
+                  <button class="shop-view-btn is-active" data-view="grid" aria-label="Vista cuadrícula">
+                    <ion-icon name="grid-outline" style="font-size:16px"></ion-icon>
+                  </button>
+                  <button class="shop-view-btn" data-view="list" aria-label="Vista lista">
+                    <ion-icon name="list-outline" style="font-size:16px"></ion-icon>
+                  </button>
+                </div>
+              </div>
+
+              <div class="shop-products-grid" id="products-grid">
+
+                <!-- p1 Terminal POS Modelo X Pro -->
+                <article class="shop-product" data-cat="cajas" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--a">[TPV Modelo X Pro]</div>
+                    <div class="shop-product__badges">
+                      <span class="shop-product__badge shop-product__badge--top">Top</span>
+                    </div>
+                    <button class="shop-product__wish" data-id="p1" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">ERPlora</span>
+                    <h3 class="shop-product__name">Terminal POS Modelo X Pro</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,8 · 124 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€890</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p1">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p2 Caja registradora compacta CR-7 -->
+                <article class="shop-product" data-cat="cajas" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--b">[Caja CR-7]</div>
+                    <button class="shop-product__wish" data-id="p2" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">ERPlora</span>
+                    <h3 class="shop-product__name">Caja registradora compacta CR-7</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,5 · 88 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€340</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p2">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p3 Impresora térmica Star TSP143 (en lista de deseos) -->
+                <article class="shop-product" data-cat="impresoras" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--c">[Star TSP143]</div>
+                    <div class="shop-product__badges">
+                      <span class="shop-product__badge shop-product__badge--new">Nuevo</span>
+                    </div>
+                    <button class="shop-product__wish is-wishlisted" data-id="p3" aria-label="Lista de deseos">
+                      <ion-icon name="heart"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Star Micronics</span>
+                    <h3 class="shop-product__name">Impresora térmica Star TSP143 III</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,7 · 256 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€229</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p3">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p4 Lector SumUp Air -->
+                <article class="shop-product" data-cat="lectores" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--d">[SumUp Air]</div>
+                    <button class="shop-product__wish" data-id="p4" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">SumUp</span>
+                    <h3 class="shop-product__name">Lector SumUp Air contactless</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,6 · 412 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€39</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p4">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p5 Pantalla cliente 7'' táctil -->
+                <article class="shop-product" data-cat="perif" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--e">[Pantalla cliente 7'']</div>
+                    <button class="shop-product__wish" data-id="p5" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">ERPlora</span>
+                    <h3 class="shop-product__name">Pantalla cliente 7'' táctil</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,4 · 56 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€189</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p5">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p6 Cajón monedero RJ11 -->
+                <article class="shop-product" data-cat="perif" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--f">[Cajón monedero]</div>
+                    <button class="shop-product__wish" data-id="p6" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Posiflex</span>
+                    <h3 class="shop-product__name">Cajón monedero RJ11 410mm</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,3 · 71 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€85</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p6">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p7 Bundle Tienda Básica (oferta + en lista de deseos) -->
+                <article class="shop-product" data-cat="bundles" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--a">[Bundle Tienda Básica]</div>
+                    <div class="shop-product__badges">
+                      <span class="shop-product__badge shop-product__badge--sale">-16%</span>
+                      <span class="shop-product__badge shop-product__badge--bundle">Bundle</span>
+                    </div>
+                    <button class="shop-product__wish is-wishlisted" data-id="p7" aria-label="Lista de deseos">
+                      <ion-icon name="heart"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">ERPlora</span>
+                    <h3 class="shop-product__name">Bundle Tienda Básica · TPV + lector + impresora</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,9 · 312 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€1 240</span>
+                      <span class="shop-product__price-orig">€1 480</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p7">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir bundle
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p8 Scanner código barras Voyager 1602g -->
+                <article class="shop-product" data-cat="lectores" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--b">[Scanner BT]</div>
+                    <button class="shop-product__wish" data-id="p8" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Honeywell</span>
+                    <h3 class="shop-product__name">Scanner código barras Voyager 1602g</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,5 · 142 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€129</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p8">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p9 Báscula homologada (agotado) -->
+                <article class="shop-product is-out" data-cat="perif" data-stock="false">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--c">[Báscula 30kg]</div>
+                    <button class="shop-product__wish" data-id="p9" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Dibal</span>
+                    <h3 class="shop-product__name">Báscula homologada 30 kg con visor</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,2 · 38 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€420</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" disabled>
+                        Agotado
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p10 Brother QL-820NWB -->
+                <article class="shop-product" data-cat="impresoras" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--d">[Brother QL-820]</div>
+                    <button class="shop-product__wish" data-id="p10" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Brother</span>
+                    <h3 class="shop-product__name">Impresora etiquetas Brother QL-820NWB</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,6 · 96 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€340</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p10">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p11 TPV táctil 15.6'' All-in-One (oferta + en lista de deseos) -->
+                <article class="shop-product" data-cat="cajas" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--e">[TPV AIO 15.6'']</div>
+                    <div class="shop-product__badges">
+                      <span class="shop-product__badge shop-product__badge--sale">-9%</span>
+                    </div>
+                    <button class="shop-product__wish is-wishlisted" data-id="p11" aria-label="Lista de deseos">
+                      <ion-icon name="heart"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Posiflex</span>
+                    <h3 class="shop-product__name">TPV táctil 15.6'' All-in-One i5 + 8GB</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,7 · 87 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€1 590</span>
+                      <span class="shop-product__price-orig">€1 750</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p11">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- p12 Soporte tablet metálico antirrobo -->
+                <article class="shop-product" data-cat="access" data-stock="true">
+                  <div class="shop-product__media">
+                    <div class="shop-product__art shop-product__art--f">[Soporte tablet]</div>
+                    <button class="shop-product__wish" data-id="p12" aria-label="Lista de deseos">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="shop-product__body">
+                    <span class="shop-product__brand">Heckler</span>
+                    <h3 class="shop-product__name">Soporte tablet metálico antirrobo</h3>
+                    <div class="shop-product__rating">
+                      <ion-icon name="star"></ion-icon>
+                      4,4 · 64 opiniones
+                    </div>
+                    <div class="shop-product__price-row">
+                      <span class="shop-product__price">€89</span>
+                    </div>
+                    <div class="shop-product__actions">
+                      <ion-button expand="block" fill="outline" size="small" data-id="p12">
+                        <ion-icon slot="start" name="cart-outline"></ion-icon>
+                        Añadir
+                      </ion-button>
+                    </div>
+                  </div>
+                </article>
+
+              </div>
+
+              <!-- Paginador -->
+              <ok-pagination
+                id="shop-pagination"
+                total="32"
+                page="1"
+                page-size="12"
+                info
+                style="margin-top:20px">
+              </ok-pagination>
+
+            </section>
+
+          </div>
+        `,
+
+        setup(doc) {
+          // ── Hero carousel ──
+          let slide = 0;
+          const TOTAL = 3;
+          const track = doc.getElementById('hero-track');
+          const dots = doc.querySelectorAll('#hero-dots .shop-hero__dot');
+
+          const goSlide = (n) => {
+            slide = (n + TOTAL) % TOTAL;
+            if (track) track.style.transform = 'translateX(-' + (slide * 100) + '%)';
+            dots.forEach((d, i) => d.classList.toggle('is-active', i === slide));
+          };
+
+          const prev = doc.getElementById('hero-prev');
+          const next = doc.getElementById('hero-next');
+          if (prev) prev.addEventListener('click', () => goSlide(slide - 1));
+          if (next) next.addEventListener('click', () => goSlide(slide + 1));
+          dots.forEach((d) => {
+            d.addEventListener('click', () => goSlide(Number(d.getAttribute('data-slide'))));
+          });
+
+          // ── Filtro por categoría ──
+          let activeCat = 'todos';
+          const catChips = doc.querySelectorAll('#cat-chips .shop-cat-chip');
+          const products = doc.querySelectorAll('#products-grid .shop-product');
+
+          const applyFilter = () => {
+            products.forEach((p) => {
+              const cat = p.getAttribute('data-cat') || '';
+              const visible = activeCat === 'todos' || cat === activeCat;
+              p.style.display = visible ? '' : 'none';
+            });
+          };
+
+          catChips.forEach((chip) => {
+            chip.addEventListener('click', () => {
+              catChips.forEach((c) => c.classList.remove('is-active'));
+              chip.classList.add('is-active');
+              activeCat = chip.getAttribute('data-cat') || 'todos';
+              applyFilter();
+            });
+          });
+
+          // ── Disponibilidad toggle ──
+          const availBtns = doc.querySelectorAll('#avail-toggle .shop-avail__opt');
+          availBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              availBtns.forEach((b) => b.classList.remove('is-active'));
+              btn.classList.add('is-active');
+              const avail = btn.getAttribute('data-avail');
+              products.forEach((p) => {
+                const stock = p.getAttribute('data-stock');
+                let visible = true;
+                if (avail === 'true') visible = stock === 'true';
+                else if (avail === 'out') visible = stock === 'false';
+                if (activeCat !== 'todos' && p.getAttribute('data-cat') !== activeCat) visible = false;
+                p.style.display = visible ? '' : 'none';
+              });
+            });
+          });
+
+          // ── Ordenar select ──
+          const SORT_LABEL = {
+            rel: 'relevancia',
+            asc: 'precio: menor a mayor',
+            desc: 'precio: mayor a menor',
+            pop: 'más vendidos',
+            new: 'novedades',
+          };
+          const sortSelect = doc.getElementById('sort-select');
+          const sortLabel = doc.getElementById('sort-label');
+          if (sortSelect && sortLabel) {
+            sortSelect.addEventListener('ionChange', (e) => {
+              const val = (e.detail && e.detail.value) || 'rel';
+              sortLabel.textContent = SORT_LABEL[val] || val;
+            });
+          }
+
+          // ── Vista grid / lista ──
+          const viewBtns = doc.querySelectorAll('#view-toggle .shop-view-btn');
+          const grid = doc.getElementById('products-grid');
+          viewBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              viewBtns.forEach((b) => b.classList.remove('is-active'));
+              btn.classList.add('is-active');
+              const view = btn.getAttribute('data-view');
+              if (grid) {
+                grid.style.gridTemplateColumns = view === 'list' ? '1fr' : '';
+              }
+            });
+          });
+
+          // ── Lista de deseos (wishlist) ──
+          let wishlist = new Set(['p3', 'p7', 'p11']);
+          const syncWish = (id, btn) => {
+            const on = wishlist.has(id);
+            btn.classList.toggle('is-wishlisted', on);
+            const icon = btn.querySelector('ion-icon');
+            if (icon) icon.setAttribute('name', on ? 'heart' : 'heart-outline');
+          };
+          doc.querySelectorAll('.shop-product__wish').forEach((btn) => {
+            const id = btn.getAttribute('data-id');
+            syncWish(id, btn);
+            btn.addEventListener('click', () => {
+              if (wishlist.has(id)) wishlist.delete(id);
+              else wishlist.add(id);
+              syncWish(id, btn);
+            });
+          });
+
+          // ── Añadir al carrito (feedback via ion-toast) ──
+          doc.querySelectorAll('ion-button[data-id]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              if (btn.disabled) return;
+              const t = document.createElement('ion-toast');
+              t.message = 'Producto añadido al carrito';
+              t.duration = 1200;
+              t.position = 'bottom';
+              t.color = 'success';
+              t.icon = 'checkmark-circle-outline';
+              document.body.appendChild(t);
+              t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            });
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

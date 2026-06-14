@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Factura INV-2026-0142</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Layout principal: documento de factura + columna lateral */
+      .inv-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 20px;
+        align-items: flex-start;
+      }
+      @media (max-width: 1100px) {
+        .inv-layout { grid-template-columns: 1fr; }
+      }
+
+      /* Columna derecha: pila de tarjetas */
+      .inv-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Sección de tarjeta de metadata con título monocroma */
+      .meta-section-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        color: var(--ion-color-medium);
+        margin: 0 0 10px;
+      }
+
+      /* Fila de metadato: clave / valor */
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        font-size: 13px;
+      }
+      .meta-row:last-of-type { border-bottom: none; }
+      .meta-row__key { color: var(--ion-color-medium); }
+      .meta-row__val { font-variant-numeric: tabular-nums; }
+      .meta-row__val--mono { font-family: var(--ion-font-family, monospace); font-size: 11.5px; }
+      .meta-row__val--strong { font-weight: 700; font-size: 14px; }
+
+      /* Documentos: botones a ancho completo */
+      .doc-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin-bottom: 6px;
+      }
+      .doc-btn:last-child { margin-bottom: 0; }
+      .doc-btn ion-button {
+        width: 100%;
+        --border-radius: 8px;
+      }
+      .doc-btn-size {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        white-space: nowrap;
+      }
+
+      /* Cliente: fila de avatar + datos */
+      .client-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .client-name {
+        font-weight: 600;
+        font-size: 13.5px;
+      }
+      .client-cif {
+        font-size: 11.5px;
+        color: var(--ion-color-medium);
+        font-family: var(--ion-font-family, monospace);
+      }
+
+      /* Acciones de riesgo */
+      .action-btn-row {
+        margin-bottom: 4px;
+      }
+      .action-btn-row:last-child { margin-bottom: 0; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        active: 'invoices',
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Factura INV-2026-0142"
+            description="Acme Industries SL">
+            <ok-status-pill slot="actions" tone="success" dot label="Pagada · 12 mar 2026"></ok-status-pill>
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="print-outline"></ion-icon>
+              Imprimir
+            </ion-button>
+            <ion-button slot="actions" fill="outline" size="small">
+              <ion-icon slot="start" name="mail-outline"></ion-icon>
+              Reenviar email
+            </ion-button>
+            <ion-button slot="actions" size="small">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              Descargar PDF
+            </ion-button>
+          </ok-page-header>
+
+          <div class="inv-layout">
+
+            <!-- ── COLUMNA IZQUIERDA: documento + historial ── -->
+            <div>
+
+              <!-- Documento de factura usando ok-invoice -->
+              <ok-invoice id="invoice-doc"></ok-invoice>
+
+              <!-- Historial de eventos (Timeline) -->
+              <ion-card style="margin-top: 20px;">
+                <ion-card-header>
+                  <ion-card-title>Historial de eventos</ion-card-title>
+                  <ion-card-subtitle>Auditoría completa de la factura</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <ok-timeline id="invoice-timeline"></ok-timeline>
+                </ion-card-content>
+              </ion-card>
+
+            </div>
+
+            <!-- ── COLUMNA DERECHA: metadatos ── -->
+            <aside class="inv-sidebar">
+
+              <!-- Tarjeta: Pago -->
+              <ion-card>
+                <ion-card-content>
+                  <p class="meta-section-label">Pago</p>
+                  <div class="meta-row">
+                    <span class="meta-row__key">Estado</span>
+                    <ok-status-pill tone="success" dot label="Pagada"></ok-status-pill>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-row__key">Método</span>
+                    <span class="meta-row__val">Stripe · Visa **** 4242</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-row__key">Cargo</span>
+                    <span class="meta-row__val">12 mar 2026 · 12:04</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-row__key">Ref. transacción</span>
+                    <span class="meta-row__val meta-row__val--mono">ch_3PqW1kK8s</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-row__key">Total</span>
+                    <span class="meta-row__val meta-row__val--strong">4 178,43 €</span>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Tarjeta: Documentos -->
+              <ion-card>
+                <ion-card-content>
+                  <p class="meta-section-label">Documentos</p>
+                  <div class="doc-btn">
+                    <ion-button fill="outline" size="small" expand="block">
+                      <ion-icon slot="start" name="document-outline"></ion-icon>
+                      Factura PDF
+                      <span slot="end" class="doc-btn-size">214 KB</span>
+                    </ion-button>
+                  </div>
+                  <div class="doc-btn">
+                    <ion-button fill="outline" size="small" expand="block">
+                      <ion-icon slot="start" name="document-text-outline"></ion-icon>
+                      Recibo PDF
+                      <span slot="end" class="doc-btn-size">89 KB</span>
+                    </ion-button>
+                  </div>
+                  <div class="doc-btn">
+                    <ion-button fill="outline" size="small" expand="block">
+                      <ion-icon slot="start" name="code-slash-outline"></ion-icon>
+                      Factura XML (Facturae)
+                      <span slot="end" class="doc-btn-size">12 KB</span>
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Tarjeta: Cliente -->
+              <ion-card>
+                <ion-card-content>
+                  <p class="meta-section-label">Cliente</p>
+                  <div class="client-row">
+                    <ok-avatar name="Acme Industries SL" size="lg" tone="primary"></ok-avatar>
+                    <div>
+                      <div class="client-name">Acme Industries SL</div>
+                      <div class="client-cif">B12345678</div>
+                    </div>
+                  </div>
+                  <ion-button fill="outline" size="small">
+                    <ion-icon slot="start" name="business-outline"></ion-icon>
+                    Ver organización
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Tarjeta: Acciones -->
+              <ion-card>
+                <ion-card-content>
+                  <p class="meta-section-label">Acciones</p>
+                  <div class="action-btn-row">
+                    <ion-button fill="clear" size="small" color="danger" expand="block" style="--padding-start:0">
+                      <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                      Solicitar reembolso
+                    </ion-button>
+                  </div>
+                  <div class="action-btn-row">
+                    <ion-button fill="clear" size="small" expand="block" style="--padding-start:0">
+                      <ion-icon slot="start" name="chatbubble-ellipses-outline"></ion-icon>
+                      Abrir disputa
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+            </aside>
+
+          </div>
+        `,
+        setup(doc) {
+
+          // ── ok-invoice: datos completos de la factura ──
+          const invoiceEl = doc.getElementById('invoice-doc');
+          if (invoiceEl) {
+            invoiceEl.labels = {
+              empty: 'Sin datos de factura.',
+              invoice: 'FACTURA',
+              number: 'Nº',
+              date: 'Emisión',
+              dueDate: 'Vencimiento',
+              billTo: 'Facturar a',
+              description: 'Concepto',
+              qty: 'Cant.',
+              price: 'Precio uds.',
+              discount: 'Dto.',
+              tax: 'IVA',
+              amount: 'Importe',
+              noLines: '— Sin líneas —',
+              taxBase: 'Subtotal',
+              discountTotal: 'Descuento socio (−5%)',
+              total: 'TOTAL',
+              paymentMethod: 'Forma de pago',
+            };
+            invoiceEl.invoice = {
+              issuer: {
+                name: 'ERPlora SL',
+                tax_id: 'CIF B-87 654 321',
+                address: 'C/ Gran Via 28, 4ª planta',
+                city: 'Barcelona',
+                postal_code: '08010',
+                country: 'España',
+                email: 'facturacion@erplora.com',
+              },
+              customer: {
+                name: 'Acme Industries SL',
+                tax_id: 'CIF B-12 345 678',
+                address: 'Polígono Las Salinas, nave 14',
+                city: 'Alicante',
+                postal_code: '03007',
+                country: 'España',
+                email: 'cuentas@acme-industries.com',
+              },
+              type: 'F1',
+              number: 'INV-2026-0142',
+              issue_date: '12/03/2026',
+              due_date: '26/03/2026',
+              lines: [
+                {
+                  description: 'Plan Business · acme-prod · marzo 2026 — Suscripción mensual incluyendo 5 hubs y soporte estándar',
+                  qty: 1,
+                  unit_price: 890.00,
+                  total: 890.00,
+                },
+                {
+                  description: 'Terminal extra POS — Modelo X · 2 unidades adicionales',
+                  qty: 2,
+                  unit_price: 410.00,
+                  total: 820.00,
+                },
+                {
+                  description: 'Soporte premium — 8 horas de consultoría · marzo 2026',
+                  qty: 8,
+                  unit_price: 80.00,
+                  total: 640.00,
+                },
+                {
+                  description: 'Migración módulo contabilidad — Servicio profesional · proyecto cerrado',
+                  qty: 1,
+                  unit_price: 1240.00,
+                  total: 1240.00,
+                },
+                {
+                  description: 'Almacenamiento extra 50 GB — Add-on mensual · marzo 2026',
+                  qty: 1,
+                  unit_price: 45.00,
+                  total: 45.00,
+                },
+              ],
+              subtotal: 3635.00,
+              discount_total: 181.75,
+              taxes: [
+                { label: 'Base imponible', base: 3453.25, amount: 0 },
+                { label: 'IVA 21%', rate: 21, base: 3453.25, amount: 725.18 },
+              ],
+              tax_total: 725.18,
+              total: 4178.43,
+              currency: '€',
+              payment_method: 'Stripe · Visa **** 4242',
+              payment_terms: 'Cargo automático realizado\nRef. transacción: ch_3PqW1kK8s · 12/03 12:04\nPróxima domiciliación: 12/04/2026',
+              notes: 'Pago automático procesado mediante Stripe el 12/03/2026 a las 12:04 CET.\nIVA general 21% aplicado conforme a la Ley 37/1992.\nPara cualquier consulta escríbenos a facturacion@erplora.com indicando el número.',
+              footer: 'Período: Marzo 2026',
+            };
+          }
+
+          // ── ok-timeline: historial de eventos de la factura ──
+          const timeline = doc.getElementById('invoice-timeline');
+          if (timeline) {
+            timeline.items = [
+              {
+                id: 'emitida',
+                title: 'Factura emitida por sistema',
+                description: 'Generada automáticamente al renovarse la suscripción Business · acme-prod.',
+                time: '12/03/2026 · 12:00',
+                icon: 'document-outline',
+                status: 'done',
+                color: 'primary',
+              },
+              {
+                id: 'email-enviado',
+                title: 'Email enviado a cuentas@acme-industries.com',
+                description: 'Asunto: «Tu factura ERPlora · marzo 2026 (4 178,43 €)».',
+                time: '12/03/2026 · 12:01',
+                icon: 'mail-outline',
+                status: 'done',
+                color: 'tertiary',
+              },
+              {
+                id: 'vista',
+                title: 'Factura vista por Ioan Beilic',
+                description: 'Apertura desde IP 81.14.22.10 · Madrid · navegador Safari.',
+                time: '12/03/2026 · 12:03',
+                icon: 'eye-outline',
+                status: 'done',
+              },
+              {
+                id: 'pagada',
+                title: 'Pagada vía Stripe · Visa **** 4242',
+                description: 'Cargo automático de 4 178,43 € procesado correctamente. Ref. ch_3PqW1kK8sJxYz.',
+                time: '12/03/2026 · 12:04',
+                icon: 'checkmark-outline',
+                status: 'done',
+                color: 'success',
+              },
+              {
+                id: 'recibo-enviado',
+                title: 'Recibo enviado a cuentas@acme-industries.com',
+                description: 'PDF del recibo adjunto · sello digital QES verificable.',
+                time: '12/03/2026 · 12:05',
+                icon: 'download-outline',
+                status: 'done',
+                color: 'success',
+              },
+            ];
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

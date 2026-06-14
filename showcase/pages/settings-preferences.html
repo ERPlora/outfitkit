@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Preferencias</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Tabs de sección internas */
+      .pref-tabs {
+        display: flex;
+        gap: 0;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-bottom: 20px;
+      }
+      .pref-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        font-size: .9rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        margin-bottom: -1px;
+        transition: color .15s, border-color .15s;
+      }
+      .pref-tab:hover { color: var(--ion-color-primary); }
+      .pref-tab.is-active {
+        color: var(--ion-color-primary);
+        border-bottom-color: var(--ion-color-primary);
+        font-weight: 600;
+      }
+      .pref-tab ion-badge {
+        --padding-top: 2px; --padding-bottom: 2px; --padding-start: 5px; --padding-end: 5px;
+        font-size: .7rem;
+      }
+
+      /* Paneles de tab */
+      .pref-panel { display: flex; flex-direction: column; gap: 20px; }
+      .pref-panel[hidden] { display: none !important; }
+
+      /* Secciones */
+      .pref-section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .pref-section-title { font-weight: 700; font-size: 1rem; margin: 0 0 2px; }
+      .pref-section-sub { color: var(--ion-color-medium); font-size: .85rem; margin: 0; }
+
+      /* Filas campo en cuadrícula dentro de una card */
+      .pref-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      @media (max-width: 640px) { .pref-fields { grid-template-columns: 1fr; } }
+      .pref-field { display: flex; flex-direction: column; gap: 6px; }
+      .pref-field--full { grid-column: 1 / -1; }
+      .pref-label { font-weight: 600; font-size: .88rem; }
+      .pref-hint { font-size: .78rem; color: var(--ion-color-medium); margin-top: 2px; }
+
+      /* Muted span (usado en ion-segment-button) */
+      .pref-radio-muted { color: var(--ion-color-medium); font-size: .8rem; }
+
+      /* Toggle-rows */
+      .pref-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .pref-toggle-row:first-of-type { border-top: 0; padding-top: 0; }
+      .pref-toggle-row__text { flex: 1 1 auto; }
+      .pref-toggle-row__label { font-weight: 600; font-size: .9rem; display: block; }
+      .pref-toggle-row__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; display: block; }
+
+      /* ion-segment ajuste compacto para formularios */
+      .pref-ion-seg { width: 100%; --border-radius: 8px; }
+
+      /* Atajos de teclado */
+      .pref-shortcut {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .pref-shortcut:last-child { border-bottom: 0; }
+      .pref-shortcut__name { font-weight: 600; font-size: .9rem; margin: 0 0 2px; }
+      .pref-shortcut__desc { color: var(--ion-color-medium); font-size: .78rem; margin: 0; }
+      .pref-keys { display: flex; gap: 4px; align-items: center; }
+      .pref-key-sep { color: var(--ion-color-medium); font-size: .8rem; }
+
+      /* Rango */
+      .pref-range { width: 100%; accent-color: var(--ion-color-primary); margin-top: 4px; }
+
+      /* Barra de guardado (sticky) */
+      .pref-save-bar {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        background: color-mix(in srgb, var(--ion-background-color) 92%, transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 10;
+        margin-top: 24px;
+      }
+      .pref-save-bar__msg {
+        flex: 1 1 auto;
+        font-size: .82rem;
+        color: var(--ion-color-medium);
+      }
+      .pref-save-bar__dirty {
+        color: var(--ion-color-warning);
+        font-weight: 600;
+        display: none;
+      }
+      .is-dirty .pref-save-bar__clean { display: none; }
+      .is-dirty .pref-save-bar__dirty { display: inline; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Preferencias"
+            description="Personaliza idioma, formato, apariencia, notificaciones y atajos de teclado.">
+          </ok-page-header>
+
+          <!-- Tabs de sección -->
+          <div class="pref-tabs" role="tablist" id="pref-tabs">
+            <button class="pref-tab is-active" data-tab="general" role="tab" aria-selected="true">
+              <ion-icon name="settings-outline" style="font-size:15px"></ion-icon>
+              General
+            </button>
+            <button class="pref-tab" data-tab="notif" role="tab" aria-selected="false">
+              <ion-icon name="notifications-outline" style="font-size:15px"></ion-icon>
+              Notificaciones
+              <ion-badge color="primary">3</ion-badge>
+            </button>
+            <button class="pref-tab" data-tab="appear" role="tab" aria-selected="false">
+              <ion-icon name="contrast-outline" style="font-size:15px"></ion-icon>
+              Apariencia
+            </button>
+            <button class="pref-tab" data-tab="lang" role="tab" aria-selected="false">
+              <ion-icon name="globe-outline" style="font-size:15px"></ion-icon>
+              Idioma y región
+            </button>
+            <button class="pref-tab" data-tab="a11y" role="tab" aria-selected="false">
+              <ion-icon name="eye-outline" style="font-size:15px"></ion-icon>
+              Accesibilidad
+            </button>
+          </div>
+
+          <!-- ══ PANEL: General ══════════════════════════════════════════ -->
+          <div class="pref-panel" id="panel-general" role="tabpanel">
+
+            <!-- Idioma y región -->
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Idioma y región</p>
+                  <p class="pref-section-sub">Afecta a fechas, números, moneda y mensajes del sistema.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div class="pref-fields">
+                    <div class="pref-field">
+                      <span class="pref-label">Idioma de la interfaz</span>
+                      <ion-select
+                        fill="outline"
+                        value="es-ES"
+                        label-placement="stacked"
+                        interface="popover">
+                        <ion-select-option value="es-ES">Español (España)</ion-select-option>
+                        <ion-select-option value="en">English</ion-select-option>
+                        <ion-select-option value="ca">Català</ion-select-option>
+                        <ion-select-option value="eu">Euskara</ion-select-option>
+                        <ion-select-option value="gl">Galego</ion-select-option>
+                        <ion-select-option value="pt">Português</ion-select-option>
+                        <ion-select-option value="fr">Français</ion-select-option>
+                        <ion-select-option value="de">Deutsch</ion-select-option>
+                        <ion-select-option value="it">Italiano</ion-select-option>
+                      </ion-select>
+                      <span class="pref-hint">Cambia inmediatamente tras guardar.</span>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Zona horaria</span>
+                      <ion-input
+                        fill="outline"
+                        value="Europe/Madrid (GMT+02:00 CEST)">
+                        <ion-icon slot="start" name="time-outline"></ion-icon>
+                      </ion-input>
+                      <span class="pref-hint">Detectada automáticamente · 8 may 2026, 09:14</span>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Formato de fecha</span>
+                      <ion-radio-group id="date-fmt-group" value="DD/MM/YYYY">
+                        <ion-radio value="DD/MM/YYYY" label-placement="end" justify="start">DD/MM/YYYY <span class="pref-radio-muted">· 08/05/2026</span></ion-radio>
+                        <ion-radio value="MM/DD/YYYY" label-placement="end" justify="start">MM/DD/YYYY <span class="pref-radio-muted">· 05/08/2026</span></ion-radio>
+                        <ion-radio value="YYYY-MM-DD" label-placement="end" justify="start">YYYY-MM-DD <span class="pref-radio-muted">· 2026-05-08</span></ion-radio>
+                      </ion-radio-group>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Formato de hora</span>
+                      <ion-segment id="time-fmt-seg" value="24h" class="pref-ion-seg">
+                        <ion-segment-button value="12h">12 h <span class="pref-radio-muted" style="margin-left:4px">9:14 AM</span></ion-segment-button>
+                        <ion-segment-button value="24h">24 h <span class="pref-radio-muted" style="margin-left:4px">09:14</span></ion-segment-button>
+                      </ion-segment>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Primer día de la semana</span>
+                      <ion-segment id="first-day-seg" value="mon" class="pref-ion-seg">
+                        <ion-segment-button value="mon">Lunes</ion-segment-button>
+                        <ion-segment-button value="sun">Domingo</ion-segment-button>
+                      </ion-segment>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+            <!-- Apariencia -->
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Apariencia</p>
+                  <p class="pref-section-sub">Tema, paleta de marca y densidad visual.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div style="display:flex;flex-direction:column;gap:18px;">
+                    <div class="pref-field">
+                      <span class="pref-label">Tema</span>
+                      <ion-segment id="theme-seg" value="auto" class="pref-ion-seg">
+                        <ion-segment-button value="auto">
+                          <ion-icon name="desktop-outline" style="font-size:14px"></ion-icon> Auto
+                        </ion-segment-button>
+                        <ion-segment-button value="light">
+                          <ion-icon name="sunny-outline" style="font-size:14px"></ion-icon> Claro
+                        </ion-segment-button>
+                        <ion-segment-button value="dark">
+                          <ion-icon name="moon-outline" style="font-size:14px"></ion-icon> Oscuro
+                        </ion-segment-button>
+                      </ion-segment>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Paleta de marca</span>
+                      <ion-select fill="outline" value="erplora" label-placement="stacked" interface="popover">
+                        <ion-select-option value="erplora">ERPlora · terracota (default)</ion-select-option>
+                        <ion-select-option value="corporate">Corporate · banking navy</ion-select-option>
+                        <ion-select-option value="minimal">Minimal · mono+gold</ion-select-option>
+                        <ion-select-option value="forest">Forest · earth green</ion-select-option>
+                        <ion-select-option value="ocean">Ocean · tech teal</ion-select-option>
+                        <ion-select-option value="violet">Violet · creative purple</ion-select-option>
+                      </ion-select>
+                      <span class="pref-hint">Solo afecta a tu sesión personal. No cambia el branding de la organización.</span>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Tamaño de texto · <span id="txt-size-val">16 px</span></span>
+                      <input type="range" class="pref-range" id="txt-size-range" min="13" max="22" step="1" value="16" />
+                      <span class="pref-hint">Aplica a toda la app. 16 px es el valor recomendado.</span>
+                    </div>
+                    <div>
+                      <div class="pref-toggle-row">
+                        <div class="pref-toggle-row__text">
+                          <span class="pref-toggle-row__label">Reducir animaciones</span>
+                          <span class="pref-toggle-row__desc">Desactiva transiciones suaves y movimientos parallax.</span>
+                        </div>
+                        <ion-toggle id="tog-reduce-motion"></ion-toggle>
+                      </div>
+                      <div class="pref-toggle-row">
+                        <div class="pref-toggle-row__text">
+                          <span class="pref-toggle-row__label">Contraste alto</span>
+                          <span class="pref-toggle-row__desc">Aumenta el contraste de texto y bordes (WCAG AAA).</span>
+                        </div>
+                        <ion-toggle id="tog-contrast"></ion-toggle>
+                      </div>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+            <!-- Notificaciones -->
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Notificaciones</p>
+                  <p class="pref-section-sub">Cómo y cuándo te avisamos.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div class="pref-field">
+                      <span class="pref-label">Resumen por email</span>
+                      <ion-segment id="email-freq-g" value="daily" class="pref-ion-seg" style="flex-wrap:wrap;">
+                        <ion-segment-button value="alert">Solo alertas</ion-segment-button>
+                        <ion-segment-button value="daily">Diario</ion-segment-button>
+                        <ion-segment-button value="weekly">Semanal</ion-segment-button>
+                        <ion-segment-button value="monthly">Mensual</ion-segment-button>
+                        <ion-segment-button value="never">Nunca</ion-segment-button>
+                      </ion-segment>
+                    </div>
+                    <div>
+                      <div class="pref-toggle-row">
+                        <div class="pref-toggle-row__text">
+                          <span class="pref-toggle-row__label">Notificaciones push</span>
+                          <span class="pref-toggle-row__desc">En navegador y app móvil. Permitido por tu organización.</span>
+                        </div>
+                        <ion-toggle id="tog-push" checked></ion-toggle>
+                      </div>
+                      <div class="pref-toggle-row">
+                        <div class="pref-toggle-row__text">
+                          <span class="pref-toggle-row__label">Sonido</span>
+                          <span class="pref-toggle-row__desc">Reproduce un breve "ping" para alertas críticas.</span>
+                        </div>
+                        <ion-toggle id="tog-sound" checked></ion-toggle>
+                      </div>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Horario laboral · solo recibo notificaciones en este rango</span>
+                      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <ion-input fill="outline" type="time" value="09:00" style="max-width:140px;"></ion-input>
+                        <ion-icon name="arrow-forward-outline" color="medium"></ion-icon>
+                        <ion-input fill="outline" type="time" value="19:00" style="max-width:140px;"></ion-input>
+                        <span style="color:var(--ion-color-medium);font-size:.82rem;">L–V</span>
+                      </div>
+                      <span class="pref-hint">Fuera de este rango solo recibirás alertas marcadas como críticas.</span>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+            <!-- Atajos de teclado -->
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Atajos de teclado</p>
+                  <p class="pref-section-sub">Toca la combinación para reasignarla.</p>
+                </div>
+                <ion-button fill="outline" size="small">Restaurar por defecto</ion-button>
+              </div>
+              <ion-card>
+                <ion-card-content style="padding:0;">
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Paleta de comandos</p>
+                      <p class="pref-shortcut__desc">Buscar y ejecutar acciones.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>⌘</ok-kbd>
+                      <span class="pref-key-sep">+</span>
+                      <ok-kbd>K</ok-kbd>
+                    </div>
+                  </div>
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Nuevo registro</p>
+                      <p class="pref-shortcut__desc">Crear ítem en la sección actual.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>⌘</ok-kbd>
+                      <span class="pref-key-sep">+</span>
+                      <ok-kbd>N</ok-kbd>
+                    </div>
+                  </div>
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Buscar global</p>
+                      <p class="pref-shortcut__desc">Buscar en toda la organización.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>/</ok-kbd>
+                    </div>
+                  </div>
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Guardar</p>
+                      <p class="pref-shortcut__desc">Persistir cambios del formulario.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>⌘</ok-kbd>
+                      <span class="pref-key-sep">+</span>
+                      <ok-kbd>S</ok-kbd>
+                    </div>
+                  </div>
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Cambiar organización</p>
+                      <p class="pref-shortcut__desc">Saltar entre tenants.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>⌘</ok-kbd>
+                      <span class="pref-key-sep">+</span>
+                      <ok-kbd>⇧</ok-kbd>
+                      <span class="pref-key-sep">+</span>
+                      <ok-kbd>O</ok-kbd>
+                    </div>
+                  </div>
+                  <div class="pref-shortcut">
+                    <div>
+                      <p class="pref-shortcut__name">Mostrar atajos</p>
+                      <p class="pref-shortcut__desc">Esta lista que estás viendo.</p>
+                    </div>
+                    <div class="pref-keys">
+                      <ok-kbd>?</ok-kbd>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+          </div>
+
+          <!-- ══ PANEL: Notificaciones ══════════════════════════════════ -->
+          <div class="pref-panel" id="panel-notif" hidden role="tabpanel">
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Resumen por email</p>
+                  <p class="pref-section-sub">Frecuencia con la que recibes resúmenes.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <ion-segment id="email-freq-g2" value="daily" class="pref-ion-seg" style="flex-wrap:wrap;">
+                    <ion-segment-button value="alert">Solo alertas</ion-segment-button>
+                    <ion-segment-button value="daily">Diario</ion-segment-button>
+                    <ion-segment-button value="weekly">Semanal</ion-segment-button>
+                    <ion-segment-button value="monthly">Mensual</ion-segment-button>
+                    <ion-segment-button value="never">Nunca</ion-segment-button>
+                  </ion-segment>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Canales</p>
+                  <p class="pref-section-sub">Activa o desactiva los canales de aviso.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div class="pref-toggle-row" style="border-top:0;padding-top:0;">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Notificaciones push</span>
+                      <span class="pref-toggle-row__desc">En navegador y app móvil.</span>
+                    </div>
+                    <ion-toggle id="tog-push2" checked></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Sonido</span>
+                      <span class="pref-toggle-row__desc">Reproduce un breve "ping".</span>
+                    </div>
+                    <ion-toggle id="tog-sound2" checked></ion-toggle>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+          </div>
+
+          <!-- ══ PANEL: Apariencia ══════════════════════════════════════ -->
+          <div class="pref-panel" id="panel-appear" hidden role="tabpanel">
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Tema</p>
+                  <p class="pref-section-sub">Auto / Claro / Oscuro.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <ion-segment id="theme-seg2" value="auto" class="pref-ion-seg">
+                    <ion-segment-button value="auto">Auto</ion-segment-button>
+                    <ion-segment-button value="light">Claro</ion-segment-button>
+                    <ion-segment-button value="dark">Oscuro</ion-segment-button>
+                  </ion-segment>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Densidad y tipografía</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div class="pref-field">
+                      <span class="pref-label">Tamaño de texto · <span id="txt-size-val2">16 px</span></span>
+                      <input type="range" class="pref-range" id="txt-size-range2" min="13" max="22" step="1" value="16" />
+                    </div>
+                    <div class="pref-toggle-row" style="border-top:0;padding-top:0;">
+                      <div class="pref-toggle-row__text">
+                        <span class="pref-toggle-row__label">Reducir animaciones</span>
+                        <span class="pref-toggle-row__desc">Desactiva transiciones suaves.</span>
+                      </div>
+                      <ion-toggle id="tog-motion2"></ion-toggle>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+          </div>
+
+          <!-- ══ PANEL: Idioma y región ════════════════════════════════ -->
+          <div class="pref-panel" id="panel-lang" hidden role="tabpanel">
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Idioma</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div class="pref-fields">
+                    <div class="pref-field">
+                      <span class="pref-label">Idioma de la interfaz</span>
+                      <ion-select fill="outline" value="es-ES" label-placement="stacked" interface="popover">
+                        <ion-select-option value="es-ES">Español (España)</ion-select-option>
+                        <ion-select-option value="en">English</ion-select-option>
+                        <ion-select-option value="ca">Català</ion-select-option>
+                        <ion-select-option value="eu">Euskara</ion-select-option>
+                        <ion-select-option value="gl">Galego</ion-select-option>
+                        <ion-select-option value="pt">Português</ion-select-option>
+                        <ion-select-option value="fr">Français</ion-select-option>
+                        <ion-select-option value="de">Deutsch</ion-select-option>
+                      </ion-select>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Moneda</span>
+                      <ion-select fill="outline" value="EUR" label-placement="stacked" interface="popover">
+                        <ion-select-option value="EUR">EUR · Euro</ion-select-option>
+                        <ion-select-option value="USD">USD · Dólar</ion-select-option>
+                        <ion-select-option value="GBP">GBP · Libra</ion-select-option>
+                      </ion-select>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Formato de fecha</span>
+                      <ion-radio-group id="date-fmt-group2" value="DD/MM/YYYY">
+                        <ion-radio value="DD/MM/YYYY" label-placement="end" justify="start">DD/MM/YYYY</ion-radio>
+                        <ion-radio value="MM/DD/YYYY" label-placement="end" justify="start">MM/DD/YYYY</ion-radio>
+                        <ion-radio value="YYYY-MM-DD" label-placement="end" justify="start">YYYY-MM-DD</ion-radio>
+                      </ion-radio-group>
+                    </div>
+                    <div class="pref-field">
+                      <span class="pref-label">Primer día de la semana</span>
+                      <ion-segment id="first-day-seg2" value="mon" class="pref-ion-seg">
+                        <ion-segment-button value="mon">Lunes</ion-segment-button>
+                        <ion-segment-button value="sun">Domingo</ion-segment-button>
+                      </ion-segment>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+          </div>
+
+          <!-- ══ PANEL: Accesibilidad ══════════════════════════════════ -->
+          <div class="pref-panel" id="panel-a11y" hidden role="tabpanel">
+
+            <section>
+              <div class="pref-section-head">
+                <div>
+                  <p class="pref-section-title">Accesibilidad visual y motriz</p>
+                  <p class="pref-section-sub">Ajustes para mejorar la usabilidad.</p>
+                </div>
+              </div>
+              <ion-card>
+                <ion-card-content>
+                  <div class="pref-toggle-row" style="border-top:0;padding-top:0;">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Contraste alto</span>
+                      <span class="pref-toggle-row__desc">Aumenta el contraste de texto y bordes (WCAG AAA).</span>
+                    </div>
+                    <ion-toggle id="tog-a11y-contrast"></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Reducir animaciones</span>
+                      <span class="pref-toggle-row__desc">Desactiva transiciones suaves.</span>
+                    </div>
+                    <ion-toggle id="tog-a11y-motion"></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Modo lector de pantalla</span>
+                      <span class="pref-toggle-row__desc">Optimiza la app para NVDA / VoiceOver.</span>
+                    </div>
+                    <ion-toggle id="tog-screen-reader"></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Navegación por teclado</span>
+                      <span class="pref-toggle-row__desc">Activa atajos completos y skip-links.</span>
+                    </div>
+                    <ion-toggle id="tog-keyboard-nav" checked></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Tipografía para dislexia</span>
+                      <span class="pref-toggle-row__desc">Sustituye la fuente por OpenDyslexic.</span>
+                    </div>
+                    <ion-toggle id="tog-dyslexic"></ion-toggle>
+                  </div>
+                  <div class="pref-toggle-row">
+                    <div class="pref-toggle-row__text">
+                      <span class="pref-toggle-row__label">Indicadores de foco visibles</span>
+                      <span class="pref-toggle-row__desc">Muestra anillos de foco también con ratón.</span>
+                    </div>
+                    <ion-toggle id="tog-focus-rings" checked></ion-toggle>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </section>
+
+          </div>
+
+          <!-- Barra de guardado sticky -->
+          <div class="pref-save-bar" id="save-bar">
+            <span class="pref-save-bar__msg">
+              <span class="pref-save-bar__clean">Sin cambios.</span>
+              <span class="pref-save-bar__dirty">Cambios sin guardar · se descartarán al cerrar sesión.</span>
+            </span>
+            <ion-button fill="outline" size="small" id="btn-reset" disabled>Restablecer</ion-button>
+            <ion-button size="small" id="btn-save" disabled>
+              <ion-icon slot="start" name="save-outline"></ion-icon>
+              Guardar cambios
+            </ion-button>
+          </div>
+        `,
+        setup(doc) {
+          // ── Estado de la vista ──────────────────────────────────────────
+          let dirty = false;
+
+          // ── Gestión de tabs ─────────────────────────────────────────────
+          const TABS = ['general', 'notif', 'appear', 'lang', 'a11y'];
+          const tabBtns = doc.querySelectorAll('#pref-tabs .pref-tab');
+          const panels = TABS.map((id) => doc.getElementById('panel-' + id));
+
+          const showTab = (target) => {
+            tabBtns.forEach((btn) => {
+              const active = btn.dataset.tab === target;
+              btn.classList.toggle('is-active', active);
+              btn.setAttribute('aria-selected', String(active));
+            });
+            panels.forEach((panel, i) => {
+              if (TABS[i] === target) {
+                panel.removeAttribute('hidden');
+              } else {
+                panel.setAttribute('hidden', '');
+              }
+            });
+          };
+
+          tabBtns.forEach((btn) => {
+            btn.addEventListener('click', () => showTab(btn.dataset.tab));
+          });
+
+          // ── Marcar dirty y actualizar barra ────────────────────────────
+          const saveBar = doc.getElementById('save-bar');
+          const btnReset = doc.getElementById('btn-reset');
+          const btnSave = doc.getElementById('btn-save');
+
+          const markDirty = () => {
+            dirty = true;
+            saveBar.classList.add('is-dirty');
+            btnReset.removeAttribute('disabled');
+            btnSave.removeAttribute('disabled');
+          };
+
+          const clearDirty = () => {
+            dirty = false;
+            saveBar.classList.remove('is-dirty');
+            btnReset.setAttribute('disabled', '');
+            btnSave.setAttribute('disabled', '');
+          };
+
+          // ── ion-segment y ion-radio-group: marcan dirty en ionChange ──
+          const segIds = [
+            'theme-seg', 'theme-seg2',
+            'time-fmt-seg',
+            'first-day-seg', 'first-day-seg2',
+            'email-freq-g', 'email-freq-g2',
+          ];
+          segIds.forEach((id) => {
+            const el = doc.getElementById(id);
+            if (el) el.addEventListener('ionChange', markDirty);
+          });
+
+          // ── Radios de fecha (ion-radio-group) ───────────────────────────
+          const radioGroupIds = ['date-fmt-group', 'date-fmt-group2'];
+          radioGroupIds.forEach((id) => {
+            const el = doc.getElementById(id);
+            if (el) el.addEventListener('ionChange', markDirty);
+          });
+
+          // ── Rango tamaño texto ──────────────────────────────────────────
+          const sizeRange = doc.getElementById('txt-size-range');
+          const sizeVal = doc.getElementById('txt-size-val');
+          if (sizeRange && sizeVal) {
+            sizeRange.addEventListener('input', () => {
+              sizeVal.textContent = sizeRange.value + ' px';
+              markDirty();
+            });
+          }
+          const sizeRange2 = doc.getElementById('txt-size-range2');
+          const sizeVal2 = doc.getElementById('txt-size-val2');
+          if (sizeRange2 && sizeVal2) {
+            sizeRange2.addEventListener('input', () => {
+              sizeVal2.textContent = sizeRange2.value + ' px';
+              markDirty();
+            });
+          }
+
+          // ── Toggles ─────────────────────────────────────────────────────
+          const togIds = [
+            'tog-reduce-motion', 'tog-contrast', 'tog-push', 'tog-sound',
+            'tog-push2', 'tog-sound2', 'tog-motion2',
+            'tog-a11y-contrast', 'tog-a11y-motion', 'tog-screen-reader',
+            'tog-keyboard-nav', 'tog-dyslexic', 'tog-focus-rings',
+          ];
+          togIds.forEach((id) => {
+            const el = doc.getElementById(id);
+            if (el) el.addEventListener('ionChange', markDirty);
+          });
+
+          // (ion-radio-group events ya cableados arriba)
+
+          // ── Selects ──────────────────────────────────────────────────────
+          doc.querySelectorAll('ion-select').forEach((s) => {
+            s.addEventListener('ionChange', markDirty);
+          });
+
+          // ── Inputs ───────────────────────────────────────────────────────
+          doc.querySelectorAll('ion-input').forEach((inp) => {
+            inp.addEventListener('ionInput', markDirty);
+          });
+
+          // ── Barra de guardado: acciones ──────────────────────────────────
+          if (btnReset) {
+            btnReset.addEventListener('click', () => {
+              // Demo: simplemente limpia el estado dirty
+              clearDirty();
+            });
+          }
+          if (btnSave) {
+            btnSave.addEventListener('click', () => {
+              // Demo: simula guardar
+              clearDirty();
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

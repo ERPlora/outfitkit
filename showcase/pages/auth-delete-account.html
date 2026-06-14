@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Eliminar cuenta</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista — solo estructura, sin colores de marca. */
+      .ui-delete-wrap {
+        max-width: 680px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      /* Sub-tabs de seguridad */
+      .ui-sec-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-bottom: 20px;
+      }
+      .ui-sec-tab {
+        padding: 10px 18px;
+        font-size: .88rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        background: none;
+        border-top: 0;
+        border-left: 0;
+        border-right: 0;
+        text-decoration: none;
+      }
+      .ui-sec-tab[aria-current="page"] {
+        color: var(--ion-color-danger);
+        border-bottom-color: var(--ion-color-danger);
+        font-weight: 700;
+      }
+
+      /* Lista de consecuencias */
+      .ui-consequence-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .ui-consequence-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .ui-consequence-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .ui-consequence-icon--danger {
+        background: color-mix(in srgb, var(--ion-color-danger) 15%, transparent);
+        color: var(--ion-color-danger);
+      }
+      .ui-consequence-icon--info {
+        background: color-mix(in srgb, var(--ion-color-primary) 15%, transparent);
+        color: var(--ion-color-primary);
+      }
+      .ui-consequence-icon--warning {
+        background: color-mix(in srgb, var(--ion-color-warning) 18%, transparent);
+        color: var(--ion-color-warning);
+      }
+      .ui-consequence-body strong {
+        display: block;
+        font-weight: 600;
+        font-size: .92rem;
+        margin-bottom: 3px;
+      }
+      .ui-consequence-body small {
+        color: var(--ion-color-medium);
+        font-size: .8rem;
+        line-height: 1.45;
+      }
+
+      /* Acciones previas: grid de botones verticales */
+      .ui-prereq-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+      }
+      .ui-prereq-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 10px;
+        text-align: center;
+        height: auto;
+      }
+      .ui-prereq-btn small {
+        font-size: .72rem;
+        font-weight: 400;
+        color: var(--ion-color-medium);
+        display: block;
+        margin-top: 2px;
+      }
+
+      /* Campo de contraseña con ojito */
+      .ui-pwd-wrap {
+        position: relative;
+      }
+      .ui-pwd-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: 0;
+        cursor: pointer;
+        color: var(--ion-color-medium);
+        padding: 4px;
+        display: flex;
+        align-items: center;
+      }
+
+      /* Campos del formulario de confirmación */
+      .ui-confirm-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .ui-field-label {
+        display: block;
+        font-weight: 600;
+        font-size: .9rem;
+        margin-bottom: 6px;
+      }
+      .ui-field-label--req::after {
+        content: " *";
+        color: var(--ion-color-danger);
+      }
+      .ui-field-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+      .ui-field-code {
+        background: var(--ion-color-step-50, rgba(127,127,127,.08));
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: var(--ion-color-danger);
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .ui-confirm-ok {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        color: var(--ion-color-success);
+        font-size: .78rem;
+        margin-top: 6px;
+      }
+
+      /* Tarjeta peligro: borde rojo sutil */
+      .ui-card-danger {
+        border: 1px solid color-mix(in srgb, var(--ion-color-danger) 30%, var(--ion-border-color, rgba(127,127,127,.2)));
+      }
+
+      /* Alternativas footer */
+      .ui-alt-footer {
+        text-align: center;
+        padding: 8px 0 24px;
+      }
+      .ui-alt-footer p {
+        color: var(--ion-color-medium);
+        font-size: .88rem;
+        font-weight: 500;
+        margin: 0 0 8px;
+      }
+      .ui-alt-links {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+        font-size: .88rem;
+      }
+      .ui-alt-links a {
+        color: var(--ion-color-primary);
+        text-decoration: none;
+      }
+      .ui-alt-links span {
+        color: var(--ion-color-medium);
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Eliminar cuenta"
+            description="Esta acción cierra tu cuenta de ERPlora Cloud. Las facturas y registros legales se conservan 7 años por obligación fiscal."
+            level="1">
+            <ion-icon slot="actions" name="trash-outline" style="color:var(--ion-color-danger);font-size:1.4rem"></ion-icon>
+          </ok-page-header>
+
+          <!-- Sub-tabs de seguridad -->
+          <nav class="ui-sec-tabs" aria-label="Sub-secciones de seguridad de cuenta">
+            <a class="ui-sec-tab" href="#">Contraseña</a>
+            <a class="ui-sec-tab" href="#">Sesiones</a>
+            <a class="ui-sec-tab" href="#">Dispositivos</a>
+            <a class="ui-sec-tab" aria-current="page">Eliminar cuenta</a>
+          </nav>
+
+          <div class="ui-delete-wrap">
+
+            <!-- Callout de peligro -->
+            <ok-inline-feedback
+              tone="danger"
+              heading="Esta acción es irreversible">
+              Una vez confirmada, la eliminación se procesa de forma inmediata y no podemos restaurar tu cuenta ni los datos asociados.
+            </ok-inline-feedback>
+
+            <!-- Qué pasará -->
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Qué pasará al eliminar tu cuenta</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <ul class="ui-consequence-list">
+                  <li class="ui-consequence-item">
+                    <span class="ui-consequence-icon ui-consequence-icon--danger">
+                      <ion-icon name="close-outline" style="font-size:13px"></ion-icon>
+                    </span>
+                    <div class="ui-consequence-body">
+                      <strong>Se eliminarán tus datos personales</strong>
+                      <small>Nombre, email, avatar, preferencias, claves API y dispositivos de confianza. Plazo de borrado: 30 días.</small>
+                    </div>
+                  </li>
+                  <li class="ui-consequence-item">
+                    <span class="ui-consequence-icon ui-consequence-icon--danger">
+                      <ion-icon name="close-outline" style="font-size:13px"></ion-icon>
+                    </span>
+                    <div class="ui-consequence-body">
+                      <strong>Perderás acceso a 4 organizaciones</strong>
+                      <small>acme S.L., Cafetería La Rambla, Bodega Núñez, Studio Ortega · membresías revocadas inmediatamente.</small>
+                    </div>
+                  </li>
+                  <li class="ui-consequence-item">
+                    <span class="ui-consequence-icon ui-consequence-icon--info">
+                      <ion-icon name="information-outline" style="font-size:13px"></ion-icon>
+                    </span>
+                    <div class="ui-consequence-body">
+                      <strong>Tus 3 hubs continúan activos</strong>
+                      <small>hub-madrid-pos, hub-bcn-warehouse, hub-sevilla-bar siguen funcionando para los demás miembros.</small>
+                    </div>
+                  </li>
+                  <li class="ui-consequence-item">
+                    <span class="ui-consequence-icon ui-consequence-icon--warning">
+                      <ion-icon name="alert-outline" style="font-size:13px"></ion-icon>
+                    </span>
+                    <div class="ui-consequence-body">
+                      <strong>Las facturas pasadas se mantienen 7 años</strong>
+                      <small>Por obligación fiscal (Art. 30 Código de Comercio + Reglamento 1619/2012). Quedarán solo accesibles a Hacienda y a tu administrador.</small>
+                    </div>
+                  </li>
+                </ul>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Antes de eliminar -->
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Antes de eliminar</ion-card-title>
+                <ion-card-subtitle>Sugerencias antes del paso final</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="ui-prereq-grid">
+                  <ion-button fill="outline" class="ui-prereq-btn" id="btn-export">
+                    <div>
+                      <ion-icon name="download-outline" style="font-size:20px;display:block;margin:0 auto 6px"></ion-icon>
+                      <span>Exportar mis datos</span>
+                      <small>JSON · 1.2 MB · listo en 5 min</small>
+                    </div>
+                  </ion-button>
+                  <ion-button fill="outline" class="ui-prereq-btn" id="btn-transfer">
+                    <div>
+                      <ion-icon name="person-add-outline" style="font-size:20px;display:block;margin:0 auto 6px"></ion-icon>
+                      <span>Transferir propiedad de hubs</span>
+                      <small>3 hubs · elige nuevo owner</small>
+                    </div>
+                  </ion-button>
+                  <ion-button fill="outline" class="ui-prereq-btn" id="btn-cancel-sub">
+                    <div>
+                      <ion-icon name="card-outline" style="font-size:20px;display:block;margin:0 auto 6px"></ion-icon>
+                      <span>Cancelar suscripciones</span>
+                      <small>Plan Pro · 89 €/mes activo</small>
+                    </div>
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Confirmar eliminación -->
+            <ion-card class="ui-card-danger">
+              <ion-card-header>
+                <ion-card-title style="color:var(--ion-color-danger)">Confirmar eliminación</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="ui-confirm-fields">
+
+                  <!-- Contraseña -->
+                  <div>
+                    <label class="ui-field-label ui-field-label--req" for="input-pwd">Tu contraseña</label>
+                    <div class="ui-pwd-wrap">
+                      <ion-input
+                        id="input-pwd"
+                        type="password"
+                        fill="outline"
+                        placeholder="Contraseña actual"
+                        autocomplete="current-password"
+                        aria-label="Contraseña actual">
+                      </ion-input>
+                      <button class="ui-pwd-toggle" type="button" id="btn-show-pwd" aria-label="Mostrar u ocultar contraseña">
+                        <ion-icon name="eye-outline" id="icon-pwd"></ion-icon>
+                      </button>
+                    </div>
+                    <small class="ui-field-hint">Verificamos tu identidad antes de eliminar nada.</small>
+                  </div>
+
+                  <!-- Texto de confirmación -->
+                  <div>
+                    <label class="ui-field-label ui-field-label--req" for="input-confirm">
+                      Escribe <code class="ui-field-code">ELIMINAR MI CUENTA</code> para confirmar
+                    </label>
+                    <ion-input
+                      id="input-confirm"
+                      fill="outline"
+                      placeholder="ELIMINAR MI CUENTA"
+                      autocomplete="off"
+                      aria-label="Texto de confirmación">
+                    </ion-input>
+                    <div id="confirm-ok" class="ui-confirm-ok" style="display:none">
+                      <ion-icon name="checkmark-outline"></ion-icon>
+                      Confirmación correcta.
+                    </div>
+                  </div>
+
+                  <!-- Botón de eliminar -->
+                  <ion-button
+                    id="btn-delete"
+                    expand="block"
+                    color="danger"
+                    disabled>
+                    <ion-icon slot="start" name="trash-outline"></ion-icon>
+                    Eliminar cuenta permanentemente
+                  </ion-button>
+
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Alternativas footer -->
+            <div class="ui-alt-footer">
+              <p>¿Buscas otra cosa?</p>
+              <div class="ui-alt-links">
+                <a href="#">Cambiar plan</a>
+                <span>·</span>
+                <a href="#">Pausar cuenta 30 días</a>
+                <span>·</span>
+                <a href="#">Contactar soporte</a>
+              </div>
+            </div>
+
+          </div>
+        `,
+        setup(doc) {
+          // Estado interno de los campos
+          const state = {
+            pwd: '',
+            confirm: '',
+            showPwd: false,
+          };
+
+          const PHRASE = 'ELIMINAR MI CUENTA';
+
+          const inputPwd = doc.getElementById('input-pwd');
+          const inputConfirm = doc.getElementById('input-confirm');
+          const btnDelete = doc.getElementById('btn-delete');
+          const btnShowPwd = doc.getElementById('btn-show-pwd');
+          const iconPwd = doc.getElementById('icon-pwd');
+          const confirmOk = doc.getElementById('confirm-ok');
+
+          // Recalcular estado del botón de eliminar
+          const recompute = () => {
+            const ready = state.confirm === PHRASE && state.pwd.length >= 6;
+            if (btnDelete) btnDelete.disabled = !ready;
+            if (confirmOk) {
+              confirmOk.style.display = state.confirm === PHRASE ? 'flex' : 'none';
+            }
+            // Borde rojo en el input de confirmación si está incorrecto y no vacío
+            if (inputConfirm) {
+              if (state.confirm.length > 0 && state.confirm !== PHRASE) {
+                inputConfirm.setAttribute('color', 'danger');
+              } else {
+                inputConfirm.removeAttribute('color');
+              }
+            }
+          };
+
+          // Listener contraseña
+          if (inputPwd) {
+            inputPwd.addEventListener('ionInput', (e) => {
+              state.pwd = (e.detail && e.detail.value) || '';
+              recompute();
+            });
+          }
+
+          // Listener confirmación
+          if (inputConfirm) {
+            inputConfirm.addEventListener('ionInput', (e) => {
+              state.confirm = (e.detail && e.detail.value) || '';
+              recompute();
+            });
+          }
+
+          // Toggle mostrar/ocultar contraseña
+          if (btnShowPwd && inputPwd) {
+            btnShowPwd.addEventListener('click', () => {
+              state.showPwd = !state.showPwd;
+              inputPwd.type = state.showPwd ? 'text' : 'password';
+              if (iconPwd) {
+                iconPwd.setAttribute('name', state.showPwd ? 'eye-off-outline' : 'eye-outline');
+              }
+            });
+          }
+
+          // Botón exportar datos (mock)
+          const btnExport = doc.getElementById('btn-export');
+          if (btnExport) {
+            btnExport.addEventListener('click', () => {
+              // Acción de exportación — placeholder
+            });
+          }
+
+          // Botón transferir hubs (mock)
+          const btnTransfer = doc.getElementById('btn-transfer');
+          if (btnTransfer) {
+            btnTransfer.addEventListener('click', () => {
+              // Acción de transferencia — placeholder
+            });
+          }
+
+          // Botón cancelar suscripción (mock)
+          const btnCancelSub = doc.getElementById('btn-cancel-sub');
+          if (btnCancelSub) {
+            btnCancelSub.addEventListener('click', () => {
+              // Acción de cancelar suscripción — placeholder
+            });
+          }
+
+          // Botón eliminar (mock — no hace nada en el showcase)
+          if (btnDelete) {
+            btnDelete.addEventListener('click', () => {
+              // En producción: POST /api/v1/account/delete/
+            });
+          }
+
+          // Estado inicial
+          recompute();
+        },
+      });
+    </script>
+  </body>
+</html>

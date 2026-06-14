@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Activar 2FA</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de la vista 2FA setup (estructura, sin colores de marca). */
+
+      /* Stepper con margen inferior */
+      .ui-stepper-wrap {
+        margin-bottom: 1.5rem;
+      }
+
+      /* Secciones de paso: ocultas por defecto, se muestran por JS */
+      .ui-step-section { display: none; }
+      .ui-step-section--visible { display: block; }
+
+      /* Lista de apps autenticadoras (paso 1) */
+      .ui-app-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin: 0.5rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .ui-app-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-app-item:last-child { border-bottom: 0; }
+      .ui-app-icon {
+        width: 2.2rem; height: 2.2rem;
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        display: grid; place-items: center;
+        flex: 0 0 auto;
+        color: var(--ion-color-primary);
+      }
+      .ui-app-name { font-weight: 600; font-size: 0.9rem; }
+      .ui-app-plat { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: 1px; }
+
+      /* QR + instrucciones (paso 2): dos columnas */
+      /* Se usa .pg-cols del shell; no añadimos duplicado */
+
+      /* Pasos numerados dentro de la card de instrucciones */
+      .ui-instructions { display: flex; flex-direction: column; gap: 1rem; }
+      .ui-inst-step {
+        display: grid;
+        grid-template-columns: 1.75rem 1fr;
+        gap: 0.75rem;
+        align-items: start;
+      }
+      .ui-inst-num {
+        width: 1.75rem; height: 1.75rem;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--ion-color-primary) 15%, transparent);
+        color: var(--ion-color-primary);
+        display: grid; place-items: center;
+        font-weight: 700; font-size: 0.8125rem;
+        flex: 0 0 auto;
+      }
+      .ui-inst-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .ui-inst-desc { font-size: 0.8rem; color: var(--ion-color-medium); line-height: 1.5; }
+
+      /* Clave secreta inline (en los pasos) */
+      .ui-secret-key {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.25));
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--ion-text-color) 4%, transparent);
+        font-family: monospace;
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+      }
+
+      /* Botón mostrar/ocultar clave en el footer de la card QR */
+      .ui-qr-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-qr-footer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .ui-qr-hint { font-size: 0.8rem; color: var(--ion-color-medium); }
+      .ui-secret-reveal {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.2s ease;
+      }
+      .ui-secret-reveal--open { max-height: 3rem; }
+
+      /* OTP (paso 3): wrapper centrado */
+      .ui-otp-wrap {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 0 0.5rem;
+      }
+      .ui-otp-hint {
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--ion-color-medium);
+        margin-top: 0.75rem;
+      }
+
+      /* Códigos de respaldo (paso 4) */
+      .ui-backup-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+      }
+      @media (max-width: 480px) {
+        .ui-backup-grid { grid-template-columns: 1fr; }
+      }
+      .ui-backup-code {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.7rem;
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--ion-text-color) 3%, transparent);
+        font-family: monospace;
+        font-size: 0.85rem;
+        letter-spacing: 0.04em;
+      }
+      .ui-backup-num {
+        font-size: 0.7rem;
+        color: var(--ion-color-medium);
+        min-width: 1.4rem;
+      }
+
+      /* Aviso guardar códigos */
+      .ui-codes-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+      }
+      .ui-codes-check input[type="checkbox"] {
+        width: 1rem; height: 1rem;
+        margin-top: 0.15rem;
+        flex: 0 0 auto;
+        cursor: pointer;
+        accent-color: var(--ion-color-primary);
+      }
+
+      /* Botones de cabecera de página */
+      .ui-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      /* Footer de acciones (navegación entre pasos) */
+      .ui-step-footer {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .ui-step-footer ion-button:last-child { margin-left: auto; }
+      @media (max-width: 600px) {
+        .ui-step-footer { flex-direction: column; }
+        .ui-step-footer ion-button { width: 100%; }
+        .ui-step-footer ion-button:last-child { margin-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Activar verificación en dos pasos"
+            description="Añade una capa extra de seguridad a tu cuenta de ERPlora Cloud.">
+          </ok-page-header>
+
+          <!-- Indicador de progreso (ok-stepper) -->
+          <div class="ui-stepper-wrap">
+            <ok-stepper id="stepper2fa" current="1"></ok-stepper>
+          </div>
+
+          <!-- ── PASO 1: Instalar app autenticadora ── -->
+          <div class="ui-step-section" id="step-1">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Instala una app autenticadora</ion-card-title>
+                <ion-card-subtitle>Necesitarás una app compatible con TOTP en tu móvil.</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <p style="margin: 0 0 0.75rem; color: var(--ion-color-medium); font-size: .9rem;">
+                  Recomendamos cualquiera de estas opciones gratuitas:
+                </p>
+                <ul class="ui-app-list">
+                  <li class="ui-app-item">
+                    <span class="ui-app-icon"><ion-icon name="phone-portrait-outline" style="font-size:1.2rem"></ion-icon></span>
+                    <div>
+                      <div class="ui-app-name">Google Authenticator</div>
+                      <div class="ui-app-plat">iOS y Android</div>
+                    </div>
+                  </li>
+                  <li class="ui-app-item">
+                    <span class="ui-app-icon"><ion-icon name="key-outline" style="font-size:1.2rem"></ion-icon></span>
+                    <div>
+                      <div class="ui-app-name">1Password</div>
+                      <div class="ui-app-plat">Multiplataforma</div>
+                    </div>
+                  </li>
+                  <li class="ui-app-item">
+                    <span class="ui-app-icon"><ion-icon name="shield-checkmark-outline" style="font-size:1.2rem"></ion-icon></span>
+                    <div>
+                      <div class="ui-app-name">Authy</div>
+                      <div class="ui-app-plat">iOS, Android y Desktop</div>
+                    </div>
+                  </li>
+                  <li class="ui-app-item">
+                    <span class="ui-app-icon"><ion-icon name="lock-closed-outline" style="font-size:1.2rem"></ion-icon></span>
+                    <div>
+                      <div class="ui-app-name">Microsoft Authenticator</div>
+                      <div class="ui-app-plat">iOS y Android</div>
+                    </div>
+                  </li>
+                </ul>
+              </ion-card-content>
+            </ion-card>
+
+            <div class="ui-step-footer">
+              <ion-button fill="outline" id="btn-cancel-1">Cancelar</ion-button>
+              <ion-button id="btn-next-1">
+                Continuar
+                <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- ── PASO 2: Escanear QR ── -->
+          <div class="ui-step-section" id="step-2">
+            <div class="pg-grid pg-grid-2" style="align-items:start">
+
+              <!-- QR -->
+              <ion-card>
+                <ion-card-header>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                    <div>
+                      <ion-card-title>Escanea el código QR</ion-card-title>
+                      <ion-card-subtitle>Apunta tu app autenticadora al QR</ion-card-subtitle>
+                    </div>
+                    <ok-status-pill tone="info" label="TOTP" dot></ok-status-pill>
+                  </div>
+                </ion-card-header>
+                <ion-card-content style="display:grid;place-items:center;padding:1.5rem;">
+                  <ok-qr
+                    id="qr-2fa"
+                    value="otpauth://totp/ERPlora%20Cloud:ioan@acme.com?secret=JBSWY3DPEHPK3PXP&issuer=ERPlora%20Cloud"
+                    size="200"
+                    ec="M">
+                  </ok-qr>
+                  <p style="margin:.75rem 0 0;font-size:.8rem;color:var(--ion-color-medium);text-align:center">
+                    ERPlora Cloud · ioan@acme.com
+                  </p>
+                </ion-card-content>
+                <div class="ui-qr-footer">
+                  <div class="ui-qr-footer-row">
+                    <span class="ui-qr-hint">¿No puedes escanear?</span>
+                    <ion-button fill="outline" size="small" id="btn-toggle-secret">Mostrar clave manual</ion-button>
+                  </div>
+                  <div class="ui-secret-reveal" id="secret-reveal">
+                    <div class="ui-secret-key">
+                      <span>JBSW Y3DP EHPK 3PXP K7AB QXFR</span>
+                      <ion-button fill="clear" size="small" id="btn-copy-secret">
+                        <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </div>
+                </div>
+              </ion-card>
+
+              <!-- Instrucciones -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Pasos a seguir</ion-card-title>
+                  <ion-card-subtitle>Necesitarás una app autenticadora compatible con TOTP</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <div class="ui-instructions">
+                    <div class="ui-inst-step">
+                      <div class="ui-inst-num">1</div>
+                      <div>
+                        <div class="ui-inst-title">Instala una app autenticadora</div>
+                        <div class="ui-inst-desc">
+                          Recomendamos <strong>Google Authenticator</strong>, <strong>1Password</strong>,
+                          <strong>Authy</strong> o <strong>Microsoft Authenticator</strong>. Disponibles en iOS y Android.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ui-inst-step">
+                      <div class="ui-inst-num">2</div>
+                      <div>
+                        <div class="ui-inst-title">Escanea el código QR</div>
+                        <div class="ui-inst-desc">
+                          Abre la app y toca el botón <strong>+</strong> para añadir una nueva cuenta.
+                          Apunta la cámara al QR de la izquierda.
+                        </div>
+                        <div class="ui-secret-key" style="margin-top:.5rem">
+                          <span>JBSW Y3DP EHPK 3PXP K7AB QXFR</span>
+                          <ion-button fill="clear" size="small" id="btn-copy-secret-2">
+                            <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+                          </ion-button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+            </div>
+
+            <div class="ui-step-footer">
+              <ion-button fill="outline" id="btn-back-2">
+                <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+                Atrás
+              </ion-button>
+              <ion-button id="btn-next-2">
+                Continuar
+                <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- ── PASO 3: Verificar código ── -->
+          <div class="ui-step-section" id="step-3">
+            <ion-card style="max-width:520px;margin:0 auto;">
+              <ion-card-header>
+                <ion-card-title>Verifica con un código de 6 dígitos</ion-card-title>
+                <ion-card-subtitle>Introduce el código que aparece en tu app autenticadora.</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="ui-otp-wrap">
+                  <ok-otp id="otp-input" length="6"></ok-otp>
+                </div>
+                <p class="ui-otp-hint">
+                  El código cambia cada 30 segundos. Si caduca, espera al siguiente.
+                </p>
+              </ion-card-content>
+            </ion-card>
+
+            <div class="ui-step-footer" style="max-width:520px;margin:0 auto;">
+              <ion-button fill="outline" id="btn-back-3">
+                <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+                Atrás
+              </ion-button>
+              <ion-button id="btn-next-3">
+                Verificar
+                <ion-icon slot="end" name="checkmark-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- ── PASO 4: Códigos de respaldo ── -->
+          <div class="ui-step-section" id="step-4">
+
+            <div style="margin-bottom:1rem">
+              <p style="margin:0 0 .25rem;font-weight:700;font-size:1.05rem">Códigos de respaldo</p>
+              <p style="margin:0;color:var(--ion-color-medium);font-size:.875rem">
+                Úsalos cuando no tengas acceso a tu app autenticadora. Cada código es de un solo uso.
+              </p>
+            </div>
+
+            <ion-card>
+              <ion-card-header>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+                  <div>
+                    <ion-card-title>8 códigos generados · 12 may 2026</ion-card-title>
+                    <ion-card-subtitle>Guárdalos en un lugar seguro (gestor de contraseñas o caja fuerte).</ion-card-subtitle>
+                  </div>
+                  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                    <ion-button fill="outline" size="small" id="btn-download-codes">
+                      <ion-icon slot="start" name="download-outline"></ion-icon>
+                      Descargar TXT
+                    </ion-button>
+                    <ion-button fill="outline" size="small" id="btn-copy-codes">
+                      <ion-icon slot="start" name="copy-outline"></ion-icon>
+                      Copiar todos
+                    </ion-button>
+                  </div>
+                </div>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="ui-backup-grid">
+                  <div class="ui-backup-code"><span class="ui-backup-num">01</span> 4F8K-X29Q-7HRT</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">02</span> 9ZJP-LW3M-BV62</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">03</span> RT4N-EXC8-K15D</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">04</span> H72S-FY4B-WP3X</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">05</span> Q83V-NM2L-YK57</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">06</span> 6CGT-AP9R-EZ41</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">07</span> S5BX-J8DH-T2VW</div>
+                  <div class="ui-backup-code"><span class="ui-backup-num">08</span> 1ULM-K9NE-PR84</div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <ok-inline-feedback
+              id="backup-warning"
+              tone="warning"
+              heading="Guarda estos códigos antes de continuar"
+              style="margin-top:.75rem;display:block">
+              Si pierdes el acceso a tu app autenticadora <strong>y</strong> a estos códigos,
+              perderás permanentemente el acceso a tu cuenta de ERPlora Cloud. No podemos recuperarlos.
+              <div class="ui-codes-check" style="margin-top:.75rem">
+                <input type="checkbox" id="codes-saved-check" />
+                <label for="codes-saved-check">
+                  He copiado y guardado mis códigos de respaldo en un lugar seguro
+                </label>
+              </div>
+              <ion-button slot="actions" fill="clear" size="small" href="#" target="_blank">
+                Más información sobre 2FA
+              </ion-button>
+            </ok-inline-feedback>
+
+            <div class="ui-step-footer">
+              <ion-button fill="outline" id="btn-back-4">
+                <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+                Atrás
+              </ion-button>
+              <ion-button id="btn-activate" disabled>
+                <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+                Activar 2FA
+              </ion-button>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          // ── Estado del wizard ──
+          let currentStep = 2; // Comenzamos en el paso 2 (QR) como muestra el prototipo
+          let secretVisible = false;
+          let codesSaved = false;
+
+          const STEPS = [
+            { label: 'Instalar app', description: 'App TOTP' },
+            { label: 'Escanear QR', description: 'Escanear' },
+            { label: 'Verificar', description: 'Código 6 dígitos' },
+            { label: 'Guardar códigos', description: 'Códigos de respaldo' },
+          ];
+
+          // ── ok-stepper ──
+          const stepper = doc.getElementById('stepper2fa');
+          if (stepper) {
+            stepper.steps = STEPS;
+            stepper.current = currentStep - 1; // 0-based
+            stepper.labels = { stepCount: 'Paso {n} de {total}' };
+          }
+
+          // ── Mostrar el paso activo ──
+          function showStep(n) {
+            for (let i = 1; i <= 4; i++) {
+              const sec = doc.getElementById('step-' + i);
+              if (sec) {
+                if (i === n) {
+                  sec.classList.add('ui-step-section--visible');
+                } else {
+                  sec.classList.remove('ui-step-section--visible');
+                }
+              }
+            }
+            // Actualizar stepper
+            if (stepper) stepper.current = n - 1;
+            currentStep = n;
+          }
+
+          // Mostrar el paso inicial
+          showStep(currentStep);
+
+          // ── Navegación entre pasos (paso 1) ──
+          const btnNext1 = doc.getElementById('btn-next-1');
+          if (btnNext1) {
+            btnNext1.addEventListener('click', () => showStep(2));
+          }
+          const btnCancel1 = doc.getElementById('btn-cancel-1');
+          if (btnCancel1) {
+            btnCancel1.addEventListener('click', () => showStep(1));
+          }
+
+          // ── Navegación entre pasos (paso 2) ──
+          const btnBack2 = doc.getElementById('btn-back-2');
+          if (btnBack2) {
+            btnBack2.addEventListener('click', () => showStep(1));
+          }
+          const btnNext2 = doc.getElementById('btn-next-2');
+          if (btnNext2) {
+            btnNext2.addEventListener('click', () => showStep(3));
+          }
+
+          // ── Navegación entre pasos (paso 3) ──
+          const btnBack3 = doc.getElementById('btn-back-3');
+          if (btnBack3) {
+            btnBack3.addEventListener('click', () => showStep(2));
+          }
+          const btnNext3 = doc.getElementById('btn-next-3');
+          if (btnNext3) {
+            btnNext3.addEventListener('click', () => showStep(4));
+          }
+
+          // ── Navegación entre pasos (paso 4) ──
+          const btnBack4 = doc.getElementById('btn-back-4');
+          if (btnBack4) {
+            btnBack4.addEventListener('click', () => showStep(3));
+          }
+
+          // ── ok-stepper: click en paso completado → navegar ──
+          if (stepper) {
+            stepper.addEventListener('ok-step-select', (e) => {
+              const idx = e.detail && e.detail.index;
+              if (typeof idx === 'number' && idx + 1 <= currentStep) {
+                showStep(idx + 1);
+              }
+            });
+          }
+
+          // ── Toggle clave secreta (paso 2) ──
+          const btnToggleSecret = doc.getElementById('btn-toggle-secret');
+          const secretReveal = doc.getElementById('secret-reveal');
+          if (btnToggleSecret && secretReveal) {
+            btnToggleSecret.addEventListener('click', () => {
+              secretVisible = !secretVisible;
+              if (secretVisible) {
+                secretReveal.classList.add('ui-secret-reveal--open');
+                btnToggleSecret.textContent = 'Ocultar clave manual';
+              } else {
+                secretReveal.classList.remove('ui-secret-reveal--open');
+                btnToggleSecret.textContent = 'Mostrar clave manual';
+              }
+            });
+          }
+
+          // ── Copiar clave secreta ──
+          const SECRET = 'JBSWY3DPEHPK3PXPK7ABQXFR';
+          const BACKUP_CODES = [
+            '4F8K-X29Q-7HRT', '9ZJP-LW3M-BV62', 'RT4N-EXC8-K15D', 'H72S-FY4B-WP3X',
+            'Q83V-NM2L-YK57', '6CGT-AP9R-EZ41', 'S5BX-J8DH-T2VW', '1ULM-K9NE-PR84',
+          ];
+
+          const btnCopySecret = doc.getElementById('btn-copy-secret');
+          if (btnCopySecret) {
+            btnCopySecret.addEventListener('click', () => {
+              navigator.clipboard.writeText(SECRET).catch(() => {});
+            });
+          }
+          const btnCopySecret2 = doc.getElementById('btn-copy-secret-2');
+          if (btnCopySecret2) {
+            btnCopySecret2.addEventListener('click', () => {
+              navigator.clipboard.writeText(SECRET).catch(() => {});
+            });
+          }
+
+          // ── Descargar / copiar códigos de respaldo ──
+          const btnDownload = doc.getElementById('btn-download-codes');
+          if (btnDownload) {
+            btnDownload.addEventListener('click', () => {
+              const content = BACKUP_CODES.map((c, i) => String(i + 1).padStart(2, '0') + '. ' + c).join('\n');
+              const blob = new Blob([content], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'erplora-backup-codes.txt';
+              a.click(); URL.revokeObjectURL(url);
+            });
+          }
+          const btnCopyCodes = doc.getElementById('btn-copy-codes');
+          if (btnCopyCodes) {
+            btnCopyCodes.addEventListener('click', () => {
+              navigator.clipboard.writeText(BACKUP_CODES.join('\n')).catch(() => {});
+            });
+          }
+
+          // ── Checkbox "He guardado los códigos" → habilita el botón Activar ──
+          const codesCheck = doc.getElementById('codes-saved-check');
+          const btnActivate = doc.getElementById('btn-activate');
+          if (codesCheck && btnActivate) {
+            codesCheck.addEventListener('change', () => {
+              codesSaved = codesCheck.checked;
+              if (codesSaved) {
+                btnActivate.removeAttribute('disabled');
+              } else {
+                btnActivate.setAttribute('disabled', '');
+              }
+            });
+          }
+
+          // ── ok-otp: autocompletar en ok-complete (paso 3) ──
+          const otpInput = doc.getElementById('otp-input');
+          if (otpInput) {
+            otpInput.addEventListener('ok-complete', (e) => {
+              // En demo simplemente habilitamos el botón Verificar
+              const code = e.detail && e.detail.value;
+              if (code && btnNext3) {
+                btnNext3.removeAttribute('disabled');
+              }
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

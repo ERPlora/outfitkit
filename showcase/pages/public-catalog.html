@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carta · Cafetería La Rambla</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Navbar pública: sticky + fondo semitransparente con blur. */
+      .pub-nav {
+        position: sticky; top: 0; z-index: 100;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px;
+        padding: 12px 24px;
+        background: color-mix(in srgb, var(--ion-background-color) 88%, transparent);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+      }
+      .pub-nav__brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        text-decoration: none; color: inherit;
+      }
+      .pub-nav__logo {
+        width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+        display: grid; place-items: center;
+        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+        font-weight: 800; font-size: 14px;
+      }
+      .pub-nav__name {
+        font-weight: 700; font-size: 15px;
+      }
+      .pub-nav__cart { position: relative; }
+      .pub-nav__cart-badge {
+        position: absolute; top: -4px; right: -4px;
+        min-width: 18px; height: 18px; padding: 0 5px;
+        border-radius: 999px;
+        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
+        font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums;
+        display: grid; place-items: center;
+        pointer-events: none;
+      }
+
+      /* Cabecera del catálogo. */
+      .cat-head { padding: 32px 0 20px; }
+      .cat-head__title {
+        margin: 0 0 6px;
+        font-size: clamp(28px, 4vw, 36px);
+        font-weight: 800;
+        letter-spacing: -.02em;
+      }
+      .cat-head__sub {
+        margin: 0 0 16px;
+        color: var(--ion-color-medium);
+        font-size: 15px;
+      }
+
+      /* Columnas principales: sidebar + grid (colapsa en móvil). */
+      .cat-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 24px;
+        padding-bottom: 40px;
+        align-items: start;
+      }
+      @media (max-width: 880px) {
+        .cat-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Sidebar de categorías. */
+      .cat-sidebar__title {
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .08em;
+        color: var(--ion-color-medium);
+        margin: 0 0 10px;
+      }
+      .cat-cats {
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      @media (max-width: 880px) {
+        .cat-cats { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+      }
+      .cat-cats ion-chip { margin: 0; cursor: pointer; }
+      .cat-cats ion-chip[aria-pressed="true"] {
+        --background: var(--ion-color-primary);
+        --color: var(--ion-color-primary-contrast);
+      }
+
+      /* Grid de productos. */
+      .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+      }
+
+      /* Tarjeta de producto con imagen/emoji + cuerpo. */
+      .prod-card {
+        border: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--ion-card-background, var(--ion-background-color));
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 160ms ease, transform 160ms ease;
+      }
+      .prod-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px -16px rgba(0,0,0,.18);
+      }
+      .prod-card--out { opacity: .6; pointer-events: none; }
+
+      .prod-media {
+        position: relative;
+        height: 130px;
+        overflow: hidden;
+      }
+      .prod-media__bg {
+        width: 100%; height: 100%;
+        display: grid; place-items: center;
+        font-size: 40px;
+      }
+      .prod-badge-wrap {
+        position: absolute; top: 8px; left: 8px;
+        display: flex; gap: 5px;
+      }
+
+      .prod-body {
+        padding: 12px 14px 14px;
+        display: flex; flex-direction: column; gap: 4px;
+        flex: 1;
+      }
+      .prod-category {
+        font-size: 11px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: .05em; color: var(--ion-color-medium);
+      }
+      .prod-name {
+        font-size: 15px; font-weight: 700; line-height: 1.3;
+        text-decoration: none; color: inherit;
+      }
+      .prod-price-row {
+        display: flex; align-items: baseline; gap: 6px;
+        margin-top: 2px;
+      }
+      .prod-price {
+        font-size: 16px; font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .prod-price-orig {
+        font-size: 13px; font-weight: 500;
+        color: var(--ion-color-medium);
+        text-decoration: line-through;
+      }
+      .prod-actions { margin-top: 8px; }
+      .prod-add-btn {
+        width: 100%;
+        --border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      /* Datos del catálogo. */
+      const PRODUCTS = [
+        { id: 'cortado',           cat: 'coffee',   catLabel: 'Cafés',         name: 'Cortado',                    price: '€1,80',  priceOrig: null,   badge: 'Top',    badgeTone: 'primary', emoji: '☕',  bg: 'linear-gradient(135deg,#6b4226,#2a1810)', out: false },
+        { id: 'espresso',          cat: 'coffee',   catLabel: 'Cafés',         name: 'Espresso',                   price: '€1,40',  priceOrig: null,   badge: null,     badgeTone: null,      emoji: '☕',  bg: 'linear-gradient(135deg,#3a1f0e,#120804)', out: false },
+        { id: 'croissant',         cat: 'bakery',   catLabel: 'Bollería',      name: 'Croissant artesano',         price: '€2,50',  priceOrig: null,   badge: 'Nuevo',  badgeTone: 'success', emoji: '🥐',  bg: 'linear-gradient(135deg,#c89568,#6b4423)', out: false },
+        { id: 'sandwich-iberico',  cat: 'sandwich', catLabel: 'Bocadillos',    name: 'Sandwich Ibérico con tomate',price: '€5,90',  priceOrig: '€6,50',badge: null,     badgeTone: null,      emoji: '🥪',  bg: 'linear-gradient(135deg,#a85a3a,#5a2818)', out: false },
+        { id: 'tortilla',          cat: 'sandwich', catLabel: 'Bocadillos',    name: 'Pincho de tortilla',         price: '€2,80',  priceOrig: null,   badge: null,     badgeTone: null,      emoji: '🍳',  bg: 'linear-gradient(135deg,#d8a23a,#6b4f1a)', out: false },
+        { id: 'zumo-naranja',      cat: 'cold',     catLabel: 'Bebidas frías', name: 'Zumo de naranja natural',    price: '€3,20',  priceOrig: null,   badge: null,     badgeTone: null,      emoji: '🍊',  bg: 'linear-gradient(135deg,#ff8c2a,#c84a14)', out: false },
+        { id: 'tarta-zanahoria',   cat: 'dessert',  catLabel: 'Postres',       name: 'Tarta de zanahoria casera', price: '€3,80',  priceOrig: '€4,50',badge: '−15%',   badgeTone: 'danger',  emoji: '🍰',  bg: 'linear-gradient(135deg,#b87a9d,#5a2c4a)', out: false },
+        { id: 'matcha-helado',     cat: 'cold',     catLabel: 'Bebidas frías', name: 'Matcha latte helado',       price: '€4,20',  priceOrig: null,   badge: null,     badgeTone: null,      emoji: '🍵',  bg: 'linear-gradient(135deg,#4a7d4a,#1f3a1f)', out: true  },
+      ];
+
+      const CATEGORIES = [
+        { id: 'all',      label: 'Todo',          count: 42 },
+        { id: 'coffee',   label: 'Cafés',         count: 12 },
+        { id: 'bakery',   label: 'Bollería',      count:  8 },
+        { id: 'sandwich', label: 'Bocadillos',    count:  9 },
+        { id: 'cold',     label: 'Bebidas frías', count:  7 },
+        { id: 'dessert',  label: 'Postres',       count:  6 },
+      ];
+
+      /* Renderiza una tarjeta de producto como string HTML. */
+      function productCardHtml(p) {
+        const badgeHtml = p.badge
+          ? `<ion-badge color="${p.badgeTone || 'primary'}" style="font-size:10px">${p.badge}</ion-badge>`
+          : '';
+
+        const nameHtml = p.out
+          ? `<span class="prod-name">${p.name}</span>`
+          : `<a href="/public/products/${p.id}" class="prod-name">${p.name}</a>`;
+
+        const origHtml = p.priceOrig
+          ? `<span class="prod-price-orig">${p.priceOrig}</span>`
+          : '';
+
+        const ctaHtml = p.out
+          ? `<ion-button class="prod-add-btn" fill="outline" disabled>Sin stock</ion-button>`
+          : `<ion-button class="prod-add-btn" data-prod="${p.id}">
+               <ion-icon slot="start" name="add-outline"></ion-icon>
+               Añadir
+             </ion-button>`;
+
+        return `
+          <div class="prod-card${p.out ? ' prod-card--out' : ''}" data-cat="${p.cat}">
+            <div class="prod-media">
+              <div class="prod-media__bg" style="background:${p.bg}">${p.emoji}</div>
+              <div class="prod-badge-wrap">${badgeHtml}</div>
+            </div>
+            <div class="prod-body">
+              <div class="prod-category">${p.catLabel}</div>
+              ${nameHtml}
+              <div class="prod-price-row">
+                <span class="prod-price">${p.price}</span>
+                ${origHtml}
+              </div>
+              <div class="prod-actions">${ctaHtml}</div>
+            </div>
+          </div>`;
+      }
+
+      const productsHtml = PRODUCTS.map(productCardHtml).join('');
+
+      const categoriesHtml = CATEGORIES.map((c) =>
+        `<ion-chip class="cat-chip" data-cat="${c.id}" aria-pressed="${c.id === 'all' ? 'true' : 'false'}">
+           <ion-label>${c.label}</ion-label>
+           <ion-badge style="margin-left:5px">${c.count}</ion-badge>
+         </ion-chip>`
+      ).join('');
+
+      definePage({
+        bare: true,
+        body: `
+          <!-- Navbar pública -->
+          <nav class="pub-nav">
+            <a href="/" class="pub-nav__brand">
+              <span class="pub-nav__logo">L</span>
+              <span class="pub-nav__name">Cafetería La Rambla</span>
+            </a>
+            <div class="pub-nav__cart">
+              <ion-button id="cart-btn" fill="clear" aria-label="Carrito">
+                <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+              </ion-button>
+              <span class="pub-nav__cart-badge" id="cart-count">2</span>
+            </div>
+          </nav>
+
+          <!-- Cabecera del catálogo -->
+          <div class="page-wrap">
+            <header class="cat-head">
+              <h1 class="cat-head__title">Carta</h1>
+              <p class="cat-head__sub">42 productos · pedidos online listos en 10 min</p>
+              <ion-searchbar
+                id="cat-search"
+                placeholder="Buscar en la carta…"
+                search-icon="search-outline"
+                clear-icon="close-outline"
+                style="max-width:480px;--border-radius:10px;padding-start:0">
+              </ion-searchbar>
+            </header>
+
+            <!-- Layout: sidebar + grid -->
+            <div class="cat-layout">
+
+              <!-- Categorías -->
+              <aside>
+                <h2 class="cat-sidebar__title">Categorías</h2>
+                <div class="cat-cats" id="cat-chips">
+                  ${categoriesHtml}
+                </div>
+              </aside>
+
+              <!-- Grid de productos -->
+              <section>
+                <div class="cat-grid" id="cat-grid">
+                  ${productsHtml}
+                </div>
+              </section>
+
+            </div>
+          </div>
+        `,
+
+        setup(doc) {
+          let cartCount = 2;
+          let activeCat = 'all';
+          let query = '';
+
+          const countEl = doc.getElementById('cart-count');
+          const grid = doc.getElementById('cat-grid');
+          const chips = doc.querySelectorAll('#cat-chips .cat-chip');
+
+          /* Actualiza el badge del carrito. */
+          function updateCart() {
+            if (countEl) {
+              countEl.textContent = String(cartCount);
+              countEl.style.display = cartCount > 0 ? 'grid' : 'none';
+            }
+          }
+
+          /* Filtra los productos según categoría activa y búsqueda. */
+          function filter() {
+            if (!grid) return;
+            const q = query.toLowerCase();
+            grid.querySelectorAll('.prod-card').forEach((card) => {
+              const cat = card.getAttribute('data-cat') || '';
+              const name = (card.querySelector('.prod-name') || {}).textContent || '';
+              const catLabel = (card.querySelector('.prod-category') || {}).textContent || '';
+              const catMatch = activeCat === 'all' || cat === activeCat;
+              const textMatch = !q || name.toLowerCase().includes(q) || catLabel.toLowerCase().includes(q);
+              card.style.display = catMatch && textMatch ? '' : 'none';
+            });
+          }
+
+          /* Chips de categoría. */
+          chips.forEach((chip) => {
+            chip.addEventListener('click', () => {
+              activeCat = chip.getAttribute('data-cat') || 'all';
+              chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+              filter();
+            });
+          });
+
+          /* Búsqueda. */
+          const searchbar = doc.getElementById('cat-search');
+          if (searchbar) {
+            searchbar.addEventListener('ionInput', (e) => {
+              query = (e.detail && e.detail.value) || '';
+              filter();
+            });
+            searchbar.addEventListener('ionClear', () => {
+              query = '';
+              filter();
+            });
+          }
+
+          /* Añadir al carrito. */
+          if (grid) {
+            grid.addEventListener('click', (e) => {
+              const btn = e.target.closest('[data-prod]');
+              if (!btn) return;
+              cartCount += 1;
+              updateCart();
+              /* Feedback visual breve en el botón. */
+              const orig = btn.textContent.trim();
+              btn.setAttribute('color', 'success');
+              setTimeout(() => btn.setAttribute('color', ''), 900);
+            });
+          }
+
+          /* Carrito: navegar. */
+          const cartBtn = doc.getElementById('cart-btn');
+          if (cartBtn) {
+            cartBtn.addEventListener('click', () => {
+              window.location.href = '/public/cart';
+            });
+          }
+
+          updateCart();
+          filter();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -213,6 +213,37 @@ ion-searchbar.nav-search {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.86rem;
 }
+
+/* Cabecera de sección plegable de primer nivel (Componentes / Páginas). */
+#nav-list ion-item.nav-section-head {
+  --min-height: 44px;
+  --background: var(--ok-surface-2);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+}
+#nav-list ion-item.nav-section-head ion-icon[slot='start'] {
+  color: var(--ion-color-primary);
+}
+#nav-list .nav-section-caret {
+  font-size: 1rem;
+  color: var(--ok-muted);
+}
+#nav-list .nav-section-count {
+  font-size: 0.72rem;
+  color: var(--ok-muted);
+  margin-inline-end: 4px;
+}
+/* Sub-encabezado de categoría/grupo dentro de una sección. */
+#nav-list ion-list-header.nav-subhead {
+  padding-inline-start: 16px;
+  min-height: 26px;
+  margin-top: 0.25rem;
+}
+/* Ítems dentro de una sección (sangrados respecto a la cabecera). */
+#nav-list ion-item.nav-sub-item { --padding-start: 22px; }
 .nav-empty {
   padding: 1rem 1.2rem;
   color: var(--ok-muted);

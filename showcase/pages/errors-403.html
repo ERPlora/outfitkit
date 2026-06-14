@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · 403 — Acceso denegado</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-error-page
+            id="err-403"
+            variant="warn"
+            code="403 · Forbidden"
+            title="No tienes permisos para esta página"
+            message="Tu cuenta no tiene los permisos necesarios. Pídele al administrador de tu organización que te asigne un rol con acceso."
+            meta="trace · 4f2a-3b81-9c · 2026-05-08 14:32 UTC">
+
+            <ion-button slot="actions" fill="outline" id="btn-back">
+              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+              Atrás
+            </ion-button>
+            <ion-button slot="actions" href="/">
+              <ion-icon slot="start" name="home-outline"></ion-icon>
+              Volver al inicio
+            </ion-button>
+
+          </ok-error-page>
+        `,
+        setup(doc) {
+          // Atajos (shortcuts) — asignados por prop JS (CSP-safe).
+          const errPage = doc.getElementById('err-403');
+          if (errPage) {
+            errPage.shortcuts = [
+              {
+                title: 'Volver al inicio',
+                desc: 'Ir al panel principal',
+                href: '/',
+                icon: 'home-outline',
+              },
+              {
+                title: 'Contactar admin',
+                desc: 'Solicitar acceso a tu organización',
+                href: '/admin/users/',
+                icon: 'people-outline',
+              },
+              {
+                title: 'Cómo funcionan los permisos',
+                desc: 'Guía de roles y accesos',
+                href: '/help/permissions/',
+                icon: 'help-circle-outline',
+              },
+            ];
+          }
+
+          // Botón "Atrás" — navega usando history.back() (CSP-safe, sin inline handler).
+          const btnBack = doc.getElementById('btn-back');
+          if (btnBack) {
+            btnBack.addEventListener('click', () => {
+              history.back();
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

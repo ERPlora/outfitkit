@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Desactivar 2FA</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Sub-tabs de sección 2FA (compartido con auth-2fa-profile) */
+      .ui-sub-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        margin-bottom: 20px;
+        gap: 0;
+      }
+      .ui-sub-tab {
+        padding: 10px 16px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        text-decoration: none;
+      }
+      .ui-sub-tab--active {
+        color: var(--ion-color-primary);
+        border-bottom-color: var(--ion-color-primary);
+        font-weight: 600;
+      }
+
+      /* Centrado del diálogo modal en la vista bare. */
+      .disable-backdrop {
+        min-height: calc(100vh - 80px);
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+      }
+      .disable-dialog {
+        width: 100%;
+        max-width: 560px;
+      }
+
+      /* Cabecera de aviso: ocupa todo el ancho del card con borde-radio arriba. */
+      .disable-warning {
+        border-radius: 12px 12px 0 0;
+        overflow: hidden;
+      }
+
+      /* Lista de riesgos */
+      .disable-risks {
+        margin: 0;
+        padding-left: 20px;
+        font-size: .9rem;
+        line-height: 1.75;
+        color: var(--ion-color-medium);
+      }
+      .disable-risks li { margin-bottom: 2px; }
+      .disable-risks li::marker { color: var(--ion-color-danger); }
+      .disable-risks strong { color: var(--ion-text-color); font-weight: 600; }
+
+      /* Separador */
+      .disable-divider {
+        border: none;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.18));
+        margin: 18px 0;
+      }
+
+      /* Etiqueta de campo */
+      .disable-label {
+        display: block;
+        font-weight: 600;
+        font-size: .9rem;
+        margin-bottom: 8px;
+      }
+      .disable-label--req::after { content: " *"; color: var(--ion-color-danger); }
+
+      /* Código inline de la confirmación */
+      .disable-code {
+        font-family: monospace;
+        background: var(--ion-color-step-50, rgba(127,127,127,.08));
+        padding: 1px 7px;
+        border-radius: 5px;
+        color: var(--ion-color-danger);
+        font-size: .85em;
+        letter-spacing: .04em;
+      }
+
+      /* Hint bajo campo */
+      .disable-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: .78rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Footer de acciones */
+      .disable-foot {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 480px) {
+        .disable-foot { flex-direction: column; }
+        .disable-foot ion-button { width: 100%; }
+      }
+
+      /* Campo de confirmación: estilo monospace */
+      #field-confirm {
+        --placeholder-opacity: .45;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Verificación en dos pasos"
+            description="Gestiona los métodos y dispositivos autorizados."
+            level="1">
+          </ok-page-header>
+
+          <!-- Sub-tabs de seguridad 2FA -->
+          <nav class="ui-sub-tabs" aria-label="Sub-secciones de seguridad 2FA">
+            <a class="ui-sub-tab" href="auth-2fa-setup.html">Configurar 2FA</a>
+            <a class="ui-sub-tab" href="auth-2fa-profile.html">Gestionar 2FA</a>
+            <a class="ui-sub-tab ui-sub-tab--active" href="auth-2fa-disable.html" aria-current="page">Desactivar 2FA</a>
+          </nav>
+
+          <div class="disable-backdrop">
+            <div class="disable-dialog">
+
+              <ion-card style="margin: 0; overflow: visible;">
+
+                <!-- Cabecera de aviso de peligro -->
+                <div class="disable-warning">
+                  <ok-inline-feedback
+                    tone="danger"
+                    heading="Estás a punto de desactivar la verificación en dos pasos">
+                    Esta acción reduce significativamente la seguridad de tu cuenta de ERPlora Cloud.
+                  </ok-inline-feedback>
+                </div>
+
+                <ion-card-content>
+
+                  <!-- Lista de consecuencias -->
+                  <div style="font-weight: 600; font-size: .85rem; color: var(--ion-color-medium); margin-bottom: 10px;">
+                    Al desactivar 2FA:
+                  </div>
+                  <ul class="disable-risks">
+                    <li>Tu cuenta podrá accederse <strong>solo con email y contraseña</strong>, sin segundo factor.</li>
+                    <li>Los <strong>4 dispositivos autorizados</strong> seguirán activos hasta que los revoques manualmente.</li>
+                    <li>Los <strong>códigos de respaldo</strong> se eliminarán de forma permanente.</li>
+                    <li>Las <strong>integraciones de Stripe Connect</strong> y APIs de facturación pasarán a modo degradado.</li>
+                    <li>Recibirás un correo de confirmación en <strong>Ioan@acme.com</strong> con el cambio aplicado.</li>
+                  </ul>
+
+                  <hr class="disable-divider" />
+
+                  <!-- Campo: contraseña actual -->
+                  <div style="margin-bottom: 20px;">
+                    <label class="disable-label disable-label--req" for="field-password">
+                      Confirma tu contraseña actual
+                    </label>
+                    <ion-input
+                      id="field-password"
+                      type="password"
+                      fill="outline"
+                      placeholder="Tu contraseña"
+                      autocomplete="current-password">
+                      <ion-icon slot="start" name="lock-closed-outline" aria-hidden="true"></ion-icon>
+                    </ion-input>
+                  </div>
+
+                  <!-- Campo: confirmación DESACTIVAR -->
+                  <div style="margin-bottom: 20px;">
+                    <label class="disable-label disable-label--req" for="field-confirm">
+                      Para confirmar, escribe <span class="disable-code">DESACTIVAR</span>
+                    </label>
+                    <ion-input
+                      id="field-confirm"
+                      type="text"
+                      fill="outline"
+                      placeholder="DESACTIVAR"
+                      autocomplete="off"
+                      maxlength="10">
+                    </ion-input>
+                    <small class="disable-hint">Esta validación evita activar la acción por error.</small>
+                  </div>
+
+                  <!-- Acciones -->
+                  <div class="disable-foot">
+                    <ion-button fill="clear" id="btn-cancel">Cancelar</ion-button>
+                    <ion-button color="danger" id="btn-disable" disabled="true">
+                      <ion-icon slot="start" name="trash-outline"></ion-icon>
+                      Desactivar 2FA
+                    </ion-button>
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          const fieldPassword = doc.getElementById('field-password');
+          const fieldConfirm  = doc.getElementById('field-confirm');
+          const btnDisable    = doc.getElementById('btn-disable');
+          const btnCancel     = doc.getElementById('btn-cancel');
+
+          // Estado reactivo
+          const state = { password: '', confirm: '' };
+
+          const updateButton = () => {
+            const valid = state.confirm === 'DESACTIVAR' && state.password.length >= 6;
+            if (btnDisable) btnDisable.disabled = !valid;
+          };
+
+          // Escuchar cambios en el campo de contraseña
+          if (fieldPassword) {
+            fieldPassword.addEventListener('ionInput', (e) => {
+              state.password = (e.target && e.target.value) || '';
+              updateButton();
+            });
+          }
+
+          // Escuchar cambios en el campo de confirmación (normalizar a mayúsculas)
+          if (fieldConfirm) {
+            fieldConfirm.addEventListener('ionInput', (e) => {
+              const raw = (e.target && e.target.value) || '';
+              state.confirm = raw.toUpperCase();
+              updateButton();
+            });
+          }
+
+          // Botón cancelar: en el showcase, muestra un toast de cancelación
+          if (btnCancel) {
+            btnCancel.addEventListener('click', async () => {
+              const toast = document.createElement('ion-toast');
+              toast.message = 'Operación cancelada. El 2FA sigue activo.';
+              toast.duration = 2500;
+              toast.color = 'medium';
+              toast.position = 'bottom';
+              document.body.appendChild(toast);
+              await toast.present();
+              toast.addEventListener('didDismiss', () => toast.remove());
+            });
+          }
+
+          // Botón desactivar: en el showcase, muestra confirmación
+          if (btnDisable) {
+            btnDisable.addEventListener('click', async () => {
+              const alert = document.createElement('ion-alert');
+              alert.header = '2FA desactivado';
+              alert.message = 'La verificación en dos pasos ha sido desactivada. Recibirás un correo de confirmación en Ioan@acme.com.';
+              alert.buttons = [{ text: 'Entendido', role: 'confirm' }];
+              document.body.appendChild(alert);
+              await alert.present();
+              alert.addEventListener('didDismiss', () => alert.remove());
+            });
+          }
+
+          // Estado inicial
+          updateButton();
+        },
+      });
+    </script>
+  </body>
+</html>

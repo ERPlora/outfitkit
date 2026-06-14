@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · 401 — No autorizado</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-error-page
+            id="err-401"
+            variant="warn"
+            code="401 · Unauthorized"
+            title="Tu sesión ha expirado"
+            message="Por seguridad, las sesiones inactivas se cierran automáticamente. Inicia sesión de nuevo para continuar donde lo dejaste."
+            meta="trace · 8c1f-401-a3b2 · 2026-05-08 14:32 UTC">
+
+            <ion-button slot="actions" fill="outline" id="btn-back">
+              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+              Atrás
+            </ion-button>
+            <ion-button slot="actions" href="/auth/login-saas.html">
+              <ion-icon slot="start" name="log-in-outline"></ion-icon>
+              Iniciar sesión
+            </ion-button>
+          </ok-error-page>
+        `,
+        setup(doc) {
+          // Atajos: Iniciar sesión, Configurar 2FA, Política de sesiones.
+          const err = doc.getElementById('err-401');
+          if (err) {
+            err.shortcuts = [
+              {
+                title: 'Iniciar sesión',
+                icon: 'log-in-outline',
+                href: '/auth/login-saas.html',
+              },
+              {
+                title: 'Configurar 2FA',
+                icon: 'lock-closed-outline',
+                href: '/auth/2fa-setup.html',
+              },
+              {
+                title: 'Política de sesiones',
+                icon: 'time-outline',
+                href: '/help/sessions/',
+              },
+            ];
+          }
+
+          // Botón "Atrás" — CSP-safe, sin onclick inline.
+          const btnBack = doc.getElementById('btn-back');
+          if (btnBack) {
+            btnBack.addEventListener('click', () => {
+              history.back();
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

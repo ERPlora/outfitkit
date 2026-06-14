@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Dispositivos de confianza</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const DEVICES = [
+        { id: 'd1', name: 'MacBook Pro M4',  label: 'Madrid · oficina',           os: 'macOS 15.4 · Chrome 142',         fp: 'a4:9c:21:fb…', trusted: '12 abr 2026', expires: '18 días',  lastSeen: 'hace 12 min', status: 'active',  expiresWarning: false },
+        { id: 'd2', name: 'iPhone 16 Pro',   label: 'Personal · llevamos siempre', os: 'iOS 18.4 · ERPlora App 4.8.2',    fp: 'b1:38:d7:9e…', trusted: '8 abr 2026',  expires: '2 días',   lastSeen: 'hace 1 h',   status: 'warning', expiresWarning: true  },
+        { id: 'd3', name: 'iPad Air',        label: 'Oficina · sala de reuniones', os: 'iPadOS 18.3 · Safari 18',          fp: '7d:f0:4a:c8…', trusted: '22 abr 2026', expires: '28 días',  lastSeen: 'hace 2 días', status: 'active',  expiresWarning: false },
+      ];
+
+      const REVOKED = [
+        { name: 'Pixel 9',        sub: 'Bilbao · backup',     os: 'Android 15 · App 4.7',       trusted: '2026-03-14', revoked: '2026-04-21', reason: 'Inactividad 30 d',    tone: 'warning' },
+        { name: 'ThinkPad T14',   sub: 'Sevilla · viaje',     os: 'Ubuntu 24.04 · Firefox 128',  trusted: '2026-02-08', revoked: '2026-04-02', reason: 'Revocado por usuario', tone: 'info'    },
+        { name: 'iPhone 15',      sub: 'Madrid · antiguo',    os: 'iOS 17.6 · App 4.5',          trusted: '2025-12-10', revoked: '2026-03-12', reason: 'Reemplazado',          tone: 'info'    },
+        { name: 'MacBook Air M2', sub: 'Barcelona · oficina', os: 'macOS 15.2 · Safari 18',      trusted: '2026-01-05', revoked: '2026-02-18', reason: 'Pérdida de equipo',    tone: 'danger'  },
+      ];
+
+      // Icono de dispositivo según nombre
+      const deviceIcon = (name) => {
+        if (/iphone|pixel|android/i.test(name)) return 'phone-portrait-outline';
+        if (/ipad|tablet/i.test(name)) return 'tablet-portrait-outline';
+        return 'desktop-outline';
+      };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Dispositivos de confianza"
+            description="Equipos que pueden saltarse el 2FA durante 30 días tras una verificación válida.">
+            <div slot="actions" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span style="font-size:0.8125rem;color:var(--ion-color-medium)">Hasta 5 dispositivos · usa 3</span>
+              <ion-button fill="outline" size="small" id="btn-add-device">
+                <ion-icon slot="start" name="add-outline"></ion-icon>
+                Añadir dispositivo
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Sub-navegación de seguridad -->
+          <ion-segment value="devices" style="margin-bottom:16px">
+            <ion-segment-button value="password"><ion-label>Contraseña</ion-label></ion-segment-button>
+            <ion-segment-button value="sessions"><ion-label>Sesiones</ion-label></ion-segment-button>
+            <ion-segment-button value="devices"><ion-label>Dispositivos</ion-label></ion-segment-button>
+            <ion-segment-button value="delete"><ion-label>Eliminar cuenta</ion-label></ion-segment-button>
+          </ion-segment>
+
+          <ok-inline-feedback
+            class="pg-mb-4"
+            tone="info"
+            heading="Solo equipos personales">
+            Los dispositivos de confianza pueden saltarse el 2FA durante 30 días. No marques como confiable un equipo prestado o compartido.
+          </ok-inline-feedback>
+
+          <!-- Listado de dispositivos activos -->
+          <ok-data-table id="devices-dt" style="display:block;margin-bottom:24px"></ok-data-table>
+
+          <!-- Sección colapsable: dispositivos revocados -->
+          <button id="revoked-trigger" aria-expanded="false" aria-controls="revoked-panel"
+            style="display:flex;width:100%;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--ion-text-color) 4%,transparent);border:1px solid color-mix(in srgb,var(--ion-text-color) 12%,transparent);border-radius:10px;padding:14px 16px;cursor:pointer;color:inherit;font:inherit;text-align:left;transition:background 150ms">
+            <div style="display:flex;align-items:center;gap:10px">
+              <ion-icon name="shield-outline" color="medium"></ion-icon>
+              <div>
+                <span style="font-weight:700;font-size:0.95rem">Dispositivos revocados</span>
+                <span style="font-size:0.8125rem;color:var(--ion-color-medium)">&nbsp;últimos 90 días · 4 entradas</span>
+              </div>
+            </div>
+            <ion-icon name="chevron-down-outline" id="revoked-chevron" style="transition:transform 200ms"></ion-icon>
+          </button>
+
+          <div id="revoked-panel" hidden>
+            <ok-data-table id="revoked-dt" style="display:block;margin-top:10px"></ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          // ── Tabla de dispositivos activos ──────────────────────────────────────
+          const dt = doc.getElementById('devices-dt');
+          dt.rowKey = (r) => r.id;
+          dt.columns = [
+            {
+              key: 'name', header: 'Dispositivo', width: 'minmax(12rem,1.5fr)',
+              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:10px">
+                <ion-icon name=${deviceIcon(r.name)} style="font-size:20px;flex-shrink:0;color:var(--ion-color-primary)"></ion-icon>
+                <span>
+                  <span style="font-weight:600;display:block">${r.name}</span>
+                  <span style="font-size:0.78rem;color:var(--ion-color-medium)">${r.label}</span>
+                </span>
+              </span>`,
+            },
+            { key: 'os', header: 'Sistema', width: 'minmax(10rem,1fr)' },
+            {
+              key: 'fp', header: 'Fingerprint', width: '9rem',
+              render: (r) => h`<code style="font-size:0.78rem">${r.fp}</code>`,
+            },
+            { key: 'trusted', header: 'Confiado desde', width: '9rem' },
+            {
+              key: 'expires', header: 'Expira en', width: '7rem',
+              render: (r) => {
+                const c = r.expiresWarning ? 'warning' : 'success';
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.expires}</ion-badge>`;
+              },
+            },
+            { key: 'lastSeen', header: 'Última conexión', width: '9rem' },
+          ];
+          dt.actions = [
+            { id: 'renew', icon: 'refresh-outline', label: 'Renovar 30 días' },
+            { id: 'revoke', icon: 'ban-outline', label: 'Revocar', color: 'danger' },
+          ];
+          dt.rows = DEVICES;
+
+          dt.addEventListener('rowAction', (e) => {
+            const { actionId, row } = e.detail || {};
+            if (actionId === 'renew') {
+              const t = document.createElement('ion-toast');
+              t.message = `${row.name} renovado por 30 días.`;
+              t.duration = 2500; t.color = 'success'; t.position = 'bottom';
+              document.body.appendChild(t); t.present();
+              t.addEventListener('didDismiss', () => t.remove());
+            } else if (actionId === 'revoke') {
+              const a = document.createElement('ion-alert');
+              a.header = 'Revocar dispositivo';
+              a.message = `¿Seguro que quieres revocar ${row.name}? Tendrá que pasar el 2FA en el próximo acceso.`;
+              a.buttons = [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Revocar', role: 'destructive' },
+              ];
+              document.body.appendChild(a); a.present();
+              a.addEventListener('didDismiss', () => a.remove());
+            }
+          });
+
+          // ── Tabla de dispositivos revocados ────────────────────────────────────
+          const rdt = doc.getElementById('revoked-dt');
+          rdt.columns = [
+            {
+              key: 'name', header: 'Dispositivo', width: 'minmax(10rem,1.5fr)',
+              render: (r) => h`<span>
+                <span style="font-weight:600">${r.name}</span>
+                <div style="font-size:0.72rem;color:var(--ion-color-medium);margin-top:2px">${r.sub}</div>
+              </span>`,
+            },
+            { key: 'os', header: 'Sistema', width: 'minmax(10rem,1fr)' },
+            {
+              key: 'trusted', header: 'Confiado', width: '8rem',
+              render: (r) => h`<code style="font-size:0.78rem">${r.trusted}</code>`,
+            },
+            {
+              key: 'revoked', header: 'Revocado', width: '8rem',
+              render: (r) => h`<code style="font-size:0.78rem">${r.revoked}</code>`,
+            },
+            {
+              key: 'reason', header: 'Motivo', width: '11rem',
+              render: (r) => h`<ok-status-pill tone=${r.tone} dot size="sm">${r.reason}</ok-status-pill>`,
+            },
+          ];
+          rdt.rows = REVOKED;
+
+          // ── Acordeón de revocados ──────────────────────────────────────────────
+          const trigger = doc.getElementById('revoked-trigger');
+          const panel = doc.getElementById('revoked-panel');
+          const chevron = doc.getElementById('revoked-chevron');
+
+          trigger.addEventListener('click', () => {
+            const isOpen = !panel.hidden;
+            panel.hidden = isOpen;
+            trigger.setAttribute('aria-expanded', String(!isOpen));
+            chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+          });
+
+          // ── Añadir dispositivo ────────────────────────────────────────────────
+          const btnAdd = doc.getElementById('btn-add-device');
+          btnAdd.addEventListener('click', () => {
+            const t = document.createElement('ion-toast');
+            t.message = 'El dispositivo actual se añadirá como confiable tras verificar el 2FA.';
+            t.duration = 3000; t.color = 'primary'; t.position = 'bottom';
+            document.body.appendChild(t); t.present();
+            t.addEventListener('didDismiss', () => t.remove());
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

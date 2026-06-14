@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Editar empleado</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
+
+      /* Cabecera de empleado con avatar. */
+      .ui-emp-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .ui-emp-header__meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .ui-emp-header__name {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      .ui-emp-header__sub {
+        font-size: .875rem;
+        color: var(--ion-color-medium);
+      }
+
+      /* Secciones del formulario. */
+      .ui-form-section {
+        margin: 0 0 4px;
+      }
+      .ui-section-title {
+        margin: 0 0 14px;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .ui-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .ui-fields-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 600px) {
+        .ui-fields-row { grid-template-columns: 1fr; }
+      }
+
+      /* Foto de perfil: avatar + botones. */
+      .ui-photo-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      /* Fila toggle "Cuenta activa". */
+      .ui-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 0;
+      }
+      .ui-toggle-row__text { flex: 1 1 auto; }
+      .ui-toggle-row__label { font-weight: 600; font-size: .9rem; }
+      .ui-toggle-row__desc {
+        color: var(--ion-color-medium);
+        font-size: .8rem;
+        margin-top: 2px;
+      }
+
+      /* Zona de peligro: filas de acción. */
+      .ui-danger-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-danger-row:last-child { border-bottom: 0; }
+      .ui-danger-row__text { flex: 1 1 auto; }
+      .ui-danger-row__label { font-weight: 600; font-size: .9rem; }
+      .ui-danger-row__label--danger { color: var(--ion-color-danger); }
+      .ui-danger-row__desc {
+        color: var(--ion-color-medium);
+        font-size: .8rem;
+        margin-top: 2px;
+      }
+
+      /* Modal de confirmación. */
+      .ui-modal-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        background: rgba(0,0,0,.4);
+      }
+      .ui-modal-overlay[hidden] { display: none !important; }
+      .ui-modal {
+        background: var(--ion-card-background, var(--ion-background-color, #fff));
+        border-radius: 14px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+        overflow: hidden;
+      }
+      .ui-modal__header {
+        padding: 18px 20px 12px;
+        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+      }
+      .ui-modal__header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      .ui-modal__body { padding: 16px 20px; }
+      .ui-modal__body p { margin: 0 0 8px; font-size: .875rem; line-height: 1.55; }
+      .ui-modal__body p:last-child { margin: 0; font-size: .78rem; color: var(--ion-color-medium); }
+      .ui-modal__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px 16px;
+      }
+
+      /* Footer de acciones del formulario. */
+      .ui-foot {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
+        padding-top: 16px;
+      }
+      .ui-foot ion-button:last-child { margin-left: auto; }
+      @media (max-width: 600px) {
+        .ui-foot ion-button { width: 100%; }
+        .ui-foot ion-button:last-child { margin-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Editar empleado"
+            description="Actualiza los datos de perfil, rol y estado de la cuenta.">
+            <div slot="actions">
+              <ion-button fill="outline" size="small" id="btn-cancel">
+                <ion-icon slot="start" name="close-outline"></ion-icon>
+                Cancelar
+              </ion-button>
+              <ion-button size="small" id="btn-save">
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                Guardar cambios
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Cabecera del empleado (nombre + email + rol) -->
+          <ion-card class="pg-mb-4">
+            <ion-card-content>
+              <div class="ui-emp-header">
+                <ok-avatar name="María Ruiz" size="lg" tone="primary"></ok-avatar>
+                <div class="ui-emp-header__meta">
+                  <h1 class="ui-emp-header__name">María Ruiz</h1>
+                  <span class="ui-emp-header__sub">maria@larambla.es · Manager</span>
+                </div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Formulario principal -->
+          <ion-card class="pg-mb-4" style="max-width:760px;">
+            <ion-card-content>
+
+              <!-- Sección: Información personal -->
+              <div class="ui-form-section">
+                <h3 class="ui-section-title">Información personal</h3>
+                <div class="ui-fields">
+
+                  <div class="ui-fields-row">
+                    <ion-input
+                      label="Nombre completo"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="María Ruiz"
+                      required
+                      id="input-nombre">
+                    </ion-input>
+                    <ion-input
+                      label="Email"
+                      label-placement="stacked"
+                      fill="outline"
+                      type="email"
+                      value="maria@larambla.es"
+                      required
+                      id="input-email">
+                    </ion-input>
+                  </div>
+
+                  <div class="ui-fields-row">
+                    <ion-select
+                      label="Idioma de la interfaz"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="es"
+                      id="select-idioma">
+                      <ion-select-option value="ca">Català</ion-select-option>
+                      <ion-select-option value="es">Español</ion-select-option>
+                      <ion-select-option value="en">English</ion-select-option>
+                    </ion-select>
+                    <ion-select
+                      label="Rol"
+                      label-placement="stacked"
+                      fill="outline"
+                      value="manager"
+                      id="select-rol">
+                      <ion-select-option value="admin">Admin</ion-select-option>
+                      <ion-select-option value="manager">Manager</ion-select-option>
+                      <ion-select-option value="cajero">Cajero</ion-select-option>
+                      <ion-select-option value="cocinero">Cocinero</ion-select-option>
+                    </ion-select>
+                  </div>
+
+                  <!-- Foto de perfil -->
+                  <div>
+                    <div style="font-size:.875rem;font-weight:600;margin-bottom:10px;">Foto de perfil</div>
+                    <div class="ui-photo-row">
+                      <ok-avatar name="María Ruiz" size="lg" tone="primary"></ok-avatar>
+                      <ion-button fill="outline" size="small" id="btn-cambiar-foto">
+                        <ion-icon slot="start" name="image-outline"></ion-icon>
+                        Cambiar foto
+                      </ion-button>
+                      <ion-button fill="clear" size="small" color="medium" id="btn-eliminar-foto">
+                        Eliminar
+                      </ion-button>
+                      <input type="file" accept="image/*" id="file-foto" hidden />
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Sección: Estado de la cuenta -->
+          <ion-card class="pg-mb-4" style="max-width:760px;">
+            <ion-card-content>
+              <h3 class="ui-section-title">Estado de la cuenta</h3>
+              <div class="ui-toggle-row">
+                <div class="ui-toggle-row__text">
+                  <div class="ui-toggle-row__label">Cuenta activa</div>
+                  <div class="ui-toggle-row__desc">Si se desactiva, María no podrá iniciar sesión en el Hub.</div>
+                </div>
+                <ion-toggle id="toggle-activo" checked></ion-toggle>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Zona de peligro -->
+          <ion-card style="max-width:760px;margin-bottom:24px;">
+            <ion-card-header>
+              <ion-card-title style="color:var(--ion-color-danger);font-size:1rem;display:flex;align-items:center;gap:6px;">
+                <ion-icon name="warning-outline" style="font-size:1.1rem;"></ion-icon>
+                Zona peligro
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <div class="ui-danger-row">
+                <div class="ui-danger-row__text">
+                  <div class="ui-danger-row__label">Restablecer PIN</div>
+                  <div class="ui-danger-row__desc">Genera un nuevo PIN aleatorio. María lo recibirá por email.</div>
+                </div>
+                <ion-button fill="outline" size="small" id="btn-reset-pin">
+                  <ion-icon slot="start" name="key-outline"></ion-icon>
+                  Restablecer PIN
+                </ion-button>
+              </div>
+
+              <div class="ui-danger-row">
+                <div class="ui-danger-row__text">
+                  <div class="ui-danger-row__label">Cerrar todas las sesiones</div>
+                  <div class="ui-danger-row__desc">Cierra los 3 dispositivos donde María tiene la sesión abierta.</div>
+                </div>
+                <ion-button fill="outline" size="small" id="btn-cerrar-sesiones">
+                  <ion-icon slot="start" name="log-out-outline"></ion-icon>
+                  Cerrar sesiones
+                </ion-button>
+              </div>
+
+              <div class="ui-danger-row">
+                <div class="ui-danger-row__text">
+                  <div class="ui-danger-row__label ui-danger-row__label--danger">Eliminar empleado</div>
+                  <div class="ui-danger-row__desc">Borra permanentemente la cuenta y desvincula todos los registros. No se puede deshacer.</div>
+                </div>
+                <ion-button fill="solid" color="danger" size="small" id="btn-eliminar">
+                  <ion-icon slot="start" name="trash-outline"></ion-icon>
+                  Eliminar empleado
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Modal: confirmar eliminación -->
+          <div class="ui-modal-overlay" id="modal-confirmar" hidden>
+            <div class="ui-modal">
+              <div class="ui-modal__header">
+                <h3>¿Eliminar a María Ruiz?</h3>
+              </div>
+              <div class="ui-modal__body">
+                <p>Se borrará la cuenta y se desvincularán los tickets y comandas que generó. Los registros históricos se conservarán como anónimos.</p>
+                <p>Esta acción no se puede deshacer.</p>
+              </div>
+              <div class="ui-modal__footer">
+                <ion-button fill="clear" color="medium" id="btn-modal-cancelar">
+                  <ion-icon slot="start" name="close-outline"></ion-icon>
+                  Cancelar
+                </ion-button>
+                <ion-button color="danger" id="btn-modal-confirmar">
+                  <ion-icon slot="start" name="trash-outline"></ion-icon>
+                  Sí, eliminar
+                </ion-button>
+              </div>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          // Botón cancelar → volver
+          const btnCancel = doc.getElementById('btn-cancel');
+          if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+              if (history.length > 1) history.back();
+            });
+          }
+
+          // Botón guardar (mock: muestra feedback)
+          const btnSave = doc.getElementById('btn-save');
+          if (btnSave) {
+            btnSave.addEventListener('click', () => {
+              // En producción: enviar formulario al servidor.
+              console.log('Guardando cambios de María Ruiz…');
+            });
+          }
+
+          // Foto de perfil: abrir selector de fichero al pulsar el botón.
+          const btnCambiarFoto = doc.getElementById('btn-cambiar-foto');
+          const fileFoto = doc.getElementById('file-foto');
+          if (btnCambiarFoto && fileFoto) {
+            btnCambiarFoto.addEventListener('click', () => fileFoto.click());
+          }
+          const btnEliminarFoto = doc.getElementById('btn-eliminar-foto');
+          if (btnEliminarFoto) {
+            btnEliminarFoto.addEventListener('click', () => {
+              console.log('Foto eliminada');
+            });
+          }
+
+          // Toggle cuenta activa
+          const toggle = doc.getElementById('toggle-activo');
+          if (toggle) {
+            toggle.addEventListener('ionChange', (e) => {
+              const activo = e.detail && e.detail.checked;
+              console.log('Cuenta activa:', activo);
+            });
+          }
+
+          // Zona de peligro: acciones
+          const btnResetPin = doc.getElementById('btn-reset-pin');
+          if (btnResetPin) {
+            btnResetPin.addEventListener('click', () => {
+              console.log('PIN restablecido → email enviado');
+            });
+          }
+
+          const btnCerrarSesiones = doc.getElementById('btn-cerrar-sesiones');
+          if (btnCerrarSesiones) {
+            btnCerrarSesiones.addEventListener('click', () => {
+              console.log('Sesiones cerradas');
+            });
+          }
+
+          // Eliminar: abrir modal de confirmación
+          const modal = doc.getElementById('modal-confirmar');
+          const btnEliminar = doc.getElementById('btn-eliminar');
+          if (btnEliminar && modal) {
+            btnEliminar.addEventListener('click', () => {
+              modal.hidden = false;
+            });
+          }
+
+          // Modal: cancelar
+          const btnModalCancelar = doc.getElementById('btn-modal-cancelar');
+          if (btnModalCancelar && modal) {
+            btnModalCancelar.addEventListener('click', () => {
+              modal.hidden = true;
+            });
+          }
+
+          // Modal: confirmar eliminación
+          const btnModalConfirmar = doc.getElementById('btn-modal-confirmar');
+          if (btnModalConfirmar && modal) {
+            btnModalConfirmar.addEventListener('click', () => {
+              modal.hidden = true;
+              console.log('Empleado eliminado');
+            });
+          }
+
+          // Cerrar modal al hacer clic en el overlay (fuera de la tarjeta)
+          if (modal) {
+            modal.addEventListener('click', (e) => {
+              if (e.target === modal) modal.hidden = true;
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

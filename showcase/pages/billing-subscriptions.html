@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Cloud · Suscripciones</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+  </head>
+  <body>
+    <!--
+      SOBRIO como el Hub real (hub/apps/web/src/views/BillingPage.vue):
+      cabecera + tabs + ok-data-table de suscripciones + ok-data-table de cambios programados.
+      SIN chrome inventado: sin KPIs/stats, sin sub-card custom, sin ion-card wrappers.
+    -->
+    <script type="module">
+      import { definePage } from './_page.js';
+      import { html as h } from 'lit';
+
+      const SUBS = [
+        { hub: 'acme-prod',    plan: 'Business', precio: '890,00 €',   ciclo: 'Anual · 12/12', renueva: '15 may 2026', status: 'active'   },
+        { hub: 'mariola-prod', plan: 'Pro',       precio: '340,50 €',   ciclo: 'Mensual',       renueva: '02 jun 2026', status: 'active'   },
+        { hub: 'rambla-prod',  plan: 'Business',  precio: '890,00 €',   ciclo: 'Anual · 7/12',  renueva: '18 oct 2026', status: 'active'   },
+        { hub: 'norte-prod',   plan: 'Trial',     precio: '0,00 €',     ciclo: 'Día 5/14',      renueva: '22 may 2026', status: 'trialing' },
+        { hub: 'lola-prod',    plan: 'Starter',   precio: '120,00 €',   ciclo: 'Mensual',       renueva: '—',           status: 'paused'   },
+      ];
+
+      const SCHED = [
+        { fecha: '01 dic 2026', hub: 'rambla-prod', tipo: 'Downgrade', tipoCls: 'warning', planActual: 'Business · 890 €', planFuturo: 'Pro · 340,50 €', delta: '−549,50 €', deltaCls: 'danger'  },
+        { fecha: '15 ene 2027', hub: 'norte-prod',  tipo: 'Upgrade',   tipoCls: 'success', planActual: 'Trial · 0 €',      planFuturo: 'Pro · 340,50 €', delta: '+340,50 €', deltaCls: 'success' },
+      ];
+
+      // Estado → etiqueta / color Ionic (alineado con BillingPage.vue del Hub).
+      const SUB_LABEL = { active: 'Activa', trialing: 'Trial', paused: 'Pausada', canceled: 'Cancelada' };
+      const SUB_COLOR = { active: 'success', trialing: 'tertiary', paused: 'warning', canceled: 'medium' };
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Suscripciones"
+            description="Gestiona los planes activos para cada uno de tus hubs">
+            <ion-button slot="actions" size="small">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Nuevo plan
+            </ion-button>
+          </ok-page-header>
+
+          <ion-segment id="billing-tabs" value="subscriptions" style="margin-bottom:16px">
+            <ion-segment-button value="invoices"><ion-icon name="receipt-outline"></ion-icon><ion-label>Facturas</ion-label></ion-segment-button>
+            <ion-segment-button value="subscriptions"><ion-icon name="refresh-outline"></ion-icon><ion-label>Suscripciones</ion-label></ion-segment-button>
+            <ion-segment-button value="payments"><ion-icon name="card-outline"></ion-icon><ion-label>Pagos</ion-label></ion-segment-button>
+          </ion-segment>
+
+          <ok-data-table id="subs-dt" style="display:block;margin-bottom:24px"></ok-data-table>
+
+          <ok-data-table id="sched-dt" style="display:block"></ok-data-table>
+        `,
+        setup(doc) {
+          // ── ok-data-table: Suscripciones ──────────────────────────────
+          const dt = doc.getElementById('subs-dt');
+          dt.title = 'Suscripciones';
+          dt.rowKey = (r) => r.hub;
+
+          dt.columns = [
+            {
+              key: 'hub',
+              header: 'Hub',
+              width: 'minmax(10rem,1.2fr)',
+              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:8px">
+                <ok-avatar name="${r.hub}" size="sm"></ok-avatar>
+                <strong>${r.hub}</strong>
+              </span>`,
+            },
+            { key: 'plan',    header: 'Plan',         width: 'minmax(7rem,1fr)' },
+            {
+              key: 'precio',
+              header: 'Precio / mes',
+              width: '9rem',
+              align: 'right',
+              render: (r) => h`<span style="font-weight:600;font-variant-numeric:tabular-nums">${r.precio}</span>`,
+            },
+            { key: 'ciclo',   header: 'Ciclo',        width: 'minmax(8rem,1fr)' },
+            { key: 'renueva', header: 'Renueva',       width: '9rem' },
+            {
+              key: 'status',
+              header: 'Estado',
+              width: '8rem',
+              render: (r) => {
+                const c = SUB_COLOR[r.status] ?? 'medium';
+                // Las clases .ion-color-* NO penetran el shadow → vars inline (como hubs-active.html).
+                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${SUB_LABEL[r.status] ?? r.status}</ion-badge>`;
+              },
+            },
+          ];
+
+          dt.rowActions = [
+            { icon: 'settings-outline',       label: 'Gestionar',    handler: () => {} },
+            { icon: 'swap-horizontal-outline', label: 'Cambiar plan', handler: () => {} },
+            { icon: 'close-circle-outline',    label: 'Cancelar',     color: 'danger', handler: () => {} },
+          ];
+
+          dt.rows = SUBS;
+
+          // ── ok-data-table: Cambios programados ──────────────────────────────
+          const sched = doc.getElementById('sched-dt');
+          sched.title = 'Cambios programados';
+          sched.rowKey = (r) => r.hub + r.fecha;
+
+          sched.columns = [
+            {
+              key: 'fecha',
+              header: 'Fecha efectiva',
+              width: '9rem',
+              render: (r) => h`<strong>${r.fecha}</strong>`,
+            },
+            {
+              key: 'hub',
+              header: 'Hub',
+              width: 'minmax(10rem,1fr)',
+              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:8px">
+                <ok-avatar name="${r.hub}" size="sm"></ok-avatar>
+                ${r.hub}
+              </span>`,
+            },
+            {
+              key: 'tipo',
+              header: 'Cambio',
+              width: '8rem',
+              render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.tipoCls}) 15%, transparent);--color:var(--ion-color-${r.tipoCls});--padding-top:5px;--padding-bottom:5px">${r.tipo}</ion-badge>`,
+            },
+            { key: 'planActual', header: 'Plan actual', width: 'minmax(9rem,1fr)' },
+            { key: 'planFuturo', header: 'Plan futuro', width: 'minmax(9rem,1fr)' },
+            {
+              key: 'delta',
+              header: 'Δ Mensual',
+              width: '8rem',
+              align: 'right',
+              render: (r) => h`<span style="font-weight:600;font-variant-numeric:tabular-nums;color:var(--ion-color-${r.deltaCls})">${r.delta}</span>`,
+            },
+          ];
+
+          sched.rowActions = [
+            { icon: 'create-outline', label: 'Editar',          handler: () => {} },
+            { icon: 'close-outline',  label: 'Cancelar cambio', color: 'danger', handler: () => {} },
+          ];
+
+          sched.rows = SCHED;
+
+          // Sub-tabs: feedback visual (sin navegación real en el showcase)
+          const tabs = doc.getElementById('billing-tabs');
+          if (tabs) {
+            tabs.addEventListener('ionChange', () => {
+              // sin-op: en el showcase los tabs son decorativos
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>

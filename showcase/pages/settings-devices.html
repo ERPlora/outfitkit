@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora Hub · Dispositivos de confianza</title>
+
+    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <link rel="stylesheet" href="../../dist/theme.example.css" />
+    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      /* Geometría puntual: tarjetas de dispositivos. */
+      .dev-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+
+      /* Cabecera de tarjeta de dispositivo */
+      .dev-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .dev-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .dev-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .dev-icon--terminal {
+        background: color-mix(in srgb, var(--ion-color-primary) 14%, transparent);
+        color: var(--ion-color-primary);
+      }
+      .dev-icon--tablet-warn {
+        background: color-mix(in srgb, var(--ion-color-warning) 18%, transparent);
+        color: var(--ion-color-warning);
+      }
+      .dev-icon--mobile {
+        background: color-mix(in srgb, var(--ion-color-tertiary, var(--ion-color-primary)) 14%, transparent);
+        color: var(--ion-color-tertiary, var(--ion-color-primary));
+      }
+      .dev-icon--blocked {
+        background: color-mix(in srgb, var(--ion-color-danger) 14%, transparent);
+        color: var(--ion-color-danger);
+      }
+
+      .dev-name { font-weight: 700; font-size: .95rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .dev-sub  { font-size: .78rem; color: var(--ion-color-medium); margin: 1px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      /* Filas de datos */
+      .dev-info { display: flex; flex-direction: column; gap: 7px; font-size: .85rem; }
+      .dev-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .dev-info-label { color: var(--ion-color-medium); }
+      .dev-info-mono  { font-family: ui-monospace, monospace; font-size: .82rem; }
+
+      /* Footer de acciones de tarjeta */
+      .dev-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid color-mix(in srgb, var(--ion-text-color) 10%, transparent);
+      }
+
+      /* Tarjeta de "Registrar dispositivo" (dashed) */
+      .dev-card-add {
+        border: 2px dashed color-mix(in srgb, var(--ion-text-color) 18%, transparent) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 210px;
+        cursor: pointer;
+      }
+      .dev-card-add:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 2px;
+      }
+      .dev-card-add-inner { text-align: center; padding: 24px 16px; }
+      .dev-add-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--ion-text-color) 8%, transparent);
+        color: var(--ion-color-medium);
+        display: grid;
+        place-items: center;
+        margin: 0 auto 12px;
+      }
+      .dev-add-label { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+      .dev-add-hint  { font-size: .78rem; color: var(--ion-color-medium); margin: 0; }
+
+      /* Modal de desvincular */
+      .dev-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .dev-modal-backdrop.open { display: flex; }
+      .dev-modal {
+        background: var(--ion-background-color, #fff);
+        border-radius: 16px;
+        max-width: 400px;
+        width: 100%;
+        padding: 24px;
+        box-shadow: 0 24px 48px rgba(0,0,0,.18);
+      }
+      .dev-modal-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .dev-modal-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--ion-color-danger) 14%, transparent);
+        color: var(--ion-color-danger);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .dev-modal-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 4px; }
+      .dev-modal-sub   { font-size: .85rem; color: var(--ion-color-medium); margin: 0; }
+      .dev-modal-body  { font-size: .88rem; color: var(--ion-color-medium); margin-bottom: 20px; line-height: 1.5; }
+      .dev-modal-foot  { display: flex; justify-content: flex-end; gap: 8px; }
+
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { definePage } from './_page.js';
+
+      definePage({
+        bare: true,
+        body: `
+          <ok-page-header
+            heading="Dispositivos de confianza"
+            description="3 dispositivos activos · 1 bloqueado">
+            <div slot="actions">
+              <ion-button size="small">
+                <ion-icon slot="start" name="add"></ion-icon>
+                Registrar dispositivo
+              </ion-button>
+            </div>
+          </ok-page-header>
+
+          <!-- Grid de tarjetas de dispositivos -->
+          <div class="dev-grid">
+
+            <!-- TPV-01 Mostrador · Terminal → En línea -->
+            <ion-card>
+              <ion-card-content>
+                <div class="dev-card-header">
+                  <div class="dev-card-header-left">
+                    <div class="dev-icon dev-icon--terminal">
+                      <ion-icon name="desktop-outline" style="font-size:18px"></ion-icon>
+                    </div>
+                    <div style="min-width:0">
+                      <p class="dev-name">TPV-01 Mostrador</p>
+                      <p class="dev-sub">Terminal · Mostrador principal</p>
+                    </div>
+                  </div>
+                  <ok-status-dot tone="ok" pulse label="En línea" size="sm" title="En línea"></ok-status-dot>
+                </div>
+
+                <div class="dev-info">
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Tipo</span>
+                    <ion-badge color="primary">Terminal</ion-badge>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Última conexión</span>
+                    <span>Hoy · 14:22</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">IP</span>
+                    <span class="dev-info-mono">192.168.1.42</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Estado</span>
+                    <ok-status-pill tone="success" dot label="Activo" size="sm"></ok-status-pill>
+                  </div>
+                </div>
+
+                <div class="dev-foot">
+                  <ion-button fill="clear" size="small" color="medium">
+                    <ion-icon slot="start" name="pulse-outline"></ion-icon>
+                    Ver actividad
+                  </ion-button>
+                  <ion-button fill="outline" size="small" color="danger" data-revoke-name="TPV-01 Mostrador" class="btn-revoke">
+                    <ion-icon slot="start" name="unlink-outline"></ion-icon>
+                    Desvincular
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Tablet Sala · iPad → En línea -->
+            <ion-card>
+              <ion-card-content>
+                <div class="dev-card-header">
+                  <div class="dev-card-header-left">
+                    <div class="dev-icon dev-icon--tablet-warn">
+                      <ion-icon name="tablet-portrait-outline" style="font-size:18px"></ion-icon>
+                    </div>
+                    <div style="min-width:0">
+                      <p class="dev-name">Tablet Sala</p>
+                      <p class="dev-sub">Tablet · iPad 10ª gen</p>
+                    </div>
+                  </div>
+                  <ok-status-dot tone="ok" pulse label="En línea" size="sm" title="En línea"></ok-status-dot>
+                </div>
+
+                <div class="dev-info">
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Tipo</span>
+                    <ion-badge color="warning">Tablet</ion-badge>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Última conexión</span>
+                    <span>Hace 4 min</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">IP</span>
+                    <span class="dev-info-mono">192.168.1.55</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Estado</span>
+                    <ok-status-pill tone="success" dot label="Activo" size="sm"></ok-status-pill>
+                  </div>
+                </div>
+
+                <div class="dev-foot">
+                  <ion-button fill="clear" size="small" color="medium">
+                    <ion-icon slot="start" name="pulse-outline"></ion-icon>
+                    Ver actividad
+                  </ion-button>
+                  <ion-button fill="outline" size="small" color="danger" data-revoke-name="Tablet Sala" class="btn-revoke">
+                    <ion-icon slot="start" name="unlink-outline"></ion-icon>
+                    Desvincular
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Móvil camarero · Aitor → Inactivo -->
+            <ion-card>
+              <ion-card-content>
+                <div class="dev-card-header">
+                  <div class="dev-card-header-left">
+                    <div class="dev-icon dev-icon--mobile">
+                      <ion-icon name="phone-portrait-outline" style="font-size:18px"></ion-icon>
+                    </div>
+                    <div style="min-width:0">
+                      <p class="dev-name">Móvil camarero · Aitor</p>
+                      <p class="dev-sub">Móvil · Android — Aitor R.</p>
+                    </div>
+                  </div>
+                  <ok-status-dot tone="warn" label="Inactivo" size="sm" title="Inactivo"></ok-status-dot>
+                </div>
+
+                <div class="dev-info">
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Tipo</span>
+                    <ion-badge color="medium">Móvil</ion-badge>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Última conexión</span>
+                    <span>Hace 2 h</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">IP</span>
+                    <span class="dev-info-mono">192.168.1.78</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Estado</span>
+                    <ok-status-pill tone="neutral" dot label="Inactivo" size="sm"></ok-status-pill>
+                  </div>
+                </div>
+
+                <div class="dev-foot">
+                  <ion-button fill="clear" size="small" color="medium">
+                    <ion-icon slot="start" name="pulse-outline"></ion-icon>
+                    Ver actividad
+                  </ion-button>
+                  <ion-button fill="outline" size="small" color="danger" data-revoke-name="Móvil camarero · Aitor" class="btn-revoke">
+                    <ion-icon slot="start" name="unlink-outline"></ion-icon>
+                    Desvincular
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Tablet Terraza · Bloqueada -->
+            <ion-card>
+              <ion-card-content>
+                <div class="dev-card-header">
+                  <div class="dev-card-header-left">
+                    <div class="dev-icon dev-icon--blocked">
+                      <ion-icon name="lock-closed-outline" style="font-size:18px"></ion-icon>
+                    </div>
+                    <div style="min-width:0">
+                      <p class="dev-name">Tablet Terraza</p>
+                      <p class="dev-sub">Tablet · iPad — bloqueada</p>
+                    </div>
+                  </div>
+                  <ok-status-dot tone="danger" label="Bloqueado" size="sm" title="Bloqueado"></ok-status-dot>
+                </div>
+
+                <div class="dev-info">
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Tipo</span>
+                    <ion-badge color="danger">Tablet</ion-badge>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Última conexión</span>
+                    <span>Ayer · 23:11</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">IP</span>
+                    <span class="dev-info-mono">192.168.1.82</span>
+                  </div>
+                  <div class="dev-info-row">
+                    <span class="dev-info-label">Estado</span>
+                    <ok-status-pill tone="danger" dot label="Bloqueada" size="sm"></ok-status-pill>
+                  </div>
+                </div>
+
+                <ok-inline-feedback
+                  tone="warning"
+                  style="display:block;margin-top:12px"
+                  icon="warning-outline">
+                  5 intentos fallidos de PIN. Desbloquéala antes de continuar.
+                </ok-inline-feedback>
+
+                <div class="dev-foot">
+                  <ion-button fill="outline" size="small">
+                    <ion-icon slot="start" name="lock-open-outline"></ion-icon>
+                    Desbloquear
+                  </ion-button>
+                  <ion-button fill="outline" size="small" color="danger" data-revoke-name="Tablet Terraza" class="btn-revoke">
+                    <ion-icon slot="start" name="unlink-outline"></ion-icon>
+                    Desvincular
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Tarjeta de añadir dispositivo -->
+            <ion-card class="dev-card-add" id="btn-add-device" tabindex="0" role="button" aria-label="Registrar dispositivo">
+              <div class="dev-card-add-inner">
+                <div class="dev-add-icon">
+                  <ion-icon name="add-outline" style="font-size:22px"></ion-icon>
+                </div>
+                <div class="dev-add-label">Registrar dispositivo</div>
+                <p class="dev-add-hint">Genera un código de pareo de 6 dígitos.</p>
+              </div>
+            </ion-card>
+
+          </div>
+
+          <!-- Modal de confirmación: desvincular dispositivo -->
+          <div class="dev-modal-backdrop" id="revoke-backdrop" role="dialog" aria-modal="true" aria-labelledby="revoke-title">
+            <div class="dev-modal">
+              <div class="dev-modal-header">
+                <div class="dev-modal-icon">
+                  <ion-icon name="close-circle-outline" style="font-size:22px"></ion-icon>
+                </div>
+                <div>
+                  <p class="dev-modal-title" id="revoke-title">Desvincular dispositivo</p>
+                  <p class="dev-modal-sub" id="revoke-sub">Quitar acceso al dispositivo</p>
+                </div>
+              </div>
+              <p class="dev-modal-body">
+                El dispositivo dejará de tener acceso al Hub. Tendrás que registrarlo de nuevo si lo vuelves a usar.
+              </p>
+              <div class="dev-modal-foot">
+                <ion-button fill="outline" id="revoke-cancel">
+                  <ion-icon slot="start" name="close-outline"></ion-icon>
+                  Cancelar
+                </ion-button>
+                <ion-button color="danger" id="revoke-confirm">
+                  <ion-icon slot="start" name="unlink-outline"></ion-icon>
+                  Desvincular
+                </ion-button>
+              </div>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          const backdrop = doc.getElementById('revoke-backdrop');
+          const revokeSub = doc.getElementById('revoke-sub');
+
+          // Abrir modal de desvincular
+          doc.querySelectorAll('.btn-revoke').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const name = btn.getAttribute('data-revoke-name') || 'este dispositivo';
+              if (revokeSub) revokeSub.textContent = 'Quitar acceso a ' + name;
+              if (backdrop) backdrop.classList.add('open');
+            });
+          });
+
+          // Cerrar modal al pulsar Cancelar
+          const cancelBtn = doc.getElementById('revoke-cancel');
+          if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+              if (backdrop) backdrop.classList.remove('open');
+            });
+          }
+
+          // Confirmar desvincular (demo: solo cierra el modal)
+          const confirmBtn = doc.getElementById('revoke-confirm');
+          if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+              if (backdrop) backdrop.classList.remove('open');
+            });
+          }
+
+          // Cerrar modal al pulsar fuera (backdrop)
+          if (backdrop) {
+            backdrop.addEventListener('click', (e) => {
+              if (e.target === backdrop) backdrop.classList.remove('open');
+            });
+          }
+
+          // Cerrar modal con Escape
+          doc.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && backdrop && backdrop.classList.contains('open')) {
+              backdrop.classList.remove('open');
+            }
+          });
+
+          // Tarjeta de añadir: activable también con Enter/Space
+          const addCard = doc.getElementById('btn-add-device');
+          if (addCard) {
+            addCard.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                addCard.click();
+              }
+            });
+          }
+        },
+      });
+    </script>
+  </body>
+</html>
