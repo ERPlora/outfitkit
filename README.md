@@ -1,21 +1,28 @@
 # OutfitKit (`@outfitkit/core`)
 
-**OutfitKit** es una librería de **Web Components (Lit)** que envuelve **Ionic** con un set de
-componentes `ok-*` consistente y estable. El consumidor usa **solo** componentes `ok-*` y **nunca**
-toca `ion-*` directamente: cada `ok-*` esconde el `ion-*` equivalente y expone una API propia,
-framework-agnóstica.
+**OutfitKit** es una librería de **Web Components (Lit)** que **CONSTRUYE lo que Ionic NO tiene**,
+sobre primitivos de Ionic.
 
-- **Wrapper completo sobre Ionic** — shell de dashboard (app-shell, sidebar, topbar, page,
-  segment), `ok-data-table`, primitivos de formulario y chrome de landing.
-- **Usable igual en cualquier sitio** — plantillas **Django**, apps **Lit/Vue**, o el **Hub** de
-  ERPlora. Son custom elements estándar: van donde vaya HTML.
+> **Ionic es la base.** Para botones, inputs, listas, modales, toolbars, layout/app-shell, tabs,
+> etc. usas **Ionic directo** (`ion-*`): OutfitKit **no** los envuelve. OutfitKit solo cubre los
+> **huecos** —componentes que Ionic no trae (árbol, tabla rica, calendario, kanban, kpi, charts,
+> inputs especializados…)— y el **chrome web/marketing** que Ionic (pensado para apps) no cubre.
+
+Esto **sustituye** el enfoque anterior de "wrapper completo de Ionic" (`ok-button`/`ok-input`/…),
+que se retiró por redundante.
+
+- **Construye SOBRE Ionic** — por dentro reusa `ion-*` nativos que registra el host; OutfitKit no
+  los importa por componente.
+- **Usable en cualquier sitio** — plantillas **Django**, apps **Lit/Vue**, o el **Hub** de ERPlora.
+  Son custom elements estándar: van donde vaya HTML.
 - **Distribución dual** — **npm** (`@outfitkit/core`) con imports individuales por componente, o
   **CDN** (bundle único `outfitkit.js`).
 - **CSP-safe** — el output no contiene `eval` / `new Function`; funciona bajo `script-src 'self'`.
-- **Tema por tokens `--ok-*`** — espejo de `--ion-*`, claro/oscuro sin esfuerzo.
+- **Tema por tokens `--ok-*`** (espejo de `--ion-*`), claro/oscuro sin esfuerzo.
 
 Showcase en vivo: **https://erplora.github.io/outfitkit/**
-Convenciones de desarrollo: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md)
+Convenciones de desarrollo: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) ·
+Backlog de componentes: [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
 
 ---
 
@@ -26,8 +33,8 @@ npm i @outfitkit/core
 ```
 
 OutfitKit declara **peer dependencies de entorno**: el host debe cargar **`@ionic/core`** (los
-componentes envuelven `ion-*`, que el host registra una sola vez) y **`lit`** (queda external en los
-bundles para compartir una única copia). Instálalas en tu app:
+componentes reusan `ion-*` por dentro, que el host registra una sola vez) y **`lit`** (queda
+external en los bundles para compartir una única copia). Instálalas en tu app:
 
 ```sh
 npm i @ionic/core lit
@@ -38,15 +45,15 @@ npm i @ionic/core lit
 Cada componente es un entry independiente con *side-effect* de registro (`define('ok-x', …)`):
 
 ```js
-import '@outfitkit/core/ok-button';
 import '@outfitkit/core/ok-data-table';
+import '@outfitkit/core/ok-tree';
 // ...solo lo que uses → menor peso
 ```
 
 Las clases y tipos también se re-exportan desde el barrel:
 
 ```js
-import { OkButton } from '@outfitkit/core';
+import { OkDataTable } from '@outfitkit/core';
 ```
 
 ### Bundle (registra todo de golpe)
@@ -74,67 +81,72 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
 <script type="module" src="https://cdn.jsdelivr.net/npm/@outfitkit/core/dist/outfitkit.js"></script>
 ```
 
-> Nota: un import-map en línea puede chocar con una CSP `script-src 'self'`. En Django sirve el
-> import-map desde un fichero estático propio o usa los imports individuales con un bundler.
+> Nota: un import-map en línea choca con una CSP `script-src 'self'`. Bajo CSP estricta (Cloud/Hub
+> de ERPlora) usa **imports individuales con un bundler** que hornee `lit` y los `ok-*` en el dist
+> same-origin; el CDN + import-map queda para entornos sin CSP estricta.
 
 ---
 
 ## Inventario de componentes
 
-Cada componente hereda el tema global `--ok-*` (ver [Theming](#theming)) y expone vars por
-componente estilo Ionic (`--background`, `--color`, …) para overrides puntuales.
+~95 componentes rellena-huecos. La **referencia viva de API** (props/eventos/slots por componente)
+es el [showcase](https://erplora.github.io/outfitkit/); aquí va el mapa por categoría.
 
-### Shell (dashboard)
+### Datos y tablas
+`ok-data-table` (tabla rica: búsqueda, orden, paginación server-side, columnas, vistas, export/import —
+componente central, API congelada), `ok-tree`, `ok-detail-list`, `ok-bar-list`, `ok-sparkline`,
+`ok-code`, `ok-json-viewer`, `ok-diff`.
 
-| Componente | Props / Attrs | Eventos | Slots |
-|---|---|---|---|
-| **`ok-app-shell`** | attr `menu-open` | escucha `ok-menu-toggle`, `ok-nav` | `sidebar`, *default* (contenido) |
-| **`ok-sidebar`** | `sections=[{label,items:[{path,label,icon?}]}]`, `active-path`, `user={name,email?,avatarUrl?}` | `ok-nav` `{path}`, `ok-account` | `brand`, `switcher` |
-| **`ok-topbar`** | `heading`, `back-href`, `actions=[{id,label,icon,pinned?}]` | `ok-menu-toggle`, `ok-back`, `ok-action` `{id}` | `title` |
-| **`ok-page`** | attr `flush` | — | `header`, *default* |
-| **`ok-segment`** | `items=[{value,label,icon?}]`, `value`, `mode`, `scrollable` | `ok-change` `{value}` | — |
+### Dashboard y charts
+`ok-kpi`, `ok-stat`, `ok-widget-board`, `ok-gauge`, `ok-chart`, `ok-donut`, `ok-heatmap`, `ok-funnel`.
 
-### Compuestos
+### Feedback y estado de UI
+`ok-inline-feedback` (banner/callout), `ok-empty-state`, `ok-error-page`, `ok-status-pill`,
+`ok-status-dot`, `ok-skeleton`, `ok-coachmark`, `ok-hover-card`.
 
-| Componente | Props | Eventos |
-|---|---|---|
-| **`ok-data-table`** | `columns`, `rows`, `searchKeys`, `pageSize`, `serverSide`, `actions`, `columnSelector`, `views`, `pageSizes`, `exportable`, `importable` | `rowAction`, `pageChange`, `sortChange`, `searchChange`, `filterChange`, `viewChange`, `columnsChange`, `pageSizeChange`, `export`, `import` |
+### Flujo de tareas
+`ok-stepper`, `ok-wizard`, `ok-pagination`, `ok-command-palette`, `ok-qty-stepper`.
 
-### Primitivos
+### Calendario y planificación
+`ok-calendar`, `ok-scheduler`, `ok-kanban`, `ok-timeline`.
 
-| Componente | Props / Attrs | Eventos | Slots |
-|---|---|---|---|
-| **`ok-button`** | `color`, `fill`, `size`, `href`, `disabled`, `full`, `round` | *(click nativo burbujea)* | `start`, *default*, `end` |
-| **`ok-icon`** | `name`, `src`, `color`, `size` | — | — |
-| **`ok-input`** | `value`, `placeholder`, `type`, `name`, `disabled`, `readonly`, `label`, `label-placement` | `ok-input`, `ok-change` `{value}`, `ok-blur`, `ok-focus` | — |
-| **`ok-select`** | `options=[{value,label}]`, `value`, `placeholder`, `label`, `label-placement`, `disabled`, `interface` | `ok-change` `{value}` | — |
-| **`ok-searchbar`** | `value`, `placeholder`, `disabled`, `debounce` | `ok-input`, `ok-change` `{value}` | — |
-| **`ok-badge`** | `color` | — | *default* |
-| **`ok-card`** | `flat` | — | *default* (familia `ok-card-header` / `ok-card-title` / `ok-card-subtitle` / `ok-card-content`) |
-| **`ok-list`** | `lines` | — | *default* (`ok-item`) |
-| **`ok-item`** | `button`, `disabled`, `lines`, `detail`, `href` | *(click nativo burbujea)* | `start`, *default*, `end` |
-| **`ok-label`** | — | — | *default* |
-| **`ok-spinner`** | `name`, `color` | — | — |
-| **`ok-toggle`** | `checked`, `disabled`, `color` | `ok-change` `{checked}` | — |
-| **`ok-checkbox`** | `checked`, `indeterminate`, `disabled`, `color` | `ok-change` `{checked}` | — |
-| **`ok-chip`** | `color`, `outline`, `disabled` | — | `start`, *default*, `end` |
+### Inputs (los que Ionic no trae)
+`ok-combo` (autocomplete), `ok-tag-input`, `ok-rating`, `ok-otp`, `ok-pinpad`, `ok-currency`,
+`ok-phone`, `ok-dropzone`, `ok-date-picker`, `ok-time-picker`, `ok-range-dual`, `ok-color-picker`,
+`ok-rich-text`, `ok-signature`, `ok-calculator`, `ok-keyboard`, `ok-select-card`.
 
-### Landing (chrome público)
+### Acciones y menús
+`ok-app-launcher` (botón "apps" 3×3), `ok-split-button`, `ok-menu`, `ok-menubar`, `ok-drawer`.
 
-Contenido por **slots** (light DOM) → crawlable para SEO; no dependen de `ion-*`.
+### Media y archivos
+`ok-image`, `ok-gallery`, `ok-lightbox`, `ok-cropper`, `ok-audio`, `ok-video`, `ok-pdf`, `ok-qr`,
+`ok-carousel`, `ok-avatar`, `ok-avatar-group`, `ok-file-item`, `ok-file-manager`, `ok-icon-tile`,
+`ok-splitter`.
 
-| Componente | Descripción |
-|---|---|
-| **`ok-navbar`** | Barra de navegación pública. |
-| **`ok-footer`** | Pie de página. |
-| **`ok-hero`** | Sección hero de cabecera. |
+### Comunicación
+`ok-chat`, `ok-mail`, `ok-notification-center`.
 
-Los **primitivos de layout** (container, grid de 12 col, sección de marketing) NO son web
-components: van como CSS plano en **`@outfitkit/core/layout.css`** (`.ok-container`,
-`.ok-container-fluid`, `.ok-grid`/`.ok-col`/`.ok-md-*`, `.ok-grid-cards`, `.ok-section` y su
-encabezado). La geometría pura no necesita JS y así no sufre FOUC ni rompe el grid con el
-shadow boundary. (Sustituyen a los antiguos `<ok-container>`, `<ok-container-full>` y
-`<ok-section>`, eliminados.)
+### Documentos y tarjetas de negocio
+`ok-receipt` (tiquet 80mm), `ok-invoice` (factura A4), `ok-loyalty-card`, `ok-event-card`, `ok-kbd`,
+`ok-org-chart`.
+
+### Web / marketing (chrome público)
+`ok-navbar`, `ok-footer`, `ok-hero`, `ok-page-header`, `ok-bento` / `ok-bento-item`, `ok-reveal`,
+`ok-feature-card`, `ok-pricing-card`, `ok-product-card`, `ok-logo-cloud`, `ok-testimonial`,
+`ok-cta-band`, `ok-language-select`. Formulario: `ok-contact-form`.
+
+### Layout (CSS plano, **no** web component)
+`@outfitkit/core/layout.css` — `.ok-container` / `.ok-container-fluid`, `.ok-grid` / `.ok-col` /
+`.ok-md-*` / `.ok-grid-cards`, `.ok-section` (+ encabezado), `.ok-table-stack` (tabla responsive).
+Geometría/tipografía pura → CSS; comportamiento/estado → web component.
+
+### Estado
+`store` (reactivo + IndexedDB) + `<ok-store>` + `StoreController` (ver abajo).
+
+> **No** se construye lo que Ionic ya da (botones, inputs, listas, modales, toolbars, tabs, layout
+> de app, app-shell). El **shell** del dashboard se compone con `ion-*` directos. Los componentes de
+> **dominio** (POS, RRHH, comercio…) viven en sus **módulos** de negocio reusando estos genéricos,
+> no en el core.
 
 ---
 
@@ -190,10 +202,10 @@ import { StoreController } from '@outfitkit/core/store-controller';
 class ThemeToggle extends LitElement {
   #theme = new StoreController(this, store, 'theme');
   render() {
-    return html`<ok-toggle
+    return html`<ion-toggle
       .checked=${this.#theme.value === 'dark'}
-      @ok-change=${(e) => this.#theme.set(e.detail.checked ? 'dark' : 'light')}
-    >Modo oscuro</ok-toggle>`;
+      @ionChange=${(e) => this.#theme.set(e.detail.checked ? 'dark' : 'light')}
+    >Modo oscuro</ion-toggle>`;
   }
 }
 ```
@@ -208,7 +220,7 @@ LitElement).
 ```html
 <ok-store name="prefs" id="prefs"></ok-store>
 <output id="count">0</output>
-<ok-button id="inc">+1</ok-button>
+<ion-button id="inc">+1</ion-button>
 
 <script type="module" nonce="{{ request.csp_nonce }}">
   const prefs = document.getElementById('prefs');
@@ -228,69 +240,39 @@ LitElement).
 
 OutfitKit se tematiza en **dos capas**:
 
-1. **Tokens globales `--ok-*`** que pones tú (espejo de `--ion-*`). Son la fuente de verdad.
-2. **Vars por componente** estilo Ionic (`--background`, `--color`, …) con default = cadena
-   `--ok-* → --ion-* → hex`. El `ion-*` interno hereda `--ion-*` del host, así que claro/oscuro
-   funcionan solos.
+1. **Tokens globales `--ok-*`** (espejo de `--ion-*`). Son la fuente de verdad.
+2. **Vars por componente** estilo Ionic con default = cadena `--ok-* → --ion-* → hex`. El `ion-*`
+   interno hereda `--ion-*` del host, así que claro/oscuro funcionan solos.
 
-Tokens disponibles:
-
-| Token | Uso |
-|---|---|
-| `--ok-primary` | Color de marca / acentos |
-| `--ok-bg` | Fondo de página |
-| `--ok-surface` | Fondo de superficies (cards, sidebar) |
-| `--ok-surface-2` | Superficie secundaria / elevada |
-| `--ok-text` | Texto principal |
-| `--ok-muted` | Texto secundario / atenuado |
-| `--ok-border` | Bordes y separadores |
-| `--ok-radius` | Radio de esquinas |
-| `--ok-spacing` | Unidad de espaciado base |
-| `--ok-container-max` | Ancho máximo de contenedores |
-| `--ok-font` | Familia tipográfica |
-
-Parte de [`@outfitkit/core/theme.css`](dist/theme.example.css) y sobrescribe lo que necesites:
+`@outfitkit/core/theme.css` ([`dist/theme.example.css`](dist/theme.example.css)) es una **plantilla**
+de tokens; cópiala y pon tus valores de marca:
 
 ```css
-/* Tema claro (por defecto) */
 :root {
-  --ok-primary: #4f46e5;
-  --ok-bg: #ffffff;
-  --ok-surface: #f8fafc;
-  --ok-surface-2: #f1f5f9;
-  --ok-text: #0f172a;
-  --ok-muted: #64748b;
-  --ok-border: #e2e8f0;
-  --ok-radius: 12px;
-  --ok-spacing: 16px;
-  --ok-container-max: 1200px;
-  --ok-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
-/* Tema oscuro */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ok-bg: #0b1120;
-    --ok-surface: #111827;
-    --ok-surface-2: #1f2937;
-    --ok-text: #f8fafc;
-    --ok-muted: #94a3b8;
-    --ok-border: #334155;
-  }
+  --ok-primary: var(--ion-color-primary);
+  --ok-surface: var(--ion-card-background);
+  --ok-radius: 14px;
+  --ok-shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --ok-shadow-md: 0 6px 20px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.04);
+  /* … */
 }
 ```
 
-Override por componente puntual (igual que `ion-button { --background: … }`):
+El dark lo gobierna `.ion-palette-dark` de Ionic (los `ok-*` heredan `--ion-*`); define ahí los
+overrides de marca que necesites.
+
+Override puntual por componente (igual que `ion-button { --background: … }`):
 
 ```css
-ok-button { --background: var(--ok-primary); --border-radius: 999px; }
+ok-kpi { --ok-radius: 999px; }
 ```
 
 ---
 
 ## Uso en Django
 
-Sirve el JS desde tus estáticos (`script-src 'self'`) y usa un `nonce` cuando lo necesites:
+Sirve el JS desde tus estáticos (`script-src 'self'`) y usa un `nonce` cuando lo necesites. El
+**shell** se arma con `ion-*` directos; OutfitKit aporta los huecos (aquí `ok-data-table`):
 
 ```html
 {% load static %}
@@ -301,16 +283,16 @@ Sirve el JS desde tus estáticos (`script-src 'self'`) y usa un `nonce` cuando l
   import '{% static "outfitkit/dist/cdn.js" %}'; // o imports individuales
 </script>
 
-<ok-app-shell>
-  <ok-sidebar slot="sidebar" active-path="{{ request.path }}"></ok-sidebar>
-  <ok-page>
-    <ok-topbar slot="header" heading="Clientes"></ok-topbar>
+<ion-split-pane content-id="main">
+  <ion-menu content-id="main"><!-- ion-list de navegación --></ion-menu>
+  <ion-content id="main">
+    <ion-header><ion-toolbar><ion-title>Clientes</ion-title></ion-toolbar></ion-header>
     <ok-data-table id="tabla"></ok-data-table>
-  </ok-page>
-</ok-app-shell>
+  </ion-content>
+</ion-split-pane>
 ```
 
-Las props complejas (arrays/objetos como `columns`, `rows`, `sections`) se asignan en JS:
+Las props complejas (arrays/objetos como `columns`, `rows`) se asignan en JS:
 
 ```html
 <script type="module" nonce="{{ request.csp_nonce }}">
@@ -340,51 +322,6 @@ export const view = (cols, rows) => html`
 
 ---
 
-## Navegación / routing (router-agnóstico)
-
-OutfitKit **no incluye router** y **no envuelve el router de Ionic**. Es una decisión de diseño,
-no una carencia: los componentes de shell son **presentacionales** y la navegación la **cablea el
-host** a través de eventos `ok-*`:
-
-- `ok-sidebar` → emite **`ok-nav`** `{ path }` al pulsar un ítem (el host decide qué significa
-  navegar; el resaltado activo entra por la prop `active-path`).
-- `ok-topbar` → emite **`ok-action`** `{ id }` y **`ok-back`**.
-
-### ¿Por qué no un `ok-router`?
-
-Sí, el router de Ionic son web components (`ion-router`, `ion-route`, `ion-router-outlet`,
-`ion-nav`, `ion-back-button`), y el Hub hoy usa además `IonReactRouter` (Ionic React + React
-Router). Pero **no son candidatos a wrapper `ok-*`**:
-
-1. **La librería sirve en dos modelos de navegación opuestos.** En **Cloud (Django/Datastar)** la
-   navegación es *server-driven* (SSE morph, `@get(...)`): no hay router cliente. En el **Hub (SPA)**
-   sí lo hay. Un `ok-router` solo tendría sentido en el SPA y sería peso muerto —y modelo
-   equivocado— en Django.
-2. **Reintroduciría el acoplamiento a Ionic/framework que precisamente escondemos.** `ion-router-outlet`/
-   `ion-nav` gestionan **stack de navegación, transiciones/animaciones y ciclo de vida** de páginas,
-   atados al router del framework. Es lo más específico del host que existe (URL strategy, history,
-   guards, transiciones).
-3. **El *seam* limpio ya existe**: los eventos `ok-nav` / `ok-action` / `ok-back`. Cada host conecta
-   su routing detrás de ellos.
-
-### Cómo lo cablea cada host
-
-```js
-// Hub / SPA Lit — un router pequeño (p. ej. @lit-labs/router o URLPattern) escucha ok-nav:
-shell.addEventListener('ok-nav', (e) => router.goto(e.detail.path));
-```
-
-```django
-{# Cloud / Django — la navegación es server-driven (Datastar); el ítem dispara el SSE: #}
-<ok-sidebar slot="sidebar" active-path="{{ request.path }}"
-            data-on:ok-nav="@get(evt.detail.path)"></ok-sidebar>
-```
-
-Si algún día un SPA puro necesitara un router empaquetado, sería una pieza **del host** (no del
-core de OutfitKit), para no romper la portabilidad a Django.
-
----
-
 ## Comandos de desarrollo
 
 ```sh
@@ -392,7 +329,10 @@ npm run build        # vite (dist/*.js, outfitkit.js, theme.example.css) + tsc (
 npm run typecheck    # comprobación de tipos sin emitir
 npm run verify:csp   # rechaza eval / new Function en dist (CSP estricta)
 npm run dev          # vite build --watch (showcase en local)
+npm run release      # release-it: corta una versión (ver docs/RELEASING.md)
 ```
+
+Publicación a npm: [`docs/RELEASING.md`](docs/RELEASING.md) (Trusted Publishing / OIDC).
 
 ---
 
@@ -400,6 +340,7 @@ npm run dev          # vite build --watch (showcase en local)
 
 - **Showcase (GitHub Pages):** https://erplora.github.io/outfitkit/
 - **Convenciones de desarrollo:** [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md)
+- **Backlog de componentes:** [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
 - **Cómo contribuir:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Licencia
