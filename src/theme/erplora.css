@@ -1,0 +1,112 @@
+/* Tema CANÓNICO de marca ERPlora — fuente única de verdad de los tokens compartidos
+ * por Cloud y Hub (issue ERPlora/outfitkit#10). Combina:
+ *   - del Hub: color primary + neutros claros + escala de steps + tokens de diseño
+ *     (--ok-radius/--ok-shadow-*) + fuente.
+ *   - de Cloud: la paleta OSCURA de marca (negros zinc), que es la elegida para ambos.
+ *
+ * Mecanismo OFICIAL de Ionic (variables --ion-*) + tokens --ok-* de OutfitKit. El dark se
+ * activa con `.ion-palette-dark` (Cloud/Hub importan la palette dark de Ionic y este fichero
+ * la sobrescribe por especificidad). Como `--ok-* → --ion-* → hex`, los componentes ok-* y los
+ * ion-* comparten exactamente la misma marca en claro y en oscuro.
+ *
+ * Fuera de alcance (por ahora): la paleta SEMÁNTICA (success/warning/danger/secondary) y las
+ * clases `.ion-color-*`, que Cloud define aparte porque no carga el core.css de Ionic. */
+
+:root {
+  /* ── Marca (primary) ── */
+  --ion-color-primary: #1496d6;
+  --ion-color-primary-rgb: 20, 150, 214;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1284bc;
+  --ion-color-primary-tint: #2ca1da;
+
+  /* ── Neutros CLAROS — lienzo casi blanco, superficies blancas por elevación (Linear/Vercel) ── */
+  --ion-background-color: #ffffff;
+  --ion-background-color-rgb: 255, 255, 255;
+  --ion-text-color: #1c1d1f;
+  --ion-text-color-rgb: 28, 29, 31;
+  --ion-toolbar-background: #ffffff;
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --ion-border-color: #eeeeef;
+
+  /* Rampa neutra clara (nombres nuevos de Ionic) + alias legacy --ion-color-step-*. */
+  --ion-background-color-step-50: #fdfdfd;
+  --ion-background-color-step-100: #f6f6f7;
+  --ion-background-color-step-150: #eeeeef;
+  --ion-background-color-step-200: #e4e4e6;
+  --ion-background-color-step-250: #d4d4d7;
+  --ion-background-color-step-300: #bdbdc1;
+  --ion-background-color-step-500: #89898f;
+  --ion-background-color-step-700: #54545a;
+  --ion-background-color-step-850: #29292d;
+  --ion-color-step-50: var(--ion-background-color-step-50);
+  --ion-color-step-100: var(--ion-background-color-step-100);
+  --ion-color-step-150: var(--ion-background-color-step-150);
+  --ion-color-step-200: var(--ion-background-color-step-200);
+  --ion-color-step-250: var(--ion-background-color-step-250);
+  --ion-color-step-300: var(--ion-background-color-step-300);
+  --ion-color-step-500: var(--ion-background-color-step-500);
+  --ion-color-step-700: var(--ion-background-color-step-700);
+  --ion-color-step-850: var(--ion-background-color-step-850);
+
+  /* Fuente de marca. Los consumidores deben cargar la webfont "Inter"; si no, cae al stack del sistema. */
+  --ion-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* ── Tokens de diseño OutfitKit (geometría / sombras, NO-color) ── */
+  --ok-radius: 14px;
+  --ok-radius-sm: 10px;
+  --ok-radius-pill: 999px;
+  --ok-shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --ok-shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --ok-shadow-md: 0 6px 20px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.04);
+  --ok-surface-muted: var(--ion-color-step-50);
+
+  /* ── Alias --ok-* → --ion-* (los componentes ok-* resuelven por esta cadena) ── */
+  --ok-primary: var(--ion-color-primary);
+  --ok-primary-contrast: var(--ion-color-primary-contrast);
+  --ok-bg: var(--ion-background-color);
+  --ok-surface: var(--ion-card-background);
+  --ok-surface-2: var(--ion-color-step-100, rgba(var(--ion-text-color-rgb), 0.04));
+  --ok-text: var(--ion-text-color);
+  --ok-muted: rgba(var(--ion-text-color-rgb), 0.6);
+  --ok-border: var(--ion-border-color);
+  --ok-border-soft: rgba(var(--ion-text-color-rgb), 0.08);
+  --ok-spacing: 1rem;
+  --ok-container-max: 1140px;
+  --ok-font: var(--ion-font-family);
+}
+
+/* ── OSCURO (paleta de marca de Cloud: negros zinc) ──
+   Mismo selector que Ionic (:root.ion-palette-dark) para ganarle por orden de carga. */
+:root.ion-palette-dark {
+  /* Lienzo oscuro */
+  --ion-background-color: #09090b;
+  --ion-background-color-rgb: 9, 9, 11;
+  --ion-text-color: #fafafa;
+  --ion-text-color-rgb: 250, 250, 250;
+  --ion-toolbar-background: #18181b;
+  --ion-item-background: #18181b;
+  --ion-card-background: #18181b;
+  --ion-border-color: #27272a;
+
+  /* Steps oscuros (legacy + nuevos en paralelo). */
+  --ion-color-step-50: #18181b;
+  --ion-color-step-100: #27272a;
+  --ion-color-step-150: #3f3f46;
+  --ion-background-color-step-50: #18181b;
+  --ion-background-color-step-100: #27272a;
+  --ion-background-color-step-150: #3f3f46;
+
+  /* Primary más claro sobre fondo oscuro. */
+  --ion-color-primary: #2aa6e4;
+  --ion-color-primary-rgb: 42, 166, 228;
+  --ion-color-primary-shade: #2592c9;
+  --ion-color-primary-tint: #3fafe7;
+
+  /* Sombras más marcadas sobre oscuro. */
+  --ok-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ok-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --ok-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+}

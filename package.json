@@ -123,6 +123,7 @@
     "./ok-org-chart": "./dist/ok-org-chart.js",
     "./ok-file-manager": "./dist/ok-file-manager.js",
     "./theme.css": "./dist/theme.example.css",
+    "./erplora.css": "./dist/erplora.css",
     "./layout.css": "./dist/layout.css",
     "./cdn": "./dist/outfitkit.js"
   },

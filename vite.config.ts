@@ -23,6 +23,13 @@ const emitTheme = {
       fileName: 'layout.css',
       source: readFileSync(resolve(__dirname, 'src/styles/layout.css'), 'utf8'),
     });
+    // erplora.css — tema CANÓNICO de marca (tokens --ion-*/--ok-* compartidos Cloud↔Hub, #10).
+    // @ts-expect-error — rollup `this.emitFile` disponible en el hook.
+    this.emitFile({
+      type: 'asset',
+      fileName: 'erplora.css',
+      source: readFileSync(resolve(__dirname, 'src/theme/erplora.css'), 'utf8'),
+    });
   },
 };
 
