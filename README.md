@@ -89,59 +89,168 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
 
 ## Inventario de componentes
 
-~95 componentes rellena-huecos. La **referencia viva de API** (props/eventos/slots por componente)
-es el [showcase](https://erplora.github.io/outfitkit/); aquí va el mapa por categoría.
+95 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
+los **eventos `ok-*`** que emite cada uno (`—` = presentacional, sin eventos). La **referencia viva
+de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 
 ### Datos y tablas
-`ok-data-table` (tabla rica: búsqueda, orden, paginación server-side, columnas, vistas, export/import —
-componente central, API congelada), `ok-tree`, `ok-detail-list`, `ok-bar-list`, `ok-sparkline`,
-`ok-code`, `ok-json-viewer`, `ok-diff`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-data-table` | Tabla rica: lista/tarjetas, búsqueda, filtros, orden, paginación (server-side), selección, columnas, vistas, CSV import/export. Componente central, API congelada. | `pageChange`, `sortChange`, `searchChange`, `filterChange`, `selectionChange`, `rowAction`, `primaryAction`, `menuAction`, `columnsChange`, `csvImport`, `csvExport` |
+| `ok-tree` | Árbol expandible recursivo por datos, con líneas guía y selección. | `ok-toggle`, `ok-select` |
+| `ok-detail-list` | Description list (`dl`) para fichas: pares label/value alineados, 1–2 columnas. | — |
+| `ok-bar-list` | Ranking de barras horizontales animadas con formateo de valores. | — |
+| `ok-sparkline` | Mini-gráfico inline (línea/barras) en SVG, sin ejes, autoescalado. | — |
+| `ok-code` | Visor de código monospace con etiqueta de lenguaje y botón copiar. | `ok-copy` |
+| `ok-json-viewer` | Árbol JSON tipado colapsable, coloreado por tipo, con guías de indentación. | `ok-toggle` |
+| `ok-diff` | Visor de diff unificado línea a línea con numeración dual y glifos +/−. | — |
 
 ### Dashboard y charts
-`ok-kpi`, `ok-stat`, `ok-widget-board`, `ok-gauge`, `ok-chart`, `ok-donut`, `ok-heatmap`, `ok-funnel`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-kpi` | Tarjeta KPI: label, valor grande, delta coloreado y flecha de tendencia. | — |
+| `ok-stat` | Métrica inline compacta (label + value + hint) para filas de stats. | — |
+| `ok-widget-board` | Panel de widgets configurable (activar/desactivar/reordenar), presets, persistencia `localStorage`. | `ok-change` |
+| `ok-gauge` | Medidor arc / ring / bullet animado con thresholds coloreados. | — |
+| `ok-chart` | Gráfico SVG inline (línea/área/barras) sin librerías externas. | — |
+| `ok-donut` | Donut/pie proporcional con leyenda opcional. | — |
+| `ok-heatmap` | Heatmap de calendario (estilo GitHub) o anual, con cuantiles e intensidad. | — |
+| `ok-funnel` | Embudo de conversión apilado con % y conteo por paso. | — |
 
 ### Feedback y estado de UI
-`ok-inline-feedback` (banner/callout), `ok-empty-state`, `ok-error-page`, `ok-status-pill`,
-`ok-status-dot`, `ok-skeleton`, `ok-coachmark`, `ok-hover-card`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-inline-feedback` | Banner/callout persistente en flujo (no efímero), tonal, con acciones y cierre. | `ok-dismiss` |
+| `ok-empty-state` | Estado vacío centrado: icono + título + mensaje + acción. | — |
+| `ok-error-page` | Plantilla full-screen para errores HTTP (403/404/500), retry con cuenta atrás, modo bootstrap con checklist. | `ok-retry`, `ok-shortcut` |
+| `ok-status-pill` | Pill de estado con fondo tonal suave + icono/punto (celdas de tabla). | — |
+| `ok-status-dot` | Punto de presencia coloreado con pulso opcional. | — |
+| `ok-skeleton` | Placeholders de carga (shimmer) con variantes y presets (card/table/chart). | — |
+| `ok-coachmark` | Tour guiado con spotlight, bubble anclado y navegación por teclado. | `ok-step`, `ok-next`, `ok-prev`, `ok-finish`, `ok-skip` |
+| `ok-hover-card` | Popover de previsualización (avatar/título/stats/acciones) anclada a hover/focus. | `ok-action`, `ok-open` |
 
 ### Flujo de tareas
-`ok-stepper`, `ok-wizard`, `ok-pagination`, `ok-command-palette`, `ok-qty-stepper`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-stepper` | Indicador de pasos (círculos numerados conectados), horizontal/compacto. | `ok-step-select` |
+| `ok-wizard` | Asistente multi-paso: compone `ok-stepper` + slots + barra Atrás/Siguiente/Finalizar. | `ok-step-change`, `ok-finish` |
+| `ok-pagination` | Paginador numerado con prev/next, elipsis y selector de filas por página. | `ok-page-change`, `ok-page-size-change` |
+| `ok-command-palette` | Paleta de comandos Cmd+K con búsqueda y agrupación. | `ok-select`, `ok-open` |
+| `ok-qty-stepper` | Selector de cantidad −/+ con campo numérico y clamp. | `ok-change` |
 
 ### Calendario y planificación
-`ok-calendar`, `ok-scheduler`, `ok-kanban`, `ok-timeline`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-calendar` | Calendario mes/agenda con eventos como chips y presets. | `ok-date-select`, `ok-event-click`, `ok-view-change`, `ok-nav` |
+| `ok-scheduler` | Timeline de recursos/turnos (filas × franjas horarias) con eventos posicionados. | `ok-event-click`, `ok-slot-click`, `ok-nav` |
+| `ok-kanban` | Tablero Kanban con HTML5 drag&drop (sin libs), columnas y tarjetas reordenables. | `ok-card-move`, `ok-card-click` |
+| `ok-timeline` | Línea de tiempo vertical con estados (done/current/pending), modo alternado. | `ok-item-click` |
 
 ### Inputs (los que Ionic no trae)
-`ok-combo` (autocomplete), `ok-tag-input`, `ok-rating`, `ok-otp`, `ok-pinpad`, `ok-currency`,
-`ok-phone`, `ok-dropzone`, `ok-date-picker`, `ok-time-picker`, `ok-range-dual`, `ok-color-picker`,
-`ok-rich-text`, `ok-signature`, `ok-calculator`, `ok-keyboard`, `ok-select-card`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-combo` | Combobox con búsqueda filtrada y navegación por teclado. | `ok-input`, `ok-change` |
+| `ok-tag-input` | Entrada de tags (chips) con Enter/coma, Backspace y sugerencias. | `ok-change` |
+| `ok-rating` | Estrellas con hover-preview, medias estrellas y readonly. | `ok-change` |
+| `ok-otp` | Código OTP/2FA con N casillas, auto-avance y pegado. | `ok-change`, `ok-complete` |
+| `ok-pinpad` | Teclado numérico PIN con display enmascarable. | `ok-input`, `ok-complete` |
+| `ok-currency` | Input monetario con máscara (miles/decimales/símbolo `Intl`). | `ok-change` |
+| `ok-phone` | Teléfono con prefijo de país (bandera + dial) y número (E.164). | `ok-change` |
+| `ok-dropzone` | Subida drag&drop + click con validación de tipo/tamaño. | `ok-change`, `ok-error` |
+| `ok-date-picker` | Campo fecha + popover calendario, single/range, chips de preset. | `ok-change` |
+| `ok-time-picker` | Pastilla HH:MM + popover de listas (horas/minutos/AM-PM), canónico 24h. | `ok-change` |
+| `ok-range-dual` | Slider min-max de doble thumb con readout. | `ok-change` |
+| `ok-color-picker` | Selector de color (SV + hue + hex + presets). | `ok-change`, `ok-open` |
+| `ok-rich-text` | Editor WYSIWYG con toolbar y contador de palabras. | `ok-input` |
+| `ok-signature` | Pad de firma sobre canvas con limpiar/exportar. | `ok-change`, `ok-clear` |
+| `ok-calculator` | Calculadora con teclado 4×4 y máquina de estados. | `ok-input`, `ok-change` |
+| `ok-keyboard` | Teclado virtual QWERTY/numérico para kiosco/táctil. | `ok-input`, `ok-key`, `ok-enter` |
+| `ok-select-card` | Tarjeta seleccionable (checkbox/radio) con borde de marca al marcar. | `ok-change` |
 
 ### Acciones y menús
-`ok-app-launcher` (botón "apps" 3×3), `ok-split-button`, `ok-menu`, `ok-menubar`, `ok-drawer`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-app-launcher` | Botón "apps" estilo Google (rejilla 3×3 en hoja de acción). | `ok-app-select`, `ok-open` |
+| `ok-split-button` | Botón principal pegado a un caret que abre menú. | `ok-main`, `ok-select`, `ok-open` |
+| `ok-menu` | Menú desplegable/contextual con submenús, checkbox/radio, divisores. | `ok-select`, `ok-open` |
+| `ok-menubar` | Barra de menús de app (Archivo/Editar/Ver) con dropdowns. | `ok-select`, `ok-open` |
+| `ok-drawer` | Panel lateral deslizante (slide-over) modal con focus-trap y cierre por ESC/scrim. | `ok-open`, `ok-close` |
 
 ### Media y archivos
-`ok-image`, `ok-gallery`, `ok-lightbox`, `ok-cropper`, `ok-audio`, `ok-video`, `ok-pdf`, `ok-qr`,
-`ok-carousel`, `ok-avatar`, `ok-avatar-group`, `ok-file-item`, `ok-file-manager`, `ok-icon-tile`,
-`ok-splitter`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-image` | Imagen lazy con skeleton, fade-in, caption y zoom (lupa/lightbox). | `ok-open` |
+| `ok-gallery` | Grid de imágenes seleccionables con caption hover y lightbox opcional. | `ok-select`, `ok-open` |
+| `ok-lightbox` | Visor de medios full-screen con filmstrip, zoom y teclado. | `ok-close`, `ok-index` |
+| `ok-cropper` | Recortador de imagen con rect arrastrable/redimensionable y rule-of-thirds. | `ok-crop`, `ok-cancel` |
+| `ok-audio` | Reproductor de audio con controles propios. | `ok-play`, `ok-pause`, `ok-ended` |
+| `ok-video` | Reproductor de vídeo con controles propios, 16:9 responsive. | `ok-play`, `ok-pause`, `ok-ended` |
+| `ok-pdf` | Visor de PDF nativo del navegador con fallback de descarga. | — |
+| `ok-qr` | Generador de QR en JS puro (Reed-Solomon, v1–40, 4 niveles EC). | — |
+| `ok-carousel` | Carrusel con swipe, flechas, puntos y autoplay. | `ok-change` |
+| `ok-avatar` | Avatar de iniciales/imagen con tamaños, formas y tono por hash. | — |
+| `ok-avatar-group` | Pila de avatares solapados con overflow "+N". | — |
+| `ok-file-item` | Fila de archivo/adjunto con badge, meta, barra de progreso y quitar. | `ok-remove` |
+| `ok-file-manager` | Gestor de archivos backend-agnóstico (árbol + toolbar + grid/lista + cuota). | `ok-navigate`, `ok-open`, `ok-download`, `ok-delete`, `ok-create-folder`, `ok-search`, `ok-upload`, `ok-view-change` |
+| `ok-icon-tile` | Pastilla cuadrada coloreada con icono (leading icon para cabeceras). | — |
+| `ok-splitter` | Split-pane redimensionable (h/v) con divisor arrastrable. | `ok-resize` |
 
 ### Comunicación
-`ok-chat`, `ok-mail`, `ok-notification-center`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-chat` | Hilo de mensajes con compositor opcional (Enter envía). | `ok-send` |
+| `ok-mail` | Cliente de correo (carpetas + lista filtrada + panel de lectura). | `ok-folder-select`, `ok-message-select`, `ok-reply`, `ok-archive`, `ok-delete`, `ok-compose`, … |
+| `ok-notification-center` | Bandeja de notificaciones (drawer) con filtros y "marcar todas leídas". | `ok-read`, `ok-read-all`, `ok-filter`, `ok-close`, `ok-open` |
 
 ### Documentos y tarjetas de negocio
-`ok-receipt` (tiquet 80mm), `ok-invoice` (factura A4), `ok-loyalty-card`, `ok-event-card`, `ok-kbd`,
-`ok-org-chart`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-receipt` | Tiquet de venta formato impresora térmica 80mm (líneas, totales, impuestos, QR). | — |
+| `ok-invoice` | Factura fiscal A4 (emisor/receptor/líneas/totales/pago/QR VeriFactu), JSON-in. | — |
+| `ok-loyalty-card` | Tarjeta de fidelización estilo tarjeta de crédito con chip EMV y tier. | — |
+| `ok-event-card` | Tarjeta de evento (bloque fecha + hora/lugar + avatares), pulso en "now". | — |
+| `ok-kbd` | Chips keycap con glifos (⌘/↵/⌫) y combos `+`. | — |
+| `ok-org-chart` | Organigrama jerárquico (tidy-tree) con pan/zoom y colapso. | `ok-node-toggle` |
 
 ### Web / marketing (chrome público)
-`ok-navbar`, `ok-footer`, `ok-hero`, `ok-page-header`, `ok-bento` / `ok-bento-item`, `ok-reveal`,
-`ok-feature-card`, `ok-pricing-card`, `ok-product-card`, `ok-logo-cloud`, `ok-testimonial`,
-`ok-cta-band`, `ok-language-select`. Formulario: `ok-contact-form`.
+
+| Componente | Qué hace | Eventos clave |
+|---|---|---|
+| `ok-navbar` | Barra de navegación responsive de landing (logo, enlaces, CTAs, drawer móvil). | navegación por `href` |
+| `ok-footer` | Footer multi-columna responsive (slots `default` + `bottom`). | — |
+| `ok-hero` | Sección hero de marketing con slots `title`/`subtitle`/`actions` (SEO). | — |
+| `ok-page-header` | Cabecera de página in-content (título + descripción + metadatos + acciones). | — |
+| `ok-bento` / `ok-bento-item` | Rejilla bento modular y sus celdas (icono/eyebrow/título, glass, hover). | — |
+| `ok-reveal` | Anima contenido al entrar en viewport (`IntersectionObserver`). | — |
+| `ok-feature-card` | Tarjeta de característica (icono + eyebrow + título + descripción). | — |
+| `ok-pricing-card` | Tarjeta de plan/precio con features checklist y CTA. | — |
+| `ok-product-card` | Tarjeta de módulo/producto (icono Iconify, categoría, badge, precio). | navegación por `href` |
+| `ok-logo-cloud` | Banda de logos "Trusted by" con marquee opcional. | — |
+| `ok-testimonial` | Cita de cliente con rating, avatar, autor/rol y glass. | — |
+| `ok-cta-band` | Banda de llamada a la acción (degradado/glass, título, subtítulo, botones). | — |
+| `ok-language-select` | Selector de idioma para landing (banderas emoji). | navegación por `href` |
+| `ok-contact-form` | Formulario web (nombre/email/asunto/mensaje) con validación inline y POST. | `ok-submit` |
 
 ### Layout (CSS plano, **no** web component)
+
 `@outfitkit/core/layout.css` — `.ok-container` / `.ok-container-fluid`, `.ok-grid` / `.ok-col` /
 `.ok-md-*` / `.ok-grid-cards`, `.ok-section` (+ encabezado), `.ok-table-stack` (tabla responsive).
 Geometría/tipografía pura → CSS; comportamiento/estado → web component.
 
 ### Estado
-`store` (reactivo + IndexedDB) + `<ok-store>` + `StoreController` (ver abajo).
+
+`store` (reactivo + IndexedDB) + `<ok-store>` (emite `ok-store-change` / `ok-store-ready`) +
+`StoreController` (Lit) — ver [sección Estado](#estado-store-con-indexeddb).
 
 > **No** se construye lo que Ionic ya da (botones, inputs, listas, modales, toolbars, tabs, layout
 > de app, app-shell). El **shell** del dashboard se compone con `ion-*` directos. Los componentes de
