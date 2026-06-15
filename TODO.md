@@ -1,12 +1,12 @@
 # Roadmap / Backlog — OutfitKit + sistema de módulos ERPlora
 
-> Lista única de todo lo pendiente, priorizada. **Primero acabar OutfitKit** (`@outfitkit/core`)
+> Lista única de todo lo pendiente, priorizada. **Primero acabar OutfitKit** (`@erplora/outfitkit`)
 > para tener el set `ok-*` completo; luego migrar los consumidores a usar **solo `ok-*`**.
 > Última actualización: 2026-06-08.
 
 ## Estado actual (de dónde partimos)
 
-- **OutfitKit canónico = `ERPlora/outfitkit/`** (`@outfitkit/core`): set `ok-*` que envuelve Ionic.
+- **OutfitKit canónico = `ERPlora/outfitkit/`** (`@erplora/outfitkit`): set `ok-*` que envuelve Ionic.
   Es la **fuente de verdad**; se re-vendoriza a `hub/packages/outfitkit` (mirror, `@erplora/outfitkit`)
   y a `cloud/.../vendor/outfitkit` (`vendor-frontend.sh`).
 - **`ok-data-table` consolidado en el canónico** usando **`ok-button`** (no `ion-button`). Tiene:
@@ -20,7 +20,7 @@
 
 ---
 
-## ⭐ PRIORIDAD 1 — Acabar OutfitKit (`@outfitkit/core`)
+## ⭐ PRIORIDAD 1 — Acabar OutfitKit (`@erplora/outfitkit`)
 
 Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por dentro.
 
@@ -57,7 +57,7 @@ Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por d
       `pageSizeOptions`, `render` de celda, drawer) al **showcase** (`showcase/components.html`).
 - [ ] Documentar API de `ok-data-table` y `ok-button` en README + `docs/CONVENTIONS.md`.
 - [ ] CI: `typecheck` + `verify:csp` + `build`.
-- [ ] Publicar **npm `@outfitkit/core`** + **GitHub Pages** (showcase).
+- [ ] Publicar **npm `@erplora/outfitkit`** + **GitHub Pages** (showcase).
 
 ---
 

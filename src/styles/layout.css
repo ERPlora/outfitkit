@@ -13,7 +13,7 @@
  *
  * Tokens: hereda --ok-container-max / --ok-spacing del tema (outfitkit-theme.css
  * o equivalente) con los mismos fallbacks que usaban los componentes.
- * Cargar después del tema. Export del paquete: `@outfitkit/core/layout.css`.
+ * Cargar después del tema. Export del paquete: `@erplora/outfitkit/layout.css`.
  */
 
 :root {

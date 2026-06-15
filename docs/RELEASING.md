@@ -1,7 +1,7 @@
-# Publicar OutfitKit (`@outfitkit/core`)
+# Publicar OutfitKit (`@erplora/outfitkit`)
 
 OutfitKit se distribuye como **librería npm** (igual que Ionic): los consumidores —Hub, Cloud y
-los módulos— instalan una versión publicada (`@outfitkit/core@^x.y.z`), no el source local. El
+los módulos— instalan una versión publicada (`@erplora/outfitkit@^x.y.z`), no el source local. El
 *bundler* (Vite en el Hub, el vendor script en Cloud) la hornea same-origin, así que **npm es
 build-time, no runtime**: no rompe la CSP estricta (`script-src 'self'`) ni el modo offline.
 
@@ -16,9 +16,9 @@ Tú solo cortas la *release* (bump + tag + push); la Action publica sola.
 
 ## Prerrequisitos (una sola vez, en npmjs — columna del humano)
 
-1. **Scope `@outfitkit`.** Un paquete `@outfitkit/*` solo se publica si existe el usuario/org
-   `outfitkit` en npmjs. Crea la organización (plan Free) si no la tienes.
-2. **Trusted Publisher** en la página del paquete: npmjs.com → Packages → `@outfitkit/core` →
+1. **Scope `@erplora`.** El paquete `@erplora/outfitkit` se publica bajo la org npm `erplora`,
+   **que ya existe** (el publicador es owner) — no hay que crear nada.
+2. **Trusted Publisher** en la página del paquete: npmjs.com → Packages → `@erplora/outfitkit` →
    *Settings* → *Trusted Publisher* → GitHub Actions:
    - Organization or user: `ERPlora`
    - Repository: `outfitkit`
@@ -28,8 +28,9 @@ Tú solo cortas la *release* (bump + tag + push); la Action publica sola.
 
    ⚠️ npm **no valida** estos datos al guardar: si org/repo/workflow no son exactos, el publish
    falla. ⚠️ El paquete debe existir para configurar su Trusted Publisher; si npm no deja
-   configurarlo antes del primer publish, haz **un publish inicial manual** (`npm login` +
-   `npm publish --access public`) y luego activa OIDC para las siguientes releases.
+   configurarlo antes del primer publish, haz **el publish inicial manual** (el publicador es
+   owner de `@erplora` y ya tiene `npm login`): `npm run build && npm publish --access public`, y
+   luego activa OIDC para las siguientes releases.
 3. *(Recomendado, tras validar OIDC)* En *Settings → Publishing access* del paquete marca
    **"Require two-factor authentication and disallow tokens"**: OIDC sigue funcionando aunque
    deshabilites los tokens, y cierras esa vía.
@@ -58,7 +59,7 @@ publique con la confianza OIDC del servidor.
 ## Verificar
 
 ```sh
-npm view @outfitkit/core version     # debe mostrar la versión recién publicada
+npm view @erplora/outfitkit version     # debe mostrar la versión recién publicada
 ```
 
 > Nota: el script usa `npx --yes release-it` (sin fijar versión) para no añadir dependencia ni

@@ -1,4 +1,4 @@
-# OutfitKit (`@outfitkit/core`)
+# OutfitKit (`@erplora/outfitkit`)
 
 **OutfitKit** es una librería de **Web Components (Lit)** que **CONSTRUYE lo que Ionic NO tiene**,
 sobre primitivos de Ionic.
@@ -15,7 +15,7 @@ que se retiró por redundante.
   los importa por componente.
 - **Usable en cualquier sitio** — plantillas **Django**, apps **Lit/Vue**, o el **Hub** de ERPlora.
   Son custom elements estándar: van donde vaya HTML.
-- **Distribución dual** — **npm** (`@outfitkit/core`) con imports individuales por componente, o
+- **Distribución dual** — **npm** (`@erplora/outfitkit`) con imports individuales por componente, o
   **CDN** (bundle único `outfitkit.js`).
 - **CSP-safe** — el output no contiene `eval` / `new Function`; funciona bajo `script-src 'self'`.
 - **Tema por tokens `--ok-*`** (espejo de `--ion-*`), claro/oscuro sin esfuerzo.
@@ -29,7 +29,7 @@ Backlog de componentes: [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
 ## Instalación
 
 ```sh
-npm i @outfitkit/core
+npm i @erplora/outfitkit
 ```
 
 OutfitKit declara **peer dependencies de entorno**: el host debe cargar **`@ionic/core`** (los
@@ -45,21 +45,21 @@ npm i @ionic/core lit
 Cada componente es un entry independiente con *side-effect* de registro (`define('ok-x', …)`):
 
 ```js
-import '@outfitkit/core/ok-data-table';
-import '@outfitkit/core/ok-tree';
+import '@erplora/outfitkit/ok-data-table';
+import '@erplora/outfitkit/ok-tree';
 // ...solo lo que uses → menor peso
 ```
 
 Las clases y tipos también se re-exportan desde el barrel:
 
 ```js
-import { OkDataTable } from '@outfitkit/core';
+import { OkDataTable } from '@erplora/outfitkit';
 ```
 
 ### Bundle (registra todo de golpe)
 
 ```js
-import '@outfitkit/core/cdn'; // auto-registra todos los ok-*
+import '@erplora/outfitkit/cdn'; // auto-registra todos los ok-*
 ```
 
 ### Uso por CDN
@@ -78,7 +78,7 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
   }
 </script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-<script type="module" src="https://cdn.jsdelivr.net/npm/@outfitkit/core/dist/outfitkit.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@erplora/outfitkit/dist/outfitkit.js"></script>
 ```
 
 > Nota: un import-map en línea choca con una CSP `script-src 'self'`. Bajo CSP estricta (Cloud/Hub
@@ -243,7 +243,7 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 
 ### Layout (CSS plano, **no** web component)
 
-`@outfitkit/core/layout.css` — `.ok-container` / `.ok-container-fluid`, `.ok-grid` / `.ok-col` /
+`@erplora/outfitkit/layout.css` — `.ok-container` / `.ok-container-fluid`, `.ok-grid` / `.ok-col` /
 `.ok-md-*` / `.ok-grid-cards`, `.ok-section` (+ encabezado), `.ok-table-stack` (tabla responsive).
 Geometría/tipografía pura → CSS; comportamiento/estado → web component.
 
@@ -285,7 +285,7 @@ API:
 ### En JS suelto
 
 ```js
-import { store, createStore } from '@outfitkit/core/store';
+import { store, createStore } from '@erplora/outfitkit/store';
 
 await store.ready;                 // hidrata la caché desde IndexedDB
 store.set('theme', 'dark');        // notifica + persiste
@@ -305,8 +305,8 @@ const prefs = createStore({ name: 'mi-app', storeName: 'prefs' });
 
 ```js
 import { LitElement, html } from 'lit';
-import { store } from '@outfitkit/core/store';
-import { StoreController } from '@outfitkit/core/store-controller';
+import { store } from '@erplora/outfitkit/store';
+import { StoreController } from '@erplora/outfitkit/store-controller';
 
 class ThemeToggle extends LitElement {
   #theme = new StoreController(this, store, 'theme');
@@ -353,7 +353,7 @@ OutfitKit se tematiza en **dos capas**:
 2. **Vars por componente** estilo Ionic con default = cadena `--ok-* → --ion-* → hex`. El `ion-*`
    interno hereda `--ion-*` del host, así que claro/oscuro funcionan solos.
 
-`@outfitkit/core/theme.css` ([`dist/theme.example.css`](dist/theme.example.css)) es una **plantilla**
+`@erplora/outfitkit/theme.css` ([`dist/theme.example.css`](dist/theme.example.css)) es una **plantilla**
 de tokens; cópiala y pon tus valores de marca:
 
 ```css
@@ -416,7 +416,7 @@ Importa los componentes (side-effect de registro) y úsalos en tus templates Lit
 
 ```js
 import { html } from 'lit';
-import '@outfitkit/core/ok-data-table';
+import '@erplora/outfitkit/ok-data-table';
 
 export const view = (cols, rows) => html`
   <ok-data-table

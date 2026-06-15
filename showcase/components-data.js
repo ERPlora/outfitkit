@@ -62,7 +62,7 @@ const COMPONENTS = [
     name: 'ok-data-table',
     category: 'datos',
     desc: 'Tabla rica con toolbar consolidada en una línea: buscador, filtros en línea (select / rango de fechas), tamaño de página, vistas tabla/tarjetas, export/import CSV, menú «⋮» y acción primaria. Celdas a medida (avatar, badges, sparkline, total con color), orden, selección y paginación numerada. Port 1:1 del antiguo <data-table>.',
-    importPath: "@outfitkit/core/ok-data-table",
+    importPath: "@erplora/outfitkit/ok-data-table",
     example: '<ok-data-table id="dt" style="display:block" fill></ok-data-table>',
     setup: (root, { h }) => {
       const eur = (n) => (n < 0 ? '−' : '') + '€' + Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2 });
@@ -167,7 +167,7 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
     name: 'ok-mail',
     category: 'flujo',
     desc: 'Cliente de correo estilo Outlook pero SOLO email: 3 paneles (carpetas · lista · lectura), buscador, no leídos, estrella, adjuntos y acciones (responder/reenviar/archivar/eliminar). Responsive: un panel a la vez en móvil. Reutiliza ion-* y ok-empty-state.',
-    importPath: "@outfitkit/core/ok-mail",
+    importPath: "@erplora/outfitkit/ok-mail",
     example: '<div style="height:520px;width:100%"><ok-mail id="mailx"></ok-mail></div>',
     setup: (root) => {
       const mail = root.querySelector('#mailx');
@@ -213,7 +213,7 @@ mail.addEventListener('ok-compose', () => openComposer());`,
     name: 'ok-tree',
     category: 'datos',
     desc: 'Árbol expandible por datos, render recursivo con indentación por nivel. Ionic no trae un tree.',
-    importPath: "@outfitkit/core/ok-tree",
+    importPath: "@erplora/outfitkit/ok-tree",
     example: '<ok-tree id="tree" selectable active-id="b"></ok-tree>',
     setup: (root) => {
       const tree = root.querySelector('#tree');
@@ -244,7 +244,7 @@ tree.addEventListener('ok-select', (e) => …); // { id, node }`,
     name: 'ok-sparkline',
     category: 'datos',
     desc: 'Mini-gráfico inline (línea o barras) sin ejes, para tendencias junto a un KPI. Sin eventos.',
-    importPath: "@outfitkit/core/ok-sparkline",
+    importPath: "@erplora/outfitkit/ok-sparkline",
     example: `<div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
   <ok-sparkline id="sl" type="line" color="primary" width="120" height="36" filled></ok-sparkline>
   <ok-sparkline id="sb" type="bar" color="success" width="120" height="36"></ok-sparkline>
@@ -268,7 +268,7 @@ spark.type = 'line'; // 'line' | 'bar'
     name: 'ok-avatar',
     category: 'datos',
     desc: 'Avatar de iniciales o imagen (lo que ion-avatar no cubre): tamaños, color derivado por hash, punto de estado y enlace opcional.',
-    importPath: "@outfitkit/core/ok-avatar",
+    importPath: "@erplora/outfitkit/ok-avatar",
     example: `<div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
   <ok-avatar name="Demo Admin" size="lg" status="online"></ok-avatar>
   <ok-avatar name="María López" tone="auto"></ok-avatar>
@@ -293,7 +293,7 @@ spark.type = 'line'; // 'line' | 'bar'
     name: 'ok-status-pill',
     category: 'datos',
     desc: 'Pill de estado con tinte semántico suave (fondo al ~14% + texto en el shade): el hueco entre ion-badge (sólido) e ion-chip (neutro). Celda de estado típica de ok-data-table.',
-    importPath: "@outfitkit/core/ok-status-pill",
+    importPath: "@erplora/outfitkit/ok-status-pill",
     example: `<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
   <ok-status-pill tone="success" dot>Activo</ok-status-pill>
   <ok-status-pill tone="warning" icon="time-outline">Pendiente</ok-status-pill>
@@ -320,7 +320,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-inline-feedback',
     category: 'feedback',
     desc: 'Banner/callout persistente en el flujo del contenido (Ionic solo trae toast/alert efímeros).',
-    importPath: "@outfitkit/core/ok-inline-feedback",
+    importPath: "@erplora/outfitkit/ok-inline-feedback",
     example: `<div style="display:flex;flex-direction:column;gap:.75rem">
   <ok-inline-feedback tone="info" heading="Información">Tu plan incluye 3 módulos activos.</ok-inline-feedback>
   <ok-inline-feedback tone="success" heading="Guardado">Los cambios se guardaron correctamente.</ok-inline-feedback>
@@ -345,7 +345,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-empty-state',
     category: 'feedback',
     desc: 'Estado centrado para «sin datos / sin resultados», con icono, título, mensaje y acción.',
-    importPath: "@outfitkit/core/ok-empty-state",
+    importPath: "@erplora/outfitkit/ok-empty-state",
     example: `<ok-empty-state icon="cart-outline" heading="Sin pedidos" message="Cuando llegue tu primer pedido aparecerá aquí.">
   <ion-button slot="action" size="small">Crear pedido</ion-button>
 </ok-empty-state>`,
@@ -365,7 +365,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-kpi',
     category: 'dashboard',
     desc: 'Tarjeta de métrica para dashboards: label, valor grande y delta con flecha y color según tendencia.',
-    importPath: "@outfitkit/core/ok-kpi",
+    importPath: "@erplora/outfitkit/ok-kpi",
     example: `<div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));width:100%">
   <ok-kpi label="Ventas hoy" value="€2.480" delta="+12%" trend="up" icon="cash-outline"></ok-kpi>
   <ok-kpi label="Devoluciones" value="4" delta="-2" trend="down" icon="return-down-back-outline"></ok-kpi>
@@ -384,7 +384,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-stat',
     category: 'dashboard',
     desc: 'Métrica inline compacta (más ligera que ok-kpi): label, valor y hint.',
-    importPath: "@outfitkit/core/ok-stat",
+    importPath: "@erplora/outfitkit/ok-stat",
     example: `<div style="display:flex;gap:2rem;flex-wrap:wrap">
   <ok-stat label="Empleados" value="6" hint="2 inactivos"></ok-stat>
   <ok-stat label="Módulos" value="3" hint="de 5 disponibles"></ok-stat>
@@ -400,7 +400,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-page-header',
     category: 'dashboard',
     desc: 'Cabecera de página IN-CONTENT típica de un ERP: título + descripción + acciones a la derecha + hueco para ion-breadcrumbs y línea de metadatos. Ionic resuelve la topbar pero no esta cabecera dentro del contenido. Layout puro (sin eventos), responsive (stack < 640px).',
-    importPath: "@outfitkit/core/ok-page-header",
+    importPath: "@erplora/outfitkit/ok-page-header",
     example: `<div style="width:100%">
   <ok-page-header heading="Empleados" description="Gestiona el personal de tu negocio y sus roles de acceso.">
     <ion-breadcrumbs slot="breadcrumbs">
@@ -442,7 +442,7 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     name: 'ok-drawer',
     category: 'dashboard',
     desc: 'Panel lateral deslizante (slide-over) contextual: asistente, detalle de registro, filtros. Ionic no lo trae (ion-menu es navegación de app; ion-modal sheet es bottom-sheet). Scrim clicable, focus-trap, ESC, slots de cabecera/pie. Modo controlado: los gestos emiten ok-close cancelable. (Overlay display:contents: ábrelo con el botón.)',
-    importPath: "@outfitkit/core/ok-drawer",
+    importPath: "@erplora/outfitkit/ok-drawer",
     example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
   <ion-button id="drw-open" size="small">Abrir drawer</ion-button>
   <small style="color:var(--ion-color-medium)">Cierra con ESC, click fuera o el botón X.</small>
@@ -490,7 +490,7 @@ drawer.addEventListener('ok-close', (e) => {
     name: 'ok-stepper',
     category: 'flujo',
     desc: 'Indicador de pasos: círculos numerados conectados; completado / activo / pendiente. Compacto en móvil.',
-    importPath: "@outfitkit/core/ok-stepper",
+    importPath: "@erplora/outfitkit/ok-stepper",
     example: '<ok-stepper id="st" current="1" style="display:block;width:100%"></ok-stepper>',
     setup: (root) => { root.querySelector('#st').steps = WIZARD_STEPS; },
     code: `stepper.steps = [{ label, description? }, …];
@@ -507,7 +507,7 @@ stepper.addEventListener('ok-step-select', (e) => …); // { index }`,
     name: 'ok-wizard',
     category: 'flujo',
     desc: 'Asistente multi-paso: stepper + contenido por slots step-0, step-1… + navegación Atrás/Siguiente/Finalizar.',
-    importPath: "@outfitkit/core/ok-wizard",
+    importPath: "@erplora/outfitkit/ok-wizard",
     example: `<ok-wizard id="wz" style="display:block;width:100%">
   <div slot="step-0"><p>Paso 1 — datos del negocio.</p></div>
   <div slot="step-1"><p>Paso 2 — elige módulos.</p></div>
@@ -532,7 +532,7 @@ wizard.addEventListener('ok-finish', () => …);`,
     name: 'ok-calendar',
     category: 'flujo',
     desc: 'Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. Ionic no trae calendario.',
-    importPath: "@outfitkit/core/ok-calendar",
+    importPath: "@erplora/outfitkit/ok-calendar",
     example: '<ok-calendar id="cal" view="month" max-per-day="3" style="display:block;width:100%"></ok-calendar>',
     setup: (root) => {
       const cal = root.querySelector('#cal');
@@ -565,7 +565,7 @@ cal.addEventListener('ok-event-click', (e) => …); // { id, event }`,
     name: 'ok-kanban',
     category: 'flujo',
     desc: 'Tablero de columnas con tarjetas arrastrables entre columnas (drag & drop). Útil para pipelines y estados.',
-    importPath: "@outfitkit/core/ok-kanban",
+    importPath: "@erplora/outfitkit/ok-kanban",
     example: '<ok-kanban id="kb" style="display:block;height:420px;width:100%"></ok-kanban>',
     setup: (root) => {
       root.querySelector('#kb').columns = [
@@ -600,7 +600,7 @@ kanban.addEventListener('ok-card-click', (e) => …); // { id, card }`,
     name: 'ok-chat',
     category: 'flujo',
     desc: 'Hilo de mensajes (chat): burbujas self/ajeno, avatar, hora y compositor con enviar. Para soporte/mensajería.',
-    importPath: "@outfitkit/core/ok-chat",
+    importPath: "@erplora/outfitkit/ok-chat",
     example: '<ok-chat id="chat" title="Soporte" style="display:block;height:420px;max-width:480px;width:100%"></ok-chat>',
     setup: (root) => {
       const chat = root.querySelector('#chat');
@@ -635,7 +635,7 @@ chat.addEventListener('ok-send', (e) => {
     name: 'ok-scheduler',
     category: 'flujo',
     desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día y celdas-slot clicables. Ionic no trae scheduler.',
-    importPath: "@outfitkit/core/ok-scheduler",
+    importPath: "@erplora/outfitkit/ok-scheduler",
     example: '<ok-scheduler id="sch" start-hour="8" end-hour="20" slot-minutes="60" style="display:block;height:360px;width:100%"></ok-scheduler>',
     setup: (root) => {
       const sch = root.querySelector('#sch');
@@ -674,7 +674,7 @@ sch.addEventListener('ok-nav', (e) => …);          // { date }`,
     name: 'ok-timeline',
     category: 'flujo',
     desc: 'Línea de tiempo vertical por datos: una fila por hito con punto de color/icono, título, descripción y hora. Estado done / current / pending y modo alternado (zig-zag) en pantallas anchas. Ionic no la trae.',
-    importPath: "@outfitkit/core/ok-timeline",
+    importPath: "@erplora/outfitkit/ok-timeline",
     example: '<ok-timeline id="tl" align="left" style="display:block;width:100%"></ok-timeline>',
     setup: (root) => {
       root.querySelector('#tl').items = [
@@ -704,7 +704,7 @@ timeline.addEventListener('ok-item-click', (e) => …); // { id, item }`,
     name: 'ok-combo',
     category: 'inputs',
     desc: 'Selector con búsqueda (autocomplete): escribe para filtrar opciones y elige una.',
-    importPath: "@outfitkit/core/ok-combo",
+    importPath: "@erplora/outfitkit/ok-combo",
     example: '<ok-combo id="cb" label="País" placeholder="Escribe para buscar…" style="display:block;max-width:320px"></ok-combo>',
     setup: (root) => {
       root.querySelector('#cb').options = [
@@ -731,7 +731,7 @@ combo.addEventListener('ok-change', (e) => …);  // { value, label }`,
     name: 'ok-tag-input',
     category: 'inputs',
     desc: 'Entrada de múltiples etiquetas (chips), con autocompletado opcional por sugerencias.',
-    importPath: "@outfitkit/core/ok-tag-input",
+    importPath: "@erplora/outfitkit/ok-tag-input",
     example: '<ok-tag-input id="ti" placeholder="Añade etiquetas…" style="display:block;max-width:420px"></ok-tag-input>',
     setup: (root) => {
       const ti = root.querySelector('#ti');
@@ -753,7 +753,7 @@ tags.addEventListener('ok-change', (e) => …); // { tags }`,
     name: 'ok-rating',
     category: 'inputs',
     desc: 'Valoración por estrellas, con soporte de medias estrellas y modo solo-lectura.',
-    importPath: "@outfitkit/core/ok-rating",
+    importPath: "@erplora/outfitkit/ok-rating",
     example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
   <ok-rating value="3" max="5" allow-half></ok-rating>
   <ok-rating value="4.5" max="5" allow-half readonly></ok-rating>
@@ -771,7 +771,7 @@ rating.addEventListener('ok-change', (e) => …); // { value }`,
     name: 'ok-otp',
     category: 'inputs',
     desc: 'Entrada de código de un solo uso: una casilla por dígito, auto-avance y pegado.',
-    importPath: "@outfitkit/core/ok-otp",
+    importPath: "@erplora/outfitkit/ok-otp",
     example: '<ok-otp length="6"></ok-otp>',
     code: `<ok-otp length="6"></ok-otp>
 otp.addEventListener('ok-change', (e) => …);   // { value }
@@ -788,7 +788,7 @@ otp.addEventListener('ok-complete', (e) => …); // { value } al completar`,
     name: 'ok-pinpad',
     category: 'inputs',
     desc: 'Teclado numérico (TPV / login por PIN) con dígitos ocultables.',
-    importPath: "@outfitkit/core/ok-pinpad",
+    importPath: "@erplora/outfitkit/ok-pinpad",
     example: '<ok-pinpad length="4" masked></ok-pinpad>',
     code: `<ok-pinpad length="4" masked></ok-pinpad>
 pinpad.addEventListener('ok-input', (e) => …);    // { value }
@@ -805,7 +805,7 @@ pinpad.addEventListener('ok-complete', (e) => …); // { value }`,
     name: 'ok-currency',
     category: 'inputs',
     desc: 'Campo de importe con formato de moneda según locale (separadores, símbolo) y valor numérico limpio.',
-    importPath: "@outfitkit/core/ok-currency",
+    importPath: "@erplora/outfitkit/ok-currency",
     example: '<ok-currency id="cu" label="Precio" currency="EUR" locale="es-ES" placeholder="0,00" style="display:block;max-width:320px"></ok-currency>',
     setup: (root) => { root.querySelector('#cu').value = 1234.5; },
     code: `cur.value = 1234.5;
@@ -824,7 +824,7 @@ cur.addEventListener('ok-change', (e) => …); // { value }`,
     name: 'ok-phone',
     category: 'inputs',
     desc: 'Campo de teléfono con selector de país (prefijo) y salida E.164 normalizada.',
-    importPath: "@outfitkit/core/ok-phone",
+    importPath: "@erplora/outfitkit/ok-phone",
     example: '<ok-phone id="ph" label="Teléfono" country="ES" placeholder="600 000 000" style="display:block;max-width:360px"></ok-phone>',
     code: `phone.country = 'ES';
 phone.value = '600000000';
@@ -842,7 +842,7 @@ phone.addEventListener('ok-change', (e) => …); // { value, country, dial, e164
     name: 'ok-dropzone',
     category: 'inputs',
     desc: 'Zona de subida de archivos por arrastrar-y-soltar o click, con filtro de tipo y tamaño máximo.',
-    importPath: "@outfitkit/core/ok-dropzone",
+    importPath: "@erplora/outfitkit/ok-dropzone",
     example: '<ok-dropzone accept="image/*" multiple max-size="5242880" hint="PNG/JPG hasta 5 MB" style="display:block;width:100%"></ok-dropzone>',
     code: `<ok-dropzone accept="image/*" multiple max-size="5242880" hint="PNG/JPG hasta 5 MB"></ok-dropzone>
 dz.addEventListener('ok-change', (e) => …); // { files }
@@ -861,7 +861,7 @@ dz.addEventListener('ok-error', (e) => …);  // { message }`,
     name: 'ok-qty-stepper',
     category: 'inputs',
     desc: 'Selector de cantidad (−/+ con campo central editable) que hace clamp a min/max según step. Útil en TPV/carritos. Ionic no trae un stepper numérico con tope.',
-    importPath: "@outfitkit/core/ok-qty-stepper",
+    importPath: "@erplora/outfitkit/ok-qty-stepper",
     example: '<ok-qty-stepper value="1" min="0" max="10"></ok-qty-stepper>',
     code: `<ok-qty-stepper value="1" min="0" max="10" step="1"></ok-qty-stepper>
 stepper.addEventListener('ok-change', (e) => …); // { value }`,
@@ -876,7 +876,7 @@ stepper.addEventListener('ok-change', (e) => …); // { value }`,
     name: 'ok-color-picker',
     category: 'inputs',
     desc: 'Selector de color: un botón-muestra (swatch) abre un panel con área HSV, hex y una rejilla de presets. Salida en hex + RGB. Ionic no trae color picker.',
-    importPath: "@outfitkit/core/ok-color-picker",
+    importPath: "@erplora/outfitkit/ok-color-picker",
     example: '<ok-color-picker id="cp" value="#2dd36f"></ok-color-picker>',
     setup: (root) => {
       root.querySelector('#cp').presets = ['#3880ff', '#2dd36f', '#ffc409', '#eb445a', '#6030ff', '#1c1b17', '#92949c', '#ffffff'];
@@ -898,7 +898,7 @@ picker.addEventListener('ok-change', (e) => …); // { value, rgb: { r, g, b } }
     name: 'ok-app-launcher',
     category: 'acciones',
     desc: 'Botón de icono (rejilla 3×3) que despliega una cuadrícula de apps/atajos, estilo lanzador.',
-    importPath: "@outfitkit/core/ok-app-launcher",
+    importPath: "@erplora/outfitkit/ok-app-launcher",
     example: '<ok-app-launcher id="al"></ok-app-launcher>',
     setup: (root) => {
       root.querySelector('#al').apps = [
@@ -925,7 +925,7 @@ launcher.addEventListener('ok-app-select', (e) => …); // { id, app }`,
     name: 'ok-split-button',
     category: 'acciones',
     desc: 'Botón con acción principal + menú desplegable de acciones secundarias.',
-    importPath: "@outfitkit/core/ok-split-button",
+    importPath: "@erplora/outfitkit/ok-split-button",
     example: '<ok-split-button id="sb2" label="Guardar" color="primary"></ok-split-button>',
     setup: (root) => {
       root.querySelector('#sb2').items = [
@@ -953,7 +953,7 @@ split.addEventListener('ok-select', (e) => …);   // { id, item }`,
     name: 'ok-command-palette',
     category: 'acciones',
     desc: 'Paleta de comandos estilo ⌘K (overlay propio): input de búsqueda con fuzzy-match sobre etiqueta/keywords, comandos agrupados con icono y atajo, navegación con teclado. Se abre con Cmd/Ctrl+K o por método. (Es un overlay display:contents: en este preview ábrela con el botón o ⌘K.)',
-    importPath: "@outfitkit/core/ok-command-palette",
+    importPath: "@erplora/outfitkit/ok-command-palette",
     example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
   <ion-button id="cmdk-open" size="small">Abrir paleta (⌘K)</ion-button>
   <small style="color:var(--ion-color-medium)">También se abre con Cmd/Ctrl + K.</small>
@@ -994,7 +994,7 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-contact-form',
     category: 'formularios',
     desc: 'Formulario de contacto web responsive con validación básica. Usa ion-input/ion-textarea por dentro.',
-    importPath: "@outfitkit/core/ok-contact-form",
+    importPath: "@erplora/outfitkit/ok-contact-form",
     example: '<ok-contact-form id="cf" heading="Escríbenos" submit-label="Enviar" style="display:block;width:100%"></ok-contact-form>',
     setup: (root) => {
       root.querySelector('#cf').addEventListener('ok-submit', (e) => console.info('contacto', e.detail));
@@ -1014,7 +1014,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'ok-navbar',
     category: 'web',
     desc: 'Barra de navegación de landing responsive con burger en móvil (ion-menu es un drawer de app, no una navbar).',
-    importPath: "@outfitkit/core/ok-navbar",
+    importPath: "@erplora/outfitkit/ok-navbar",
     example: `<div style="width:100%;overflow:hidden;border-radius:8px">
   <ok-navbar>
     <strong slot="brand">OutfitKit</strong>
@@ -1039,7 +1039,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'ok-language-select',
     category: 'web',
     desc: 'Selector de idioma para la web pública: los idiomas se pasan como enlaces (<a data-lang href>) en light DOM → SEO-crawlable, funciona sin JS y CSP-safe (navega por href). Autoselecciona el idioma del navegador si no se fija value.',
-    importPath: "@outfitkit/core/ok-language-select",
+    importPath: "@erplora/outfitkit/ok-language-select",
     example: `<ok-language-select value="es">
   <a data-lang="en" href="#/c/ok-language-select">English</a>
   <a data-lang="es" href="#/c/ok-language-select">Español</a>
@@ -1060,7 +1060,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'ok-footer',
     category: 'web',
     desc: 'Footer web multi-columna responsive con barra inferior (slot bottom).',
-    importPath: "@outfitkit/core/ok-footer",
+    importPath: "@erplora/outfitkit/ok-footer",
     example: `<div style="width:100%;overflow:hidden;border-radius:8px">
   <ok-footer>
     <div><strong>Producto</strong><br><a href="#">Características</a><br><a href="#">Precios</a></div>
@@ -1082,7 +1082,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'ok-hero',
     category: 'web',
     desc: 'Sección hero de marketing con título, subtítulo y CTAs (slots).',
-    importPath: "@outfitkit/core/ok-hero",
+    importPath: "@erplora/outfitkit/ok-hero",
     example: `<div style="width:100%;overflow:hidden;border-radius:8px">
   <ok-hero>
     <h1 slot="title">Construye sobre Ionic</h1>
@@ -1105,7 +1105,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'layout.css (container · grid)',
     category: 'web',
     desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fill, sin breakpoints). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
-    importPath: "@outfitkit/core/layout.css",
+    importPath: "@erplora/outfitkit/layout.css",
     example: `<div class="ok-container">
   <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center;margin-bottom:1rem">
     .ok-container — centrado con ancho máximo (--ok-container-max).
@@ -1145,7 +1145,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'Grid — casos de uso',
     category: 'web',
     desc: 'Recetas reales con la rejilla de layout.css: KPIs de dashboard, master-detail, grid de cards sin breakpoints y container de web pública. La regla: en dashboard (ion-split-pane) NUNCA .ok-container — el ancho lo da el panel; en web pública sí. Las clases .ok-md/lg/xl-* responden al ancho de VENTANA (media queries): en esta preview redimensiona la ventana del navegador, no el selector de viewport.',
-    importPath: "@outfitkit/core/layout.css",
+    importPath: "@erplora/outfitkit/layout.css",
     example: `<div style="display:flex;flex-direction:column;gap:2rem;width:100%">
 
   <div>
@@ -1229,7 +1229,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: '.ok-table-stack (layout.css)',
     category: 'datos',
     desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una card apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). Funciona con <table> nativa, con divs (.ok-thead/.ok-trow/.ok-tcell) y con ion-grid/ion-row/ion-col.',
-    importPath: "@outfitkit/core/layout.css",
+    importPath: "@erplora/outfitkit/layout.css",
     example: `<table class="ok-table-stack">
   <thead>
     <tr><th>Producto</th><th>SKU</th><th>Precio</th><th>Stock</th></tr>
@@ -1289,7 +1289,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     name: 'ok-menubar',
     category: 'web',
     desc: 'Barra de menús de escritorio (estilo app: Archivo / Editar / Ver…): dropdowns con iconos, atajos, separadores y submenús. En móvil colapsa a hamburguesa con acordeón. Navegación con teclado.',
-    importPath: "@outfitkit/core/ok-menubar",
+    importPath: "@erplora/outfitkit/ok-menubar",
     example: '<ok-menubar id="mb" style="display:block;width:100%"></ok-menubar>',
     setup: (root) => {
       root.querySelector('#mb').menus = [
@@ -1341,7 +1341,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: '.ok-section (layout.css)',
     category: 'marketing',
     desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado) y --divider (separador superior). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
-    importPath: "@outfitkit/core/layout.css",
+    importPath: "@erplora/outfitkit/layout.css",
     example: `<section class="ok-section ok-section--center ok-section--divider" style="padding-block:2rem">
   <header class="ok-section-head">
     <span class="ok-eyebrow">Plataforma</span>
@@ -1373,7 +1373,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-bento',
     category: 'marketing',
     desc: 'Rejilla «bento» modular (tendencia 2026): contenedor de celdas de tamaños variados. Las celdas son ok-bento-item (cada una ocupa cols×rows de la rejilla). En móvil colapsa a 1 columna automáticamente.',
-    importPath: "@outfitkit/core/ok-bento",
+    importPath: "@erplora/outfitkit/ok-bento",
     example: `<ok-bento cols="6" gap="1rem" style="width:100%">
   <ok-bento-item cols="4" rows="2" tone="primary" icon="lucide:zap" heading="Tiempo real">
     <p>Cada acción se refleja al instante en todos los dispositivos.</p>
@@ -1403,7 +1403,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-bento-item',
     category: 'marketing',
     desc: 'Celda de una ok-bento. Ocupa cols×rows de la rejilla. Panel con superficie, borde y radio; opcionalmente glass (cristal esmerilado), tinte de color (tone), elevación al hover (interactive) y enlace (href). Encabezado opcional (eyebrow/heading/icon) + slot default. En móvil ocupa el ancho total.',
-    importPath: "@outfitkit/core/ok-bento-item",
+    importPath: "@erplora/outfitkit/ok-bento-item",
     example: `<ok-bento cols="4" gap="1rem" style="width:100%">
   <ok-bento-item cols="2" rows="1" icon="lucide:box" eyebrow="Catálogo" heading="Productos">
     <p>Define artículos, variantes y precios.</p>
@@ -1433,7 +1433,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-reveal',
     category: 'marketing',
     desc: 'Anima su contenido al entrar en el viewport (scroll reveal, tendencia 2026). Usa IntersectionObserver (CSP-safe, sin eval) y respeta prefers-reduced-motion. delay para escalonar varios reveal seguidos.',
-    importPath: "@outfitkit/core/ok-reveal",
+    importPath: "@erplora/outfitkit/ok-reveal",
     example: `<div style="display:flex;flex-direction:column;gap:1rem;width:100%">
   <ok-reveal variant="up">
     <div style="background:var(--ok-surface-2);padding:1.25rem;border-radius:12px">Aparece desde abajo (up).</div>
@@ -1460,7 +1460,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-feature-card',
     category: 'marketing',
     desc: 'Tarjeta de característica para marketing: icono + (eyebrow) + título + descripción (slot default). Eleva al hover con línea de acento superior. Si se pasa href, toda la tarjeta es enlace. Reemplaza el patrón ion-card manual de la landing.',
-    importPath: "@outfitkit/core/ok-feature-card",
+    importPath: "@erplora/outfitkit/ok-feature-card",
     example: `<div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));width:100%">
   <ok-feature-card icon="lucide:credit-card" eyebrow="01 · POS" heading="Punto de venta">
     Cobra, factura y controla caja desde cualquier dispositivo.
@@ -1489,7 +1489,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-pricing-card',
     category: 'marketing',
     desc: 'Tarjeta de plan/precio: nombre, precio + periodo, descripción, lista de features (prop .features o slot con <ul>) y CTA (slot="cta"). featured la destaca con borde de marca y badge flotante. Pensada para una rejilla de planes.',
-    importPath: "@outfitkit/core/ok-pricing-card",
+    importPath: "@erplora/outfitkit/ok-pricing-card",
     example: `<div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));width:100%;padding-top:1rem">
   <ok-pricing-card id="pc-basic" name="Básico" price="€0" period="/ mes" description="Para empezar."></ok-pricing-card>
   <ok-pricing-card id="pc-pro" name="Pro" price="€49" period="/ mes" description="Para equipos en crecimiento." featured badge="Popular"></ok-pricing-card>
@@ -1523,7 +1523,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-product-card',
     category: 'marketing',
     desc: 'Tarjeta de producto/módulo del catálogo (marketplace): icono + categoría + nombre + descripción (slot) + badge opcional + precio. Si hay href, toda la tarjeta es enlace y muestra una flecha «ir» al hover.',
-    importPath: "@outfitkit/core/ok-product-card",
+    importPath: "@erplora/outfitkit/ok-product-card",
     example: `<div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));width:100%">
   <ok-product-card icon="lucide:boxes" category="Inventario" name="WMS multi-almacén" badge="Premium" price="€12/mes" href="#">
     Gestiona ubicaciones, lotes y picking en varios almacenes.
@@ -1548,7 +1548,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-logo-cloud',
     category: 'marketing',
     desc: 'Banda de logos de clientes / «trusted by» (prueba social). Acepta los logos como slot (imgs o texto) y los muestra en rejilla atenuada (grayscale → color al hover). Con marquee desplaza la fila en bucle (CSS, sin JS). label opcional encima.',
-    importPath: "@outfitkit/core/ok-logo-cloud",
+    importPath: "@erplora/outfitkit/ok-logo-cloud",
     example: `<ok-logo-cloud label="Usado por equipos de" style="width:100%">
   <span>Café Central</span>
   <span>Moda Norte</span>
@@ -1571,7 +1571,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-testimonial',
     category: 'marketing',
     desc: 'Cita de cliente (prueba social): rating opcional en estrellas, cita (slot default), avatar (o iniciales) + autor + rol. glass para cristal esmerilado. Pensada para una rejilla de testimonios.',
-    importPath: "@outfitkit/core/ok-testimonial",
+    importPath: "@erplora/outfitkit/ok-testimonial",
     example: `<div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));width:100%">
   <ok-testimonial rating="5" author="Marina Ribó" author-role="Gerente · Café Central">
     Cambiamos 7 herramientas por ERPlora y cerramos caja en la mitad de tiempo.
@@ -1597,7 +1597,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-cta-band',
     category: 'marketing',
     desc: 'Banda de llamada a la acción (final de página/sección). Fondo con degradado de marca (variant solid, def) o soft/glass, título grande, subtítulo y CTAs (slot="actions", normalmente ion-button). Centrada por defecto.',
-    importPath: "@outfitkit/core/ok-cta-band",
+    importPath: "@erplora/outfitkit/ok-cta-band",
     example: `<ok-cta-band eyebrow="Empieza hoy" heading="Tu ERP, listo en 5 minutos" subheading="Sin tarjeta. Sin instalación." style="width:100%">
   <ion-button slot="actions" href="#">Crear mi hub</ion-button>
   <ion-button slot="actions" fill="outline" href="#">Ver demo</ion-button>
@@ -1621,7 +1621,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     name: 'ok-carousel',
     category: 'multimedia',
     desc: 'Carrusel de slides con transición por transform: flechas prev/next, puntos indicadores y swipe táctil. Slides por slot (cada hijo directo) o por prop .slides (array de strings/HTML). Autoplay y loop opcionales.',
-    importPath: "@outfitkit/core/ok-carousel",
+    importPath: "@erplora/outfitkit/ok-carousel",
     example: `<ok-carousel loop autoplay="4000" style="display:block;width:100%">
   <div style="display:grid;place-items:center;height:100%;background:var(--ion-color-primary);color:#fff;font-size:1.5rem;font-weight:700">Slide 1</div>
   <div style="display:grid;place-items:center;height:100%;background:var(--ion-color-success);color:#fff;font-size:1.5rem;font-weight:700">Slide 2</div>
@@ -1647,7 +1647,7 @@ carousel.addEventListener('ok-change', (e) => …); // { index }`,
     name: 'ok-signature',
     category: 'multimedia',
     desc: 'Pad de firma sobre canvas con trazo suavizado y soporte HiDPI (devicePixelRatio). Métodos clear() / toDataURL() / isEmpty(). Ionic no trae captura de firma.',
-    importPath: "@outfitkit/core/ok-signature",
+    importPath: "@erplora/outfitkit/ok-signature",
     example: '<ok-signature pen-color="#1c1b17" line-width="2.5" height="200" show-export style="display:block;width:100%"></ok-signature>',
     code: `<ok-signature pen-color="#1c1b17" line-width="2.5" height="200" show-export></ok-signature>
 sig.clear();
@@ -1668,7 +1668,7 @@ sig.addEventListener('ok-clear', () => …);`,
     name: 'ok-qr',
     category: 'multimedia',
     desc: 'Generador de código QR autocontenido (SVG, sin dependencias). Nivel de corrección de errores, tamaño, colores y margen configurables.',
-    importPath: "@outfitkit/core/ok-qr",
+    importPath: "@erplora/outfitkit/ok-qr",
     example: '<ok-qr value="https://erplora.com" size="160"></ok-qr>',
     code: `<ok-qr value="https://erplora.com" ec="M" size="160"></ok-qr>
 qr.value = 'https://erplora.com';
@@ -1685,7 +1685,7 @@ qr.ec = 'H'; // L | M | Q | H`,
     name: 'ok-audio',
     category: 'multimedia',
     desc: 'Reproductor de audio con controles propios (play/pausa, barra de progreso, tiempo). Construido sobre <audio> nativo.',
-    importPath: "@outfitkit/core/ok-audio",
+    importPath: "@erplora/outfitkit/ok-audio",
     // NOTA: usa un src de ejemplo público (SoundHelix); sustituir por tu propio audio en producción.
     example: '<ok-audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" title="Pista de ejemplo" style="display:block;width:100%"></ok-audio>',
     code: `<ok-audio src="/media/jingle.mp3" title="Jingle"></ok-audio>
@@ -1702,7 +1702,7 @@ audio.addEventListener('ok-ended', () => …);`,
     name: 'ok-video',
     category: 'multimedia',
     desc: 'Reproductor de vídeo responsive (aspect-ratio 16/9) con controles propios y póster. Construido sobre <video> nativo.',
-    importPath: "@outfitkit/core/ok-video",
+    importPath: "@erplora/outfitkit/ok-video",
     // NOTA: usa un src de ejemplo público (Google sample); sustituir por tu propio vídeo en producción.
     example: '<ok-video src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg" style="display:block;width:100%"></ok-video>',
     code: `<ok-video src="/media/intro.mp4" poster="/media/intro.jpg"></ok-video>
@@ -1719,7 +1719,7 @@ video.addEventListener('ok-ended', () => …);`,
     name: 'ok-pdf',
     category: 'multimedia',
     desc: 'Visor de PDF embebido (vía <iframe>/<embed>) con cabecera de título y altura configurable.',
-    importPath: "@outfitkit/core/ok-pdf",
+    importPath: "@erplora/outfitkit/ok-pdf",
     // NOTA: usa un src de ejemplo público (pdf.js tracemonkey sample); sustituir por tu propio PDF en producción.
     example: '<ok-pdf src="https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf" title="Documento de ejemplo" height="480px" style="display:block;width:100%"></ok-pdf>',
     code: `<ok-pdf src="/docs/factura.pdf" title="Factura" height="480px"></ok-pdf>`,
@@ -1733,7 +1733,7 @@ video.addEventListener('ok-ended', () => …);`,
     name: 'ok-receipt',
     category: 'multimedia',
     desc: 'Tiquet/recibo de venta (POS) presentacional: recibe un JSON (prop .receipt) y lo pinta con estética de impresora térmica (80mm). Cabecera de negocio (+logo), líneas, subtotal/impuestos/total, pago+cambio, pie y QR (reusa ok-qr, p.ej. VeriFactu). No habla con ningún backend; cualquier botón externo le pasa el JSON.',
-    importPath: "@outfitkit/core/ok-receipt",
+    importPath: "@erplora/outfitkit/ok-receipt",
     example: '<ok-receipt id="rcpt" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18);background:#fff"></ok-receipt>',
     setup: (root) => {
       const el = root.querySelector('#rcpt');
@@ -1777,7 +1777,7 @@ container.appendChild(el);
     name: 'ok-invoice',
     category: 'multimedia',
     desc: 'Factura A4 (documento fiscal completo) presentacional: recibe un JSON (prop .invoice) y lo pinta como factura profesional — emisor+receptor con datos fiscales, líneas con descuento/impuesto, resumen de impuestos por tipo, totales, condiciones de pago, pie legal y QR opcional (reusa ok-qr). Hermano A4 de ok-receipt (tiquet 80mm). No habla con backend.',
-    importPath: "@outfitkit/core/ok-invoice",
+    importPath: "@erplora/outfitkit/ok-invoice",
     example: '<ok-invoice id="inv" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18)"></ok-invoice>',
     setup: (root) => {
       const el = root.querySelector('#inv');
@@ -1827,7 +1827,7 @@ container.appendChild(el);`,
     name: 'ok-store / store API',
     category: 'estado',
     desc: 'Store reactivo persistente (IndexedDB, con fallback en memoria). Como elemento <ok-store> o como API createStore()/store importable.',
-    importPath: "@outfitkit/core/ok-store",
+    importPath: "@erplora/outfitkit/ok-store",
     example: `<ok-store id="store" name="demo">
   <div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
     <ion-button id="store-inc" size="small">Incrementar contador</ion-button>
@@ -1853,7 +1853,7 @@ storeEl.get('contador');           // 1 (síncrono)
 storeEl.addEventListener('ok-store-change', (e) => …); // { key, value }
 
 // Como API importable
-import { createStore, store } from '@outfitkit/core/ok-store';
+import { createStore, store } from '@erplora/outfitkit/ok-store';
 const s = createStore({ name: 'demo' });
 await s.ready;
 s.set('k', v); s.get('k'); s.update('k', (v) => v + 1);
@@ -1872,7 +1872,7 @@ const off = s.subscribe('k', (value) => …);`,
     name: "ok-pagination",
     category: "datos",
     desc: "Paginador numerado (sobre ion-button/ion-select) con chevrons prev/next, colapso por elipsis (sibling-count/boundary-count), info \"X–Y de Z\" y selector de filas. Presentacional: emite ok-page-change y ok-page-size-change.",
-    importPath: "@outfitkit/core/ok-pagination",
+    importPath: "@erplora/outfitkit/ok-pagination",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.75rem;padding:.5rem 0\">\n  <div>\n    <div style=\"font-size:.75rem;color:var(--ion-color-medium);margin-bottom:.5rem\">Completo · con info y selector de filas</div>\n    <ok-pagination id=\"pg-full\" total=\"487\" page=\"4\" page-size=\"20\" info></ok-pagination>\n  </div>\n  <div>\n    <div style=\"font-size:.75rem;color:var(--ion-color-medium);margin-bottom:.5rem\">Numerado · elipsis</div>\n    <ok-pagination total=\"1240\" page=\"9\" page-size=\"25\"></ok-pagination>\n  </div>\n  <div>\n    <div style=\"font-size:.75rem;color:var(--ion-color-medium);margin-bottom:.5rem\">Compacto</div>\n    <ok-pagination total=\"96\" page=\"2\" page-size=\"20\" variant=\"compact\"></ok-pagination>\n  </div>\n</div>",
     setup: (root, ctx) => {
 const full = root.querySelector('#pg-full');
@@ -1890,7 +1890,7 @@ if (full) {
     name: "ok-skeleton",
     category: "feedback",
     desc: "Placeholder de carga (shimmer) con variantes de forma (text/title/circle/avatar/button/chip/card/row), stack de líneas de anchos decrecientes (lines) y presets compuestos (preset=\"card\"/\"table\"/\"chart\"). Respeta prefers-reduced-motion. Sin eventos.",
-    importPath: "@outfitkit/core/ok-skeleton",
+    importPath: "@erplora/outfitkit/ok-skeleton",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem\">\n  <ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n  <ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n  <div style=\"display:flex;gap:1rem;align-items:center;flex-wrap:wrap\">\n    <ok-skeleton variant=\"avatar\" width=\"48px\" height=\"48px\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"chip\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"button\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"circle\" width=\"56px\" height=\"56px\" style=\"width:auto\"></ok-skeleton>\n  </div>\n  <ok-skeleton preset=\"card\"></ok-skeleton>\n  <ok-skeleton preset=\"table\" rows=\"4\" cols=\"4\"></ok-skeleton>\n  <ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>\n</div>",
     code: "// Variante simple\n<ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n<ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n\n// Presets compuestos\n<ok-skeleton preset=\"card\"></ok-skeleton>\n<ok-skeleton preset=\"table\" rows=\"5\" cols=\"4\"></ok-skeleton>\n<ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>",
     api: [{"kind": "prop", "name": "variant", "type": "text|title|circle|avatar|button|chip|card|row", "detail": "Forma del bloque individual"}, {"kind": "prop", "name": "lines", "type": "number", "detail": "Nº de líneas apiladas (text/title; >1 activa el stack 92/78/60%)"}, {"kind": "prop", "name": "preset", "type": "none|card|table|chart", "detail": "Scaffold de placeholder compuesto"}, {"kind": "prop", "name": "rows", "type": "number", "detail": "Filas del preset table (incluye cabecera)"}, {"kind": "prop", "name": "cols", "type": "number", "detail": "Columnas del preset table / nº de barras del preset chart"}, {"kind": "prop", "name": "width · height · radius", "type": "string", "detail": "Overrides CSS explícitos de la variante (p.ej. \"120px\", \"40%\")"}],
@@ -1900,7 +1900,7 @@ if (full) {
     name: "ok-gauge",
     category: "graficos",
     desc: "Medidor en SVG a mano (CSP-safe) con tres tipos: 'arc' (semicírculo), 'ring' (anillo) y 'bullet' (barra Tufte con zonas + objetivo). Props: type, value, min/max, .thresholds (zonas que tiñen el relleno), target, label/sublabel, color, size, unit. Sin eventos.",
-    importPath: "@outfitkit/core/ok-gauge",
+    importPath: "@erplora/outfitkit/ok-gauge",
     example: "<div style=\"display:flex;gap:1.75rem;align-items:flex-end;flex-wrap:wrap\">\n  <ok-gauge id=\"g-arc\" type=\"arc\" value=\"82\" size=\"150\" label=\"Ocupación mesas\" sublabel=\"Servicio noche\"></ok-gauge>\n  <ok-gauge id=\"g-ring\" type=\"ring\" value=\"63\" size=\"140\" label=\"OEE línea 2\"></ok-gauge>\n  <div style=\"flex:1 1 260px;min-width:240px;display:flex;flex-direction:column;gap:1.25rem\">\n    <ok-gauge id=\"g-b1\" type=\"bullet\" value=\"14820\" min=\"0\" max=\"20000\" target=\"16000\" unit=\" €\" label=\"Ventas hoy\" sublabel=\"objetivo 16.000\"></ok-gauge>\n    <ok-gauge id=\"g-b2\" type=\"bullet\" value=\"47\" min=\"0\" max=\"100\" target=\"80\" label=\"Margen medio\"></ok-gauge>\n  </div>\n</div>",
     setup: (root, ctx) => {
 const warmZones = [
@@ -1929,7 +1929,7 @@ root.querySelector('#g-b2').thresholds = [
     name: "ok-chart",
     category: "graficos",
     desc: "Gráfico declarativo en SVG inline (línea, área o barras) autocontenido y CSP-safe: rejilla, eje de valor, etiquetas X, leyenda, series con color/punteado/atenuado y punto final con etiqueta. Props: type, .series, .labels, .axis, gridlines, height, endpoint, endpointLabel. Presentacional, sin eventos.",
-    importPath: "@outfitkit/core/ok-chart",
+    importPath: "@erplora/outfitkit/ok-chart",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.5rem;max-width:560px\">\n  <ok-chart id=\"c-area\" type=\"area\" height=\"180\" endpoint gridlines></ok-chart>\n  <ok-chart id=\"c-bar\" type=\"bar\" height=\"160\" gridlines></ok-chart>\n</div>",
     setup: (root, ctx) => {
 const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
@@ -1959,7 +1959,7 @@ bar.series = [
     name: "ok-donut",
     category: "graficos",
     desc: "Gráfico donut/pie dibujado en SVG (lo que Ionic no trae): segmentos proporcionales con leyenda y porcentajes calculados, más valor/label central. Props: .slices, size, thickness (0 ⇒ pie), center-value, center-label, legend, legend-side. Presentacional, sin eventos.",
-    importPath: "@outfitkit/core/ok-donut",
+    importPath: "@erplora/outfitkit/ok-donut",
     example: "<div style=\"display:flex;gap:2.5rem;align-items:center;flex-wrap:wrap;padding:.5rem\">\n  <ok-donut id=\"d-ventas\" size=\"160\" thickness=\"20\" center-value=\"8.420€\" center-label=\"Ventas mes\"></ok-donut>\n  <ok-donut id=\"d-pago\" size=\"150\" thickness=\"0\" legend-side=\"bottom\"></ok-donut>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#d-ventas').slices = [
@@ -1982,7 +1982,7 @@ root.querySelector('#d-pago').slices = [
     name: "ok-heatmap",
     category: "graficos",
     desc: "Heatmap de calendario/contribución (estilo GitHub) en CSS puro: celdas coloreadas por intensidad (cuantiles sobre value, o level explícito). Props .data, layout (weeks|year), levels, scale, cell-size, legend. Sin eventos.",
-    importPath: "@outfitkit/core/ok-heatmap",
+    importPath: "@erplora/outfitkit/ok-heatmap",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.5rem;max-width:560px\">\n  <div>\n    <div style=\"font-size:13px;color:var(--ion-color-medium);margin-bottom:8px\">Actividad de ventas · últimas semanas</div>\n    <ok-heatmap id=\"hm-weeks\" layout=\"weeks\" cell-size=\"13\" legend></ok-heatmap>\n  </div>\n  <div>\n    <div style=\"font-size:13px;color:var(--ion-color-medium);margin-bottom:8px\">Pedidos por día · año (escala verde)</div>\n    <ok-heatmap id=\"hm-year\" layout=\"year\" scale=\"#2dd36f\"></ok-heatmap>\n  </div>\n</div>",
     setup: (root, ctx) => {
 // Genera datos {date, value} para ~17 semanas (layout weeks)
@@ -2018,7 +2018,7 @@ root.querySelector('#hm-year').data = year;
     name: "ok-funnel",
     category: "graficos",
     desc: "Embudo de conversión: filas apiladas con barra de ancho % decreciente (gradiente brand) más meta con conteo absoluto y % de conversión por paso (auto, respecto al anterior). Prop `.steps` (label/value/color), `min-width` y `locale`. Sin eventos.",
-    importPath: "@outfitkit/core/ok-funnel",
+    importPath: "@erplora/outfitkit/ok-funnel",
     example: "<div style=\"max-width:520px\">\n  <ok-funnel id=\"fn\" locale=\"es-ES\"></ok-funnel>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#fn').steps = [
@@ -2036,7 +2036,7 @@ root.querySelector('#fn').steps = [
     name: "ok-bar-list",
     category: "graficos",
     desc: "Lista ranking de barras horizontales (top-N): cada fila = etiqueta + track con relleno proporcional al valor frente a `max` (auto-calculado) + valor en negrita. Props: `.items`, `max`, `value-format` (number/compact/currency/percent), `locale`, `currency`. Presentacional, sin eventos.",
-    importPath: "@outfitkit/core/ok-bar-list",
+    importPath: "@erplora/outfitkit/ok-bar-list",
     example: "<div style=\"max-width:380px\">\n  <ok-bar-list id=\"bl\" value-format=\"currency\" currency=\"EUR\"></ok-bar-list>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#bl').items = [
@@ -2055,7 +2055,7 @@ root.querySelector('#bl').items = [
     name: "ok-detail-list",
     category: "datos",
     desc: "Lista de detalle (description list, <dl>) para pantallas de ficha: pares etiqueta/valor alineados por baseline con la etiqueta muted. Props .items (label/value/html/full), columns (1|2), dense y placeholder. Sin eventos.",
-    importPath: "@outfitkit/core/ok-detail-list",
+    importPath: "@erplora/outfitkit/ok-detail-list",
     example: "<div style=\"max-width:560px;display:flex;flex-direction:column;gap:1.5rem;width:100%\">\n  <div>\n    <p style=\"margin:0 0 .5rem;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ion-color-medium,#92949c)\">Datos del cliente</p>\n    <ok-detail-list id=\"dl1\" columns=\"2\"></ok-detail-list>\n  </div>\n  <div>\n    <p style=\"margin:0 0 .5rem;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ion-color-medium,#92949c)\">Resumen del pedido (denso)</p>\n    <ok-detail-list id=\"dl2\" dense></ok-detail-list>\n  </div>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#dl1').items = [
@@ -2085,7 +2085,7 @@ root.querySelector('#dl2').items = [
     name: "ok-icon-tile",
     category: "datos",
     desc: "Pastilla cuadrada coloreada con un icono dentro (leading icon de filas/cards/KPI). Puramente presentacional: props icon (Iconify/Ionicons), color (brand|leaf|warn|danger|info|neutral), size (md|lg), shape (rounded|circle) y label accesible. Sin eventos.",
-    importPath: "@outfitkit/core/ok-icon-tile",
+    importPath: "@erplora/outfitkit/ok-icon-tile",
     example: "<div style=\"display:flex;gap:1rem;align-items:center;flex-wrap:wrap\">\n  <ok-icon-tile color=\"brand\" size=\"lg\" icon=\"cube-outline\" label=\"Inventario\"></ok-icon-tile>\n  <ok-icon-tile color=\"leaf\" size=\"lg\" icon=\"trending-up-outline\" label=\"Ingresos\"></ok-icon-tile>\n  <ok-icon-tile color=\"warn\" size=\"lg\" icon=\"alert-outline\" label=\"Avisos\"></ok-icon-tile>\n  <ok-icon-tile color=\"danger\" size=\"lg\" icon=\"trash-outline\" label=\"Eliminar\"></ok-icon-tile>\n  <ok-icon-tile color=\"info\" shape=\"circle\" size=\"lg\" icon=\"information-circle-outline\" label=\"Info\"></ok-icon-tile>\n  <ok-icon-tile color=\"neutral\" icon=\"ellipsis-horizontal\" label=\"Más\"></ok-icon-tile>\n</div>",
     code: "<ok-icon-tile color=\"leaf\" size=\"lg\" icon=\"trending-up-outline\" label=\"Ingresos\"></ok-icon-tile>\n<!-- Iconify con prefijo de set: usa iconify-icon en vez de ion-icon -->\n<ok-icon-tile color=\"brand\" shape=\"circle\" icon=\"mdi:home-outline\"></ok-icon-tile>",
     api: [{"kind": "prop", "name": "icon", "type": "string", "detail": "Nombre del icono; con prefijo de set (\"mdi:home\") usa iconify-icon, si no ion-icon"}, {"kind": "prop", "name": "color", "type": "brand|leaf|warn|danger|info|neutral", "detail": "Par de color: fondo soft + color del icono (reflect)"}, {"kind": "prop", "name": "size", "type": "md|lg", "detail": "Tamaño del tile: 32px (md) o 40px (lg) (reflect)"}, {"kind": "prop", "name": "shape", "type": "rounded|circle", "detail": "Forma del recorte: radio 8px o circular (reflect)"}, {"kind": "prop", "name": "label", "type": "string", "detail": "Etiqueta accesible; si falta, el tile es decorativo (aria-hidden)"}, {"kind": "slot", "name": "(default)", "type": "—", "detail": "Sin icon: compón un SVG/imagen propio dentro de la pastilla"}],
@@ -2095,7 +2095,7 @@ root.querySelector('#dl2').items = [
     name: "ok-status-dot",
     category: "feedback",
     desc: "Punto de presencia/estado coloreado y compacto (forma reducida de ok-status-pill): solo el dot con tono semántico, tamaño, label opcional (inline o sr-only) y pulso \"en vivo\". Sin eventos.",
-    importPath: "@outfitkit/core/ok-status-dot",
+    importPath: "@erplora/outfitkit/ok-status-dot",
     example: "<div style=\"display:flex;flex-direction:column;gap:1rem;font-family:system-ui\">\n  <div style=\"display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap\">\n    <ok-status-dot tone=\"ok\" pulse label=\"En línea\" show-label></ok-status-dot>\n    <ok-status-dot tone=\"warn\" label=\"Inactivo\" show-label></ok-status-dot>\n    <ok-status-dot tone=\"danger\" pulse label=\"Sin conexión\" show-label></ok-status-dot>\n    <ok-status-dot tone=\"off\" label=\"Apagado\" show-label></ok-status-dot>\n  </div>\n  <div style=\"display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap\">\n    <span style=\"display:inline-flex;gap:.4rem;align-items:center;font-size:.875rem\"><ok-status-dot tone=\"brand\" size=\"lg\" pulse label=\"TPV abierto\"></ok-status-dot>TPV Caja 1 abierto</span>\n    <span style=\"display:inline-flex;gap:.4rem;align-items:center;font-size:.875rem\"><ok-status-dot tone=\"info\" size=\"sm\" label=\"Sincronizando\"></ok-status-dot>Sincronizando</span>\n  </div>\n</div>",
     code: "<ok-status-dot tone=\"ok\" pulse label=\"En línea\" show-label></ok-status-dot>\n<!-- solo dot + label accesible (sr-only) en una celda: -->\n<ok-status-dot tone=\"danger\" label=\"Sin conexión\"></ok-status-dot>",
     api: [{"kind": "prop", "name": "tone", "type": "ok|warn|danger|info|off|brand", "detail": "Tono semántico → --ion-color-* (por defecto off)"}, {"kind": "prop", "name": "size", "type": "sm|md|lg", "detail": "Tamaño del dot (por defecto md)"}, {"kind": "prop", "name": "pulse", "type": "boolean", "detail": "Aro de pulso animado \"en vivo\" (respeta prefers-reduced-motion)"}, {"kind": "prop", "name": "label", "type": "string", "detail": "Texto del estado (accesible vía aria-label)"}, {"kind": "prop", "name": "show-label", "type": "boolean", "detail": "Muestra el label inline junto al dot; si no, queda solo sr-only"}],
@@ -2105,7 +2105,7 @@ root.querySelector('#dl2').items = [
     name: "ok-kbd",
     category: "inputs",
     desc: "Chips de keycap (teclas de teclado) presentacionales: keys=\"cmd k\" renderiza ⌘ + K con relieve 3D, modificadores en negrita/mayúsculas y glifos bonitos. Props: keys, size (sm|md), combo. Sin eventos.",
-    importPath: "@outfitkit/core/ok-kbd",
+    importPath: "@erplora/outfitkit/ok-kbd",
     example: "<div style=\"display:flex;flex-direction:column;gap:1rem;font-family:system-ui\">\n  <div style=\"display:flex;align-items:center;gap:.6rem;flex-wrap:wrap\">\n    <span style=\"color:#808289;font-size:13px\">Buscar</span>\n    <ok-kbd keys=\"cmd k\"></ok-kbd>\n  </div>\n  <div style=\"display:flex;align-items:center;gap:.6rem;flex-wrap:wrap\">\n    <span style=\"color:#808289;font-size:13px\">Nueva venta</span>\n    <ok-kbd keys=\"ctrl shift n\"></ok-kbd>\n  </div>\n  <div style=\"display:flex;align-items:center;gap:.6rem;flex-wrap:wrap\">\n    <span style=\"color:#808289;font-size:13px\">Guardar</span>\n    <ok-kbd keys=\"cmd s\" size=\"sm\"></ok-kbd>\n  </div>\n  <div style=\"display:flex;align-items:center;gap:.6rem;flex-wrap:wrap\">\n    <span style=\"color:#808289;font-size:13px\">Navegar</span>\n    <ok-kbd keys=\"up\"></ok-kbd>\n    <ok-kbd keys=\"down\"></ok-kbd>\n    <ok-kbd keys=\"enter\"></ok-kbd>\n    <ok-kbd keys=\"esc\"></ok-kbd>\n  </div>\n</div>",
     code: "<ok-kbd keys=\"cmd k\"></ok-kbd>\n<ok-kbd keys=\"ctrl shift n\"></ok-kbd>\n<ok-kbd keys=\"cmd s\" size=\"sm\"></ok-kbd>",
     api: [{"kind": "prop", "name": "keys", "type": "string", "detail": "Teclas separadas por espacio (p.ej. \"cmd k\" o \"ctrl shift n\")"}, {"kind": "prop", "name": "size", "type": "sm|md", "detail": "Tamaño del keycap (reflejado como atributo). Por defecto md"}, {"kind": "prop", "name": "combo", "type": "boolean", "detail": "Inserta separadores \"+\" entre teclas. Por defecto true"}],
@@ -2115,7 +2115,7 @@ root.querySelector('#dl2').items = [
     name: "ok-menu",
     category: "overlays",
     desc: "Menú desplegable / contextual sobre primitivos propios: items declarativos (.items) con icono, atajo, divisor, sección, checkbox/radio y submenús en cascada; modo click o contextual (clic derecho), anclaje volteable y slot header. Emite ok-select {id} y ok-open {open}.",
-    importPath: "@outfitkit/core/ok-menu",
+    importPath: "@erplora/outfitkit/ok-menu",
     example: "<div style=\"display:flex;justify-content:center;padding:1rem 1rem 9rem\">\n  <ok-menu id=\"m\" anchor=\"bl\" width=\"md\" open>\n    <ion-button id=\"trg\" fill=\"outline\">\n      <ion-icon slot=\"start\" name=\"ellipsis-horizontal\"></ion-icon>\n      Acciones\n    </ion-button>\n    <div slot=\"header\">\n      <strong>María López</strong><br>\n      <span style=\"color:var(--ion-color-medium)\">maria@erplora.com</span>\n    </div>\n  </ok-menu>\n</div>",
     setup: (root, ctx) => {
 const m = root.querySelector('#m');
@@ -2149,7 +2149,7 @@ m.addEventListener('ok-open', (e) => {
     name: "ok-hover-card",
     category: "overlays",
     desc: "Popover rica de previsualización anclada al hover/focus de un disparador inline (@menciones / referencias cruzadas): avatar + título con badge, @handle, cuerpo, fila de 3 cifras tabulares y pie de hasta 2 botones. Props name/badge/handle/avatar(-src)/body/.stats/.actions/placement/open-delay/close-delay; emite ok-action y ok-open.",
-    importPath: "@outfitkit/core/ok-hover-card",
+    importPath: "@erplora/outfitkit/ok-hover-card",
     example: "<div style=\"font:0.95rem system-ui,sans-serif;color:#3a3a42;max-width:480px;line-height:1.7\">\n  <p style=\"margin:0 0 .5rem\">Asignado a\n    <ok-hover-card id=\"hc\" name=\"María López\" badge=\"Encargada\" handle=\"@maria.lopez\" avatar=\"ML\" body=\"Encargada de turno en la tienda Centro. Gestiona caja, devoluciones y el cuadre diario.\" open-delay=\"0\" placement=\"bottom\" style=\"font-weight:600;color:var(--ion-color-primary,#3880ff);border-bottom:1px dashed currentColor;cursor:default\">\n      <span>@maria.lopez</span>\n    </ok-hover-card>\n    para la apertura de hoy.</p>\n  <p style=\"margin:1.6rem 0 0;color:#8a8a93;font-size:.8rem\">Pasa el ratón sobre la mención para ver la tarjeta.</p>\n</div>",
     setup: (root, ctx) => {
 const hc = root.querySelector('#hc');
@@ -2171,7 +2171,7 @@ hc.actions = [
     name: "ok-notification-center",
     category: "overlays",
     desc: "Bandeja de notificaciones tipo drawer lateral derecho (inbox de ERP): lista de avisos status-tintados, chips de filtro, contador de no-leídas y pie \"marcar todas leídas\". Props .items/.filters/active/open/title/.labels; eventos ok-read, ok-read-all, ok-filter, ok-close, ok-open.",
-    importPath: "@outfitkit/core/ok-notification-center",
+    importPath: "@erplora/outfitkit/ok-notification-center",
     example: "<div style=\"position:relative;height:480px;overflow:hidden;border-radius:12px;background:repeating-linear-gradient(45deg,rgba(0,0,0,.02),rgba(0,0,0,.02) 12px,transparent 12px,transparent 24px)\">\n  <ok-notification-center id=\"nc\" open title=\"Notificaciones\" active=\"all\" style=\"--ok-notif-width:340px\"></ok-notification-center>\n</div>",
     setup: (root, ctx) => {
 const nc = root.querySelector('#nc');
@@ -2212,7 +2212,7 @@ nc.addEventListener('ok-close', (e) => { e.preventDefault(); });
     name: "ok-coachmark",
     category: "overlays",
     desc: "Tour guiado (onboarding) con spotlight: recorta el scrim alrededor de un target, ancla un bubble edge-aware (top/bottom/left/right con volteo) y navega por pasos. Props .steps, current, open, labels; emite ok-step/ok-next/ok-prev/ok-finish/ok-skip.",
-    importPath: "@outfitkit/core/ok-coachmark",
+    importPath: "@erplora/outfitkit/ok-coachmark",
     example: "<div style=\"position:relative;padding:1rem;min-height:240px\">\n  <div style=\"display:flex;gap:.6rem;align-items:center;margin-bottom:1rem\">\n    <button id=\"cm-new\" style=\"background:var(--ion-color-primary,#3880ff);color:#fff;border:0;border-radius:8px;padding:.55rem .9rem;font:600 13px system-ui;cursor:pointer\">+ Nueva venta</button>\n    <button id=\"cm-search\" style=\"background:#eef1f6;border:0;border-radius:8px;padding:.55rem .9rem;font:600 13px system-ui;cursor:pointer\">Buscar producto</button>\n    <div style=\"margin-left:auto;display:flex;gap:.4rem\">\n      <button id=\"cm-cart\" style=\"background:#eef1f6;border:0;border-radius:8px;padding:.55rem .9rem;font:600 13px system-ui;cursor:pointer\">Carrito · 3</button>\n    </div>\n  </div>\n  <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem\">\n    <div id=\"cm-prod\" style=\"border:1px solid #e3e6ee;border-radius:10px;padding:.8rem;font:13px system-ui\">Café con leche<br><b>1,40 €</b></div>\n    <div style=\"border:1px solid #e3e6ee;border-radius:10px;padding:.8rem;font:13px system-ui\">Croissant<br><b>1,80 €</b></div>\n    <div style=\"border:1px solid #e3e6ee;border-radius:10px;padding:.8rem;font:13px system-ui\">Zumo natural<br><b>2,50 €</b></div>\n  </div>\n  <div style=\"margin-top:1rem\"><button id=\"cm-start\" style=\"background:#fff;border:1px solid var(--ion-color-primary,#3880ff);color:var(--ion-color-primary,#3880ff);border-radius:8px;padding:.5rem .9rem;font:600 13px system-ui;cursor:pointer\">▶ Reiniciar tour</button></div>\n  <ok-coachmark id=\"cm\"></ok-coachmark>\n</div>",
     setup: (root, ctx) => {
 const cm = root.querySelector('#cm');
@@ -2234,7 +2234,7 @@ if (restart) restart.addEventListener('click', () => { cm.current = 0; cm.open =
     name: "ok-select-card",
     category: "inputs",
     desc: "Fila/tarjeta seleccionable: toda la fila es zona de click y envuelve un ion-checkbox/ion-radio nativo; al marcar pinta borde y fondo de marca. Props: mode (checkbox|radio), name (grupo radio), value, checked, label, description, icon, disabled. Evento: ok-change { checked, value }.",
-    importPath: "@outfitkit/core/ok-select-card",
+    importPath: "@erplora/outfitkit/ok-select-card",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;width:100%\">\n  <div style=\"display:flex;flex-direction:column;gap:.6rem\">\n    <p style=\"margin:0 0 .15rem;font-size:.8125rem;font-weight:600;color:var(--ion-color-medium)\">Plan (radio)</p>\n    <ok-select-card id=\"p1\" mode=\"radio\" name=\"plan\" value=\"local\" checked icon=\"hardware-chip-outline\" label=\"Local\" description=\"Gratis · 1 dispositivo · backup en S3\"></ok-select-card>\n    <ok-select-card id=\"p2\" mode=\"radio\" name=\"plan\" value=\"cloud\" icon=\"cloud-outline\" label=\"Cloud\" description=\"Online · multi-dispositivo · sin sincronización\"></ok-select-card>\n  </div>\n  <div style=\"display:flex;flex-direction:column;gap:.6rem\">\n    <p style=\"margin:0 0 .15rem;font-size:.8125rem;font-weight:600;color:var(--ion-color-medium)\">Módulos (checkbox)</p>\n    <ok-select-card mode=\"checkbox\" value=\"inventory\" checked icon=\"cube-outline\" label=\"Inventario\" description=\"Productos y existencias\"></ok-select-card>\n    <ok-select-card mode=\"checkbox\" value=\"pos\" icon=\"card-outline\" label=\"TPV\" description=\"Punto de venta y tickets\"></ok-select-card>\n    <ok-select-card mode=\"checkbox\" value=\"whatsapp\" disabled icon=\"logo-whatsapp\" label=\"WhatsApp\" description=\"Premium · requiere suscripción\"></ok-select-card>\n  </div>\n</div>",
     code: "<ok-select-card mode=\"radio\" name=\"plan\" value=\"cloud\"\n  icon=\"cloud-outline\" label=\"Cloud\"\n  description=\"Online · multi-dispositivo\">\n</ok-select-card>\n\n// JS:\ncard.addEventListener('ok-change', (e) => {\n  console.log(e.detail.checked, e.detail.value);\n});",
     api: [{"kind": "prop", "name": "mode", "type": "'checkbox' | 'radio'", "detail": "Independiente o exclusivo por grupo (default checkbox)"}, {"kind": "prop", "name": "name", "type": "string", "detail": "Grupo de radios para la exclusión mutua (modo radio)"}, {"kind": "prop", "name": "value · checked", "type": "string · boolean", "detail": "Valor emitido · si está marcada (refleja)"}, {"kind": "prop", "name": "label · description · icon", "type": "string", "detail": "Título · texto muted · icono Iconify a la izquierda"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Deshabilita la interacción (refleja)"}, {"kind": "event", "name": "ok-change", "type": "{ checked: boolean, value: string }", "detail": "Al cambiar la selección (bubbles + composed)"}, {"kind": "slot", "name": "(default)", "type": "—", "detail": "Contenido extra bajo el label"}],
@@ -2244,7 +2244,7 @@ if (restart) restart.addEventListener('click', () => { cm.current = 0; cm.open =
     name: "ok-error-page",
     category: "feedback",
     desc: "Plantilla full-screen para errores HTTP (403/404/500) o pantalla de arranque (bootstrap): código + título + mensaje, ilustración por variant (info/warn/danger), tiles de atajo (.shortcuts), checklist de salud (.checks en mode=bootstrap), traza colapsable (trace), chip de reintento con cuenta atrás (retry-seconds) y slots actions/search. Emite ok-shortcut y ok-retry.",
-    importPath: "@outfitkit/core/ok-error-page",
+    importPath: "@erplora/outfitkit/ok-error-page",
     example: "<div style=\"height:540px;overflow:auto;border:1px solid var(--ion-border-color,#e3e5e8);border-radius:12px\">\n  <ok-error-page\n    id=\"errp\"\n    code=\"404\"\n    title=\"Página no encontrada\"\n    message=\"No encontramos lo que buscabas. Puede que el enlace esté roto o que el módulo se haya desinstalado.\"\n    variant=\"info\"\n    meta=\"trace-id: 8f2a1c · 2026-06-14 10:42\"\n    style=\"--ok-error-min-height:auto\">\n    <ion-button slot=\"actions\" fill=\"solid\">Volver al inicio</ion-button>\n    <ion-button slot=\"actions\" fill=\"outline\">Contactar soporte</ion-button>\n  </ok-error-page>\n</div>",
     setup: (root, ctx) => {
 const el = root.querySelector('#errp');
@@ -2270,7 +2270,7 @@ el.addEventListener('ok-shortcut', (e) => console.log('shortcut', e.detail.short
     name: "ok-date-picker",
     category: "inputs",
     desc: "Campo de fecha con popover de calendario propio (lo que Ionic no trae cómodo): selección single o range con chips de preset (Hoy/7d/Esta semana/Mes/Trimestre/YTD), navegación de mes, min/max y 1-2 paneles. Props .value, mode, min/max, .presets, months; evento ok-change.",
-    importPath: "@outfitkit/core/ok-date-picker",
+    importPath: "@erplora/outfitkit/ok-date-picker",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;max-width:340px\">\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">FECHA DE FACTURA\n    <ok-date-picker id=\"dpSingle\" mode=\"single\" placeholder=\"Seleccionar fecha\"></ok-date-picker>\n  </label>\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">PERIODO DEL INFORME\n    <ok-date-picker id=\"dpRange\" mode=\"range\" months=\"1\"></ok-date-picker>\n  </label>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#dpSingle').value = '2026-06-09';
@@ -2292,7 +2292,7 @@ range.presets = [
     name: "ok-time-picker",
     category: "inputs",
     desc: "Selector compacto de hora del día (pastilla HH:MM mono + popover con listas de horas/minutos): más ligero que ion-datetime. Props value \"HH:MM\" (24h), step, use-ampm, min/max, disabled; emite ok-change { value }.",
-    importPath: "@outfitkit/core/ok-time-picker",
+    importPath: "@erplora/outfitkit/ok-time-picker",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;padding:.5rem 0\">\n  <div style=\"display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap\">\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      APERTURA\n      <ok-time-picker value=\"09:30\" step=\"15\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      CIERRE (12h)\n      <ok-time-picker value=\"21:00\" step=\"30\" use-ampm></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      RESERVA\n      <ok-time-picker id=\"tp-resa\" value=\"13:45\" step=\"5\" min=\"12:00\" max=\"16:30\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      BLOQUEADO\n      <ok-time-picker value=\"08:00\" disabled></ok-time-picker>\n    </label>\n  </div>\n  <p style=\"margin:0;font:.85rem system-ui;color:#374151\">\n    Reserva seleccionada: <strong id=\"tp-out\" style=\"font-variant-numeric:tabular-nums\">13:45</strong>\n  </p>\n</div>",
     setup: (root, ctx) => {
 const resa = root.querySelector('#tp-resa');
@@ -2307,7 +2307,7 @@ resa.addEventListener('ok-change', (e) => { out.textContent = e.detail.value; })
     name: "ok-range-dual",
     category: "inputs",
     desc: "Slider de rango min–max con doble thumb (el hueco que ion-range no cubre): pista con relleno coloreado entre los dos thumbs y readout «low – high». Props low/high/min/max/step + prefix/suffix; emite ok-change con {low, high}.",
-    importPath: "@outfitkit/core/ok-range-dual",
+    importPath: "@erplora/outfitkit/ok-range-dual",
     example: "<div style=\"display:grid;gap:2rem;max-width:420px;padding:0.5rem\">\n  <ok-range-dual id=\"precio\" label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"></ok-range-dual>\n  <ok-range-dual id=\"desc\" label=\"Descuento\" min=\"0\" max=\"100\" step=\"5\" low=\"10\" high=\"40\" suffix=\"%\"></ok-range-dual>\n  <ok-range-dual id=\"peso\" label=\"Peso (kg)\" min=\"0\" max=\"50\" step=\"0.5\" low=\"5\" high=\"22.5\" suffix=\" kg\"></ok-range-dual>\n  <ok-range-dual id=\"off\" label=\"Deshabilitado\" min=\"0\" max=\"100\" low=\"20\" high=\"80\" suffix=\"%\" disabled></ok-range-dual>\n</div>",
     code: "&lt;ok-range-dual label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"&gt;&lt;/ok-range-dual&gt;\n\nrange.addEventListener('ok-change', (e) =&gt; {\n  console.log(e.detail.low, e.detail.high); // { low, high }\n});",
     api: [{"kind": "prop", "name": "low", "type": "number", "detail": "Valor inferior actual del rango"}, {"kind": "prop", "name": "high", "type": "number", "detail": "Valor superior actual del rango"}, {"kind": "prop", "name": "min · max · step", "type": "number", "detail": "Límites del rango y paso de incremento"}, {"kind": "prop", "name": "label", "type": "string", "detail": "Etiqueta opcional a la izquierda del readout"}, {"kind": "prop", "name": "prefix · suffix", "type": "string", "detail": "Prefijo/sufijo en el readout (ej. '€', '%', ' kg')"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Deshabilita la interacción (atenúa el control)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{low,high}>", "detail": "Emitido al mover cualquiera de los dos thumbs"}],
@@ -2317,7 +2317,7 @@ resa.addEventListener('ok-change', (e) => { out.textContent = e.detail.value; })
     name: "ok-file-item",
     category: "inputs",
     desc: "Fila de archivo adjunto/subida (compañero de ok-dropzone): badge cuadrado tintado por extensión, nombre elipsado, meta de tamaño, barra de progreso al subir y estado error. Botón de quitar/cancelar opcional que emite ok-remove.",
-    importPath: "@outfitkit/core/ok-file-item",
+    importPath: "@erplora/outfitkit/ok-file-item",
     example: "<div style=\"display:flex;flex-direction:column;gap:10px;max-width:420px\">\n  <ok-file-item name=\"Factura-2026-0148.pdf\" ext=\"pdf\" size=\"2,4 MB · 14 jun 2026\" state=\"done\" removable></ok-file-item>\n  <ok-file-item name=\"Inventario-almacen-central.xlsx\" ext=\"xlsx\" size=\"845 KB\" state=\"done\" removable></ok-file-item>\n  <ok-file-item name=\"logo-tienda-cabecera.png\" ext=\"png\" size=\"1,2 MB · subiendo… 64%\" state=\"uploading\" progress=\"64\" removable></ok-file-item>\n  <ok-file-item name=\"catalogo-temporada.zip\" ext=\"zip\" size=\"18,9 MB\" error=\"Supera el límite de 10 MB\" state=\"error\" removable></ok-file-item>\n</div>",
     code: "<ok-file-item\n  name=\"Factura-2026-0148.pdf\"\n  ext=\"pdf\"\n  size=\"2,4 MB\"\n  state=\"done\"\n  removable></ok-file-item>\n\n<!-- subiendo -->\n<ok-file-item name=\"logo.png\" ext=\"png\" state=\"uploading\" progress=\"64\" removable></ok-file-item>\n<!-- error -->\n<ok-file-item name=\"big.zip\" ext=\"zip\" state=\"error\" error=\"Supera el límite\" removable></ok-file-item>\n\n// item.addEventListener('ok-remove', e => console.log(e.detail.name));",
     api: [{"kind": "prop", "name": "name", "type": "string", "detail": "Nombre del archivo (se elipsa si no cabe)"}, {"kind": "prop", "name": "ext", "type": "string", "detail": "Extensión/tipo (pdf, xlsx, png, zip…) → badge tintado"}, {"kind": "prop", "name": "size", "type": "string", "detail": "Tamaño/meta ya formateado (p.ej. \"2,4 MB\")"}, {"kind": "prop", "name": "state", "type": "'done'|'uploading'|'error'", "detail": "Estado: muestra progreso al subir, borde rojo en error"}, {"kind": "prop", "name": "progress", "type": "number", "detail": "Progreso 0–100, visible mientras state=\"uploading\""}, {"kind": "prop", "name": "error · removable", "type": "string · boolean", "detail": "Mensaje de error (sustituye a meta) · muestra botón quitar/cancelar"}, {"kind": "event", "name": "ok-remove", "type": "CustomEvent<{name,ext,state}>", "detail": "Al pulsar quitar/cancelar"}],
@@ -2327,7 +2327,7 @@ resa.addEventListener('ok-change', (e) => { out.textContent = e.detail.value; })
     name: "ok-rich-text",
     category: "inputs",
     desc: "Editor WYSIWYG (rich text) que Ionic no trae: área contenteditable con prosa completa (títulos, listas, enlaces, código, cita), toolbar de formato y footer con contador de palabras. Props: value (HTML), placeholder, size (sm·md·lg·minimal), toolbar, footer. Emite ok-input {html} en cada cambio.",
-    importPath: "@outfitkit/core/ok-rich-text",
+    importPath: "@erplora/outfitkit/ok-rich-text",
     example: "<div style=\"max-width:560px\">\n  <ok-rich-text id=\"rt\" placeholder=\"Escribe la descripción del producto…\"></ok-rich-text>\n</div>",
     setup: (root, ctx) => {
 const el = root.querySelector('#rt');
@@ -2347,7 +2347,7 @@ el.value = [
     name: "ok-code",
     category: "inputs",
     desc: "Visor de código sin resaltado: bloque monospace bordeado con scroll horizontal, etiqueta de lenguaje opcional y botón de copiar (emite ok-copy); variante inline (pill) para `code` dentro de texto. Props: code, language, inline, copy.",
-    importPath: "@outfitkit/core/ok-code",
+    importPath: "@erplora/outfitkit/ok-code",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem\">\n  <ok-code id=\"c-block\" language=\"bash\" copy code=\"# Instalar un módulo en el Hub\nhub module install inventory --version 1.4.0\nhub module activate inventory\"></ok-code>\n  <ok-code id=\"c-json\" language=\"json\" code='{\n  \"command\": \"pos.sale.create\",\n  \"lines\": [\n    { \"sku\": \"CAFE-001\", \"qty\": 2, \"price\": 1.30 }\n  ],\n  \"total\": 2.60\n}'></ok-code>\n  <p style=\"margin:0;font-size:14px;line-height:1.6;color:var(--ion-text-color,#1f2933)\">\n    Ejecuta el comando <ok-code inline code=\"pos.sale.create\"></ok-code> pasando el\n    <ok-code inline code=\"hub_id\"></ok-code> que inyecta el despliegue.\n  </p>\n</div>",
     code: "<ok-code language=\"bash\" copy code=\"hub module install inventory\"></ok-code>\n<!-- inline dentro de texto -->\nEjecuta <ok-code inline code=\"pos.sale.create\"></ok-code>.\n\n// feedback de copia\nel.addEventListener('ok-copy', (e) => console.log(e.detail.ok, e.detail.code));",
     api: [{"kind": "prop", "name": "code", "type": "string", "detail": "Texto de código a mostrar (whitespace preservado)"}, {"kind": "prop", "name": "language", "type": "string", "detail": "Etiqueta de lenguaje informativa (sin resaltado real)"}, {"kind": "prop", "name": "inline", "type": "boolean", "detail": "Variante pill inline en vez de bloque (refleja a atributo)"}, {"kind": "prop", "name": "copy", "type": "boolean", "detail": "Muestra el botón de copiar (solo en bloque)"}, {"kind": "event", "name": "ok-copy", "type": "CustomEvent<{code:string; ok:boolean}>", "detail": "Emitido al pulsar copiar; ok indica si la Clipboard API tuvo éxito"}],
@@ -2357,7 +2357,7 @@ el.value = [
     name: "ok-json-viewer",
     category: "datos",
     desc: "Visor de árbol JSON tipado y colapsable: colorea por tipo (key/string/number/bool/null), filas con chevron que rota y badge \"N keys / N items\" al colapsar. Props .data (objeto/array o string JSON), size (compact|default|lg) y expanded-depth; emite ok-toggle {path, expanded}.",
-    importPath: "@outfitkit/core/ok-json-viewer",
+    importPath: "@erplora/outfitkit/ok-json-viewer",
     example: "<div style=\"max-width:520px\">\n  <ok-json-viewer id=\"okjv\" expanded-depth=\"2\"></ok-json-viewer>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#okjv').data = {
@@ -2380,7 +2380,7 @@ root.querySelector('#okjv').data = {
     name: "ok-diff",
     category: "datos",
     desc: "Visor de diff unificado línea a línea (estilo auditoría/versiones): rejilla monoespaciada con doble numeración old/new, líneas añadidas en verde y eliminadas en rojo, glifos +/− y cabeceras de hunk. Datos vía prop `.lines` (OkDiffLine[]) o `raw` (diff unificado en texto que se parsea). Puramente presentacional, sin eventos.",
-    importPath: "@outfitkit/core/ok-diff",
+    importPath: "@erplora/outfitkit/ok-diff",
     example: "<div style=\"max-width:560px\">\n  <ok-diff id=\"d\" raw=\"@@ -1,6 +1,7 @@\n def calcular_total(lineas):\n     total = 0\n-    iva = 0.10\n+    iva = 0.21\n     for l in lineas:\n-        total += l.precio\n+        total += l.precio * l.cantidad\n+        total += total * iva\n     return total\"></ok-diff>\n</div>",
     setup: (root, ctx) => {
 // Ejemplo declarativo con .lines (precio_pvp en un producto de catálogo):
@@ -2405,7 +2405,7 @@ el.lines = [
     name: "ok-keyboard",
     category: "inputs",
     desc: "Teclado virtual en pantalla para kiosko/POS y táctiles: layouts qwerty/numeric/symbol, densidad touch/compact, shift de mayúsculas y tira de display opcional. Emite ok-input, ok-key y ok-enter.",
-    importPath: "@outfitkit/core/ok-keyboard",
+    importPath: "@erplora/outfitkit/ok-keyboard",
     example: "<div style=\"display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start\">\n  <div style=\"flex:1 1 320px;min-width:300px\">\n    <div style=\"font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ion-color-medium);margin-bottom:.4rem\">QWERTY · touch</div>\n    <ok-keyboard layout=\"qwerty\" density=\"touch\" show-display display-label=\"Nombre\" value=\"María\"></ok-keyboard>\n  </div>\n  <div style=\"flex:0 0 auto\">\n    <div style=\"font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ion-color-medium);margin-bottom:.4rem\">Numérico · PIN</div>\n    <ok-keyboard layout=\"numeric\" density=\"touch\" show-display display-label=\"PIN\" value=\"••••\"></ok-keyboard>\n  </div>\n</div>",
     code: "<ok-keyboard layout=\"qwerty\" density=\"touch\" show-display display-label=\"Nombre\"></ok-keyboard>\n\nconst kb = document.querySelector('ok-keyboard');\nkb.addEventListener('ok-input', (e) => { input.value = e.detail.value; });\nkb.addEventListener('ok-enter', (e) => submit(e.detail.value));",
     api: [{"kind": "prop", "name": "layout", "type": "qwerty|numeric|symbol", "detail": "Distribución del teclado (numeric = rejilla 3 columnas)"}, {"kind": "prop", "name": "density", "type": "touch|compact", "detail": "Tamaño de las teclas: kiosko (grandes) o denso/mobile"}, {"kind": "prop", "name": "value", "type": "string", "detail": "Valor actual del campo (controlado o no)"}, {"kind": "prop", "name": "show-display · display-label", "type": "bool · string", "detail": "Muestra la tira display con etiqueta y caret parpadeante"}, {"kind": "prop", "name": "is-shift", "type": "bool", "detail": "Estado de shift/mayúsculas (reflejado para CSS)"}, {"kind": "event", "name": "ok-input", "type": "{ value }", "detail": "Valor completo tras cada pulsación o borrado"}, {"kind": "event", "name": "ok-key · ok-enter", "type": "{ key } · { value }", "detail": "Tecla individual pulsada · intro confirmado"}],
@@ -2415,7 +2415,7 @@ el.lines = [
     name: "ok-calculator",
     category: "inputs",
     desc: "Calculadora genérica con display de dos líneas (operación previa + valor) y teclado de 4 columnas; máquina de estados completa (+ − × ÷, AC, ⌫, decimal). Gestiona su propio estado o se controla vía `value`. Emite `ok-input` (cada tecla) y `ok-change` (cambia el display).",
-    importPath: "@outfitkit/core/ok-calculator",
+    importPath: "@erplora/outfitkit/ok-calculator",
     example: "<div style=\"display:flex;justify-content:center;padding:.5rem\">\n  <ok-calculator></ok-calculator>\n</div>",
     code: "// Autónoma: gestiona su propio estado\n<ok-calculator></ok-calculator>\n\n// Escuchar el resultado mostrado\ncalc.addEventListener('ok-change', (e) => {\n  console.log('valor:', e.detail.value);\n});\n\n// Modo controlado opcional\n<ok-calculator value=\"42.50\"></ok-calculator>",
     api: [{"kind": "prop", "name": "value", "type": "string", "detail": "Display controlado opcional; si se omite, el componente gestiona su estado interno"}, {"kind": "event", "name": "ok-input", "type": "CustomEvent<{key:string}>", "detail": "Tecla pulsada tal cual (dígito, operador, '=', 'AC', '⌫', '.')"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{value:string}>", "detail": "Valor actual del display tras la pulsación"}],
@@ -2425,7 +2425,7 @@ el.lines = [
     name: "ok-image",
     category: "multimedia",
     desc: "Imagen lazy que Ionic no trae: marco con ratio fijo, placeholder con shimmer mientras carga, fade-in al cargar, caption con degradado, y zoom opcional (lens=lupa que sigue el puntero · lightbox=overlay a pantalla completa). Props: src, alt, ratio, caption, radius, zoom, placeholder-text. Emite ok-open al abrir el lightbox.",
-    importPath: "@outfitkit/core/ok-image",
+    importPath: "@erplora/outfitkit/ok-image",
     example: "<div style=\"display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:560px\">\n  <ok-image src=\"https://picsum.photos/id/292/640/360\" alt=\"Salón del restaurante\" ratio=\"16:9\" caption=\"Mesa 12 · Terraza\" zoom=\"lightbox\"></ok-image>\n  <ok-image src=\"https://picsum.photos/id/1080/480/640\" alt=\"Plato del día\" ratio=\"portrait\" caption=\"Solomillo al Pedro Ximénez\"></ok-image>\n  <ok-image src=\"https://picsum.photos/id/431/400/400\" alt=\"Café de especialidad\" ratio=\"square\" zoom=\"lens\" radius=\"lg\"></ok-image>\n  <ok-image src=\"https://no-existe.erplora.com/roto.jpg\" alt=\"Imagen rota\" ratio=\"square\" placeholder-text=\"cargando foto…\"></ok-image>\n</div>",
     code: "<ok-image\n  src=\"/media/plato.webp\"\n  alt=\"Solomillo al PX\"\n  ratio=\"16:9\"\n  caption=\"Mesa 12 · Terraza\"\n  zoom=\"lightbox\"\n></ok-image>\n\nimg.addEventListener('ok-open', (e) => {\n  // e.detail = { src, alt } — abre tu propio visor si lo prefieres\n});",
     api: [{"kind": "prop", "name": "src", "type": "string", "detail": "URL de la imagen (loading=lazy)"}, {"kind": "prop", "name": "alt", "type": "string", "detail": "Texto alternativo (accesibilidad)"}, {"kind": "prop", "name": "ratio", "type": "'16:9'|'square'|'portrait'|'free'", "detail": "Relacion de aspecto del marco"}, {"kind": "prop", "name": "caption", "type": "string", "detail": "Pie opcional pinned abajo con degradado"}, {"kind": "prop", "name": "zoom", "type": "'none'|'lens'|'lightbox'", "detail": "Lupa que sigue el puntero o overlay a pantalla completa"}, {"kind": "prop", "name": "radius · placeholder-text", "type": "'sm'|'md'|'lg' · string", "detail": "Radio de esquinas · texto del placeholder mientras carga"}, {"kind": "event", "name": "ok-open", "type": "CustomEvent<{src,alt}>", "detail": "Al abrir el lightbox (permite usar tu propio visor)"}],
@@ -2435,7 +2435,7 @@ el.lines = [
     name: "ok-gallery",
     category: "multimedia",
     desc: "Grid de imágenes cuadradas (auto-fill) seleccionable que Ionic no trae: hover con escala + caption con gradiente, badge circular de selección y placeholder de rayas para imágenes sin src. Props .images, selectable, .selected, min-size, columns; eventos ok-select y ok-open (para emparejar con ok-lightbox).",
-    importPath: "@outfitkit/core/ok-gallery",
+    importPath: "@erplora/outfitkit/ok-gallery",
     example: "<div style=\"max-width:560px\"><ok-gallery id=\"g\" selectable min-size=\"120\"></ok-gallery></div>",
     setup: (root, ctx) => {
 const g = root.querySelector("#g");
@@ -2459,7 +2459,7 @@ g.addEventListener("ok-open", (e) => console.log("ok-open", e.detail.index));
     name: "ok-lightbox",
     category: "multimedia",
     desc: "Visor de medios a pantalla completa (galería): overlay oscuro con cabecera \"N / M · fichero\" + descargar/fullscreen/cerrar, medio centrado, navegación prev/next y filmstrip de miniaturas. Teclado: flechas navegan, Esc cierra. Props .items, index, open; eventos ok-index y ok-close.",
-    importPath: "@outfitkit/core/ok-lightbox",
+    importPath: "@erplora/outfitkit/ok-lightbox",
     example: "<div style=\"display:flex;flex-direction:column;gap:1rem;align-items:flex-start\">\n  <p style=\"margin:0;color:var(--ion-color-medium);font-size:.9rem\">Galería del producto. Pulsa una miniatura para abrir el visor a pantalla completa.</p>\n  <div id=\"lb-grid\" style=\"display:flex;gap:.6rem;flex-wrap:wrap\">\n    <img class=\"lb-th\" data-i=\"0\" src=\"https://picsum.photos/id/1080/200/140\" alt=\"Fresas frescas\" style=\"width:120px;height:84px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--ion-color-step-150,#e0e0e0)\">\n    <img class=\"lb-th\" data-i=\"1\" src=\"https://picsum.photos/id/292/200/140\" alt=\"Plato de tapas\" style=\"width:120px;height:84px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--ion-color-step-150,#e0e0e0)\">\n    <img class=\"lb-th\" data-i=\"2\" src=\"https://picsum.photos/id/431/200/140\" alt=\"Café de especialidad\" style=\"width:120px;height:84px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--ion-color-step-150,#e0e0e0)\">\n    <img class=\"lb-th\" data-i=\"3\" src=\"https://picsum.photos/id/225/200/140\" alt=\"Pan artesano\" style=\"width:120px;height:84px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--ion-color-step-150,#e0e0e0)\">\n  </div>\n  <ion-button id=\"lb-open\" size=\"small\" fill=\"solid\">\n    <ion-icon name=\"images-outline\" slot=\"start\"></ion-icon>\n    Abrir galería\n  </ion-button>\n  <ok-lightbox id=\"lb\"></ok-lightbox>\n</div>",
     setup: (root, ctx) => {
 const lb = root.querySelector('#lb');
@@ -2494,7 +2494,7 @@ lb.addEventListener('ok-index', (e) => { lb.index = e.detail.index; });
     name: "ok-cropper",
     category: "multimedia",
     desc: "UI de recorte de imagen que Ionic no trae: viewport con checkerboard y overlay oscuro, rectángulo de recorte arrastrable y redimensionable por las 4 esquinas, guías rule-of-thirds y toolbar con presets de aspecto (Libre/1:1/4:3/16:9). Props: src, aspect, .value (rect en %), crop-label/cancel-label. Eventos: ok-crop (con {rect}) y ok-cancel.",
-    importPath: "@outfitkit/core/ok-cropper",
+    importPath: "@erplora/outfitkit/ok-cropper",
     example: "<div style=\"max-width:520px;margin:0 auto\">\n  <ok-cropper\n    id=\"cr\"\n    src=\"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80\"\n    aspect=\"4:3\"\n    crop-label=\"Recortar foto\"\n    cancel-label=\"Cancelar\"\n  ></ok-cropper>\n  <p style=\"margin:.75rem 0 0;font-size:.8rem;color:var(--ion-color-medium,#6b7280)\">\n    Arrastra el recuadro o sus esquinas. Cambia la proporción con la barra de abajo.\n  </p>\n</div>",
     setup: (root, ctx) => {
 const cr = root.querySelector('#cr');
@@ -2514,7 +2514,7 @@ cr.addEventListener('ok-cancel', () => console.log('recorte cancelado'));
     name: "ok-splitter",
     category: "web",
     desc: "Split-pane redimensionable estilo IDE: dos paneles (slots start/end) con un divisor arrastrable; props orientation, size (% del primer panel), min/max y collapsed; emite ok-resize al redimensionar.",
-    importPath: "@outfitkit/core/ok-splitter",
+    importPath: "@erplora/outfitkit/ok-splitter",
     example: "<ok-splitter id=\"sp\" orientation=\"horizontal\" size=\"38\" min=\"20\" max=\"70\" style=\"--min-height:260px\">\n  <div slot=\"start\" style=\"padding:14px;font:14px/1.5 system-ui\">\n    <div style=\"font-weight:600;margin-bottom:10px\">Categorías</div>\n    <div style=\"padding:8px 10px;border-radius:8px;background:var(--ion-color-primary,#3880ff);color:#fff;margin-bottom:4px\">Bebidas</div>\n    <div style=\"padding:8px 10px;border-radius:8px;margin-bottom:4px\">Entrantes</div>\n    <div style=\"padding:8px 10px;border-radius:8px;margin-bottom:4px\">Platos principales</div>\n    <div style=\"padding:8px 10px;border-radius:8px;margin-bottom:4px\">Postres</div>\n    <div style=\"padding:8px 10px;border-radius:8px\">Cafés</div>\n  </div>\n  <div slot=\"end\" style=\"padding:14px;font:14px/1.5 system-ui\">\n    <div style=\"font-weight:600;margin-bottom:10px\">Bebidas — 6 productos</div>\n    <div style=\"display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ion-border-color,#e0e0e0)\"><span>Agua mineral 50cl</span><strong>1,20 €</strong></div>\n    <div style=\"display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ion-border-color,#e0e0e0)\"><span>Refresco cola</span><strong>2,10 €</strong></div>\n    <div style=\"display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ion-border-color,#e0e0e0)\"><span>Cerveza tercio</span><strong>2,50 €</strong></div>\n    <div style=\"display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ion-border-color,#e0e0e0)\"><span>Zumo natural</span><strong>3,00 €</strong></div>\n    <div style=\"display:flex;justify-content:space-between;padding:8px 0\"><span>Vino copa</span><strong>3,50 €</strong></div>\n    <div style=\"margin-top:14px;font-size:12px;color:var(--ion-color-medium,#92949c)\">Arrastra el divisor para redimensionar</div>\n  </div>\n</ok-splitter>",
     code: "<ok-splitter orientation=\"horizontal\" size=\"38\" min=\"20\" max=\"70\">\n  <div slot=\"start\">Maestro</div>\n  <div slot=\"end\">Detalle</div>\n</ok-splitter>\nsplitter.addEventListener('ok-resize', e => console.log(e.detail.size)); // % del 1.er panel",
     api: [{"kind": "prop", "name": "orientation", "type": "'horizontal'|'vertical'", "detail": "Paneles lado a lado o apilados"}, {"kind": "prop", "name": "size", "type": "number", "detail": "Tamaño del primer panel en % (0-100)"}, {"kind": "prop", "name": "min", "type": "number", "detail": "Mínimo % del primer panel"}, {"kind": "prop", "name": "max", "type": "number", "detail": "Máximo % del primer panel"}, {"kind": "prop", "name": "collapsed", "type": "'none'|'start'|'end'", "detail": "Colapsa (oculta) un panel"}, {"kind": "event", "name": "ok-resize", "type": "CustomEvent<{size:number}>", "detail": "Emitido al redimensionar; detail.size = % del primer panel"}, {"kind": "slot", "name": "start · end", "type": "slot", "detail": "Contenido del primer y segundo panel"}],
@@ -2524,7 +2524,7 @@ cr.addEventListener('ok-cancel', () => console.log('recorte cancelado'));
     name: "ok-loyalty-card",
     category: "marketing",
     desc: "Tarjeta de socio/fidelización presentacional (formato apaisado, gradiente de marca, chip EMV en CSS): titular, número mono, puntos y badge de tier. Props: holder, number, points, points-label, brand, tier (silver|gold|platinum|brand), meta-label, meta-value, size. Sin eventos ni slots.",
-    importPath: "@outfitkit/core/ok-loyalty-card",
+    importPath: "@erplora/outfitkit/ok-loyalty-card",
     example: "<div style=\"display:flex;gap:1.25rem;flex-wrap:wrap;align-items:flex-start\">\n  <ok-loyalty-card\n    brand=\"ERPlora Club\"\n    holder=\"María López\"\n    number=\"6011 2354 8890 1247\"\n    points=\"12.480\"\n    points-label=\"Puntos acumulados\"\n    tier=\"gold\"\n    tier-label=\"Oro\"\n    meta-label=\"Socio desde\"\n    meta-value=\"03 / 22\"\n    size=\"md\"></ok-loyalty-card>\n  <ok-loyalty-card\n    brand=\"ERPlora Club\"\n    holder=\"Juan Pérez\"\n    number=\"6011 7781 0042 9930\"\n    points=\"48.910\"\n    points-label=\"Puntos acumulados\"\n    tier=\"platinum\"\n    tier-label=\"Platino\"\n    meta-label=\"Caduca\"\n    meta-value=\"12 / 26\"\n    size=\"md\"></ok-loyalty-card>\n</div>",
     code: "<ok-loyalty-card\n  brand=\"ERPlora Club\"\n  holder=\"María López\"\n  number=\"6011 2354 8890 1247\"\n  points=\"12.480\"\n  points-label=\"Puntos acumulados\"\n  tier=\"gold\"\n  tier-label=\"Oro\"\n  meta-label=\"Socio desde\"\n  meta-value=\"03 / 22\"\n  size=\"md\"></ok-loyalty-card>",
     api: [{"kind": "prop", "name": "brand · holder", "type": "string", "detail": "Marca/programa en la cabecera · nombre del titular"}, {"kind": "prop", "name": "number", "type": "string", "detail": "Número de socio/tarjeta (se renderiza en mono)"}, {"kind": "prop", "name": "points · points-label", "type": "string", "detail": "Valor de puntos (tal cual) · etiqueta bajo el valor (def. 'Reward points')"}, {"kind": "prop", "name": "tier · tier-label", "type": "silver|gold|platinum|brand · string", "detail": "Nivel visual (platinum anima un sheen) · texto del badge (def. tier capitalizado)"}, {"kind": "prop", "name": "meta-label · meta-value", "type": "string", "detail": "Etiqueta (def. 'Member since') · valor (alta/caducidad, ej. '03 / 24')"}, {"kind": "prop", "name": "size", "type": "sm|md|lg", "detail": "Tamaño de la tarjeta (md = 340x210)"}],
@@ -2534,7 +2534,7 @@ cr.addEventListener('ok-cancel', () => console.log('recorte cancelado'));
     name: "ok-event-card",
     category: "datos",
     desc: "Tarjeta de evento de calendario: bloque de fecha (día grande + mes) + título, hora y lugar con iconos inline, y pila de avatares solapados (+N). Props: title, date (ISO) o day/month, time, location, color, size, now (pulso \"en curso\"), max-avatars y .attendees. Sin eventos propios.",
-    importPath: "@outfitkit/core/ok-event-card",
+    importPath: "@erplora/outfitkit/ok-event-card",
     example: "<div style=\"display:flex;flex-direction:column;gap:.75rem;max-width:520px\">\n  <ok-event-card id=\"ev1\" now color=\"brand\" title=\"Reunión de equipo comercial\" date=\"2026-06-14\" time=\"09:30 – 10:15\" location=\"Sala Atlántico\"></ok-event-card>\n  <ok-event-card id=\"ev2\" color=\"leaf\" title=\"Inventario trimestral de almacén\" date=\"2026-06-18\" time=\"16:00\" location=\"Almacén central\" max-avatars=\"3\"></ok-event-card>\n  <ok-event-card id=\"ev3\" size=\"sm\" color=\"warn\" title=\"Cierre de caja\" date=\"2026-06-14\" time=\"22:00\"></ok-event-card>\n</div>",
     setup: (root, ctx) => {
 root.querySelector('#ev1').attendees = [
@@ -2559,7 +2559,7 @@ root.querySelector('#ev2').attendees = [
     name: "ok-avatar-group",
     category: "datos",
     desc: "Pila de avatares solapados (stack) presentacional: cada avatar muestra imagen o iniciales con tono de color, y colapsa el exceso en un globo \"+N\". Props: .avatars, max, size (xs/sm/md/lg), overlap. Sin eventos.",
-    importPath: "@outfitkit/core/ok-avatar-group",
+    importPath: "@erplora/outfitkit/ok-avatar-group",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;align-items:flex-start\">\n  <ok-avatar-group id=\"ag-lg\" size=\"lg\"></ok-avatar-group>\n  <ok-avatar-group id=\"ag-md\" size=\"md\" max=\"4\"></ok-avatar-group>\n  <ok-avatar-group id=\"ag-sm\" size=\"sm\" max=\"3\" overlap=\"12\"></ok-avatar-group>\n</div>",
     setup: (root, ctx) => {
 const equipo = [
@@ -2583,7 +2583,7 @@ root.querySelector('#ag-sm').avatars = equipo.slice(0, 5);
     name: "ok-org-chart",
     category: "datos",
     desc: "Organigrama jerárquico con render SVG vectorial: layout calculado (tidy-tree), conectores que cuadran centro-a-centro y nodos HTML (avatar imagen o iniciales del nombre, hover-lift, stack de avatares +N por tamaño de equipo). Como un organigrama no cabe a lo ancho, se navega con pan (arrastrar) + zoom (rueda/pinch + botones), centrar y «ajustar a pantalla»; cada rama se puede recoger/expandir. Recibe el árbol por la prop `.root`. Emite `ok-node-toggle`.",
-    importPath: "@outfitkit/core/ok-org-chart",
+    importPath: "@erplora/outfitkit/ok-org-chart",
     example: "<ok-org-chart id=\"org\" max-avatars=\"3\" height=\"460\"></ok-org-chart>",
     setup: (root, ctx) => {
 root.querySelector('#org').root = {
@@ -2628,7 +2628,7 @@ root.querySelector('#org').root = {
     name: "ok-file-manager",
     category: "datos",
     desc: "Gestor de archivos autocontenido: árbol de carpetas con contadores + medidor de espacio, breadcrumb, toolbar (búsqueda, cuadrícula/lista, subir), y rejilla/lista de ficheros con badge por tipo. Zona drag-and-drop de subida. Agnóstico al backend: solo renderiza y emite eventos (el Hub conecta disco local / S3 vía Cloud). Ej.: facturas recibidas y emitidas; los módulos definen su carpeta vía module.json.",
-    importPath: "@outfitkit/core/ok-file-manager",
+    importPath: "@erplora/outfitkit/ok-file-manager",
     example: "<ok-file-manager id=\"fm\" title=\"Archivos del Hub\" view=\"grid\" style=\"--ok-fm-height:520px\"></ok-file-manager>",
     setup: (root, ctx) => {
 const fm = root.querySelector('#fm');

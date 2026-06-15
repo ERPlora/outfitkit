@@ -1,4 +1,4 @@
-// Entry del bundle único de CDN (`@outfitkit/core/cdn` → dist/outfitkit.js). Importar este fichero
+// Entry del bundle único de CDN (`@erplora/outfitkit/cdn` → dist/outfitkit.js). Importar este fichero
 // auto-registra TODOS los componentes ok-*. Para una página de una vez (Django/landing/showcase)
 // con un solo <script type="module">. `lit` external → en CDN sirve un import-map para "lit".
 

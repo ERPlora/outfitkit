@@ -1,6 +1,6 @@
 # Contribuir a OutfitKit
 
-Gracias por tu interés en OutfitKit (`@outfitkit/core`). Este documento describe cómo trabajamos y
+Gracias por tu interés en OutfitKit (`@erplora/outfitkit`). Este documento describe cómo trabajamos y
 las reglas que todo cambio debe respetar. La referencia técnica detallada de la API está en
 [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
 

@@ -1,13 +1,13 @@
 name: Publish Package
 
-# Publica @outfitkit/core en npm vía Trusted Publishing (OIDC) — SIN token ni secret.
+# Publica @erplora/outfitkit en npm vía Trusted Publishing (OIDC) — SIN token ni secret.
 # npm y GitHub establecen una relación de confianza; en cada publish se genera un token
 # efímero, firmado y específico de este workflow. Como bonus, en repo público npm genera
 # provenance automáticamente.
 #
 # Requisito (npmjs, una sola vez): configurar el Trusted Publisher en la página del
 # paquete con  org/usuario=ERPlora · repo=outfitkit · workflow=publish.yml.
-# El scope @outfitkit debe existir como usuario/org en npmjs.
+# El scope @erplora ya existe como org en npmjs (el publicador es owner).
 #
 # Disparador: push de tag `v*` (lo crea `npm run release` / release-it). El gate replica
 # el CI: build + typecheck + verify:csp.
@@ -67,9 +67,9 @@ jobs:
         id: check
         run: |
           PKG_VERSION="$(node -p "require('./package.json').version")"
-          if npm view "@outfitkit/core@$PKG_VERSION" version >/dev/null 2>&1; then
+          if npm view "@erplora/outfitkit@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::@outfitkit/core@$PKG_VERSION ya está publicada; no se republica."
+            echo "::notice::@erplora/outfitkit@$PKG_VERSION ya está publicada; no se republica."
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi

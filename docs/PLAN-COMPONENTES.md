@@ -57,7 +57,7 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
   consumidor **no** importa Tailwind para usar el componente.
 - **Convención responsive**: por defecto cada componente ocupa el **ancho máximo de su contenedor**
   (block, width 100%) y es responsive (desktop + móvil).
-- Mantener: **`ok-data-table`** (en curso), el **store** (`@outfitkit/core/store`), y el **chrome
+- Mantener: **`ok-data-table`** (en curso), el **store** (`@erplora/outfitkit/store`), y el **chrome
   web/marketing** (navbar, footer, hero, container, contact-form).
 
 ---

@@ -1,6 +1,6 @@
-// @outfitkit/core — barrel. Importar este módulo registra TODOS los componentes ok-* y re-exporta
+// @erplora/outfitkit — barrel. Importar este módulo registra TODOS los componentes ok-* y re-exporta
 // sus clases y tipos. Para tree-shake real, importa el componente concreto:
-//   import '@outfitkit/core/ok-tree';
+//   import '@erplora/outfitkit/ok-tree';
 
 // ── Estado (store reactivo + IndexedDB) ───────────────────────────────────────────────────
 export { createStore, store } from './store/store.js';
