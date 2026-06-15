@@ -26,17 +26,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node 24 (registro npmjs)
-        uses: actions/setup-node@v4
+      # setup-node@v6 es consciente de OIDC (Trusted Publishing). v4/v5 inyectaban un
+      # .npmrc con `_authToken=${NODE_AUTH_TOKEN}` placeholder que rompía el OIDC → 404.
+      # Node 24 trae npm >= 11.5.1 (requisito de OIDC). Config oficial de npm docs.
+      - name: Setup Node 24
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-
-      # OIDC/Trusted Publishing exige npm >= 11.5.1 (el de Node 24 puede ser anterior).
-      - name: Update npm (>= 11.5.1 para OIDC)
-        run: npm install -g npm@latest
+          package-manager-cache: false
 
       # No hay package-lock.json en el repo (mismo patrón que ci.yml).
       - name: Install dependencies
