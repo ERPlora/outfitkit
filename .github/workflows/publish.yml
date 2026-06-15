@@ -1,16 +1,16 @@
-name: Release npm
+name: Publish Package
 
-# Publica @outfitkit/core en npm (registro público npmjs, --access public).
+# Publica @outfitkit/core en npm vía Trusted Publishing (OIDC) — SIN token ni secret.
+# npm y GitHub establecen una relación de confianza; en cada publish se genera un token
+# efímero, firmado y específico de este workflow. Como bonus, en repo público npm genera
+# provenance automáticamente.
 #
-# Disparadores:
-#   - push de tag `v*` (p.ej. v0.1.0) — la versión del tag DEBE coincidir con package.json
-#   - workflow_dispatch (manual, para re-lanzar una publicación)
+# Requisito (npmjs, una sola vez): configurar el Trusted Publisher en la página del
+# paquete con  org/usuario=ERPlora · repo=outfitkit · workflow=publish.yml.
+# El scope @outfitkit debe existir como usuario/org en npmjs.
 #
-# Requiere el secreto NPM_TOKEN (token "Automation" de npmjs con permiso de publish
-# sobre el scope @outfitkit). Sin él, el job de publish falla en la autenticación.
-#
-# El gate previo replica el CI: build + typecheck + verify:csp (la CSP estricta de
-# Cloud/Hub exige dist sin eval/new Function).
+# Disparador: push de tag `v*` (lo crea `npm run release` / release-it). El gate replica
+# el CI: build + typecheck + verify:csp.
 
 on:
   push:
@@ -18,6 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  id-token: write   # OBLIGATORIO para OIDC (Trusted Publishing)
   contents: read
 
 jobs:
@@ -27,15 +28,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 20 (registro npmjs)
+      - name: Setup Node 24 (registro npmjs)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
-      # No hay package-lock.json en el repo: mismo patrón que ci.yml/pages.yml.
+      # OIDC/Trusted Publishing exige npm >= 11.5.1 (el de Node 24 puede ser anterior).
+      - name: Update npm (>= 11.5.1 para OIDC)
+        run: npm install -g npm@latest
+
+      # No hay package-lock.json en el repo (mismo patrón que ci.yml).
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
 
       - name: Build (vite + tsc declarations)
         run: npm run build
@@ -46,8 +51,7 @@ jobs:
       - name: Verify CSP (sin eval / new Function en dist)
         run: npm run verify:csp
 
-      # En releases por tag, la versión del tag debe coincidir con package.json
-      # (evita publicar una versión que no es la que dice el tag).
+      # En releases por tag, la versión del tag debe coincidir con package.json.
       - name: Check tag == package.json version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -58,7 +62,7 @@ jobs:
             exit 1
           fi
 
-      # No re-publicar una versión ya existente (npm lo rechazaría con error).
+      # No re-publicar una versión ya existente (npm la rechazaría con error).
       - name: Skip if version already published
         id: check
         run: |
@@ -70,8 +74,7 @@ jobs:
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish to npm
+      # Sin NODE_AUTH_TOKEN: npm detecta el entorno OIDC y se autentica solo.
+      - name: Publish to npm (OIDC, sin token)
         if: steps.check.outputs.published == 'false'
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
