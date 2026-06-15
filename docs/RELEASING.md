@@ -5,22 +5,34 @@ los módulos— instalan una versión publicada (`@outfitkit/core@^x.y.z`), no e
 *bundler* (Vite en el Hub, el vendor script en Cloud) la hornea same-origin, así que **npm es
 build-time, no runtime**: no rompe la CSP estricta (`script-src 'self'`) ni el modo offline.
 
-## Quién publica
+## Quién publica: Trusted Publishing (OIDC), sin token
 
-El **publish lo hace GitHub Actions**, no tu portátil. El token de npm vive solo como secreto del
-repo (`NPM_TOKEN`); nunca en local. Tú solo cortas la *release* (bump + tag + push) y la Action se
-encarga del resto.
+El **publish lo hace GitHub Actions** vía **Trusted Publishing con OIDC** — **no hay token ni
+secret**. npm y GitHub establecen una relación de confianza; en cada publicación se genera un
+token efímero, firmado y específico de este workflow, que no se puede extraer ni reutilizar. En
+repo público, npm genera **provenance** automáticamente (prueba criptográfica de origen del build).
 
-## Prerrequisitos (una sola vez)
+Tú solo cortas la *release* (bump + tag + push); la Action publica sola.
 
-1. **Org `outfitkit` en npmjs.** Un paquete con scope `@outfitkit/*` solo se publica si existe la
-   organización `outfitkit` en npmjs (o si `outfitkit` fuese tu usuario). Créala en
-   npmjs.com → *Add Organization* (plan Free).
-2. **Secreto `NPM_TOKEN`** en el repo, tipo *Automation* (permiso publish sobre `@outfitkit`):
-   ```sh
-   # npmjs.com → perfil → Access Tokens → Generate New Token → Automation
-   gh secret set NPM_TOKEN -R ERPlora/outfitkit
-   ```
+## Prerrequisitos (una sola vez, en npmjs — columna del humano)
+
+1. **Scope `@outfitkit`.** Un paquete `@outfitkit/*` solo se publica si existe el usuario/org
+   `outfitkit` en npmjs. Crea la organización (plan Free) si no la tienes.
+2. **Trusted Publisher** en la página del paquete: npmjs.com → Packages → `@outfitkit/core` →
+   *Settings* → *Trusted Publisher* → GitHub Actions:
+   - Organization or user: `ERPlora`
+   - Repository: `outfitkit`
+   - Workflow filename: `publish.yml`  *(solo el nombre, no la ruta)*
+   - Environment name: *(vacío)*
+   - Allowed actions: `npm publish`
+
+   ⚠️ npm **no valida** estos datos al guardar: si org/repo/workflow no son exactos, el publish
+   falla. ⚠️ El paquete debe existir para configurar su Trusted Publisher; si npm no deja
+   configurarlo antes del primer publish, haz **un publish inicial manual** (`npm login` +
+   `npm publish --access public`) y luego activa OIDC para las siguientes releases.
+3. *(Recomendado, tras validar OIDC)* En *Settings → Publishing access* del paquete marca
+   **"Require two-factor authentication and disallow tokens"**: OIDC sigue funcionando aunque
+   deshabilites los tokens, y cierras esa vía.
 
 ## Cortar una release
 
@@ -36,12 +48,12 @@ npm run release      # release-it: pregunta el bump (patch/minor/major)
 4. crea el tag anotado `vX.Y.Z` y hace `push` del commit + el tag.
 
 El `push` del tag `v*` dispara
-[`.github/workflows/release.yml`](../.github/workflows/release.yml), que repite el gate
+[`.github/workflows/publish.yml`](../.github/workflows/publish.yml), que repite el gate
 (build/typecheck/csp), comprueba `tag == package.json.version`, **no republica** si la versión ya
-existe, y hace `npm publish --access public` con `NPM_TOKEN`.
+existe, y hace `npm publish --access public` autenticándose por **OIDC** (sin token).
 
 `release-it` tiene `npm.publish: false` a propósito: **no** publica desde local; deja que la Action
-publique con el token del servidor.
+publique con la confianza OIDC del servidor.
 
 ## Verificar
 
