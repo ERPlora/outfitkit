@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/release-it/schema/release-it.json",
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "OutfitKit v${version}",
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
+    "push": true
+  },
+  "npm": {
+    "publish": false
+  },
+  "github": {
+    "release": false
+  },
+  "hooks": {
+    "before:init": ["npm run build", "npm run typecheck", "npm run verify:csp"]
+  }
+}

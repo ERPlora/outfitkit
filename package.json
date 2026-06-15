@@ -133,7 +133,8 @@
     "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "verify:csp": "node scripts/assert-csp-safe.mjs dist"
+    "verify:csp": "node scripts/assert-csp-safe.mjs dist",
+    "release": "npx --yes release-it"
   },
   "dependencies": {
     "lit": "^3.2.0"
