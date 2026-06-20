@@ -100,13 +100,8 @@
                       value="ghp_AbCdE1234567890XyZqRsTuVw9876543210"
                       fill="outline"
                       helper-text="Scopes requeridos: repo, admin:repo_hook">
+                        <ion-input-password-toggle slot="end"></ion-input-password-toggle>
                     </ion-input>
-                    <div style="margin-top:4px">
-                      <ion-button id="btn-toggle-pat" fill="clear" size="small">
-                        <ion-icon id="pat-eye-icon" slot="start" name="eye-outline"></ion-icon>
-                        <span id="pat-eye-label">Mostrar</span>
-                      </ion-button>
-                    </div>
                   </div>
                   <ion-select
                     label="Branch por defecto"
@@ -296,21 +291,6 @@
             s.present();
             s.addEventListener('didDismiss', () => s.remove());
           });
-
-          // ── PAT toggle (mostrar/ocultar) ──
-          const patInput = doc.getElementById('pat-input');
-          const patBtn = doc.getElementById('btn-toggle-pat');
-          const patEye = doc.getElementById('pat-eye-icon');
-          const patLabel = doc.getElementById('pat-eye-label');
-          let patVisible = false;
-          if (patBtn) {
-            patBtn.addEventListener('click', () => {
-              patVisible = !patVisible;
-              if (patInput) patInput.type = patVisible ? 'text' : 'password';
-              if (patEye) patEye.setAttribute('name', patVisible ? 'eye-off-outline' : 'eye-outline');
-              if (patLabel) patLabel.textContent = patVisible ? 'Ocultar' : 'Mostrar';
-            });
-          }
         },
       });
     </script>

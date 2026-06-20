@@ -123,24 +123,6 @@
         margin-top: 2px;
       }
 
-      /* Campo de contraseña con ojito */
-      .ui-pwd-wrap {
-        position: relative;
-      }
-      .ui-pwd-toggle {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: 0;
-        cursor: pointer;
-        color: var(--ion-color-medium);
-        padding: 4px;
-        display: flex;
-        align-items: center;
-      }
-
       /* Campos del formulario de confirmación */
       .ui-confirm-fields {
         display: flex;
@@ -334,19 +316,15 @@
                   <!-- Contraseña -->
                   <div>
                     <label class="ui-field-label ui-field-label--req" for="input-pwd">Tu contraseña</label>
-                    <div class="ui-pwd-wrap">
-                      <ion-input
-                        id="input-pwd"
-                        type="password"
-                        fill="outline"
-                        placeholder="Contraseña actual"
-                        autocomplete="current-password"
-                        aria-label="Contraseña actual">
-                      </ion-input>
-                      <button class="ui-pwd-toggle" type="button" id="btn-show-pwd" aria-label="Mostrar u ocultar contraseña">
-                        <ion-icon name="eye-outline" id="icon-pwd"></ion-icon>
-                      </button>
-                    </div>
+                    <ion-input
+                      id="input-pwd"
+                      type="password"
+                      fill="outline"
+                      placeholder="Contraseña actual"
+                      autocomplete="current-password"
+                      aria-label="Contraseña actual">
+                      <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+                    </ion-input>
                     <small class="ui-field-hint">Verificamos tu identidad antes de eliminar nada.</small>
                   </div>
 
@@ -401,7 +379,6 @@
           const state = {
             pwd: '',
             confirm: '',
-            showPwd: false,
           };
 
           const PHRASE = 'ELIMINAR MI CUENTA';
@@ -409,8 +386,6 @@
           const inputPwd = doc.getElementById('input-pwd');
           const inputConfirm = doc.getElementById('input-confirm');
           const btnDelete = doc.getElementById('btn-delete');
-          const btnShowPwd = doc.getElementById('btn-show-pwd');
-          const iconPwd = doc.getElementById('icon-pwd');
           const confirmOk = doc.getElementById('confirm-ok');
 
           // Recalcular estado del botón de eliminar
@@ -443,17 +418,6 @@
             inputConfirm.addEventListener('ionInput', (e) => {
               state.confirm = (e.detail && e.detail.value) || '';
               recompute();
-            });
-          }
-
-          // Toggle mostrar/ocultar contraseña
-          if (btnShowPwd && inputPwd) {
-            btnShowPwd.addEventListener('click', () => {
-              state.showPwd = !state.showPwd;
-              inputPwd.type = state.showPwd ? 'text' : 'password';
-              if (iconPwd) {
-                iconPwd.setAttribute('name', state.showPwd ? 'eye-off-outline' : 'eye-outline');
-              }
             });
           }
 

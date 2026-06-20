@@ -306,9 +306,7 @@
                       placeholder="••••••••"
                       autocomplete="current-password"
                       required>
-                      <ion-button slot="end" fill="clear" id="btn-toggle-password" aria-label="Ver/ocultar contraseña">
-                        <ion-icon slot="icon-only" name="eye-outline" id="pw-eye-icon"></ion-icon>
-                      </ion-button>
+                        <ion-input-password-toggle slot="end"></ion-input-password-toggle>
                     </ion-input>
 
                     <div class="hub-trust-row">
@@ -391,7 +389,6 @@
             selectedEmployee: null, // objeto Employee o null
             pinValue: '',
             pinError: false,
-            pwVisible: false,
             cloudLoading: false,
             deviceTrusted: false,   // true tras PIN setup o si dispositivo es de confianza
             // setup PIN (modal)
@@ -415,9 +412,6 @@
           const btnBack        = doc.getElementById('btn-back-employees');
           const btnUseCloud    = doc.getElementById('btn-use-cloud');
           const employeesFoot  = doc.getElementById('employees-foot');
-          const cloudPasswordEl= doc.getElementById('cloud-password');
-          const pwEyeIcon      = doc.getElementById('pw-eye-icon');
-          const btnTogglePw    = doc.getElementById('btn-toggle-password');
           const btnCloudLogin  = doc.getElementById('btn-cloud-login');
           const btnTrustInfo   = doc.getElementById('btn-trust-info');
           const modalTrustInfo = doc.getElementById('modal-trust-info');
@@ -541,19 +535,6 @@
                   refreshDots(pinDotsEl, '', false, false);
                   if (pinErrorEl) pinErrorEl.hidden = true;
                 }, 900);
-              }
-            });
-          }
-
-          /* ── Ver/ocultar contraseña ───────────────────────────────────── */
-          if (btnTogglePw) {
-            btnTogglePw.addEventListener('click', () => {
-              state.pwVisible = !state.pwVisible;
-              if (cloudPasswordEl) {
-                cloudPasswordEl.setAttribute('type', state.pwVisible ? 'text' : 'password');
-              }
-              if (pwEyeIcon) {
-                pwEyeIcon.setAttribute('name', state.pwVisible ? 'eye-off-outline' : 'eye-outline');
               }
             });
           }
