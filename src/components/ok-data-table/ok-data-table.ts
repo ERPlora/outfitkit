@@ -22,6 +22,22 @@ import { define } from '../../base/define.js';
 //    `pageChange`/`sortChange`/`searchChange`/`filterChange`; el módulo re-consulta al runtime.
 //
 // Filas NO clicables (navegación vía botones de fila): se pasan `actions` y se escucha `rowAction`.
+//
+// ─── ORDEN DE LA TOOLBAR (convención FIJA — así hay que usarla) ────────────────────────────────
+// Los controles se colocan SIEMPRE en el mismo orden, de izquierda a derecha. El consumidor solo
+// los ACTIVA/DESACTIVA vía props; NO reordena (el layout es fijo para que TODAS las tablas —Cloud,
+// Hub y módulos— se vean igual):
+//   1) BUSCADOR            (al inicio)   → `searchable` / `searchKeys`
+//   2) FILTROS EN LÍNEA    (en medio)    → `inlineFilters` (selects / rango de fechas)
+//   3) ‹spacer flexible›                 → empuja el cluster derecho al borde (se oculta al envolver)
+//   4) SELECTORES          columnas → filas/página   → `columnPicker` (def. ON), `pageSizeOptions`
+//   5) BOTONES DE ACCIÓN   (al final)    → vistas (`views`), filtros (funnel, si `filterable`),
+//                                          import/export CSV (`csv`), alta (`addable`),
+//                                          menú ⋮ (`menuActions`), acción primaria (`primaryAction`)
+// Es decir: BUSCAR al inicio · FILTROS en medio · SELECTORES (columnas, luego «N por página») y
+// BOTONES al final. Si cambias este orden, cámbialo aquí (en el render) para que siga aplicando a
+// TODOS los consumidores a la vez — nunca por vista.
+// ───────────────────────────────────────────────────────────────────────────────────────────────
 
 export interface DataTableColumn {
   /** Clave del campo en la fila (o id lógico si se usa `format`). */
