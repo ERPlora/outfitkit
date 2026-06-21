@@ -76,39 +76,14 @@
         margin-bottom: 20px;
       }
 
-      /* Panel de empleados — rejilla autoresponsiva. */
+      /* Panel de empleados — rejilla de ion-card (solo geometría; el resto lo da Ionic). */
       .hub-employees {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 12px;
       }
-      .hub-employee {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        padding: 16px 12px;
-        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 12px;
-        cursor: pointer;
-        background: var(--ion-item-background, var(--ion-background-color));
-        transition: border-color .15s, transform .15s;
-      }
-      .hub-employee:hover {
-        border-color: var(--ion-color-primary);
-        transform: translateY(-2px);
-      }
-      .hub-employee__name {
-        font-size: 13px;
-        font-weight: 500;
-        text-align: center;
-        color: var(--ion-text-color);
-      }
-      /* La etiqueta de rol se renderiza como ok-status-pill neutral */
-      .hub-employee__role {
-        font-size: 11px;
-        color: var(--ion-color-medium);
-      }
+      .hub-employees ion-card { margin: 0; }
+      .hub-employee__name { margin: 8px 0 4px; font-size: 13px; font-weight: 600; }
 
       /* Separador de acción secundaria bajo la rejilla. */
       .hub-employees-foot {
@@ -133,33 +108,6 @@
         font-size: 14px;
         color: var(--ion-color-medium);
         margin: 0;
-      }
-
-      /* Dots indicadores del PIN (4 círculos). */
-      .hub-pin-dots {
-        display: flex;
-        gap: 14px;
-        margin: 4px 0;
-      }
-      .hub-pin-dot {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: transparent;
-        border: 1.5px solid var(--ion-color-medium);
-        transition: background .1s, border-color .1s;
-      }
-      .hub-pin-dot.filled {
-        background: var(--ion-color-primary);
-        border-color: var(--ion-color-primary);
-      }
-      .hub-pin-dot.error {
-        background: var(--ion-color-danger);
-        border-color: var(--ion-color-danger);
-      }
-      .hub-pin-dot.success {
-        background: var(--ion-color-success);
-        border-color: var(--ion-color-success);
       }
 
       /* Mensajes de error/confirmación bajo los dots. */
@@ -204,7 +152,6 @@
   <body>
     <script type="module">
       import { definePage } from './_page.js';
-      import { html as h } from 'lit';
 
       /* ── Datos de empleados ────────────────────────────────────────────────── */
       const EMPLOYEES = [
@@ -265,20 +212,17 @@
                     <h2 class="hub-pinpad-name" id="pin-name">Joan Castell</h2>
                     <p class="hub-pinpad-hint">Introduce tu PIN</p>
 
-                    <div class="hub-pin-dots" id="pin-dots">
-                      <div class="hub-pin-dot" data-idx="0"></div>
-                      <div class="hub-pin-dot" data-idx="1"></div>
-                      <div class="hub-pin-dot" data-idx="2"></div>
-                      <div class="hub-pin-dot" data-idx="3"></div>
-                    </div>
+                    <!-- ok-pinpad: pantalla (4 círculos), teclado y tecla «cambiar usuario»
+                         (flecha a la izquierda del 0, borrado a la derecha). Todo el PIN
+                         lo gestiona el componente — sin dots a mano. -->
+                    <ok-pinpad
+                      id="main-pinpad"
+                      dots
+                      length="4"
+                      secondary-icon="arrow-back-outline"
+                      secondary-label="Cambiar usuario">
+                    </ok-pinpad>
                     <p class="hub-pin-msg hub-pin-msg--error" id="pin-error" hidden>PIN incorrecto</p>
-
-                    <ok-pinpad id="main-pinpad" masked length="4"></ok-pinpad>
-
-                    <ion-button id="btn-back-employees" fill="clear" size="small">
-                      <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
-                      Cambiar usuario
-                    </ion-button>
                   </div>
                 </div>
 
@@ -341,16 +285,9 @@
               <p style="margin:0;font-size:14px;color:var(--ion-color-medium);">Bienvenido, Joan Castell · Crea un PIN de 4 dígitos</p>
             </div>
 
-            <div class="hub-pin-dots" id="setup-dots">
-              <div class="hub-pin-dot" data-idx="0"></div>
-              <div class="hub-pin-dot" data-idx="1"></div>
-              <div class="hub-pin-dot" data-idx="2"></div>
-              <div class="hub-pin-dot" data-idx="3"></div>
-            </div>
+            <ok-pinpad id="setup-pinpad" dots length="4"></ok-pinpad>
             <p class="hub-pin-msg hub-pin-msg--confirm" id="setup-confirm-msg" hidden>Confirma tu PIN</p>
             <p class="hub-pin-msg hub-pin-msg--error" id="setup-error-msg" hidden>Los PINs no coinciden</p>
-
-            <ok-pinpad id="setup-pinpad" masked length="4"></ok-pinpad>
           </div>
         </ion-modal>
 
@@ -404,12 +341,10 @@
           const panelPin       = doc.getElementById('panel-pin');
           const panelCloud     = doc.getElementById('panel-cloud');
           const employeeGrid   = doc.getElementById('employee-grid');
-          const pinDotsEl      = doc.querySelectorAll('#pin-dots .hub-pin-dot');
           const pinErrorEl     = doc.getElementById('pin-error');
           const pinAvatarEl    = doc.getElementById('pin-avatar');
           const pinNameEl      = doc.getElementById('pin-name');
           const mainPinpad     = doc.getElementById('main-pinpad');
-          const btnBack        = doc.getElementById('btn-back-employees');
           const btnUseCloud    = doc.getElementById('btn-use-cloud');
           const employeesFoot  = doc.getElementById('employees-foot');
           const btnCloudLogin  = doc.getElementById('btn-cloud-login');
@@ -418,7 +353,6 @@
           const btnCloseTrust  = doc.getElementById('btn-close-trust-info');
           const btnTrustEntend = doc.getElementById('btn-trust-entendido');
           const modalPinSetup  = doc.getElementById('modal-pin-setup');
-          const setupDotsEl    = doc.querySelectorAll('#setup-dots .hub-pin-dot');
           const setupConfirmMsg= doc.getElementById('setup-confirm-msg');
           const setupErrorMsg  = doc.getElementById('setup-error-msg');
           const setupPinpad    = doc.getElementById('setup-pinpad');
@@ -440,31 +374,21 @@
             panelCloud.hidden     = !(mode === 'cloud');
           };
 
-          /* ── Dots del PIN principal ───────────────────────────────────── */
-          const refreshDots = (dotsNodeList, value, error, success) => {
-            dotsNodeList.forEach((dot, i) => {
-              dot.classList.toggle('filled',  !error && !success && i < value.length);
-              dot.classList.toggle('error',    error);
-              dot.classList.toggle('success',  success && i < value.length);
-            });
-          };
-
-          /* ── Rejilla de empleados ─────────────────────────────────────── */
+          /* ── Rejilla de empleados (ion-card clicable) ─────────────────── */
           EMPLOYEES.forEach((emp) => {
-            const card = doc.createElement('div');
-            card.className = 'hub-employee';
+            const card = doc.createElement('ion-card');
+            card.setAttribute('button', '');
             card.innerHTML = `
-              <ok-avatar name="${emp.name}" size="lg"></ok-avatar>
-              <span class="hub-employee__name">${emp.name}</span>
-              <ok-status-pill tone="neutral" label="${emp.role}" size="sm"></ok-status-pill>`;
+              <ion-card-content class="ion-text-center">
+                <ok-avatar name="${emp.name}" size="lg"></ok-avatar>
+                <p class="hub-employee__name">${emp.name}</p>
+                <ok-status-pill tone="neutral" label="${emp.role}" size="sm"></ok-status-pill>
+              </ion-card-content>`;
             card.addEventListener('click', () => {
               state.selectedEmployee = emp;
-              state.pinValue = '';
-              state.pinError = false;
-              mainPinpad.value = '';
+              if (mainPinpad) { mainPinpad.value = ''; mainPinpad.error = false; }
               if (pinAvatarEl) pinAvatarEl.setAttribute('name', emp.name);
               if (pinNameEl)   pinNameEl.textContent = emp.name;
-              refreshDots(pinDotsEl, '', false, false);
               if (pinErrorEl) pinErrorEl.hidden = true;
               showPanels(state.mode, true);
             });
@@ -476,10 +400,7 @@
             modeSegment.addEventListener('ionChange', (e) => {
               state.mode = (e.detail && e.detail.value) || 'cloud';
               state.selectedEmployee = null;
-              state.pinValue = '';
-              state.pinError = false;
-              if (mainPinpad) mainPinpad.value = '';
-              refreshDots(pinDotsEl, '', false, false);
+              if (mainPinpad) { mainPinpad.value = ''; mainPinpad.error = false; }
               if (pinErrorEl) pinErrorEl.hidden = true;
               showPanels(state.mode, false);
             });
@@ -495,59 +416,40 @@
             });
           }
 
-          /* ── "Cambiar usuario" (bajo pinpad) ──────────────────────────── */
-          if (btnBack) {
-            btnBack.addEventListener('click', () => {
+          /* ── ok-pinpad principal (modo PIN) — el componente pinta los círculos ── */
+          if (mainPinpad) {
+            // Tecla secundaria (flecha atrás, a la izquierda del 0) → «cambiar usuario».
+            mainPinpad.addEventListener('ok-secondary', () => {
               state.selectedEmployee = null;
-              state.pinValue = '';
-              state.pinError = false;
-              if (mainPinpad) mainPinpad.value = '';
-              refreshDots(pinDotsEl, '', false, false);
+              mainPinpad.value = '';
+              mainPinpad.error = false;
               if (pinErrorEl) pinErrorEl.hidden = true;
               showPanels('local', false);
             });
-          }
-
-          /* ── ok-pinpad principal (modo PIN) ──────────────────────────── */
-          if (mainPinpad) {
-            mainPinpad.addEventListener('ok-input', (e) => {
-              state.pinValue = (e.detail && e.detail.value) || '';
-              state.pinError = false;
+            mainPinpad.addEventListener('ok-input', () => {
+              mainPinpad.error = false;
               if (pinErrorEl) pinErrorEl.hidden = true;
-              refreshDots(pinDotsEl, state.pinValue, false, false);
             });
             mainPinpad.addEventListener('ok-complete', (e) => {
-              // Simulación: PIN 1234 correcto; cualquier otro → error
+              // Simulación: PIN 1234 correcto; cualquier otro → error.
               const pin = (e.detail && e.detail.value) || '';
-              if (pin === '1234') {
-                refreshDots(pinDotsEl, pin, false, true);
-                // Simula primer login → abrir modal de configuración de PIN (en un caso real,
-                // solo aparecería si el servidor indica que no hay PIN configurado).
-              } else {
-                state.pinError = true;
-                if (pinErrorEl) pinErrorEl.hidden = false;
-                refreshDots(pinDotsEl, pin, true, false);
-                // Limpia tras breve pausa para reintentar.
-                setTimeout(() => {
-                  if (mainPinpad) mainPinpad.value = '';
-                  state.pinValue = '';
-                  state.pinError = false;
-                  refreshDots(pinDotsEl, '', false, false);
-                  if (pinErrorEl) pinErrorEl.hidden = true;
-                }, 900);
-              }
+              if (pin === '1234') return; // en real: navegar al POS / abrir setup
+              mainPinpad.error = true;
+              if (pinErrorEl) pinErrorEl.hidden = false;
+              setTimeout(() => {
+                mainPinpad.value = '';
+                mainPinpad.error = false;
+                if (pinErrorEl) pinErrorEl.hidden = true;
+              }, 900);
             });
           }
 
           /* ── Botón "Iniciar sesión" (Cloud) ──────────────────────────── */
           if (btnCloudLogin) {
             btnCloudLogin.addEventListener('click', () => {
-              state.cloudLoading = true;
               btnCloudLogin.disabled = true;
               btnCloudLogin.textContent = 'Entrando…';
-              // Simulación: tras 1.2 s abrir modal de setup de PIN (primer login).
               setTimeout(() => {
-                state.cloudLoading = false;
                 btnCloudLogin.disabled = false;
                 btnCloudLogin.textContent = 'Iniciar sesión';
                 if (modalPinSetup) modalPinSetup.present();
@@ -556,31 +458,15 @@
           }
 
           /* ── Modal: info sobre confiar en dispositivo ─────────────────── */
-          if (btnTrustInfo) {
-            btnTrustInfo.addEventListener('click', () => {
-              if (modalTrustInfo) modalTrustInfo.present();
-            });
-          }
-          if (btnCloseTrust) {
-            btnCloseTrust.addEventListener('click', () => {
-              if (modalTrustInfo) modalTrustInfo.dismiss();
-            });
-          }
-          if (btnTrustEntend) {
-            btnTrustEntend.addEventListener('click', () => {
-              if (modalTrustInfo) modalTrustInfo.dismiss();
-            });
-          }
+          if (btnTrustInfo)   btnTrustInfo.addEventListener('click', () => modalTrustInfo && modalTrustInfo.present());
+          if (btnCloseTrust)  btnCloseTrust.addEventListener('click', () => modalTrustInfo && modalTrustInfo.dismiss());
+          if (btnTrustEntend) btnTrustEntend.addEventListener('click', () => modalTrustInfo && modalTrustInfo.dismiss());
 
           /* ── Modal: configurar PIN (ok-pinpad del setup) ─────────────── */
           if (setupPinpad) {
-            setupPinpad.addEventListener('ok-input', (e) => {
-              const val = (e.detail && e.detail.value) || '';
-              state.setupPinValue = val;
-              state.setupPinError = false;
+            setupPinpad.addEventListener('ok-input', () => {
+              setupPinpad.error = false;
               if (setupErrorMsg) setupErrorMsg.hidden = true;
-              const isConfirmPhase = state.setupPhase === 2;
-              refreshDots(setupDotsEl, val, false, isConfirmPhase && val.length > 0);
             });
             setupPinpad.addEventListener('ok-complete', (e) => {
               const pin = (e.detail && e.detail.value) || '';
@@ -589,36 +475,25 @@
                 state.setupPin1 = pin;
                 state.setupPhase = 2;
                 setupPinpad.value = '';
-                state.setupPinValue = '';
-                refreshDots(setupDotsEl, '', false, false);
                 if (setupConfirmMsg) setupConfirmMsg.hidden = false;
+              } else if (pin === state.setupPin1) {
+                // Coinciden: cerrar y marcar dispositivo de confianza.
+                if (modalPinSetup) modalPinSetup.dismiss();
+                state.setupPhase = 1; state.setupPin1 = '';
+                state.deviceTrusted = true;
+                if (employeesFoot) employeesFoot.hidden = false;
+                if (setupConfirmMsg) setupConfirmMsg.hidden = true;
               } else {
-                // Fase 2: comparar con el primero.
-                if (pin === state.setupPin1) {
-                  // PINs coinciden: cerrar modal y marcar dispositivo como de confianza.
-                  if (modalPinSetup) modalPinSetup.dismiss();
-                  state.setupPhase = 1;
-                  state.setupPin1 = '';
-                  state.deviceTrusted = true;
-                  if (employeesFoot) employeesFoot.hidden = false;
+                // No coinciden: error y volver a fase 1.
+                setupPinpad.error = true;
+                if (setupErrorMsg) setupErrorMsg.hidden = false;
+                setTimeout(() => {
+                  state.setupPhase = 1; state.setupPin1 = '';
+                  setupPinpad.value = '';
+                  setupPinpad.error = false;
+                  if (setupErrorMsg) setupErrorMsg.hidden = true;
                   if (setupConfirmMsg) setupConfirmMsg.hidden = true;
-                  refreshDots(setupDotsEl, '', false, false);
-                } else {
-                  // No coinciden: mostrar error y volver a fase 1.
-                  state.setupPinError = true;
-                  if (setupErrorMsg) setupErrorMsg.hidden = false;
-                  refreshDots(setupDotsEl, pin, true, false);
-                  setTimeout(() => {
-                    state.setupPhase = 1;
-                    state.setupPin1 = '';
-                    setupPinpad.value = '';
-                    state.setupPinValue = '';
-                    state.setupPinError = false;
-                    if (setupErrorMsg) setupErrorMsg.hidden = true;
-                    if (setupConfirmMsg) setupConfirmMsg.hidden = true;
-                    refreshDots(setupDotsEl, '', false, false);
-                  }, 900);
-                }
+                }, 900);
               }
             });
           }
