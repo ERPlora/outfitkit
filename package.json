@@ -1,6 +1,6 @@
 {
   "name": "@erplora/outfitkit",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "OutfitKit — librería de Web Components (Lit) que CONSTRUYE lo que Ionic no tiene (tree, data-table rica, inline-feedback, kpi/stat, stepper/wizard, calendar, kanban…) sobre primitivos de Ionic. Ionic es la base; OutfitKit cubre los huecos. npm + CDN, imports individuales, CSP-safe. Tema vía tokens --ok-* (fallback a --ion-*).",
   "type": "module",
   "license": "MIT",
@@ -125,7 +125,8 @@
     "./theme.css": "./dist/theme.example.css",
     "./erplora.css": "./dist/erplora.css",
     "./layout.css": "./dist/layout.css",
-    "./cdn": "./dist/outfitkit.js"
+    "./cdn": "./dist/outfitkit.js",
+    "./bundle": "./dist/outfitkit.bundle.js"
   },
   "files": [
     "dist"
@@ -134,7 +135,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build": "vite build && vite build --config vite.config.cdn.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
     "verify:csp": "node scripts/assert-csp-safe.mjs dist",
