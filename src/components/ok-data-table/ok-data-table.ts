@@ -258,12 +258,15 @@ export class OkDataTable extends LitElement {
 
     /* ── Topbar / cabecera (relieve) ─────────────────────────────────────────────────────── */
     .bar { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
-    /* Toolbar CONSOLIDADA: TODOS los controles (buscador, filtros, page-size, vistas, columnas,
-     * CSV, ⋮, alta) son hijos directos de UNA sola fila flex que envuelve ELEMENTO A ELEMENTO
-     * (no por bloques): caben en una línea → una línea; los que no caben bajan a la(s) línea(s)
-     * que hagan falta. El cluster derecho se empuja al borde con .tk-spacer (hueco flexible)
-     * solo cuando todo cabe en una línea; al envolver, el spacer se oculta y todo se apila a la
-     * izquierda. */
+    /* Toolbar CONSOLIDADA: TODOS los controles son hijos directos de UNA sola fila flex que
+     * envuelve ELEMENTO A ELEMENTO (no por bloques): caben en una línea → una línea; los que no
+     * caben bajan a la(s) línea(s) que hagan falta. El cluster derecho se empuja al borde con
+     * .tk-spacer (hueco flexible) solo cuando todo cabe en una línea; al envolver, el spacer se
+     * oculta y todo se apila a la izquierda.
+     * ORDEN CANÓNICO (2026-06-22, izquierda→derecha): [buscador] · [filtros en línea] · ‹spacer› ·
+     * [SELECTORES: columnas → filas/página] · [BOTONES: vistas → filtros(funnel) → import → export →
+     * alta → ⋮ → acción primaria]. Es decir: buscador al inicio, filtros en medio, y al final los
+     * selectores (columnas, luego «N por página») seguidos de los botones de acción. */
     .bar-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .bar-main > ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
     /* Spacer que absorbe el hueco libre en pantallas anchas (empuja el cluster derecho al borde).
@@ -1150,6 +1153,21 @@ export class OkDataTable extends LitElement {
                   ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : nothing}
                   ${this.inlineFilters ? this.renderInlineFilters() : nothing}
                   <span class="tk-spacer"></span>
+                    ${this.effColumnPicker
+                      ? html`
+                          <ion-select
+                            class="tk-cols"
+                            multiple
+                            interface="popover"
+                            aria-label=${this.t.columnsVisible}
+                            .value=${this.visibleColumns.map((c) => c.key)}
+                            .selectedText=${this.t.columns}
+                            @ionChange=${(e: CustomEvent) => this.setVisibleColumns((e.detail as { value: string[] }).value)}
+                          >
+                            ${this.columns.map((c) => html`<ion-select-option value=${c.key}>${c.header}</ion-select-option>`)}
+                          </ion-select>
+                        `
+                      : nothing}
                     ${this.effPageSizes.length
                       ? html`
                           <ion-select
@@ -1169,21 +1187,6 @@ export class OkDataTable extends LitElement {
                             ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), this.t.viewList)}
                             ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), this.t.viewCards)}
                           </span>
-                        `
-                      : nothing}
-                    ${this.effColumnPicker
-                      ? html`
-                          <ion-select
-                            class="tk-cols"
-                            multiple
-                            interface="popover"
-                            aria-label=${this.t.columnsVisible}
-                            .value=${this.visibleColumns.map((c) => c.key)}
-                            .selectedText=${this.t.columns}
-                            @ionChange=${(e: CustomEvent) => this.setVisibleColumns((e.detail as { value: string[] }).value)}
-                          >
-                            ${this.columns.map((c) => html`<ion-select-option value=${c.key}>${c.header}</ion-select-option>`)}
-                          </ion-select>
                         `
                       : nothing}
                     ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), this.t.filters, this.serverSide ? undefined : this.activeFilterCount) : nothing}
