@@ -1,80 +1,76 @@
 name: Publish Package
 
-# Publica @erplora/outfitkit en npm vía Trusted Publishing (OIDC) — SIN token ni secret.
-# npm y GitHub establecen una relación de confianza; en cada publish se genera un token
-# efímero, firmado y específico de este workflow. Como bonus, en repo público npm genera
-# provenance automáticamente.
+# AUTO-RELEASE: cada push a `main` genera una versión nueva y la publica.
+# Flujo (todo en este workflow para no romper el Trusted Publishing, que npm tiene
+# atado a `publish.yml`):
+#   1. release-it bumpea patch, corre el gate (build + typecheck + verify:csp via
+#      before:init de .release-it.json), commitea `chore: release vX.Y.Z`, taggea y
+#      pushea.  (.release-it.json tiene npm.publish=false → NO publica aquí.)
+#   2. `npm publish --access public` publica vía OIDC (Trusted Publishing, sin token).
+# El push de vuelta lo hace GITHUB_TOKEN → NO re-dispara este workflow (sin bucle);
+# el guard `if` es defensa extra por si algún día se usa un PAT.
 #
-# Requisito (npmjs, una sola vez): configurar el Trusted Publisher en la página del
-# paquete con  org/usuario=ERPlora · repo=outfitkit · workflow=publish.yml.
-# El scope @erplora ya existe como org en npmjs (el publicador es owner).
+# El Cloud carga OutfitKit desde jsDelivr en @latest, así que recoge la versión nueva
+# sola (jsDelivr cachea @latest unas horas; purgar con purge.jsdelivr.net para verla ya).
 #
-# Disparador: push de tag `v*` (lo crea `npm run release` / release-it). El gate replica
-# el CI: build + typecheck + verify:csp.
+# Trusted Publishing (npmjs, una sola vez): Trusted Publisher en la página del paquete
+# con org/usuario=ERPlora · repo=outfitkit · workflow=publish.yml. Scope @erplora ya existe.
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   id-token: write   # OBLIGATORIO para OIDC (Trusted Publishing)
-  contents: read
+  contents: write   # push del commit de bump + tag
+
+# Serializa releases: si llegan dos pushes seguidos, el segundo espera (no cancela) y
+# bumpea sobre el resultado del primero → una versión por push, sin carrera en el push.
+concurrency:
+  group: publish-main
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
+    # No relanzar sobre el propio commit de release (el push de GITHUB_TOKEN ya no
+    # dispara workflows; esto cubre el caso de un PAT futuro).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !startsWith(github.event.head_commit.message, 'chore: release v')
     steps:
+      # `ref: main` (no el SHA) → checkout ATADO a la rama; sin esto el push event
+      # deja HEAD desacoplado y release-it no puede commitear/pushear.
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0   # release-it necesita historia + tags para el bump
 
-      # SIN registry-url A PROPÓSITO. setup-node con registry-url (v4 o v6) escribe un .npmrc
-      # temporal con `_authToken=${NODE_AUTH_TOKEN}` = placeholder XXXXX-XXXXX-... → npm
-      # autentica POR TOKEN con ese placeholder inválido y NUNCA intenta OIDC → 404 (verificado
-      # en los logs de v0.1.2/v0.1.3). El registry público lo aporta el `.npmrc` del repo (sin
-      # token), así que sin registry-url npm no tiene token → activa OIDC / Trusted Publishing.
+      # SIN registry-url A PROPÓSITO. setup-node con registry-url escribe un .npmrc con
+      # _authToken placeholder → npm autentica por token inválido y NUNCA intenta OIDC.
+      # Sin él, npm detecta el entorno OIDC y se autentica solo.
       - name: Setup Node 24
         uses: actions/setup-node@v6
         with:
           node-version: '24'
 
-      # No hay package-lock.json en el repo (mismo patrón que ci.yml).
+      # `--no-package-lock`: el repo no versiona lockfile; si npm install lo crea, el
+      # working dir queda sucio y release-it aborta por requireCleanWorkingDir.
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-package-lock
 
-      - name: Build (vite + tsc declarations)
-        run: npm run build
-
-      - name: Typecheck (tsc --noEmit)
-        run: npm run typecheck
-
-      - name: Verify CSP (sin eval / new Function en dist)
-        run: npm run verify:csp
-
-      # En releases por tag, la versión del tag debe coincidir con package.json.
-      - name: Check tag == package.json version
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Git identity (commit/tag de release)
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::El tag v$TAG_VERSION no coincide con package.json ($PKG_VERSION)"
-            exit 1
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # No re-publicar una versión ya existente (npm la rechazaría con error).
-      - name: Skip if version already published
-        id: check
-        run: |
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          if npm view "@erplora/outfitkit@$PKG_VERSION" version >/dev/null 2>&1; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::@erplora/outfitkit@$PKG_VERSION ya está publicada; no se republica."
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
+      # Bump patch + gate (before:init: build/typecheck/csp) + commit + tag + push.
+      # Si el gate falla, release-it aborta → no hay versión ni publish.
+      - name: Release (bump + tag + push)
+        run: npx --yes release-it patch --ci
 
-      # Sin NODE_AUTH_TOKEN: npm detecta el entorno OIDC y se autentica solo.
+      # La versión recién bumpeada nunca está publicada → publica siempre.
       - name: Publish to npm (OIDC, sin token)
-        if: steps.check.outputs.published == 'false'
         run: npm publish --access public
