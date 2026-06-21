@@ -1,6 +1,11 @@
 name: Publish Package
 
-# AUTO-RELEASE: cada push a `main` genera una versión nueva y la publica.
+# AUTO-RELEASE: un push a `main` que toque el CÓDIGO PUBLICADO (src/ o config de build)
+# genera una versión nueva y la publica. Pushes de solo docs/showcase/CI NO releasean
+# (filtro `paths`). El commit `chore: release` del bot solo toca package.json (fuera del
+# filtro) → no dispara (anti-bucle nativo, además del guard y de que GITHUB_TOKEN no
+# re-dispara). Cambios SOLO de dependencias (package.json) → release manual por
+# `workflow_dispatch`.
 # Flujo (todo en este workflow para no romper el Trusted Publishing, que npm tiene
 # atado a `publish.yml`):
 #   1. release-it bumpea patch, corre el gate (build + typecheck + verify:csp via
@@ -19,6 +24,13 @@ name: Publish Package
 on:
   push:
     branches: [main]
+    paths:
+      # Solo lo que cambia el artefacto publicado (dist/). NO package.json (el bump del
+      # bot lo toca → re-dispararía). Para un bump de solo-dependencias: workflow_dispatch.
+      - 'src/**'
+      - 'vite.config.ts'
+      - 'vite.config.cdn.ts'
+      - 'tsconfig*.json'
   workflow_dispatch:
 
 permissions:
