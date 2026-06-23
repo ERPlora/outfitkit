@@ -940,13 +940,14 @@ export class OkDataTable extends LitElement {
         <ion-select
           label=${col.header}
           label-placement="stacked"
+          fill="outline"
           ?multiple=${multi}
           interface="modal"
           .interfaceOptions=${{ cssClass: 'ok-overlay' }}
-          placeholder=${col.header}
+          placeholder=${this.t.select}
           @ionChange=${(e: CustomEvent) => this.onFilterSelect(col, (e.detail as { value: unknown }).value, multi)}
         >
-          ${multi ? nothing : html`<ion-select-option value="">${col.header}</ion-select-option>`}
+          ${multi ? nothing : html`<ion-select-option value="">${this.t.select}</ion-select-option>`}
           ${opts.map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
         </ion-select>
       `;
