@@ -253,13 +253,7 @@ export class OkDataTable extends LitElement {
     .fblock { display: flex; flex-direction: column; gap: 0.45rem; }
     .flabel { font-size: 13px; font-weight: 500; color: var(--color); }
     .frange { display: flex; gap: 0.5rem; }
-    /* Filtros cliente: chips multi-select (estilo Hub) + rango de fechas. */
-    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.6rem; border: 1px solid var(--border-color); border-radius: 999px; background: var(--background); color: var(--color-muted); font-size: 12px; cursor: pointer; transition: color 0.12s, background 0.12s, border-color 0.12s; }
-    .chip:hover { color: var(--color); }
-    .chip.on { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 15%, transparent); }
-    .chip ion-icon { font-size: 12px; }
-    .chip-empty { font-size: 12px; color: var(--color-muted); }
+    /* Filtros cliente: multi-select con ion-select (ventana flotante de Ionic) + rango de fechas. */
     .daterange { display: flex; gap: 0.6rem; }
     .daterange ion-input { flex: 1; }
     /* Pie del drawer de filtros: Limpiar / Aplicar. */
@@ -379,27 +373,35 @@ export class OkDataTable extends LitElement {
     .range { display: flex; gap: 0.25rem; }
 
     /* ── Vista tarjetas ──────────────────────────────────────────────────────────────────── */
-    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; }
-    /* Flat: sin borde ni elevación — las tarjetas se delimitan por la superficie (no por sombra). */
-    .rcard { display: flex; flex-direction: column; border: 0; border-radius: 12px; overflow: hidden; background: var(--header-background); box-shadow: none; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
-    @media (hover: hover) {
-      .rcard:hover { background: var(--row-hover); }
-    }
-    .rcard:active { transform: scale(0.995); }
+    /* Cada tarjeta mide SU contenido (no se estira al alto de la fila ni del contenedor):
+       - grid-auto-rows: max-content → cada fila implícita = alto de su contenido. CLAVE: sin esto,
+         en modo fill (grid de alto fijo + align-content:start) cuando las tarjetas no caben el
+         navegador encoge los tracks de fila y las tarjetas se solapan.
+       - align-content: start → empaqueta las filas arriba (no reparte el hueco sobrante estirando).
+       - align-items: start → en una fila multi-columna cada tarjeta mide su propio contenido.
+       En modo fill el grid es flex-child con overflow:auto → cuando las tarjetas no caben aparece el
+       scroll DENTRO de la tabla (no crece hacia fuera). */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; padding: 1rem; grid-auto-rows: max-content; align-content: start; align-items: start; }
+    /* Tarjeta = ion-card NATIVO de Ionic: su fondo, radio, elevación y padding son los de Ionic y NO
+       se sobrescriben. Aquí solo se ajusta lo que el contexto de rejilla exige (margin) y los huecos
+       que Ionic no trae (cabecera en fila, filas clave-valor, barra de acciones, resalte de selección). */
+    ion-card.rcard { margin: 0; } /* la rejilla aporta el gap → sin esto el margin por defecto de ion-card lo duplica */
+    ion-card.rcard.selected { outline: 2px solid var(--primary); outline-offset: -2px; }
     @media (prefers-reduced-motion: reduce) {
       .gh.sortable:hover, .gh.sortable:active,
-      .grow-data:hover, .grow-data:active,
-      .rcard:hover, .rcard:active { transform: none; }
+      .grow-data:hover, .grow-data:active { transform: none; }
     }
-    .rcard.selected { background: color-mix(in srgb, var(--primary) 12%, var(--header-background)); }
-    .rcard-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
+    /* Cabecera: ion-card-header en fila (icono + título + checkbox); se conserva su padding Ionic. */
+    ion-card-header.rcard-head { display: flex; align-items: center; gap: 0.5rem; }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
     .rcard-head .rc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    .rcard-body { flex: 1; padding: 0.6rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    /* Cuerpo: ion-card-content (padding Ionic por defecto) con las filas clave-valor apiladas. */
+    ion-card-content.rcard-body { display: flex; flex-direction: column; gap: 0.4rem; }
     .rrow { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 13px; }
     .rrow .rk { color: var(--color-muted); }
-    .rrow .rv { font-weight: 500; text-align: right; }
-    .ractions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0.25rem 0.5rem; border-top: 1px solid var(--border-color-soft); background: var(--header-background); }
+    .rrow .rv { font-weight: 500; text-align: right; color: var(--color); }
+    /* Barra de acciones (Ionic no trae "card actions"): pie alineado a la derecha, fondo transparente. */
+    .ractions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0 0.5rem 0.5rem; }
 
     /* ── Estado vacío ────────────────────────────────────────────────────────────────────── */
     .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
@@ -483,6 +485,11 @@ export class OkDataTable extends LitElement {
    *  vistas. La presencia de 'cards' (o 'card') habilita la vista tarjetas. Compatibilidad: el
    *  antiguo valor booleano sigue funcionando. */
   @property({ attribute: false }) views: boolean | string[] = false;
+  /** (NUEVO) Vista inicial al montar: 'cards' | 'table'. Por defecto 'table' (compatibilidad). Solo
+   *  aplica una vez, en el primer render; el usuario puede luego conmutar con el toggle. Si pide
+   *  'cards' pero la vista tarjetas no está habilitada (`views`), se ignora. Evita el hack de fijar
+   *  `viewMode` por referencia tras montar (frágil si la tabla monta detrás de un `v-if`/loading). */
+  @property({ attribute: 'default-view' }) defaultView?: 'table' | 'cards';
   /** (NUEVO, alias documentado) Habilita import/export CSV (equivalente a `exportable`+`importable`
    *  / `csv`). Mostrar el botón de Exportar. */
   @property({ type: Boolean }) exportable = false;
@@ -689,12 +696,12 @@ export class OkDataTable extends LitElement {
     }
     return out;
   }
-  private toggleFilterValue(key: string, value: string): void {
+  // Fija el conjunto de valores seleccionados de una columna (multi-select del drawer = ion-select).
+  private setFilterValues(key: string, values: string[]): void {
     const next = this.cloneFilters(this.filterDraft);
-    const values = new Set(next[key]?.values ?? []);
-    if (values.has(value)) values.delete(value);
-    else values.add(value);
-    next[key] = { ...next[key], values };
+    const clean = (values ?? []).filter((v) => v != null && v !== '');
+    if (clean.length) next[key] = { ...next[key], values: new Set(clean) };
+    else next[key] = { ...next[key], values: undefined };
     this.filterDraft = next;
   }
   private setFilterRange(key: string, edge: 'from' | 'to', value: string): void {
@@ -925,6 +932,14 @@ export class OkDataTable extends LitElement {
   private openMenu(ev: Event): void {
     this.menuEv = ev;
     this.menuOpen = true;
+  }
+
+  // Aplica la vista inicial declarada (`default-view`) una sola vez, tras el primer render. Es la
+  // forma robusta de arrancar en tarjetas sin depender de fijar `viewMode` por referencia (que
+  // falla si la tabla monta detrás de un `v-if`/loading y el ref aún es null).
+  firstUpdated(): void {
+    if (this.defaultView === 'cards' && this.cardViewEnabled) this.viewMode = 'cards';
+    else if (this.defaultView === 'table') this.viewMode = 'table';
   }
 
   private setViewMode(mode: 'table' | 'cards'): void {
@@ -1340,24 +1355,29 @@ export class OkDataTable extends LitElement {
         </div>
       `;
     }
-    // Por defecto: multi-select por chips con los valores distintos de la columna.
-    const distinct = this.distinctValues(col);
-    const selected = this.filterDraft[col.key]?.values ?? new Set<string>();
+    // Por defecto: multi-select con el ion-select nativo de Ionic (ventana flotante), no chips
+    // custom. `interface="modal"` igual que renderFilterControl (server) → look consistente y sin el
+    // glitch de anclaje del popover dentro del drawer animado. Opciones declaradas (col.options) o,
+    // si no, los valores distintos de la columna.
+    const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
+    const selected = [...(this.filterDraft[col.key]?.values ?? new Set<string>())];
     return html`
       <div class="fblock">
-        <span class="flabel">${label}</span>
-        <div class="chips">
-          ${distinct.length === 0
-            ? html`<span class="chip-empty">${this.t.noValues}</span>`
-            : distinct.map((v) => {
-                const on = selected.has(v);
-                return html`
-                  <button class=${`chip${on ? ' on' : ''}`} @click=${() => this.toggleFilterValue(col.key, v)}>
-                    ${on ? html`<ion-icon name="checkmark-outline"></ion-icon>` : nothing}${v}
-                  </button>
-                `;
-              })}
-        </div>
+        <ion-select
+          label=${label}
+          label-placement="stacked"
+          fill="outline"
+          multiple
+          interface="modal"
+          .interfaceOptions=${{ cssClass: 'ok-overlay' }}
+          placeholder=${this.t.select}
+          .value=${selected}
+          @ionChange=${(e: CustomEvent) => this.setFilterValues(col.key, (e.detail as { value: string[] }).value ?? [])}
+        >
+          ${opts.length === 0
+            ? html`<ion-select-option .disabled=${true} value="">${this.t.noValues}</ion-select-option>`
+            : opts.map((o) => html`<ion-select-option value=${o.value}>${o.label}</ion-select-option>`)}
+        </ion-select>
       </div>
     `;
   }
@@ -1447,10 +1467,10 @@ export class OkDataTable extends LitElement {
             const selected = this.selectable && this.selection.has(key);
             const icon = this.cardIcon?.(row);
             return html`
-              <div class=${`rcard${selected ? ' selected' : ''}`}>
+              <ion-card class=${`rcard${selected ? ' selected' : ''}`}>
                 ${hasHead
                   ? html`
-                      <header class="rcard-head">
+                      <ion-card-header class="rcard-head">
                         ${icon != null && icon !== ''
                           ? html`<span class="rc-icon">${typeof icon === 'string' ? html`<ion-icon name=${icon}></ion-icon>` : icon}</span>`
                           : nothing}
@@ -1458,18 +1478,18 @@ export class OkDataTable extends LitElement {
                         ${this.selectable
                           ? html`<ion-checkbox .checked=${selected} aria-label=${this.t.select} @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
                           : nothing}
-                      </header>
+                      </ion-card-header>
                     `
                   : nothing}
-                <div class="rcard-body">
+                <ion-card-content class="rcard-body">
                   ${this.renderCard
                     ? this.renderCard(row)
                     : this.visibleColumns.map(
                         (c) => html`<div class="rrow"><span class="rk">${c.header}</span><span class="rv">${c.render ? c.render(row) : this.cell(c, row)}</span></div>`,
                       )}
-                </div>
+                </ion-card-content>
                 ${this.actions.length ? html`<div class="ractions">${this.actionButtons(row)}</div>` : nothing}
-              </div>
+              </ion-card>
             `;
           },
         )}
