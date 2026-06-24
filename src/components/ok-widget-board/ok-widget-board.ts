@@ -188,11 +188,14 @@ export class OkWidgetBoard extends LitElement {
     modal.initialBreakpoint = 0.9;
     modal.breakpoints = [0, 0.9, 1];
 
-    const header = make('ion-header');
-    const tb = make('ion-toolbar');
+    // Header sin borde ni sombra (ion-no-border + refuerzo CSS abajo); toolbar con ion-padding.
+    const header = make('ion-header', { attrs: { class: 'okwb-header ion-no-border' } });
+    const tb = make('ion-toolbar', { attrs: { class: 'okwb-toolbar ion-padding' } });
     tb.appendChild(make('ion-title', { text: t.customize }));
     const endBtns = make('ion-buttons', { attrs: { slot: 'end' } });
-    const closeBtn = make('ion-button', { text: t.close });
+    // Botón de cerrar = ion-button icon-only (icono "close"), accesible vía aria-label.
+    const closeBtn = make('ion-button', { attrs: { fill: 'clear', 'aria-label': t.close } });
+    closeBtn.appendChild(make('ion-icon', { attrs: { slot: 'icon-only', name: 'close' } }));
     closeBtn.addEventListener('click', () => modal.dismiss?.());
     endBtns.appendChild(closeBtn); tb.appendChild(endBtns); header.appendChild(tb); modal.appendChild(header);
 
@@ -231,6 +234,9 @@ export class OkWidgetBoard extends LitElement {
 
     // Estilos del modal (light-DOM): viven en un <style> propio del modal.
     const style = make('style', { text:
+      `.okwb-header{box-shadow:none}` +
+      `.okwb-header::after{display:none}` +
+      `.okwb-toolbar{--border-width:0;--border-color:transparent;box-shadow:none}` +
       `.okwb-sub{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ion-color-medium);padding:12px 16px 4px}` +
       `.okwb-presets{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px}` });
     modal.appendChild(style);
