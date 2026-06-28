@@ -8,7 +8,7 @@
 
 - **OutfitKit canónico = `ERPlora/outfitkit/`** (`@erplora/outfitkit`): set `ok-*` que envuelve Ionic.
   Es la **fuente de verdad**; se re-vendoriza a `hub/packages/outfitkit` (mirror, `@erplora/outfitkit`)
-  y a `cloud/.../vendor/outfitkit` (`vendor-frontend.sh`).
+  y a `saas/.../vendor/outfitkit` (`vendor-frontend.sh`).
 - **`ok-data-table` consolidado en el canónico** usando **`ok-button`** (no `ion-button`). Tiene:
   drawer lateral de filtros+alta/edición, modo `fill` (scroll interno + thead sticky + pager fijo),
   `render` de celda, `columnPicker`, CSV import/export, page-size, vista lista/tarjetas.
