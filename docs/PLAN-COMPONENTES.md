@@ -21,7 +21,7 @@ Docs-app estilo `ux` (sidebar+búsqueda, viewport, temas — ERPlora terracota p
 
 ### Oleada marketing 2026 (2026-06-09) — bento · scroll-reveal · glass
 
-Para rediseñar la **web pública del Cloud Portal** (tendencias 2026: bento grids, animaciones al
+Para rediseñar la **web pública del SaaS** (tendencias 2026: bento grids, animaciones al
 scroll, glass/“liquid glass” como acento, tipografía display) se añadieron 11 tags:
 
 - [x] `.ok-section` (layout.css) — sección de marketing como CSS plano sobre `<section>` (antes WC `ok-section`, eliminado): eyebrow + título display + subtítulo; modificadores `--center`/`--divider`.
