@@ -78,6 +78,13 @@ export interface DataTableAction {
   icon?: string;
   /** Color Ionic del botón (p.ej. 'danger', 'primary'). */
   color?: string;
+  /** (opcional, por fila) Si devuelve `true` para una fila, el botón de esa acción se renderiza
+   *  deshabilitado (`?disabled` + `aria-disabled="true"`). */
+  disabled?: (row: Record<string, unknown>) => boolean;
+  /** (opcional, por fila) Si devuelve `true` para una fila, el botón muestra un
+   *  `<ion-spinner name="dots">` en lugar del icono/label Y queda deshabilitado
+   *  (una acción en curso no debe ser re-clicable). */
+  loading?: (row: Record<string, unknown>) => boolean;
 }
 
 /** Acción primaria de la topbar (botón destacado). Emite el evento `primaryAction`. */
@@ -408,6 +415,10 @@ export class OkDataTable extends LitElement {
     .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
 
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+    /* Spinner de acción en curso (loading): contenido dentro del ion-button small (Ionic lo fija
+     * a 28px en el :host, por eso width/height y no font-size). Cubre tabla y tarjetas: los
+     * botones de fila siempre van dentro de .actions. */
+    .actions ion-spinner { width: 18px; height: 18px; }
 
     /* ── Pie: contador + paginación ──────────────────────────────────────────────────────── */
     .pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 1rem; border-top: 1px solid var(--border-color); background: var(--header-background); font-size: 12.5px; color: var(--color-muted); }
@@ -1083,16 +1094,25 @@ export class OkDataTable extends LitElement {
     return html`
       <div class="actions">
         ${this.actions.map(
-          (a) => html`
+          (a) => {
+            // Acción en curso → spinner y no re-clicable; deshabilitada → botón inerte.
+            const loading = a.loading?.(row) === true;
+            const disabled = loading || a.disabled?.(row) === true;
+            return html`
             <ion-button
               size="small"
               fill="clear"
               color=${a.color ?? 'medium'}
+              ?disabled=${disabled}
+              aria-disabled=${disabled ? 'true' : nothing}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
-              ${a.icon ? html`<ion-icon slot="icon-only" name=${a.icon}></ion-icon>` : a.label}
+              ${loading
+                ? html`<ion-spinner slot="icon-only" name="dots"></ion-spinner>`
+                : a.icon ? html`<ion-icon slot="icon-only" name=${a.icon}></ion-icon>` : a.label}
             </ion-button>
-          `,
+          `;
+          },
         )}
       </div>
     `;
