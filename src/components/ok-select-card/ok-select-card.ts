@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // ok-select-card — fila/tarjeta seleccionable con borde que envuelve un checkbox/radio nativo
 // de Ionic. Toda la fila es zona de click. Cuando está marcada ([data-checked]) la tarjeta pinta
@@ -229,7 +230,7 @@ export class OkSelectCard extends LitElement {
       >
         ${control}
         ${this.icon
-          ? html`<span class="icon"><ion-icon name=${this.icon}></ion-icon></span>`
+          ? html`<span class="icon"><ion-icon .icon=${okIcon(this.icon)}></ion-icon></span>`
           : null}
         <div class="body">
           ${this.label ? html`<p class="label">${this.label}</p>` : null}

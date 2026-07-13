@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // Color de la pastilla: par (fondo soft + color de icono).
 export type OkIconTileColor =
@@ -106,7 +107,7 @@ export class OkIconTile extends LitElement {
     if (this.icon.includes(':')) {
       return html`<iconify-icon icon=${this.icon} aria-hidden="true"></iconify-icon>`;
     }
-    return html`<ion-icon name=${this.icon} aria-hidden="true"></ion-icon>`;
+    return html`<ion-icon .icon=${okIcon(this.icon)} aria-hidden="true"></ion-icon>`;
   }
 
   render(): unknown {

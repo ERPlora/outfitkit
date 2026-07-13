@@ -1,6 +1,7 @@
 import { LitElement, html, css, render, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconAppsOutline, iconCloseOutline, okIcon } from '../../base/icons.js';
 
 // App (entrada de la rejilla). La aporta el consumidor vía la prop `.apps`.
 export interface OkLauncherApp {
@@ -401,7 +402,7 @@ export class OkAppLauncher extends LitElement {
       <span class="box">
         ${this.isResolvedSvg(icon)
           ? html`<ion-icon .icon=${icon}></ion-icon>`
-          : html`<ion-icon .name=${icon}></ion-icon>`}
+          : html`<ion-icon .icon=${okIcon(icon)}></ion-icon>`}
       </span>
       <span class="label">${app.label}</span>
     </button>`;
@@ -418,7 +419,7 @@ export class OkAppLauncher extends LitElement {
         aria-label=${this.t.apps}
         @click=${() => this.toggle()}
       >
-        <ion-icon name="apps-outline"></ion-icon>
+        <ion-icon .icon=${iconAppsOutline}></ion-icon>
       </button>
     `;
   }
@@ -437,7 +438,7 @@ export class OkAppLauncher extends LitElement {
             aria-label=${this.t.close}
             @click=${() => this.close()}
           >
-            <ion-icon name="close-outline"></ion-icon>
+            <ion-icon .icon=${iconCloseOutline}></ion-icon>
           </button>
         </div>
         ${this.apps.length

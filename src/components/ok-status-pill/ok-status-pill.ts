@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // ok-status-pill — pill de estado con tinte semántico suave (el hueco que Ionic no cubre:
 // ion-badge es color sólido y ion-chip es neutro/interactivo). Fondo al ~14% del color del tono
@@ -109,7 +110,7 @@ export class OkStatusPill extends LitElement {
         ${this.dot
           ? html`<span class="dot" part="dot" aria-hidden="true"></span>`
           : this.icon
-            ? html`<ion-icon name=${this.icon} aria-hidden="true"></ion-icon>`
+            ? html`<ion-icon .icon=${okIcon(this.icon)} aria-hidden="true"></ion-icon>`
             : null}
         <slot>${this.label ?? ''}</slot>
       </span>

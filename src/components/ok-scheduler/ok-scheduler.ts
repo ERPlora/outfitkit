@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
 // Recurso (fila del timeline): un empleado, sala, máquina, etc.
 // Lo aporta el consumidor vía la prop `.resources`.
@@ -551,7 +552,7 @@ export class OkScheduler extends LitElement {
           aria-label=${this.t.prevDay}
           @click=${() => this.navDay(-1)}
         >
-          <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+          <ion-icon slot="icon-only" .icon=${iconChevronBackOutline}></ion-icon>
         </ion-button>
         <span class="title">${this.dayLabel()}</span>
         <ion-button
@@ -560,7 +561,7 @@ export class OkScheduler extends LitElement {
           aria-label=${this.t.nextDay}
           @click=${() => this.navDay(1)}
         >
-          <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+          <ion-icon slot="icon-only" .icon=${iconChevronForwardOutline}></ion-icon>
         </ion-button>
       </div>
       <div class="scroll">

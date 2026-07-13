@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // ok-error-page — plantilla full-screen para errores HTTP/arranque (403/404/500…).
 // Fondo cuadriculado, ilustración por variante, código + título + mensaje,
@@ -473,7 +474,7 @@ export class OkErrorPage extends LitElement {
       <div class="shortcuts" role="list">
         ${this.shortcuts.map((s) => {
           const body = html`
-            ${s.icon ? html`<ion-icon name=${s.icon} aria-hidden="true"></ion-icon>` : null}
+            ${s.icon ? html`<ion-icon .icon=${okIcon(s.icon)} aria-hidden="true"></ion-icon>` : null}
             <span class="shortcut-body">
               <span class="shortcut-title">${s.title}</span>
               ${s.desc ? html`<span class="shortcut-desc">${s.desc}</span>` : null}

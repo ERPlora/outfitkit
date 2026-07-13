@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconCheckmarkOutline } from '../../base/icons.js';
 
 /** Un paso del stepper/wizard. */
 export interface OkStep {
@@ -279,7 +280,7 @@ export class OkStepper extends LitElement {
               <span class="circle-row">
                 <span class="circle">
                   ${i < this.current
-                    ? html`<ion-icon name="checkmark-outline" aria-hidden="true"></ion-icon>`
+                    ? html`<ion-icon .icon=${iconCheckmarkOutline} aria-hidden="true"></ion-icon>`
                     : html`${i + 1}`}
                 </span>
               </span>

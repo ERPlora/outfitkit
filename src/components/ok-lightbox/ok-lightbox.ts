@@ -1,6 +1,7 @@
 import { LitElement, html, css, render, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronBackOutline, iconChevronForwardOutline, iconCloseOutline, iconDownloadOutline, iconExpandOutline, iconPlayOutline } from '../../base/icons.js';
 
 // Tipo de medio de un item del lightbox.
 export type OkLightboxItemType = 'img' | 'video';
@@ -450,7 +451,7 @@ export class OkLightbox extends LitElement {
                   rel="noopener"
                   aria-label=${this.t.download}
                 >
-                  <ion-icon name="download-outline"></ion-icon>
+                  <ion-icon .icon=${iconDownloadOutline}></ion-icon>
                 </a>`
               : null}
             <button
@@ -459,7 +460,7 @@ export class OkLightbox extends LitElement {
               aria-label=${this.t.fullscreen}
               @click=${() => this.toggleFullscreen()}
             >
-              <ion-icon name="expand-outline"></ion-icon>
+              <ion-icon .icon=${iconExpandOutline}></ion-icon>
             </button>
             <button
               type="button"
@@ -467,7 +468,7 @@ export class OkLightbox extends LitElement {
               aria-label=${this.t.close}
               @click=${() => this.requestClose()}
             >
-              <ion-icon name="close-outline"></ion-icon>
+              <ion-icon .icon=${iconCloseOutline}></ion-icon>
             </button>
           </div>
         </div>
@@ -480,7 +481,7 @@ export class OkLightbox extends LitElement {
             ?disabled=${i <= 0}
             @click=${() => this.go(-1)}
           >
-            <ion-icon name="chevron-back-outline"></ion-icon>
+            <ion-icon .icon=${iconChevronBackOutline}></ion-icon>
           </button>
 
           ${current
@@ -502,7 +503,7 @@ export class OkLightbox extends LitElement {
             ?disabled=${i >= total - 1}
             @click=${() => this.go(1)}
           >
-            <ion-icon name="chevron-forward-outline"></ion-icon>
+            <ion-icon .icon=${iconChevronForwardOutline}></ion-icon>
           </button>
         </div>
 
@@ -526,7 +527,7 @@ export class OkLightbox extends LitElement {
       @click=${() => this.setIndex(idx)}
     >
       ${isVideo
-        ? html`<span class="vid"><ion-icon name="play-outline"></ion-icon></span>`
+        ? html`<span class="vid"><ion-icon .icon=${iconPlayOutline}></ion-icon></span>`
         : html`<img src=${item.thumb ?? item.src} alt="" loading="lazy" />`}
     </button>`;
   }

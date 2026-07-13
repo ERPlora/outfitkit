@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronDownOutline, okIcon } from '../../base/icons.js';
 
 // Item del menú desplegable. Lo aporta el consumidor vía la prop `.items`.
 export interface OkSplitButtonItem {
@@ -238,7 +239,7 @@ export class OkSplitButton extends LitElement {
       role="menuitem"
       @click=${() => this.selectItem(item)}
     >
-      ${item.icon ? html`<ion-icon .name=${item.icon}></ion-icon>` : ''}
+      ${item.icon ? html`<ion-icon .icon=${okIcon(item.icon)}></ion-icon>` : ''}
       <span class="label">${item.label}</span>
     </button>`;
   }
@@ -263,7 +264,7 @@ export class OkSplitButton extends LitElement {
           aria-label=${this.t.more}
           @click=${() => this.toggle()}
         >
-          <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
+          <ion-icon slot="icon-only" .icon=${iconChevronDownOutline}></ion-icon>
         </ion-button>
       </div>
       ${this.open

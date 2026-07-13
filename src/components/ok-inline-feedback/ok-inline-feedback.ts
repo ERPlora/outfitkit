@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconAlertCircle, iconCheckmarkCircle, iconClose, iconInformationCircle, iconWarning, okIcon } from '../../base/icons.js';
 
 // ok-inline-feedback — banner/callout persistente en el flujo del contenido (el hueco que Ionic
 // no cubre: ion-toast/ion-alert son efímeros/modales, no un aviso embebido y persistente).
@@ -163,12 +164,12 @@ export class OkInlineFeedback extends LitElement {
   // Icono por defecto según el tono (overridable por la prop `icon`).
   private defaultIcon(): string {
     switch (this.tone) {
-      case 'success': return 'checkmark-circle';
-      case 'warning': return 'warning';
-      case 'danger':  return 'alert-circle';
-      case 'neutral': return 'information-circle';
+      case 'success': return iconCheckmarkCircle;
+      case 'warning': return iconWarning;
+      case 'danger':  return iconAlertCircle;
+      case 'neutral': return iconInformationCircle;
       case 'info':
-      default:        return 'information-circle';
+      default:        return iconInformationCircle;
     }
   }
 
@@ -187,7 +188,7 @@ export class OkInlineFeedback extends LitElement {
     const iconName = this.icon ?? this.defaultIcon();
     return html`
       <div class="box" role="status">
-        <ion-icon class="icon" name=${iconName} aria-hidden="true"></ion-icon>
+        <ion-icon class="icon" .icon=${okIcon(iconName)} aria-hidden="true"></ion-icon>
         <div class="content">
           <div class="row">
             <div class="text">
@@ -202,7 +203,7 @@ export class OkInlineFeedback extends LitElement {
         ${this.dismissible
           ? html`
               <button class="close" aria-label=${this.t.dismiss} @click=${this.dismiss}>
-                <ion-icon name="close" aria-hidden="true"></ion-icon>
+                <ion-icon .icon=${iconClose} aria-hidden="true"></ion-icon>
               </button>
             `
           : null}

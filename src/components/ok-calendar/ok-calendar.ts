@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
 // Evento de calendario. Lo aporta el consumidor vía la prop `.events`.
 export interface OkCalendarEvent {
@@ -533,7 +534,7 @@ export class OkCalendar extends LitElement {
             (ev) => html`<div class="agenda-item" @click=${(e: Event) => this.clickEvent(ev, e)}>
               <span class="dot" style=${`background:${ev.color || 'var(--primary-color)'}`}></span>
               <span class="agenda-title">${ev.title}</span>
-              <ion-icon name="chevron-forward-outline"></ion-icon>
+              <ion-icon .icon=${iconChevronForwardOutline}></ion-icon>
             </div>`,
           )}
         </div>`;
@@ -558,7 +559,7 @@ export class OkCalendar extends LitElement {
             aria-label=${this.t.prevMonth}
             @click=${() => this.navMonth(-1)}
           >
-            <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconChevronBackOutline}></ion-icon>
           </ion-button>
           <span class="title">${this.monthLabel()}</span>
           <ion-button
@@ -567,7 +568,7 @@ export class OkCalendar extends LitElement {
             aria-label=${this.t.nextMonth}
             @click=${() => this.navMonth(1)}
           >
-            <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconChevronForwardOutline}></ion-icon>
           </ion-button>
         </div>
         <div class="toggle" role="tablist">

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // Item de la línea de tiempo. Lo aporta el consumidor vía la prop `.items`.
 export interface OkTimelineItem {
@@ -242,7 +243,7 @@ export class OkTimeline extends LitElement {
     return html`<li class=${classes}>
       <span class="marker">
         <span class="dot" style=${dotStyle}>
-          ${item.icon ? html`<ion-icon .name=${item.icon}></ion-icon>` : ''}
+          ${item.icon ? html`<ion-icon .icon=${okIcon(item.icon)}></ion-icon>` : ''}
         </span>
       </span>
       <button

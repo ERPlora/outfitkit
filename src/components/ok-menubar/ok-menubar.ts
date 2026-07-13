@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronForwardOutline, iconMenuOutline, okIcon } from '../../base/icons.js';
 
 // Item de un menú (puede ser hoja, separador, o submenú vía `children`).
 // Lo aporta el consumidor vía la prop `.menus`.
@@ -577,11 +578,11 @@ export class OkMenubar extends LitElement {
         aria-disabled=${item.disabled ? 'true' : 'false'}
         @click=${() => (hasChildren ? this.openSub(item.id, level) : this.selectItem(item))}
       >
-        <span class="icon">${item.icon ? html`<ion-icon .name=${item.icon}></ion-icon>` : ''}</span>
+        <span class="icon">${item.icon ? html`<ion-icon .icon=${okIcon(item.icon)}></ion-icon>` : ''}</span>
         <span class="label">${item.label ?? ''}</span>
         ${item.shortcut ? html`<span class="shortcut">${item.shortcut}</span>` : ''}
         ${hasChildren
-          ? html`<span class="caret"><ion-icon name="chevron-forward-outline"></ion-icon></span>`
+          ? html`<span class="caret"><ion-icon .icon=${iconChevronForwardOutline}></ion-icon></span>`
           : ''}
       </button>
       ${subOpen
@@ -634,7 +635,7 @@ export class OkMenubar extends LitElement {
         aria-disabled=${item.disabled ? 'true' : 'false'}
         @click=${() => this.selectItem(item)}
       >
-        <span class="icon">${item.icon ? html`<ion-icon .name=${item.icon}></ion-icon>` : ''}</span>
+        <span class="icon">${item.icon ? html`<ion-icon .icon=${okIcon(item.icon)}></ion-icon>` : ''}</span>
         <span class="label">${item.label ?? ''}</span>
         ${item.shortcut ? html`<span class="shortcut">${item.shortcut}</span>` : ''}
       </button>
@@ -652,7 +653,7 @@ export class OkMenubar extends LitElement {
         aria-label=${this.t.menu}
         @click=${() => this.toggleMobile()}
       >
-        <ion-icon name="menu-outline"></ion-icon>
+        <ion-icon .icon=${iconMenuOutline}></ion-icon>
         <span>${this.t.menu}</span>
       </button>
       ${this.mobileOpen
@@ -667,7 +668,7 @@ export class OkMenubar extends LitElement {
                   @click=${() => this.toggleAccordion(menu.id)}
                 >
                   <span class="label">${menu.label}</span>
-                  <span class="caret"><ion-icon name="chevron-forward-outline"></ion-icon></span>
+                  <span class="caret"><ion-icon .icon=${iconChevronForwardOutline}></ion-icon></span>
                 </button>
                 ${expanded ? menu.items.map((item) => this.renderAccItem(item, 0)) : ''}
               `;

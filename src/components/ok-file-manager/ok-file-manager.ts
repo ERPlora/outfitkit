@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
 
 // ok-file-manager — widget de gestor de archivos AUTOCONTENIDO y BACKEND-AGNÓSTICO.
 // Solo RENDERIZA (árbol de carpetas + meter de espacio + breadcrumb + toolbar con búsqueda,
@@ -897,10 +898,10 @@ export class OkFileManager extends LitElement {
             this.toggle(folder);
           }}
         >
-          <ion-icon name="chevron-forward-outline"></ion-icon>
+          <ion-icon .icon=${iconChevronForwardOutline}></ion-icon>
         </button>
         <span class="ticon"
-          ><ion-icon name=${folder.icon || 'folder-outline'}></ion-icon
+          ><ion-icon .icon=${okIcon(folder.icon || 'folder-outline')}></ion-icon
         ></span>
         <span class="tlabel" title=${folder.label}>${folder.label}</span>
         ${folder.count != null
@@ -965,7 +966,7 @@ export class OkFileManager extends LitElement {
           const isLast = i === crumbs.length - 1;
           return html`${i > 0
               ? html`<span class="crumb-sep" aria-hidden="true"
-                  ><ion-icon name="chevron-forward-outline"></ion-icon
+                  ><ion-icon .icon=${iconChevronForwardOutline}></ion-icon
                 ></span>`
               : ''}<button
               type="button"
@@ -1117,7 +1118,7 @@ export class OkFileManager extends LitElement {
     }
     if (!this.files.length) {
       return html`<div class="empty">
-        <ion-icon name="folder-open-outline"></ion-icon>
+        <ion-icon .icon=${iconFolderOpenOutline}></ion-icon>
         <span>${this.t.empty}</span>
       </div>`;
     }

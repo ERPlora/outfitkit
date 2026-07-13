@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconBackspaceOutline, okIcon } from '../../base/icons.js';
 
 // ok-pinpad — teclado numérico (PIN): rejilla 1-9, 0 y borrar. Muestra arriba los dígitos
 // introducidos (o • si `masked`). Con `length` fija el tamaño y emite `ok-complete` al alcanzarlo.
@@ -194,7 +195,7 @@ export class OkPinpad extends LitElement {
   // Botón de borrado (reutilizado en ambos layouts).
   private renderBackspace(): unknown {
     return html`<ion-button fill="clear" aria-label=${this.t.backspace} @click=${() => this.backspace()}>
-      <ion-icon slot="icon-only" name="backspace-outline"></ion-icon>
+      <ion-icon slot="icon-only" .icon=${iconBackspaceOutline}></ion-icon>
     </ion-button>`;
   }
 
@@ -242,7 +243,7 @@ export class OkPinpad extends LitElement {
               fill="clear"
               aria-label=${this.secondaryLabel ?? this.secondaryIcon}
               @click=${() => this.secondary()}
-            ><ion-icon slot="icon-only" name=${this.secondaryIcon}></ion-icon></ion-button>`
+            ><ion-icon slot="icon-only" .icon=${okIcon(this.secondaryIcon)}></ion-icon></ion-button>`
           : html`<span class="spacer" aria-hidden="true"></span>`}
         <ion-button fill="outline" aria-label="0" @click=${() => this.press('0')}>0</ion-button>
         ${this.renderBackspace()}

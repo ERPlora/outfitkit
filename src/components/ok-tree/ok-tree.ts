@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronForwardOutline, okIcon } from '../../base/icons.js';
 
 // Nodo del árbol (recursivo). Lo aporta el consumidor vía la prop `.nodes`.
 export interface OkTreeNode {
@@ -265,10 +266,10 @@ export class OkTree extends LitElement {
             this.toggle(node);
           }}
         >
-          <ion-icon name="chevron-forward-outline"></ion-icon>
+          <ion-icon .icon=${iconChevronForwardOutline}></ion-icon>
         </button>
         ${node.icon
-          ? html`<span class="icon"><ion-icon .name=${node.icon}></ion-icon></span>`
+          ? html`<span class="icon"><ion-icon .icon=${okIcon(node.icon)}></ion-icon></span>`
           : ''}
         <span class="label" @click=${() => this.select(node)}>${node.label}</span>
       </div>

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconAdd, iconRemove } from '../../base/icons.js';
 
 // ok-qty-stepper — selector de cantidad (botones -/+ con campo central editable). Ionic no trae
 // un stepper numérico con clamp; este lo cubre. AUTOCONTENIDO: CSS propio en el shadow; usa
@@ -186,7 +187,7 @@ export class OkQtyStepper extends LitElement {
         ?disabled=${this.disabled || atMin}
         @click=${() => this.decrement()}
       >
-        <ion-icon slot="icon-only" name="remove"></ion-icon>
+        <ion-icon slot="icon-only" .icon=${iconRemove}></ion-icon>
       </ion-button>
       <input
         class="field"
@@ -208,7 +209,7 @@ export class OkQtyStepper extends LitElement {
         ?disabled=${this.disabled || atMax}
         @click=${() => this.increment()}
       >
-        <ion-icon slot="icon-only" name="add"></ion-icon>
+        <ion-icon slot="icon-only" .icon=${iconAdd}></ion-icon>
       </ion-button>
     </div>`;
   }
