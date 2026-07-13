@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { computeAnchor } from '../../base/anchor.js';
+import { iconCalendarOutline, iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
 // Modo del picker: una sola fecha o un rango (start..end).
 export type OkDatePickerMode = 'single' | 'range';
@@ -626,7 +627,7 @@ export class OkDatePicker extends LitElement {
         aria-label=${label || this.t.open}
         @click=${() => this.toggle()}
       >
-        <ion-icon name="calendar-outline"></ion-icon>
+        <ion-icon .icon=${iconCalendarOutline}></ion-icon>
         <span class="label ${label ? '' : 'placeholder'}">${label || this.placeholder}</span>
       </button>
       ${this.open
@@ -672,7 +673,7 @@ export class OkDatePicker extends LitElement {
                 aria-label=${this.t.prev}
                 @click=${() => this.prevMonth()}
               >
-                <ion-icon name="chevron-back-outline"></ion-icon>
+                <ion-icon .icon=${iconChevronBackOutline}></ion-icon>
               </button>`
             : html`<span style="width:28px"></span>`}
           <span class="title">${title}</span>
@@ -683,7 +684,7 @@ export class OkDatePicker extends LitElement {
                 aria-label=${this.t.next}
                 @click=${() => this.nextMonth()}
               >
-                <ion-icon name="chevron-forward-outline"></ion-icon>
+                <ion-icon .icon=${iconChevronForwardOutline}></ion-icon>
               </button>`
             : html`<span style="width:28px"></span>`}
         </div>

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconDocumentTextOutline, iconDownloadOutline, iconOpenOutline } from '../../base/icons.js';
 
 // ok-pdf — visor de PDF usando el visor NATIVO del navegador (sin pdf.js ni libs externas).
 // AUTOCONTENIDO: CSS propio en el shadow; sólo usa `ion-button`/`ion-icon` (los registra el host).
@@ -141,7 +142,7 @@ export class OkPdf extends LitElement {
             aria-label=${this.t.openAria}
             @click=${this.open}
           >
-            <ion-icon slot="start" name="open-outline"></ion-icon>
+            <ion-icon slot="start" .icon=${iconOpenOutline}></ion-icon>
             ${this.t.open}
           </ion-button>
         </div>
@@ -149,10 +150,10 @@ export class OkPdf extends LitElement {
           <object data=${this.src} type="application/pdf">
             <!-- Fallback: el navegador no pudo incrustar el PDF → enlace de descarga. -->
             <div class="fallback">
-              <ion-icon name="document-text-outline"></ion-icon>
+              <ion-icon .icon=${iconDocumentTextOutline}></ion-icon>
               <span>${this.t.cannotDisplay}</span>
               <ion-button fill="solid" size="small" @click=${this.open}>
-                <ion-icon slot="start" name="download-outline"></ion-icon>
+                <ion-icon slot="start" .icon=${iconDownloadOutline}></ion-icon>
                 ${this.t.download}
               </ion-button>
             </div>

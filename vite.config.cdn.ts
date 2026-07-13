@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import Icons from 'unplugin-icons/vite';
 import { resolve } from 'node:path';
 
 // Build SECUNDARIO: un único bundle AUTOCONTENIDO para CDN (`dist/outfitkit.bundle.js`).
@@ -15,6 +16,9 @@ import { resolve } from 'node:path';
 // (el orden lo fija el script `build` de package.json: primero el principal, luego este).
 // CSP-safe: esbuild minify no introduce eval/new Function (lo verifica `npm run verify:csp`).
 export default defineConfig({
+  // Mismo plugin que el build principal: los iconos de `base/icons.ts` se hornean desde Iconify
+  // (`~icons/ion/<name>?raw`). Sin esto, Rollup no sabe resolver esos imports y el bundle CDN casca.
+  plugins: [Icons({ compiler: 'raw' })],
   build: {
     target: 'es2022',
     outDir: 'dist',

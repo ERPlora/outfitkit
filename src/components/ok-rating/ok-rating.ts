@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // ok-rating — valoración por estrellas (inline). El hover previsualiza el valor y el click lo fija;
 // con `allow-half` se permiten medias estrellas (la mitad izquierda de cada estrella = .5).
@@ -157,7 +158,7 @@ export class OkRating extends LitElement {
   private renderHalfStar(index: number): unknown {
     const filled = this.displayValue >= index - 0.5;
     return html`<span class=${`star half-mode ${filled ? 'filled' : ''}`}>
-      <ion-icon .name=${this.iconFor(index)}></ion-icon>
+      <ion-icon .icon=${okIcon(this.iconFor(index))}></ion-icon>
       ${this.readonly
         ? ''
         : html`<span
@@ -184,7 +185,7 @@ export class OkRating extends LitElement {
       @mouseenter=${() => this.onEnter(index)}
       @click=${() => this.setValue(index)}
     >
-      <ion-icon .name=${this.iconFor(index)}></ion-icon>
+      <ion-icon .icon=${okIcon(this.iconFor(index))}></ion-icon>
     </button>`;
   }
 

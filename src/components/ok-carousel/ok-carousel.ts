@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
 // ok-carousel — carrusel de slides con transición por `transform`.
 // AUTOCONTENIDO: CSS propio en el shadow (sin Ionic salvo `ion-button`/`ion-icon` para las flechas,
@@ -313,7 +314,7 @@ export class OkCarousel extends LitElement {
           ?disabled=${n <= 1 || (!this.loop && atStart)}
           @click=${() => this.prev()}
         >
-          <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+          <ion-icon slot="icon-only" .icon=${iconChevronBackOutline}></ion-icon>
         </ion-button>
 
         <div
@@ -341,7 +342,7 @@ export class OkCarousel extends LitElement {
           ?disabled=${n <= 1 || (!this.loop && atEnd)}
           @click=${() => this.next()}
         >
-          <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+          <ion-icon slot="icon-only" .icon=${iconChevronForwardOutline}></ion-icon>
         </ion-button>
       </div>
 

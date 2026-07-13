@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconSearchOutline, okIcon } from '../../base/icons.js';
 
 // Comando (entrada de la paleta). Lo aporta el consumidor vía la prop `.commands`.
 export interface OkCommand {
@@ -429,7 +430,7 @@ export class OkCommandPalette extends LitElement {
       }}
     >
       <span class="icon">
-        ${cmd.icon ? html`<ion-icon .name=${cmd.icon}></ion-icon>` : ''}
+        ${cmd.icon ? html`<ion-icon .icon=${okIcon(cmd.icon)}></ion-icon>` : ''}
       </span>
       <span class="body">
         <span class="label">${cmd.label}</span>
@@ -457,7 +458,7 @@ export class OkCommandPalette extends LitElement {
     >
       <div class="panel">
         <div class="search">
-          <ion-icon name="search-outline"></ion-icon>
+          <ion-icon .icon=${iconSearchOutline}></ion-icon>
           <input
             type="text"
             .value=${this.queryText}

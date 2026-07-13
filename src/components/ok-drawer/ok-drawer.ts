@@ -1,6 +1,7 @@
 import { LitElement, html, css, type PropertyValues } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconCloseOutline, okIcon } from '../../base/icons.js';
 
 // ok-drawer — panel lateral deslizante (slide-over) contextual. Ionic NO lo trae: `ion-menu` es
 // navegación de app (ligado a split-pane/content-id) y `ion-modal` sheet es bottom-sheet. Este es
@@ -359,7 +360,7 @@ export class OkDrawer extends LitElement {
         tabindex="-1"
       >
         <header class="header">
-          ${this.icon ? html`<ion-icon .name=${this.icon} aria-hidden="true"></ion-icon>` : ''}
+          ${this.icon ? html`<ion-icon .icon=${okIcon(this.icon)} aria-hidden="true"></ion-icon>` : ''}
           ${this.heading ? html`<h2 class="heading">${this.heading}</h2>` : html`<span class="heading"></span>`}
           <div class="header-actions">
             <slot name="header-actions"></slot>
@@ -371,7 +372,7 @@ export class OkDrawer extends LitElement {
                   title=${this.t.close}
                   @click=${() => this.requestClose('button')}
                 >
-                  <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
+                  <ion-icon .icon=${iconCloseOutline} aria-hidden="true"></ion-icon>
                 </button>`
               : ''}
           </div>

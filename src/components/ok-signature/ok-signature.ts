@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconDownloadOutline, iconTrashOutline } from '../../base/icons.js';
 
 // ok-signature — pad de firma sobre `<canvas>`.
 // AUTOCONTENIDO: CSS propio en el shadow (sin Ionic salvo `ion-button`/`ion-icon` para los
@@ -278,7 +279,7 @@ export class OkSignature extends LitElement {
       </div>
       <div class="actions">
         <ion-button fill="clear" size="small" @click=${() => this.clear()}>
-          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          <ion-icon slot="start" .icon=${iconTrashOutline}></ion-icon>
           ${this.t.clear}
         </ion-button>
         ${this.showExport
@@ -287,7 +288,7 @@ export class OkSignature extends LitElement {
               size="small"
               @click=${() => this.onExport()}
             >
-              <ion-icon slot="start" name="download-outline"></ion-icon>
+              <ion-icon slot="start" .icon=${iconDownloadOutline}></ion-icon>
               ${this.t.export}
             </ion-button>`
           : ''}

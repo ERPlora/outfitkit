@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconChevronDownOutline } from '../../base/icons.js';
 
 // Opción del combo. La aporta el consumidor vía la prop `.options`.
 export interface OkComboOption {
@@ -290,7 +291,7 @@ export class OkCombo extends LitElement {
         @keydown=${(e: KeyboardEvent) => this.handleKeydown(e)}
       ></ion-input>
       <span class="chevron">
-        <ion-icon name="chevron-down-outline"></ion-icon>
+        <ion-icon .icon=${iconChevronDownOutline}></ion-icon>
       </span>
       ${this.open
         ? html`<ul class="dropdown" role="listbox">

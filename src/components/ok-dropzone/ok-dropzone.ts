@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconAlertCircleOutline, iconCloseOutline, iconCloudUploadOutline, iconDocumentOutline } from '../../base/icons.js';
 
 // ok-dropzone — subida de archivos por arrastrar-y-soltar (drag & drop) + click.
 // AUTOCONTENIDO: CSS propio en el shadow (sin Ionic salvo `ion-icon` para iconos de la zona y
@@ -353,7 +354,7 @@ export class OkDropzone extends LitElement {
         @dragleave=${this.onDragLeave}
         @drop=${this.onDrop}
       >
-        <ion-icon class="big-icon" name="cloud-upload-outline"></ion-icon>
+        <ion-icon class="big-icon" .icon=${iconCloudUploadOutline}></ion-icon>
         <span class="title">
           ${titleBefore}<span class="link">${this.t.browse}</span>${titleAfter}
         </span>
@@ -367,13 +368,13 @@ export class OkDropzone extends LitElement {
         @change=${this.onInputChange}
       />
 
-      ${this.error ? html`<div class="error"><ion-icon name="alert-circle-outline"></ion-icon>${this.error}</div>` : ''}
+      ${this.error ? html`<div class="error"><ion-icon .icon=${iconAlertCircleOutline}></ion-icon>${this.error}</div>` : ''}
 
       ${this.files.length
         ? html`<ul class="files">
             ${this.files.map(
               (file, i) => html`<li class="file">
-                <ion-icon class="file-icon" name="document-outline"></ion-icon>
+                <ion-icon class="file-icon" .icon=${iconDocumentOutline}></ion-icon>
                 <span class="meta">
                   <span class="name">${file.name}</span>
                   <span class="size">${this.formatSize(file.size)}</span>
@@ -387,7 +388,7 @@ export class OkDropzone extends LitElement {
                     this.removeAt(i);
                   }}
                 >
-                  <ion-icon name="close-outline"></ion-icon>
+                  <ion-icon .icon=${iconCloseOutline}></ion-icon>
                 </button>
               </li>`,
             )}

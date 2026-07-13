@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconCloseOutline } from '../../base/icons.js';
 
 // ok-tag-input — entrada de chips/tags. El usuario escribe y pulsa Enter o coma para añadir
 // un tag; Backspace con el input vacío borra el último; cada chip tiene una × para quitarlo.
@@ -341,7 +342,7 @@ export class OkTagInput extends LitElement {
               this.removeAt(i);
             }}
           >
-            <ion-icon name="close-outline"></ion-icon>
+            <ion-icon .icon=${iconCloseOutline}></ion-icon>
           </button>
         </span>`,
       )}

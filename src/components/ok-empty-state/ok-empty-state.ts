@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { okIcon } from '../../base/icons.js';
 
 // ok-empty-state — estado vacío centrado (sin datos, sin resultados, etc.).
 // Icono grande atenuado + título + mensaje muted + acción opcional.
@@ -77,7 +78,7 @@ export class OkEmptyState extends LitElement {
   render(): unknown {
     return html`
       <div class="wrap">
-        <ion-icon name=${this.icon} aria-hidden="true"></ion-icon>
+        <ion-icon .icon=${okIcon(this.icon)} aria-hidden="true"></ion-icon>
         ${this.heading ? html`<h2 class="heading">${this.heading}</h2>` : null}
         ${this.message ? html`<p class="message">${this.message}</p>` : null}
         <slot></slot>

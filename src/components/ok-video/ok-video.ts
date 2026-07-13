@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconExpandOutline, okIcon } from '../../base/icons.js';
 
 // ok-video — reproductor de vídeo con controles PROPIOS sobre un `<video>` nativo (sin libs).
 // AUTOCONTENIDO: CSS propio en el shadow; sólo usa `ion-button`/`ion-icon` (los registra el host).
@@ -315,7 +316,7 @@ export class OkVideo extends LitElement {
           @click=${this.togglePlay}
         >
           <span class="big">
-            <ion-icon name=${this.playing ? 'pause' : 'play'}></ion-icon>
+            <ion-icon .icon=${okIcon(this.playing ? 'pause' : 'play')}></ion-icon>
           </span>
         </button>
 
@@ -326,7 +327,7 @@ export class OkVideo extends LitElement {
             aria-label=${this.playing ? this.t.pause : this.t.play}
             @click=${this.togglePlay}
           >
-            <ion-icon slot="icon-only" name=${this.playing ? 'pause' : 'play'}></ion-icon>
+            <ion-icon slot="icon-only" .icon=${okIcon(this.playing ? 'pause' : 'play')}></ion-icon>
           </ion-button>
 
           <div class="progress" @click=${this.seek}>
@@ -343,7 +344,7 @@ export class OkVideo extends LitElement {
               aria-label=${this.muted ? this.t.unmute : this.t.mute}
               @click=${this.toggleMute}
             >
-              <ion-icon slot="icon-only" name=${volIcon}></ion-icon>
+              <ion-icon slot="icon-only" .icon=${okIcon(volIcon)}></ion-icon>
             </ion-button>
             <input
               type="range"
@@ -362,7 +363,7 @@ export class OkVideo extends LitElement {
             aria-label=${this.t.fullscreen}
             @click=${this.toggleFullscreen}
           >
-            <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconExpandOutline}></ion-icon>
           </ion-button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconCloseOutline, iconNotificationsOffOutline, okIcon } from '../../base/icons.js';
 
 // ok-notification-center — bandeja de notificaciones estilo drawer lateral derecho. Ionic NO lo
 // trae: es el panel de "inbox" típico de un ERP (campana → panel deslizante a la derecha con lista
@@ -526,7 +527,7 @@ export class OkNotificationCenter extends LitElement {
       ${this.isResolvedSvg(icon)
         ? // SVG resuelto: lo pinta ion-icon vía prop `icon`.
           html`<ion-icon .icon=${icon}></ion-icon>`
-        : html`<ion-icon .name=${icon}></ion-icon>`}
+        : html`<ion-icon .icon=${okIcon(icon)}></ion-icon>`}
     </span>`;
   }
 
@@ -562,7 +563,7 @@ export class OkNotificationCenter extends LitElement {
 
   private renderEmpty(): unknown {
     return html`<div class="empty">
-      <span class="ic" aria-hidden="true"><ion-icon name="notifications-off-outline"></ion-icon></span>
+      <span class="ic" aria-hidden="true"><ion-icon .icon=${iconNotificationsOffOutline}></ion-icon></span>
       <span class="e-title">${this.t.emptyTitle}</span>
       <span class="e-text">${this.t.emptyText}</span>
     </div>`;
@@ -591,7 +592,7 @@ export class OkNotificationCenter extends LitElement {
             aria-label=${this.t.close}
             @click=${() => this.requestClose('button')}
           >
-            <ion-icon name="close-outline"></ion-icon>
+            <ion-icon .icon=${iconCloseOutline}></ion-icon>
           </button>
         </header>
 

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconVolumeHighOutline, iconVolumeLowOutline, iconVolumeMuteOutline, okIcon } from '../../base/icons.js';
 
 // ok-audio — reproductor de audio con controles PROPIOS sobre un `<audio>` nativo (sin libs).
 // AUTOCONTENIDO: CSS propio en el shadow; sólo usa `ion-button`/`ion-icon` (los registra el host).
@@ -251,10 +252,10 @@ export class OkAudio extends LitElement {
   render(): unknown {
     const pct = this.duration ? (this.current / this.duration) * 100 : 0;
     const volIcon = this.muted || this.volume === 0
-      ? 'volume-mute-outline'
+      ? iconVolumeMuteOutline
       : this.volume < 0.5
-        ? 'volume-low-outline'
-        : 'volume-high-outline';
+        ? iconVolumeLowOutline
+        : iconVolumeHighOutline;
 
     return html`
       <div class="player">
@@ -278,7 +279,7 @@ export class OkAudio extends LitElement {
           >
             <ion-icon
               slot="icon-only"
-              name=${this.playing ? 'pause' : 'play'}
+              .icon=${okIcon(this.playing ? 'pause' : 'play')}
             ></ion-icon>
           </ion-button>
 
@@ -296,7 +297,7 @@ export class OkAudio extends LitElement {
               aria-label=${this.muted ? this.t.unmute : this.t.mute}
               @click=${this.toggleMute}
             >
-              <ion-icon slot="icon-only" name=${volIcon}></ion-icon>
+              <ion-icon slot="icon-only" .icon=${okIcon(volIcon)}></ion-icon>
             </ion-button>
             <input
               type="range"

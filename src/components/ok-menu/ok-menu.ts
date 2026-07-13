@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { computeAnchor } from '../../base/anchor.js';
+import { okIcon } from '../../base/icons.js';
 
 // Entrada de un menú desplegable / contextual. La aporta el consumidor vía la prop `.items`.
 // Puede ser una acción (hoja), un divisor, una etiqueta de sección, o un submenú (`children`).
@@ -475,7 +476,7 @@ export class OkMenu extends LitElement {
   private renderIcon(icon: string): unknown {
     return this.isResolvedSvg(icon)
       ? html`<ion-icon .icon=${icon}></ion-icon>`
-      : html`<ion-icon .name=${icon}></ion-icon>`;
+      : html`<ion-icon .icon=${okIcon(icon)}></ion-icon>`;
   }
 
   private renderEntry(entry: OkMenuEntry, key: string): unknown {

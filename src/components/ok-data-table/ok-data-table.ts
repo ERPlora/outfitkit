@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../../base/define.js';
+import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevronForward, iconChevronUpOutline, iconClose, iconEllipsisVertical, iconFileTrayOutline, iconSwapVerticalOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-checkbox / ion-icon NATIVOS (los registra el host). OutfitKit
 // construye SOBRE Ionic; no envolvemos lo que Ionic ya da.
 
@@ -1051,7 +1052,7 @@ export class OkDataTable extends LitElement {
     // date / daterange → pastilla compacta con icono calendario y dos ion-input (type=date).
     return html`
       <span class="tk-daterange" role="group" aria-label=${col.header}>
-        <ion-icon name="calendar-outline"></ion-icon>
+        <ion-icon .icon=${iconCalendarOutline}></ion-icon>
         <ion-input type="date" aria-label=${this.t.fromOf.replace('{label}', col.header)} .value=${f?.from ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'from', e)}></ion-input>
         <span class="arr">→</span>
         <ion-input type="date" aria-label=${this.t.toOf.replace('{label}', col.header)} .value=${f?.to ?? ''} @ionChange=${(e: Event) => this.onInlineRange(col, 'to', e)}></ion-input>
@@ -1064,7 +1065,7 @@ export class OkDataTable extends LitElement {
     if (!this.menuActions.length) return nothing;
     return html`
       <ion-button class="toolbtn" fill="clear" aria-label=${this.t.moreActions} @click=${(e: Event) => this.openMenu(e)}>
-        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+        <ion-icon slot="icon-only" .icon=${iconEllipsisVertical}></ion-icon>
       </ion-button>
       <ion-popover
         .isOpen=${this.menuOpen}
@@ -1077,7 +1078,7 @@ export class OkDataTable extends LitElement {
             ${this.menuActions.map(
               (a) => html`
                 <ion-item button .detail=${false} @click=${() => { this.menuOpen = false; this.emit('menuAction', { actionId: a.id }); }}>
-                  ${a.icon ? html`<ion-icon slot="start" name=${a.icon} color=${a.color ?? nothing}></ion-icon>` : nothing}
+                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} color=${a.color ?? nothing}></ion-icon>` : nothing}
                   <ion-label color=${a.color ?? nothing}>${a.label}</ion-label>
                 </ion-item>
               `,
@@ -1109,7 +1110,7 @@ export class OkDataTable extends LitElement {
             >
               ${loading
                 ? html`<ion-spinner slot="icon-only" name="dots"></ion-spinner>`
-                : a.icon ? html`<ion-icon slot="icon-only" name=${a.icon}></ion-icon>` : a.label}
+                : a.icon ? html`<ion-icon slot="icon-only" .icon=${okIcon(a.icon)}></ion-icon>` : a.label}
             </ion-button>
           `;
           },
@@ -1123,7 +1124,7 @@ export class OkDataTable extends LitElement {
   private toolButton(icon: string, on: boolean, onClick: () => void, label: string, badge?: number): unknown {
     return html`
       <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} title=${label} aria-label=${label} @click=${onClick}>
-        <ion-icon slot="icon-only" name=${icon}></ion-icon>
+        <ion-icon slot="icon-only" .icon=${okIcon(icon)}></ion-icon>
         ${badge && badge > 0 ? html`<span class="badge">${badge}</span>` : nothing}
       </ion-button>
     `;
@@ -1263,7 +1264,7 @@ export class OkDataTable extends LitElement {
                             title=${this.primaryAction.label}
                             aria-label=${this.primaryAction.label}
                             @click=${() => this.emit('primaryAction', {})}
-                          ><ion-icon slot="icon-only" name=${this.primaryAction.icon ?? 'add'}></ion-icon></ion-button>
+                          ><ion-icon slot="icon-only" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon></ion-button>
                         `
                       : nothing}
                     <!-- El módulo proyecta aquí acciones globales adicionales. -->
@@ -1274,7 +1275,7 @@ export class OkDataTable extends LitElement {
                       <div class="selbar">
                         <strong>${this.t.selected.replace('{n}', String(selCount))}</strong>
                         <button class="sel-clear" @click=${() => this.setSelection(new Set())}>
-                          <ion-icon name="close" style="font-size:14px"></ion-icon> ${this.t.clear}
+                          <ion-icon .icon=${iconClose} style="font-size:14px"></ion-icon> ${this.t.clear}
                         </button>
                       </div>
                     `
@@ -1308,13 +1309,13 @@ export class OkDataTable extends LitElement {
                 ${pages > 1
                   ? html`
                       <div class="nav">
-                        <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" name="chevron-back"></ion-icon></ion-button>
+                        <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon></ion-button>
                         ${this.pageList(current + 1, pages).map((p) =>
                           p === '…'
                             ? html`<span class="pgap">…</span>`
                             : html`<button class=${`pnum${p === current + 1 ? ' on' : ''}`} @click=${() => goTo(p - 1)}>${p}</button>`,
                         )}
-                        <ion-button size="small" fill="clear" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" name="chevron-forward"></ion-icon></ion-button>
+                        <ion-button size="small" fill="clear" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" .icon=${iconChevronForward}></ion-icon></ion-button>
                       </div>
                     `
                   : nothing}
@@ -1339,7 +1340,7 @@ export class OkDataTable extends LitElement {
       <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.t.form}>
         <header class="dh">
           <strong>${isFilters ? this.t.filters : this.t.newRecord}</strong>
-          <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.close()}><ion-icon slot="icon-only" name="close"></ion-icon></ion-button>
+          <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.close()}><ion-icon slot="icon-only" .icon=${iconClose}></ion-icon></ion-button>
         </header>
         <div class="db">
           ${isFilters
@@ -1405,7 +1406,7 @@ export class OkDataTable extends LitElement {
   private emptyState(): unknown {
     return html`
       <div class="empty">
-        <span class="empty-ic"><ion-icon name="file-tray-outline"></ion-icon></span>
+        <span class="empty-ic"><ion-icon .icon=${iconFileTrayOutline}></ion-icon></span>
         <span>${this.effEmptyMessage}</span>
       </div>
     `;
@@ -1432,7 +1433,7 @@ export class OkDataTable extends LitElement {
               const active = sortable && (this.serverSide ? this.sort === c.key : this.clientSort === c.key);
               const dir = this.serverSide ? this.sortDir : this.clientSortDir;
               // Icono 3-estados (como el Hub): neutral / asc / desc, con Ionicons.
-              const caretIcon = !active ? 'swap-vertical-outline' : dir === 'asc' ? 'chevron-up-outline' : 'chevron-down-outline';
+              const caretIcon = !active ? iconSwapVerticalOutline : dir === 'asc' ? iconChevronUpOutline : iconChevronDownOutline;
               return html`
                 <div
                   class=${`gcell gh ${alignCls(c.align)}${sortable ? ' sortable' : ''}`}
@@ -1441,7 +1442,7 @@ export class OkDataTable extends LitElement {
                 >
                   <span>${c.header}</span>
                   ${sortable
-                    ? html`<span class=${`caret${active ? ' on' : ''}`}><ion-icon name=${caretIcon}></ion-icon></span>`
+                    ? html`<span class=${`caret${active ? ' on' : ''}`}><ion-icon .icon=${okIcon(caretIcon)}></ion-icon></span>`
                     : nothing}
                 </div>
               `;
@@ -1492,7 +1493,7 @@ export class OkDataTable extends LitElement {
                   ? html`
                       <ion-card-header class="rcard-head">
                         ${icon != null && icon !== ''
-                          ? html`<span class="rc-icon">${typeof icon === 'string' ? html`<ion-icon name=${icon}></ion-icon>` : icon}</span>`
+                          ? html`<span class="rc-icon">${typeof icon === 'string' ? html`<ion-icon .icon=${okIcon(icon)}></ion-icon>` : icon}</span>`
                           : nothing}
                         <span class="rc-title">${this.cardTitle ? this.cardTitle(row) : nothing}</span>
                         ${this.selectable

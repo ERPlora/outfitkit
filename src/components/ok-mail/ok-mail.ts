@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
+import { iconArchiveOutline, iconArrowRedoOutline, iconArrowUndoOutline, iconChevronBack, iconCreateOutline, iconDocumentAttachOutline, iconTrashOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-icon / ion-searchbar / ion-avatar / ion-badge NATIVOS (los
 // registra el HOST). Para los estados vacíos REUSA <ok-empty-state> del catálogo. OutfitKit
 // construye SOBRE Ionic; no envolvemos lo que Ionic (o el propio core) ya da.
@@ -477,7 +478,7 @@ export class OkMail extends LitElement {
     return html`
       <div class="topbar">
         <ion-button @click=${() => this.emit('ok-compose', {})}>
-          <ion-icon slot="start" name="create-outline"></ion-icon>
+          <ion-icon slot="start" .icon=${iconCreateOutline}></ion-icon>
           ${this.t.compose}
         </ion-button>
         ${this.searchable
@@ -506,7 +507,7 @@ export class OkMail extends LitElement {
               aria-selected=${f.id === this.activeFolder ? 'true' : 'false'}
               @click=${() => this.onFolderSelect(f.id)}
             >
-              ${f.icon ? html`<ion-icon name=${f.icon}></ion-icon>` : nothing}
+              ${f.icon ? html`<ion-icon .icon=${okIcon(f.icon)}></ion-icon>` : nothing}
               <span class="tlabel">${f.label}</span>
               ${f.count ? html`<ion-badge>${f.count}</ion-badge>` : nothing}
             </button>
@@ -547,7 +548,7 @@ export class OkMail extends LitElement {
                         aria-label=${m.starred ? this.t.unstar : this.t.star}
                         @click=${(e: Event) => this.onStar(e, m)}
                       >
-                        <ion-icon name=${m.starred ? 'star' : 'star-outline'}></ion-icon>
+                        <ion-icon .icon=${okIcon(m.starred ? 'star' : 'star-outline')}></ion-icon>
                       </button>
                     </article>
                   `;
@@ -575,20 +576,20 @@ export class OkMail extends LitElement {
         <div class="reader-actions">
           <span class="back">
             <ion-button fill="clear" size="small" aria-label=${this.t.back} @click=${() => { this.activeMessage = ''; }}>
-              <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+              <ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon>
             </ion-button>
           </span>
           <ion-button fill="clear" size="small" aria-label=${this.t.reply} @click=${() => this.emit('ok-reply', { id: m.id })}>
-            <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconArrowUndoOutline}></ion-icon>
           </ion-button>
           <ion-button fill="clear" size="small" aria-label=${this.t.forward} @click=${() => this.emit('ok-forward', { id: m.id })}>
-            <ion-icon slot="icon-only" name="arrow-redo-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconArrowRedoOutline}></ion-icon>
           </ion-button>
           <ion-button fill="clear" size="small" aria-label=${this.t.archive} @click=${() => this.emit('ok-archive', { id: m.id })}>
-            <ion-icon slot="icon-only" name="archive-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconArchiveOutline}></ion-icon>
           </ion-button>
           <ion-button fill="clear" size="small" color="danger" aria-label=${this.t.delete} @click=${() => this.emit('ok-delete', { id: m.id })}>
-            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            <ion-icon slot="icon-only" .icon=${iconTrashOutline}></ion-icon>
           </ion-button>
         </div>
         <div class="reader-body">
@@ -609,7 +610,7 @@ export class OkMail extends LitElement {
                   ${m.attachments.map(
                     (a) => html`
                       <span class="att-chip">
-                        <ion-icon name="document-attach-outline"></ion-icon>
+                        <ion-icon .icon=${iconDocumentAttachOutline}></ion-icon>
                         <span>${a.name}</span>
                         ${a.size != null ? html`<span class="att-size">${this.fmtSize(a.size)}</span>` : nothing}
                       </span>

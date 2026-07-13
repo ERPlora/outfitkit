@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
+import { iconEllipsisVertical } from '../../base/icons.js';
 
 // ok-widget-board — panel de widgets configurable por el usuario.
 //
@@ -138,7 +139,7 @@ export class OkWidgetBoard extends LitElement {
         <slot name="title"><span class="title"></span></slot>
         ${this.editable
           ? html`<ion-button fill="clear" size="small" aria-label=${this.t.customize} @click=${this.openConfig}>
-              <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+              <ion-icon slot="icon-only" .icon=${iconEllipsisVertical}></ion-icon>
             </ion-button>`
           : nothing}
       </div>

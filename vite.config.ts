@@ -1,4 +1,6 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
+import Icons from 'unplugin-icons/vite';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -34,7 +36,19 @@ const emitTheme = {
 };
 
 export default defineConfig({
-  plugins: [emitTheme],
+  plugins: [
+    emitTheme,
+    // Iconos Iconify horneados EN BUILD (`~icons/ion/<name>?raw` → string SVG del set local
+    // @iconify-json/ion). OutfitKit trae así SUS PROPIOS iconos en vez de pedirle al host que los
+    // registre: el contrato implícito «el consumidor ya habrá hecho addIcons» rompía el Hub
+    // (offline: sin registro, ion-icon intenta bajar el SVG por red y sale VACÍO). Ver base/icons.ts.
+    Icons({ compiler: 'raw' }),
+  ],
+  // Tests unitarios (vitest), junto al código: src/**/*.test.ts.
+  test: {
+    include: ['src/**/*.test.ts'],
+    environment: 'node',
+  },
   build: {
     target: 'es2022',
     outDir: 'dist',

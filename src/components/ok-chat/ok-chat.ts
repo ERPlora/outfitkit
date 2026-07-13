@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconSend } from '../../base/icons.js';
 
 // Mensaje del hilo de chat. Lo aporta el consumidor vía la prop `.messages`.
 export interface OkChatMessage {
@@ -336,7 +337,7 @@ export class OkChat extends LitElement {
               aria-label=${this.t.send}
               @click=${() => this.send()}
             >
-              <ion-icon slot="icon-only" name="send"></ion-icon>
+              <ion-icon slot="icon-only" .icon=${iconSend}></ion-icon>
             </ion-button>
           </div>`}
     `;

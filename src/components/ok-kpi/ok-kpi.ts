@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { iconRemove, iconTrendingDown, iconTrendingUp, okIcon } from '../../base/icons.js';
 
 // ok-kpi — tarjeta KPI para dashboards: label (muted) + value (grande) + delta con color y flecha.
 // Slot default opcional (p.ej. una sparkline) bajo el valor.
@@ -110,11 +111,11 @@ export class OkKpi extends LitElement {
   /** Nombre de un ion-icon opcional mostrado junto al label. */
   @property() icon?: string;
 
-  /** Devuelve el ion-icon de flecha según la tendencia. */
+  /** Devuelve el icono de flecha según la tendencia (SVG horneado, ver base/icons.ts). */
   private trendIcon(): string {
-    if (this.trend === 'up') return 'trending-up';
-    if (this.trend === 'down') return 'trending-down';
-    return 'remove';
+    if (this.trend === 'up') return iconTrendingUp;
+    if (this.trend === 'down') return iconTrendingDown;
+    return iconRemove;
   }
 
   render(): unknown {
@@ -122,12 +123,12 @@ export class OkKpi extends LitElement {
       <div class="card">
         <div class="top">
           ${this.label ? html`<p class="label">${this.label}</p>` : null}
-          ${this.icon ? html`<ion-icon class="label-icon" name=${this.icon} aria-hidden="true"></ion-icon>` : null}
+          ${this.icon ? html`<ion-icon class="label-icon" .icon=${okIcon(this.icon)} aria-hidden="true"></ion-icon>` : null}
         </div>
         ${this.value ? html`<p class="value">${this.value}</p>` : null}
         ${this.delta
           ? html`<span class="delta ${this.trend}">
-              <ion-icon name=${this.trendIcon()} aria-hidden="true"></ion-icon>${this.delta}
+              <ion-icon .icon=${this.trendIcon()} aria-hidden="true"></ion-icon>${this.delta}
             </span>`
           : null}
         <slot></slot>
