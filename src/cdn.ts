@@ -97,6 +97,7 @@ import './components/ok-keyboard/ok-keyboard.js';
 import './components/ok-calculator/ok-calculator.js';
 import './components/ok-image/ok-image.js';
 import './components/ok-gallery/ok-gallery.js';
+import './components/ok-image-picker/ok-image-picker.js';
 import './components/ok-lightbox/ok-lightbox.js';
 import './components/ok-cropper/ok-cropper.js';
 import './components/ok-splitter/ok-splitter.js';

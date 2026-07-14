@@ -174,6 +174,8 @@ export { OkImage } from './components/ok-image/ok-image.js';
 export type { OkImageRatio, OkImageRadius, OkImageZoom } from './components/ok-image/ok-image.js';
 export { OkGallery } from './components/ok-gallery/ok-gallery.js';
 export type { OkGalleryImage } from './components/ok-gallery/ok-gallery.js';
+export { OkImagePicker } from './components/ok-image-picker/ok-image-picker.js';
+export type { OkPickerImage, OkPickerOrigin } from './components/ok-image-picker/ok-image-picker.js';
 export { OkLightbox } from './components/ok-lightbox/ok-lightbox.js';
 export type { OkLightboxItemType, OkLightboxItem, OkLightboxLabels } from './components/ok-lightbox/ok-lightbox.js';
 export { OkCropper } from './components/ok-cropper/ok-cropper.js';

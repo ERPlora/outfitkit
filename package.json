@@ -114,6 +114,7 @@
     "./ok-calculator": "./dist/ok-calculator.js",
     "./ok-image": "./dist/ok-image.js",
     "./ok-gallery": "./dist/ok-gallery.js",
+    "./ok-image-picker": "./dist/ok-image-picker.js",
     "./ok-lightbox": "./dist/ok-lightbox.js",
     "./ok-cropper": "./dist/ok-cropper.js",
     "./ok-splitter": "./dist/ok-splitter.js",

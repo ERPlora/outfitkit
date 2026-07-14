@@ -166,6 +166,7 @@ export default defineConfig({
         'ok-calculator': resolve(__dirname, 'src/components/ok-calculator/ok-calculator.ts'),
         'ok-image': resolve(__dirname, 'src/components/ok-image/ok-image.ts'),
         'ok-gallery': resolve(__dirname, 'src/components/ok-gallery/ok-gallery.ts'),
+        'ok-image-picker': resolve(__dirname, 'src/components/ok-image-picker/ok-image-picker.ts'),
         'ok-lightbox': resolve(__dirname, 'src/components/ok-lightbox/ok-lightbox.ts'),
         'ok-cropper': resolve(__dirname, 'src/components/ok-cropper/ok-cropper.ts'),
         'ok-splitter': resolve(__dirname, 'src/components/ok-splitter/ok-splitter.ts'),
