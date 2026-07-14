@@ -1099,6 +1099,11 @@ export class OkDataTable extends LitElement {
             // Acción en curso → spinner y no re-clicable; deshabilitada → botón inerte.
             const loading = a.loading?.(row) === true;
             const disabled = loading || a.disabled?.(row) === true;
+            // Botón SOLO ICONO → el `label` es su NOMBRE ACCESIBLE (`aria-label`) y su tooltip
+            // (`title`); si no, el lector de pantalla lee «botón» a secas y el ratón no ve nada
+            // (ADR-0133). Con texto visible no se pone: el nombre accesible ya es ese texto.
+            const iconOnly = !!a.icon;
+            const name = iconOnly && a.label ? a.label : nothing;
             return html`
             <ion-button
               size="small"
@@ -1106,6 +1111,8 @@ export class OkDataTable extends LitElement {
               color=${a.color ?? 'medium'}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
+              title=${name}
+              aria-label=${name}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
               ${loading

@@ -44,10 +44,19 @@ export default defineConfig({
     // (offline: sin registro, ion-icon intenta bajar el SVG por red y sale VACÍO). Ver base/icons.ts.
     Icons({ compiler: 'raw' }),
   ],
-  // Tests unitarios (vitest), junto al código: src/**/*.test.ts.
+  // Tests unitarios (vitest), junto al código: src/**/*.test.ts. Los que MONTAN un componente
+  // declaran `// @vitest-environment happy-dom` en su cabecera (DOM real: customElements + shadow
+  // root, para comprobar lo que PINTA); el resto corre en `node`.
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'node',
+    // SOLO EN TESTS: quita el sufijo `?raw` de los iconos horneados (`~icons/ion/<name>?raw`).
+    // Con el entorno happy-dom, vitest usa el transform «web» de Vite, que aplica su chequeo de
+    // acceso a ficheros a TODO id acabado en `?raw` — y los de unplugin-icons son ids VIRTUALES,
+    // no ficheros → «Error: Denied ID ~icons/ion/add?raw» al importar base/icons.ts. Sin el
+    // sufijo, `Icons({compiler:'raw'})` (arriba) devuelve exactamente el mismo string SVG, así que
+    // el módulo carga igual. El BUILD no se toca: sigue con `?raw` (ver src/base/icons.ts).
+    alias: [{ find: /^~icons\/(.*)\?raw$/, replacement: '~icons/$1' }],
   },
   build: {
     target: 'es2022',
