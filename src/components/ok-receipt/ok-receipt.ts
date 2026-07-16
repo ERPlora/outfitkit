@@ -111,6 +111,11 @@ export interface ReceiptData {
   qr?: string;
   /** Leyenda bajo el QR. */
   qr_note?: string;
+  /** QR promocional del negocio (reseñas Google, redes, web). Va SIEMPRE al final,
+   *  después del fiscal (que es el legal) y más pequeño. Si vacío, no deja rastro. */
+  promo_qr?: string;
+  /** Leyenda sobre el QR promocional (p.ej. «Escanea y déjanos una reseña»). */
+  promo_note?: string;
 }
 
 export class OkReceipt extends LitElement {
@@ -159,6 +164,8 @@ export class OkReceipt extends LitElement {
     .footer { font-size: 10px; white-space: pre-line; }
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
     .qr-note { font-size: 8px; text-align: center; word-break: break-word; }
+    .promo-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
+    .promo-note { font-size: 9px; text-align: center; word-break: break-word; }
     .empty { padding: 4mm; text-align: center; color: #888; font-style: italic; }
   `;
 
@@ -197,6 +204,7 @@ export class OkReceipt extends LitElement {
       ${this.renderTotals(r)}
       ${r.footer ? html`<hr class="sep" /><div class="center footer">${r.footer}</div>` : nothing}
       ${this.renderQr(r)}
+      ${this.renderPromo(r)}
     </div>`;
   }
 
@@ -276,6 +284,15 @@ export class OkReceipt extends LitElement {
     return html`<div class="qr-wrap">
       <ok-qr .value=${r.qr} .size=${this.qrSize} ec="M" color="#000" background="#fff"></ok-qr>
       ${r.qr_note ? html`<div class="qr-note">${r.qr_note}</div>` : nothing}
+    </div>`;
+  }
+
+  /** QR promocional (reseñas/redes): al final del papel y más pequeño que el fiscal. */
+  private renderPromo(r: ReceiptData) {
+    if (!r.promo_qr) return nothing;
+    return html`<div class="promo-wrap">
+      ${r.promo_note ? html`<div class="promo-note">${r.promo_note}</div>` : nothing}
+      <ok-qr .value=${r.promo_qr} .size=${Math.round(this.qrSize * 0.7)} ec="M" color="#000" background="#fff"></ok-qr>
     </div>`;
   }
 }
