@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../../base/define.js';
+import { CSV_BOM, decodeCsvBuffer } from './csv-encoding.js';
 import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevronForward, iconChevronUpOutline, iconClose, iconEllipsisVertical, iconFileTrayOutline, iconSwapVerticalOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-checkbox / ion-icon NATIVOS (los registra el host). OutfitKit
 // construye SOBRE Ionic; no envolvemos lo que Ionic ya da.
@@ -646,7 +647,8 @@ export class OkDataTable extends LitElement {
     const head = cols.map((c) => this.csvEscape(c.key)).join(',');
     const lines = this.rows.map((r) => cols.map((c) => this.csvEscape(r[c.key])).join(','));
     const csv = [head, ...lines].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    // BOM: sin él, Excel abre el UTF-8 como ANSI y pinta «CafÃ©» (ver csv-encoding.ts).
+    const blob = new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -685,7 +687,9 @@ export class OkDataTable extends LitElement {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    const text = await file.text();
+    // Nunca `file.text()`: decodifica siempre UTF-8 y rompe los CSV ANSI de Excel
+    // («Café» → «Caf�») y su "CSV UTF-8" con BOM (ver csv-encoding.ts).
+    const text = decodeCsvBuffer(await file.arrayBuffer());
     const { headers, rows } = this.parseCsv(text);
     this.emit('csvImport', { headers, rows });
     this.emit('import', { headers, rows });
