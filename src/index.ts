@@ -74,6 +74,7 @@ export type {
   ReceiptTax,
   ReceiptPayment,
   ReceiptBusiness,
+  OkReceiptLabels,
 } from './components/ok-receipt/ok-receipt.js';
 export { OkInvoice } from './components/ok-invoice/ok-invoice.js';
 export type {
@@ -81,6 +82,7 @@ export type {
   InvoiceParty,
   InvoiceLine,
   InvoiceTaxLine,
+  OkInvoiceLabels,
 } from './components/ok-invoice/ok-invoice.js';
 export { OkTimeline } from './components/ok-timeline/ok-timeline.js';
 export type { OkTimelineItem } from './components/ok-timeline/ok-timeline.js';
