@@ -32,6 +32,13 @@ const emitTheme = {
       fileName: 'erplora.css',
       source: readFileSync(resolve(__dirname, 'src/theme/erplora.css'), 'utf8'),
     });
+    // palettes.css — paletas opcionales sobre el canónico (data-ok-palette, del showcase ux).
+    // @ts-expect-error — rollup `this.emitFile` disponible en el hook.
+    this.emitFile({
+      type: 'asset',
+      fileName: 'palettes.css',
+      source: readFileSync(resolve(__dirname, 'src/theme/palettes.css'), 'utf8'),
+    });
   },
 };
 
@@ -144,6 +151,7 @@ export default defineConfig({
         'ok-notification-center': resolve(__dirname, 'src/components/ok-notification-center/ok-notification-center.ts'),
         'ok-coachmark': resolve(__dirname, 'src/components/ok-coachmark/ok-coachmark.ts'),
         'ok-select-card': resolve(__dirname, 'src/components/ok-select-card/ok-select-card.ts'),
+        'ok-theme-picker': resolve(__dirname, 'src/components/ok-theme-picker/ok-theme-picker.ts'),
         'ok-error-page': resolve(__dirname, 'src/components/ok-error-page/ok-error-page.ts'),
         'ok-date-picker': resolve(__dirname, 'src/components/ok-date-picker/ok-date-picker.ts'),
         'ok-time-picker': resolve(__dirname, 'src/components/ok-time-picker/ok-time-picker.ts'),

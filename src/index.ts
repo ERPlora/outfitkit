@@ -74,6 +74,7 @@ export type {
   ReceiptTax,
   ReceiptPayment,
   ReceiptBusiness,
+  OkReceiptLabels,
 } from './components/ok-receipt/ok-receipt.js';
 export { OkInvoice } from './components/ok-invoice/ok-invoice.js';
 export type {
@@ -81,6 +82,7 @@ export type {
   InvoiceParty,
   InvoiceLine,
   InvoiceTaxLine,
+  OkInvoiceLabels,
 } from './components/ok-invoice/ok-invoice.js';
 export { OkTimeline } from './components/ok-timeline/ok-timeline.js';
 export type { OkTimelineItem } from './components/ok-timeline/ok-timeline.js';
@@ -149,6 +151,12 @@ export { OkCoachmark } from './components/ok-coachmark/ok-coachmark.js';
 export type { OkCoachStep, OkCoachPlacement, OkCoachmarkLabels } from './components/ok-coachmark/ok-coachmark.js';
 export { OkSelectCard } from './components/ok-select-card/ok-select-card.js';
 export type { OkSelectCardChangeDetail } from './components/ok-select-card/ok-select-card.js';
+export { OkThemePicker, DEFAULT_PALETTES, applyPalette } from './components/ok-theme-picker/ok-theme-picker.js';
+export type {
+  OkThemePickerPalette,
+  OkThemePickerMode,
+  OkThemePickerLabels,
+} from './components/ok-theme-picker/ok-theme-picker.js';
 export { OkErrorPage } from './components/ok-error-page/ok-error-page.js';
 export type { OkErrorPageVariant, OkErrorPageMode, OkErrorCheckStatus, OkErrorShortcut, OkErrorCheck } from './components/ok-error-page/ok-error-page.js';
 export { OkDatePicker } from './components/ok-date-picker/ok-date-picker.js';
