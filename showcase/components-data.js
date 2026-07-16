@@ -2240,6 +2240,31 @@ if (restart) restart.addEventListener('click', () => { cm.current = 0; cm.open =
     api: [{"kind": "prop", "name": "mode", "type": "'checkbox' | 'radio'", "detail": "Independiente o exclusivo por grupo (default checkbox)"}, {"kind": "prop", "name": "name", "type": "string", "detail": "Grupo de radios para la exclusión mutua (modo radio)"}, {"kind": "prop", "name": "value · checked", "type": "string · boolean", "detail": "Valor emitido · si está marcada (refleja)"}, {"kind": "prop", "name": "label · description · icon", "type": "string", "detail": "Título · texto muted · icono Iconify a la izquierda"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Deshabilita la interacción (refleja)"}, {"kind": "event", "name": "ok-change", "type": "{ checked: boolean, value: string }", "detail": "Al cambiar la selección (bubbles + composed)"}, {"kind": "slot", "name": "(default)", "type": "—", "detail": "Contenido extra bajo el label"}],
   },
   {
+    id: "ok-theme-picker",
+    name: "ok-theme-picker",
+    category: "inputs",
+    desc: "Selector de tema compartido Cloud↔Hub (settings): paleta de marca (swatches — ERPlora + terracotta/corporate/minimal/forest/ocean/violet de palettes.css) + modo claro/oscuro/sistema. NO persiste ni toca el <html>: emite ok-change {palette, mode} y es el host quien aplica (applyPalette) y guarda. hide-mode oculta el segmento de modo.",
+    importPath: "@erplora/outfitkit/ok-theme-picker",
+    example: "<div style=\"display:flex;flex-direction:column;gap:.75rem;width:100%\">\n  <ok-theme-picker id=\"tpick\"></ok-theme-picker>\n  <p style=\"margin:0;font-size:.8rem;color:var(--ion-color-medium)\">Demo VIVA: la paleta elegida se aplica a TODO el showcase (data-ok-palette en el &lt;html&gt;, palettes.css).</p>\n</div>",
+    setup: (root, ctx) => {
+const el = root.querySelector('#tpick');
+const doc = document.documentElement;
+// Estado inicial desde el DOM real del showcase.
+el.palette = doc.getAttribute('data-ok-palette') || 'erplora';
+el.mode = doc.classList.contains('ion-palette-dark') ? 'dark' : 'light';
+el.addEventListener('ok-change', (e) => {
+  const { palette, mode } = e.detail;
+  // applyPalette() inline (la demo no importa el módulo): erplora = quitar el atributo.
+  if (!palette || palette === 'erplora') doc.removeAttribute('data-ok-palette');
+  else doc.setAttribute('data-ok-palette', palette);
+  const dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  doc.classList.toggle('ion-palette-dark', dark);
+});
+    },
+    code: "import { applyPalette } from '@erplora/outfitkit/ok-theme-picker';\n// CSS (una vez, tras erplora.css):\n//   @import '@erplora/outfitkit/erplora.css';\n//   @import '@erplora/outfitkit/palettes.css';\n\nconst picker = document.querySelector('ok-theme-picker');\npicker.palette = saved.palette;   // 'erplora' | 'terracotta' | 'corporate' | …\npicker.mode = saved.mode;         // 'system' | 'light' | 'dark'\npicker.labels = { palette: 'Paleta de tema', mode: 'Apariencia', system: 'Sistema', light: 'Claro', dark: 'Oscuro' };\n\npicker.addEventListener('ok-change', (e) => {\n  const { palette, mode } = e.detail;\n  applyPalette(document.documentElement, palette); // 'erplora' QUITA data-ok-palette\n  document.documentElement.classList.toggle('ion-palette-dark', mode === 'dark');\n  persist({ palette, mode }); // cookie/preferencias (Cloud) · localStorage/hub_settings (Hub)\n});",
+    api: [{"kind": "prop", "name": "palette", "type": "string", "detail": "Paleta activa ('erplora' = marca por defecto, sin atributo)"}, {"kind": "prop", "name": "mode", "type": "'system' | 'light' | 'dark'", "detail": "Modo de color activo"}, {"kind": "prop", "name": "hide-mode", "type": "boolean", "detail": "Oculta el segmento de modo (hosts con toggle propio)"}, {"kind": "prop", "name": ".palettes", "type": "OkThemePickerPalette[]", "detail": "Paletas a mostrar {id, label, brand} (default: DEFAULT_PALETTES, espejo de palettes.css)"}, {"kind": "prop", "name": ".labels", "type": "Partial<OkThemePickerLabels>", "detail": "Textos: palette/mode/system/light/dark (merge sobre defaults EN)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{palette, mode}>", "detail": "Al elegir paleta o modo (bubbles + composed); el host aplica y persiste"}, {"kind": "prop", "name": "applyPalette(root, id)", "type": "función exportada", "detail": "Único escritor de data-ok-palette: 'erplora'/vacío lo QUITA, el resto lo pone"}],
+  },
+  {
     id: "ok-error-page",
     name: "ok-error-page",
     category: "feedback",

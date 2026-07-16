@@ -84,6 +84,7 @@ import './components/ok-hover-card/ok-hover-card.js';
 import './components/ok-notification-center/ok-notification-center.js';
 import './components/ok-coachmark/ok-coachmark.js';
 import './components/ok-select-card/ok-select-card.js';
+import './components/ok-theme-picker/ok-theme-picker.js';
 import './components/ok-error-page/ok-error-page.js';
 import './components/ok-date-picker/ok-date-picker.js';
 import './components/ok-time-picker/ok-time-picker.js';

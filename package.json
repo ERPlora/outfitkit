@@ -101,6 +101,7 @@
     "./ok-notification-center": "./dist/ok-notification-center.js",
     "./ok-coachmark": "./dist/ok-coachmark.js",
     "./ok-select-card": "./dist/ok-select-card.js",
+    "./ok-theme-picker": "./dist/ok-theme-picker.js",
     "./ok-error-page": "./dist/ok-error-page.js",
     "./ok-date-picker": "./dist/ok-date-picker.js",
     "./ok-time-picker": "./dist/ok-time-picker.js",
@@ -124,6 +125,7 @@
     "./ok-file-manager": "./dist/ok-file-manager.js",
     "./theme.css": "./dist/theme.example.css",
     "./erplora.css": "./dist/erplora.css",
+    "./palettes.css": "./dist/palettes.css",
     "./layout.css": "./dist/layout.css",
     "./cdn": "./dist/outfitkit.js",
     "./bundle": "./dist/outfitkit.bundle.js"
@@ -148,6 +150,7 @@
   "devDependencies": {
     "@iconify-json/ion": "^1.2.7",
     "@types/node": "^24.10.1",
+    "happy-dom": "^20.10.6",
     "typescript": "^5.6.0",
     "unplugin-icons": "^23.0.1",
     "vite": "^6.0.0",
