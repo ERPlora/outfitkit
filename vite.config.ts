@@ -113,6 +113,7 @@ export default defineConfig({
         'ok-timeline': resolve(__dirname, 'src/components/ok-timeline/ok-timeline.ts'),
         'ok-qty-stepper': resolve(__dirname, 'src/components/ok-qty-stepper/ok-qty-stepper.ts'),
         'ok-command-palette': resolve(__dirname, 'src/components/ok-command-palette/ok-command-palette.ts'),
+        'ok-spotlight-search': resolve(__dirname, 'src/components/ok-spotlight-search/ok-spotlight-search.ts'),
         'ok-color-picker': resolve(__dirname, 'src/components/ok-color-picker/ok-color-picker.ts'),
         'ok-avatar': resolve(__dirname, 'src/components/ok-avatar/ok-avatar.ts'),
         'ok-status-pill': resolve(__dirname, 'src/components/ok-status-pill/ok-status-pill.ts'),

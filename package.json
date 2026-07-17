@@ -66,6 +66,7 @@
     "./ok-timeline": "./dist/ok-timeline.js",
     "./ok-qty-stepper": "./dist/ok-qty-stepper.js",
     "./ok-command-palette": "./dist/ok-command-palette.js",
+    "./ok-spotlight-search": "./dist/ok-spotlight-search.js",
     "./ok-color-picker": "./dist/ok-color-picker.js",
     "./ok-avatar": "./dist/ok-avatar.js",
     "./ok-status-pill": "./dist/ok-status-pill.js",

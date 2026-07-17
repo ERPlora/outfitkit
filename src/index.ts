@@ -89,6 +89,7 @@ export type { OkTimelineItem } from './components/ok-timeline/ok-timeline.js';
 export { OkQtyStepper } from './components/ok-qty-stepper/ok-qty-stepper.js';
 export { OkCommandPalette } from './components/ok-command-palette/ok-command-palette.js';
 export type { OkCommand } from './components/ok-command-palette/ok-command-palette.js';
+export { OkSpotlightSearch } from './components/ok-spotlight-search/ok-spotlight-search.js';
 export { OkColorPicker } from './components/ok-color-picker/ok-color-picker.js';
 export type { OkRgb } from './components/ok-color-picker/ok-color-picker.js';
 export { OkAvatar } from './components/ok-avatar/ok-avatar.js';
