@@ -987,6 +987,52 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
       { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre de la paleta' },
     ],
   },
+  {
+    id: 'ok-spotlight-search',
+    name: 'ok-spotlight-search',
+    category: 'acciones',
+    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante (arriba-centro, fondo desenfocado) que NO rompe la vista de debajo. Aporta solo el chrome (input hero + ✕ + trigger opcional + autofoco + Esc); los RESULTADOS los pone el consumidor por slot (datos síncronos o async), así sirve para cualquier búsqueda. Es un <dialog> nativo en el TOP LAYER: escapa el containing block de un ion-toolbar donde viva el trigger.',
+    importPath: "@erplora/outfitkit/ok-spotlight-search",
+    example: `<div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-start">
+  <small style="color:var(--ion-color-medium)">Pulsa el icono para abrir el buscador.</small>
+  <ok-spotlight-search id="sp" trigger-icon="person" trigger-label="Buscar cliente" placeholder="Buscar cliente…">
+    <ion-list id="sp-list" lines="none">
+      <ion-item button detail="false"><ion-label><h3>Ana García</h3><p>600 111 222</p></ion-label></ion-item>
+      <ion-item button detail="false"><ion-label><h3>Bar Manolo</h3><p>600 333 444</p></ion-label></ion-item>
+      <ion-item button detail="false"><ion-label><h3>Café Central</h3><p>600 555 666</p></ion-label></ion-item>
+    </ion-list>
+    <ion-button slot="footer" fill="clear" size="small">Quitar</ion-button>
+  </ok-spotlight-search>
+</div>`,
+    setup: (root) => {
+      const sp = root.querySelector('#sp');
+      const items = [...root.querySelectorAll('#sp-list ion-item')];
+      // Filtra los resultados según lo tecleado (el consumidor decide cómo; aquí, por texto).
+      sp.addEventListener('ok-input', (e) => {
+        const q = (e.detail.value || '').toLowerCase();
+        items.forEach((it) => { it.style.display = it.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+      });
+      // Al elegir un resultado se cierra el overlay.
+      items.forEach((it) => it.addEventListener('click', () => sp.close()));
+      root.querySelector('[slot="footer"]').addEventListener('click', () => sp.close());
+    },
+    code: `<ok-spotlight-search trigger-icon="person" placeholder="Buscar cliente…">
+  <ion-list><!-- el consumidor pinta y estila los resultados --></ion-list>
+  <ion-button slot="footer">Quitar</ion-button>
+</ok-spotlight-search>
+
+// Filtrar según lo tecleado (datos síncronos o async):
+sp.addEventListener('ok-input', (e) => buscar(e.detail.value));
+sp.addEventListener('ok-open',  (e) => { if (e.detail.open) cargar(); });
+sp.openSearch();  // close() / toggle()  · o desde una lupa externa`,
+    api: [
+      { kind: 'prop', name: 'open · placeholder · value', type: 'bool · string · string', detail: 'Abierto (reflejado) · guía del input · texto de búsqueda' },
+      { kind: 'prop', name: 'trigger-icon · trigger-label', type: 'string · string', detail: 'Si se da, pinta su botón-icono; si no, el consumidor controla la apertura' },
+      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados (los pone el consumidor) · acciones (p.ej. Quitar)' },
+      { kind: 'event', name: 'openSearch() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
+      { kind: 'event', name: 'ok-input · ok-open', type: '{value} · {open}', detail: 'Al teclear · al abrir/cerrar' },
+    ],
+  },
 
   // ═════════════════════════════ FORMULARIOS ══════════════════════════════
   {
