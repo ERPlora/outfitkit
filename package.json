@@ -27,6 +27,10 @@
       "types": "./dist/store/controller.d.ts",
       "import": "./dist/store-controller.js"
     },
+    "./tabbar": {
+      "types": "./dist/tabbar/tabbar.d.ts",
+      "import": "./dist/tabbar.js"
+    },
     "./ok-store": "./dist/ok-store.js",
     "./ok-data-table": "./dist/ok-data-table.js",
     "./ok-mail": "./dist/ok-mail.js",
@@ -128,6 +132,7 @@
     "./erplora.css": "./dist/erplora.css",
     "./palettes.css": "./dist/palettes.css",
     "./layout.css": "./dist/layout.css",
+    "./tabbar.css": "./dist/tabbar.css",
     "./cdn": "./dist/outfitkit.js",
     "./bundle": "./dist/outfitkit.bundle.js"
   },
