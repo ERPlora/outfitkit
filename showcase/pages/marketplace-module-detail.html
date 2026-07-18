@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WhatsApp Inbox · ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <style>
+      .module-detail-stack { display:grid; gap:1rem; }
+      .module-summary { margin:0; }
+      .module-summary-head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+      .module-eyebrow { color:var(--ion-color-medium); font-size:.75rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+      .module-summary h1 { margin:.2rem 0; font-size:1.45rem; }
+      .module-summary p { color:var(--ion-color-medium); }
+      .module-hub-form { max-width:28rem; margin-top:1rem; }
+      .module-tiers { display:grid; grid-template-columns:minmax(0,28rem); gap:1rem; }
+      .module-tiers h2 { margin:0; font-size:1.05rem; }
+      .module-price { margin:.35rem 0; color:var(--ion-color-primary); font-size:1.55rem; font-weight:700; }
+      .module-price small { color:var(--ion-color-medium); font-size:.8rem; font-weight:400; }
+      .module-quota { padding:0; margin:.75rem 0; list-style:none; }
+      .module-quota li { margin:.35rem 0; }
+      .checkout-preview { display:grid; place-items:center; min-height:20rem; padding:2rem; text-align:center; }
+      .checkout-preview iconify-icon { color:var(--ion-color-primary); }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const hubs = [
+        { id:'main-hub', label:'Main Hub — Test Org' },
+        { id:'second-hub', label:'Second Hub — Test Org' },
+      ];
+
+      defineSaasDashboardPage({
+        active: '/dashboard/marketplace/modules/whatsapp-inbox/',
+        title: 'WhatsApp Inbox',
+        body: `
+          <div class="module-detail-stack">
+            <ion-card class="module-summary">
+              <ion-card-content>
+                <div class="module-summary-head">
+                  <div>
+                    <div class="module-eyebrow">Módulo</div>
+                    <h1>WhatsApp Inbox</h1>
+                    <p>Bandeja compartida de WhatsApp para atender conversaciones desde tus hubs.</p>
+                  </div>
+                  <ion-badge id="module-hub-state" color="medium">No suscrito</ion-badge>
+                </div>
+                <form id="form-hub-select" class="module-hub-form">
+                  <ion-select id="module-detail-hub" fill="outline" label="Hub" label-placement="floating" interface="popover" value="main-hub">
+                    <ion-select-option value="main-hub">Main Hub — Test Org</ion-select-option>
+                    <ion-select-option value="second-hub">Second Hub — Test Org</ion-select-option>
+                  </ion-select>
+                </form>
+              </ion-card-content>
+            </ion-card>
+            <section class="module-tiers">
+              <h2>Planes</h2>
+              <ion-card>
+                <ion-card-content>
+                  <strong>Pro</strong>
+                  <div class="module-price">19,00 €<small>/mes</small></div>
+                  <ul class="module-quota"><li>✓ 1.000 conversaciones/mes</li></ul>
+                  <p>Prueba gratuita de 15 días</p>
+                  <form id="module-checkout-form" class="marketplace-checkout-form">
+                    <ion-button type="submit" expand="block"><iconify-icon slot="start" icon="lucide:shopping-cart" width="16" height="16"></iconify-icon>Suscribirse</ion-button>
+                  </form>
+                </ion-card-content>
+              </ion-card>
+            </section>
+          </div>
+          <ion-modal id="marketplace-checkout-modal" backdrop-dismiss="false">
+            <div class="ion-page">
+              <ion-header class="ion-no-border">
+                <ion-toolbar>
+                  <ion-title>Checkout</ion-title>
+                  <ion-buttons slot="end"><ion-button id="marketplace-checkout-close" fill="clear" aria-label="Cerrar"><iconify-icon slot="icon-only" icon="lucide:x" width="18" height="18"></iconify-icon></ion-button></ion-buttons>
+                </ion-toolbar>
+              </ion-header>
+              <ion-content>
+                <div class="checkout-preview">
+                  <div><iconify-icon icon="lucide:shield-check" width="32" height="32"></iconify-icon><h2>Checkout seguro</h2><p id="checkout-summary">Preparando la suscripción…</p><ion-spinner id="marketplace-checkout-loading" name="crescent"></ion-spinner></div>
+                </div>
+              </ion-content>
+            </div>
+          </ion-modal>
+          <ion-toast id="module-detail-toast" duration="1800" position="bottom"></ion-toast>`,
+        footer: `
+          <footer id="section-tabbar">
+            <ion-segment value="modules" aria-label="Navegación del marketplace">
+              <ion-segment-button value="modules"><iconify-icon icon="lucide:puzzle" width="20" height="20"></iconify-icon><ion-label>Módulos</ion-label></ion-segment-button>
+              <ion-segment-button value="plans"><iconify-icon icon="lucide:server" width="20" height="20"></iconify-icon><ion-label>Planes de hub</ion-label></ion-segment-button>
+            </ion-segment>
+          </footer>`,
+        setup(doc) {
+          const hubSelect = doc.getElementById('module-detail-hub');
+          const checkoutForm = doc.getElementById('module-checkout-form');
+          const checkoutModal = doc.getElementById('marketplace-checkout-modal');
+          const summary = doc.getElementById('checkout-summary');
+          const spinner = doc.getElementById('marketplace-checkout-loading');
+          let selectedHub = hubs[0];
+
+          hubSelect.addEventListener('ionChange', (event) => {
+            selectedHub = hubs.find((hub) => hub.id === event.detail?.value) ?? hubs[0];
+          });
+          checkoutForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            checkoutModal.isOpen = true;
+            summary.textContent = `WhatsApp Inbox · Pro para ${selectedHub.label}`;
+            spinner.hidden = false;
+            window.setTimeout(() => { spinner.hidden = true; }, 600);
+          });
+          doc.getElementById('marketplace-checkout-close').addEventListener('click', () => {
+            checkoutModal.isOpen = false;
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

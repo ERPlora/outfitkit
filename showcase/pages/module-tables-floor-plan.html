@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Plano de sala</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .tables-floor-plan-page { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0.65rem; }
+      .tables-floor-plan-actions { display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap; }
+      .tables-floor-plan-actions ion-input { flex: 1 1 12rem; }
+      .tables-floor-plan-zonebar { display: flex; gap: 0.35rem; align-items: center; }
+      .tables-floor-plan-zonebar ion-segment { flex: 1 1 auto; min-width: 0; }
+      .tables-floor-plan-legend { display: flex; gap: 0.7rem; flex-wrap: wrap; color: var(--ion-color-medium); font-size: 0.78rem; }
+      .tables-floor-plan-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+      .tables-floor-plan-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; }
+      .tables-floor-plan-canvas { position: relative; flex: 1 1 auto; min-height: 22rem; overflow: hidden; border: 1px dashed var(--ion-border-color, #cfcabd); border-radius: 14px; background: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0, 0, 0, 0.04) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0, 0, 0, 0.04) 40px); touch-action: none; }
+      .tables-floor-plan-table { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 72px; height: 72px; padding: 0; border: 2px solid; border-radius: 12px; background: var(--ion-background-color, #fff); color: var(--ion-text-color, #1c1b18); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); cursor: grab; user-select: none; }
+      .tables-floor-plan-table.round { border-radius: 50%; }
+      .tables-floor-plan-table.dragging { z-index: 2; cursor: grabbing; opacity: 0.85; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24); }
+      .tables-floor-plan-table b { font-size: 1.05rem; }
+      .tables-floor-plan-table small { color: var(--ion-color-medium); }
+      .tables-floor-plan-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; color: var(--ion-color-medium); text-align: center; pointer-events: none; }
+      .tables-floor-plan-hint { margin: 0; color: var(--ion-color-medium); font-size: 0.85rem; }
+      .tables-floor-plan-form { display: grid; gap: 0.75rem; }
+      .tables-floor-plan-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .tables-floor-plan-modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 1rem; }
+      @media (max-width: 520px) {
+        .tables-floor-plan-actions ion-button { flex: 1 1 auto; }
+        .tables-floor-plan-form-row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Base canónica de erp-tables-floor-plan.test.ts; la posición completa el lienzo de preview.
+      const ZONE_FIXTURE = [
+        { "id": "z1", "name": "Terraza", "color": "#0f0", "sort_order": 1, "is_active": 1 },
+        { "id": "z2", "name": "Salón", "color": "#00f", "sort_order": 2, "is_active": 1 }
+      ];
+      const TABLE_FIXTURE = [
+        { "id": "m1", "number": "12", "name": "", "capacity": 4, "shape": "square", "status": "available", "is_active": 1, "zone": "Terraza", "zone_id": "z1", "position_x": 32, "position_y": 32, "width": 72, "height": 72 }
+      ];
+
+      const BOX = 72;
+      const DRAG_THRESHOLD = 5;
+      const STATUS_COLOR = {
+        available: '#2f9e44', occupied: '#d9480f', reserved: '#f08c00', blocked: '#868e96',
+      };
+      const STATUS_LABEL = {
+        available: 'Disponible', occupied: 'Ocupada', reserved: 'Reservada', blocked: 'Bloqueada',
+      };
+
+      let zones = ZONE_FIXTURE.map((row) => ({ ...row }));
+      let tables = TABLE_FIXTURE.map((row) => ({ ...row }));
+      let activeZone = zones[0]?.id || '';
+      let editingTableId = '';
+      let editingZoneId = '';
+      let drag = null;
+
+      function recordQuery(name, params = {}) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+      defineHubPage({
+        active: '/m/tables/floor_plan',
+        title: 'Plano de sala',
+        body: `
+          <div class="tables-floor-plan-page">
+            <div class="tables-floor-plan-actions">
+              <ion-input id="tables-new-zone-name" fill="outline" label="Zona" label-placement="floating" placeholder="Nueva zona…"></ion-input>
+              <ion-button id="tables-add-zone" size="small" fill="outline">Añadir zona</ion-button>
+              <ion-button id="tables-add-table" size="small">Añadir mesa</ion-button>
+            </div>
+            <div class="tables-floor-plan-zonebar">
+              <ion-segment id="tables-floor-plan-zones" scrollable></ion-segment>
+              <ion-button id="tables-edit-zone" size="small" fill="clear">Editar zona</ion-button>
+            </div>
+            <div class="tables-floor-plan-legend" aria-label="Estados de mesa">
+              <span><i class="tables-floor-plan-dot" style="background:#2f9e44"></i>Disponible</span>
+              <span><i class="tables-floor-plan-dot" style="background:#d9480f"></i>Ocupada</span>
+              <span><i class="tables-floor-plan-dot" style="background:#f08c00"></i>Reservada</span>
+              <span><i class="tables-floor-plan-dot" style="background:#868e96"></i>Bloqueada</span>
+            </div>
+            <div id="tables-floor-plan-canvas" class="tables-floor-plan-canvas"></div>
+            <p class="tables-floor-plan-hint">Arrastra para colocar · pulsa una mesa para editarla o borrarla. Los cambios se guardan al momento.</p>
+          </div>
+
+          <ion-modal id="tables-table-modal">
+            <ion-header class="ion-no-border">
+              <ion-toolbar>
+                <ion-title>Editar mesa</ion-title>
+                <ion-buttons slot="end"><ion-button id="tables-table-close" aria-label="Cerrar"><ion-icon name="close" slot="icon-only"></ion-icon></ion-button></ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <form id="tables-table-form" class="tables-floor-plan-form">
+                <div class="tables-floor-plan-form-row">
+                  <ion-input id="tables-table-number" fill="outline" label="Número" label-placement="floating" required></ion-input>
+                  <ion-input id="tables-table-capacity" fill="outline" label="Aforo" label-placement="floating" type="number" min="1"></ion-input>
+                </div>
+                <ion-input id="tables-table-name" fill="outline" label="Nombre (opcional)" label-placement="floating"></ion-input>
+                <div class="tables-floor-plan-form-row">
+                  <ion-select id="tables-table-shape" fill="outline" label="Forma" label-placement="floating" interface="popover">
+                    <ion-select-option value="square">Cuadrada</ion-select-option>
+                    <ion-select-option value="round">Redonda</ion-select-option>
+                    <ion-select-option value="rectangle">Rectangular</ion-select-option>
+                  </ion-select>
+                  <ion-select id="tables-table-status" fill="outline" label="Estado" label-placement="floating" interface="popover">
+                    <ion-select-option value="available">Disponible</ion-select-option>
+                    <ion-select-option value="occupied">Ocupada</ion-select-option>
+                    <ion-select-option value="reserved">Reservada</ion-select-option>
+                    <ion-select-option value="blocked">Bloqueada</ion-select-option>
+                  </ion-select>
+                </div>
+                <ion-select id="tables-table-zone" fill="outline" label="Zona" label-placement="floating" interface="popover"></ion-select>
+                <ion-toggle id="tables-table-active">Mesa activa</ion-toggle>
+                <div class="tables-floor-plan-modal-actions">
+                  <ion-button id="tables-table-delete" type="button" color="danger" fill="outline">Borrar</ion-button>
+                  <ion-button type="submit">Guardar</ion-button>
+                </div>
+              </form>
+            </ion-content>
+          </ion-modal>
+
+          <ion-modal id="tables-zone-modal">
+            <ion-header class="ion-no-border">
+              <ion-toolbar>
+                <ion-title>Editar zona</ion-title>
+                <ion-buttons slot="end"><ion-button id="tables-zone-close" aria-label="Cerrar"><ion-icon name="close" slot="icon-only"></ion-icon></ion-button></ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <form id="tables-zone-form" class="tables-floor-plan-form">
+                <ion-input id="tables-zone-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="tables-zone-description" fill="outline" label="Descripción (opcional)" label-placement="floating"></ion-input>
+                <ion-input id="tables-zone-color" fill="outline" label="Color" label-placement="floating"></ion-input>
+                <ion-input id="tables-zone-order" fill="outline" label="Orden" label-placement="floating" type="number" min="0"></ion-input>
+                <ion-toggle id="tables-zone-active">Zona activa</ion-toggle>
+                <div class="tables-floor-plan-modal-actions">
+                  <ion-button id="tables-zone-delete" type="button" color="danger" fill="outline">Borrar zona</ion-button>
+                  <ion-button type="submit">Guardar</ion-button>
+                </div>
+              </form>
+            </ion-content>
+          </ion-modal>
+        `,
+        setup(doc) {
+          const newZoneName = doc.getElementById('tables-new-zone-name');
+          const addZone = doc.getElementById('tables-add-zone');
+          const addTable = doc.getElementById('tables-add-table');
+          const editZone = doc.getElementById('tables-edit-zone');
+          const zoneSegment = doc.getElementById('tables-floor-plan-zones');
+          const canvas = doc.getElementById('tables-floor-plan-canvas');
+          const tableModal = doc.getElementById('tables-table-modal');
+          const tableForm = doc.getElementById('tables-table-form');
+          const tableNumber = doc.getElementById('tables-table-number');
+          const tableCapacity = doc.getElementById('tables-table-capacity');
+          const tableName = doc.getElementById('tables-table-name');
+          const tableShape = doc.getElementById('tables-table-shape');
+          const tableStatus = doc.getElementById('tables-table-status');
+          const tableZone = doc.getElementById('tables-table-zone');
+          const tableActive = doc.getElementById('tables-table-active');
+          const zoneModal = doc.getElementById('tables-zone-modal');
+          const zoneForm = doc.getElementById('tables-zone-form');
+          const zoneName = doc.getElementById('tables-zone-name');
+          const zoneDescription = doc.getElementById('tables-zone-description');
+          const zoneColor = doc.getElementById('tables-zone-color');
+          const zoneOrder = doc.getElementById('tables-zone-order');
+          const zoneActive = doc.getElementById('tables-zone-active');
+
+          function renderZoneSelect() {
+            zoneSegment.innerHTML = zones.map((zone) => `<ion-segment-button value="${escapeHtml(zone.id)}"><ion-label>${escapeHtml(zone.name)}</ion-label></ion-segment-button>`).join('');
+            zoneSegment.value = activeZone;
+            tableZone.innerHTML = `<ion-select-option value="">Sin zona</ion-select-option>${zones.map((zone) => `<ion-select-option value="${escapeHtml(zone.id)}">${escapeHtml(zone.name)}</ion-select-option>`).join('')}`;
+            addTable.disabled = !zones.length;
+            editZone.disabled = !activeZone;
+          }
+
+          function renderCanvas() {
+            const rows = tables.filter((row) => !activeZone || row.zone_id === activeZone);
+            canvas.innerHTML = rows.map((row) => `
+              <button type="button" class="tables-floor-plan-table ${row.shape === 'round' ? 'round' : ''}" data-table-id="${escapeHtml(row.id)}" style="left:${Number(row.position_x) || 0}px;top:${Number(row.position_y) || 0}px;border-color:${STATUS_COLOR[row.status] || '#cfcabd'}" title="${escapeHtml(STATUS_LABEL[row.status] || row.status)} · ${Number(row.capacity) || 1} pax">
+                <b>${escapeHtml(row.number)}</b><small>${Number(row.capacity) || 1} pax</small>
+              </button>
+            `).join('');
+            if (!zones.length) canvas.innerHTML = '<div class="tables-floor-plan-empty">Crea una zona para empezar a colocar mesas.</div>';
+            else if (!rows.length) canvas.innerHTML = '<div class="tables-floor-plan-empty">Sin mesas en esta zona. Pulsa «Añadir mesa».</div>';
+          }
+
+          function refresh() {
+            recordQuery('tables.zones.list', { sort: 'sort_order', dir: 'asc' });
+            recordQuery('tables.tables.list', { sort: 'number', dir: 'asc' });
+            if (!activeZone || !zones.some((zone) => zone.id === activeZone)) activeZone = zones[0]?.id || '';
+            renderZoneSelect();
+            renderCanvas();
+          }
+
+          function openTable(id) {
+            const row = tables.find((item) => item.id === id);
+            if (!row) return;
+            editingTableId = id;
+            tableNumber.value = row.number;
+            tableCapacity.value = String(row.capacity);
+            tableName.value = row.name || '';
+            tableShape.value = row.shape;
+            tableStatus.value = row.status;
+            tableZone.value = row.zone_id || '';
+            tableActive.checked = Boolean(Number(row.is_active));
+            tableModal.present();
+          }
+
+          function openZone() {
+            const row = zones.find((item) => item.id === activeZone);
+            if (!row) return;
+            recordQuery('tables.zones.get', { zone_id: row.id });
+            editingZoneId = row.id;
+            zoneName.value = row.name;
+            zoneDescription.value = row.description || '';
+            zoneColor.value = row.color || 'primary';
+            zoneOrder.value = String(row.sort_order || 0);
+            zoneActive.checked = Boolean(Number(row.is_active));
+            zoneModal.present();
+          }
+
+          addZone.addEventListener('click', () => {
+            const name = String(newZoneName.value || '').trim();
+            if (!name) return;
+            const payload = { name, description: '', color: 'primary', sort_order: zones.length };
+            recordCommand('tables.zones.create', payload);
+            const id = `preview-zone-${zones.length + 1}`;
+            zones = [...zones, { id, ...payload, is_active: 1 }];
+            activeZone = id;
+            newZoneName.value = '';
+            refresh();
+          });
+
+          addTable.addEventListener('click', () => {
+            if (!activeZone) return;
+            const number = String(tables.filter((row) => row.zone_id === activeZone).length + 1);
+            const payload = { zone_id: activeZone, number, name: '', capacity: 4, position_x: 48, position_y: 48, width: BOX, height: BOX, shape: 'square' };
+            recordCommand('tables.tables.create', payload);
+            const zone = zones.find((row) => row.id === activeZone);
+            tables = [...tables, { id: `preview-table-${tables.length + 1}`, ...payload, status: 'available', is_active: 1, zone: zone?.name || null }];
+            refresh();
+          });
+
+          zoneSegment.addEventListener('ionChange', (event) => {
+            activeZone = String(event.detail.value || '');
+            renderCanvas();
+          });
+          editZone.addEventListener('click', openZone);
+
+          canvas.addEventListener('pointerdown', (event) => {
+            const target = event.target.closest('[data-table-id]');
+            if (!target) return;
+            const row = tables.find((item) => item.id === target.dataset.tableId);
+            if (!row) return;
+            const rect = canvas.getBoundingClientRect();
+            drag = {
+              id: row.id,
+              target,
+              startX: event.clientX,
+              startY: event.clientY,
+              dx: event.clientX - rect.left - Number(row.position_x || 0),
+              dy: event.clientY - rect.top - Number(row.position_y || 0),
+              moved: false,
+            };
+            target.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+          });
+          canvas.addEventListener('pointermove', (event) => {
+            if (!drag) return;
+            if (Math.abs(event.clientX - drag.startX) > DRAG_THRESHOLD || Math.abs(event.clientY - drag.startY) > DRAG_THRESHOLD) drag.moved = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.min(Math.max(0, rect.width - BOX), Math.max(0, event.clientX - rect.left - drag.dx));
+            const y = Math.min(Math.max(0, rect.height - BOX), Math.max(0, event.clientY - rect.top - drag.dy));
+            const row = tables.find((item) => item.id === drag.id);
+            if (row) { row.position_x = x; row.position_y = y; }
+            drag.target.style.left = `${x}px`;
+            drag.target.style.top = `${y}px`;
+            drag.target.classList.toggle('dragging', drag.moved);
+          });
+
+          function finishDrag() {
+            if (!drag) return;
+            const current = drag;
+            drag = null;
+            current.target.classList.remove('dragging');
+            const row = tables.find((item) => item.id === current.id);
+            if (!row) return;
+            if (!current.moved) return openTable(row.id);
+            const payload = { table_id: row.id, position_x: Math.round(row.position_x), position_y: Math.round(row.position_y), width: BOX, height: BOX };
+            recordCommand('tables.tables.move', payload);
+          }
+          canvas.addEventListener('pointerup', finishDrag);
+          canvas.addEventListener('pointercancel', finishDrag);
+
+          tableForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const row = tables.find((item) => item.id === editingTableId);
+            const number = String(tableNumber.value || '').trim();
+            if (!row || !number) return;
+            const payload = {
+              table_id: row.id,
+              number,
+              name: String(tableName.value || '').trim(),
+              capacity: Math.max(1, Number(tableCapacity.value) || 1),
+              zone_id: String(tableZone.value || '') || null,
+              shape: String(tableShape.value || 'square'),
+              status: String(tableStatus.value || 'available'),
+              is_active: tableActive.checked ? 1 : 0,
+            };
+            recordCommand('tables.tables.update', payload);
+            const zone = zones.find((item) => item.id === payload.zone_id);
+            tables = tables.map((item) => item.id === row.id ? { ...item, ...payload, id: item.id, zone: zone?.name || null } : item);
+            tableModal.dismiss();
+            refresh();
+          });
+          doc.getElementById('tables-table-delete').addEventListener('click', () => {
+            if (!editingTableId) return;
+            recordCommand('tables.tables.delete', { table_id: editingTableId });
+            tables = tables.filter((row) => row.id !== editingTableId);
+            tableModal.dismiss();
+            refresh();
+          });
+          doc.getElementById('tables-table-close').addEventListener('click', () => tableModal.dismiss());
+
+          zoneForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const row = zones.find((item) => item.id === editingZoneId);
+            const name = String(zoneName.value || '').trim();
+            if (!row || !name) return;
+            const payload = {
+              zone_id: row.id,
+              name,
+              description: String(zoneDescription.value || '').trim(),
+              color: String(zoneColor.value || '').trim() || 'primary',
+              sort_order: Math.max(0, Number(zoneOrder.value) || 0),
+              is_active: zoneActive.checked ? 1 : 0,
+            };
+            recordCommand('tables.zones.update', payload);
+            zones = zones.map((item) => item.id === row.id ? { ...item, ...payload, id: item.id } : item);
+            tables = tables.map((item) => item.zone_id === row.id ? { ...item, zone: name } : item);
+            zoneModal.dismiss();
+            refresh();
+          });
+          doc.getElementById('tables-zone-delete').addEventListener('click', () => {
+            if (!editingZoneId) return;
+            recordCommand('tables.zones.delete', { zone_id: editingZoneId });
+            // La guarda WASM real rechaza `tables_attached`; el preview deja el modal abierto.
+            if (tables.some((row) => row.zone_id === editingZoneId && Number(row.is_active))) return;
+            zones = zones.filter((row) => row.id !== editingZoneId);
+            activeZone = zones[0]?.id || '';
+            zoneModal.dismiss();
+            refresh();
+          });
+          doc.getElementById('tables-zone-close').addEventListener('click', () => zoneModal.dismiss());
+
+          refresh();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -3,152 +3,175 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Ingresos de vendor</title>
+    <title>Ingresos · ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Celda de módulo con icono coloreado */
-      .ui-module-cell {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .ui-module-icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 4px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .ui-module-name {
-        font-size: 0.88rem;
-        font-weight: 500;
-      }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
   </head>
   <body>
-    <!--
-      SOBRIO: solo ok-page-header + ok-data-table.
-      SIN chrome inventado: ni KPIs, ni gráficos, ni toolbar de filtros manuales,
-      ni paginador manual, ni export popover. El buscador/columnas/csv del
-      propio ok-data-table son suficientes.
-    -->
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      const fmt    = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-      const fmtNeg = (n) => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-
-      // Tipo → color Ionic (las clases .ion-color-* NO penetran el shadow → vars inline).
-      const TIPO_COLOR = { 'Compra': 'success', 'Renovación': 'tertiary', 'Expansión': 'warning' };
-
-      const ROWS = [
-        { fecha: '30 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'acme-prod',    tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
-        { fecha: '28 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Renovación', bruto: 159.00, fees: -52.11, net: 106.89 },
-        { fecha: '26 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'norte-prod',   tipo: 'Compra',     bruto: 49.00,  fees: -16.12, net: 32.88 },
-        { fecha: '24 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'acme-prod',    tipo: 'Expansión',  bruto: 240.00, fees: -78.82, net: 161.18 },
-        { fecha: '22 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'rambla-prod',  tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
-        { fecha: '20 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Expansión',  bruto: 159.00, fees: -52.11, net: 106.89 },
-        { fecha: '18 mar 2026', modulo: 'pos-tickets-bono', moduloColor: 'medium',   hub: 'rambla-prod',  tipo: 'Compra',     bruto: 29.00,  fees: -9.57,  net: 19.43 },
-        { fecha: '16 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'acme-prod',    tipo: 'Renovación', bruto: 49.00,  fees: -16.12, net: 32.88 },
-        { fecha: '14 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'norte-prod',   tipo: 'Compra',     bruto: 95.00,  fees: -31.21, net: 63.79 },
-        { fecha: '12 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'acme-prod',    tipo: 'Renovación', bruto: 89.00,  fees: -29.28, net: 59.72 },
-        { fecha: '10 mar 2026', modulo: 'pos-tickets-bono', moduloColor: 'medium',   hub: 'lola-prod',    tipo: 'Compra',     bruto: 29.00,  fees: -9.57,  net: 19.43 },
-        { fecha: '08 mar 2026', modulo: 'vinedos-erp',      moduloColor: 'success',  hub: 'mariola-prod', tipo: 'Compra',     bruto: 159.00, fees: -52.11, net: 106.89 },
-        { fecha: '06 mar 2026', modulo: 'stock-multi-sede', moduloColor: 'warning',  hub: 'rambla-prod',  tipo: 'Compra',     bruto: 95.00,  fees: -31.21, net: 63.79 },
-        { fecha: '04 mar 2026', modulo: 'facturae-export',  moduloColor: 'tertiary', hub: 'norte-prod',   tipo: 'Compra',     bruto: 49.00,  fees: -16.12, net: 32.88 },
-        { fecha: '02 mar 2026', modulo: 'contabilidad-pro', moduloColor: 'primary',  hub: 'mariola-prod', tipo: 'Compra',     bruto: 89.00,  fees: -29.28, net: 59.72 },
+      /* Datos demostrativos con el contrato actual de developer/earnings/views.py. */
+      const EARNINGS = [
+        { id: 'earning-1', moduleId: 'inventory', module: 'Inventario', createdAt: '2026-07-16T10:24:00', gross: 49, commission: 7.35, net: 41.65, status: 'paid' },
+        { id: 'earning-2', moduleId: 'accounting', module: 'Contabilidad', createdAt: '2026-07-14T16:05:00', gross: 19, commission: 2.85, net: 16.15, status: 'pending' },
+        { id: 'earning-3', moduleId: 'hr', module: 'Recursos humanos', createdAt: '2026-07-11T09:38:00', gross: 29, commission: 4.35, net: 24.65, status: 'processing' },
+        { id: 'earning-4', moduleId: 'inventory', module: 'Inventario', createdAt: '2026-07-08T13:46:00', gross: 49, commission: 7.35, net: 41.65, status: 'paid' },
+        { id: 'earning-5', moduleId: 'accounting', module: 'Contabilidad', createdAt: '2026-07-04T11:12:00', gross: 19, commission: 2.85, net: 16.15, status: 'failed' },
       ];
 
-      definePage({
-        bare: true,
+      const STATUS = {
+        paid: ['Pagado', 'success'],
+        pending: ['Pendiente', 'warning'],
+        processing: ['Procesando', 'medium'],
+        failed: ['Fallido', 'danger'],
+      };
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const date = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const moduleCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.65rem;min-width:0">
+          <ion-avatar style="display:grid;place-items:center;flex:none;width:2.1rem;height:2.1rem;color:var(--ion-color-primary);font-size:12px;font-weight:750;background:rgba(var(--ion-color-primary-rgb),.14)">
+            <span style="display:grid;width:100%;height:100%;place-items:center">${row.module.charAt(0)}</span>
+          </ion-avatar>
+          <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.module}</strong>
+        </span>`;
+
+      const statusCell = (row) => {
+        const [label, tone] = STATUS[row.status] || [row.status, 'medium'];
+        return h`<ion-badge style="--background:rgba(var(--ion-color-${tone}-rgb),.14);--color:var(--ion-color-${tone});--padding-top:5px;--padding-bottom:5px">${label}</ion-badge>`;
+      };
+
+      const footer = `
+        <footer id="section-tabbar">
+          <ion-segment value="earnings" aria-label="Secciones de desarrollador">
+            <ion-segment-button value="overview"><iconify-icon icon="lucide:layout-grid" width="20" height="20"></iconify-icon><ion-label>Resumen</ion-label></ion-segment-button>
+            <ion-segment-button value="earnings"><iconify-icon icon="lucide:wallet" width="20" height="20"></iconify-icon><ion-label>Ingresos</ion-label></ion-segment-button>
+            <ion-segment-button value="payouts"><iconify-icon icon="lucide:banknote" width="20" height="20"></iconify-icon><ion-label>Pagos</ion-label></ion-segment-button>
+            <ion-segment-button value="modules"><iconify-icon icon="lucide:box" width="20" height="20"></iconify-icon><ion-label>Mis módulos</ion-label></ion-segment-button>
+            <ion-segment-button value="blueprints"><iconify-icon icon="lucide:layers" width="20" height="20"></iconify-icon><ion-label>Blueprints</ion-label></ion-segment-button>
+            <ion-segment-button value="repositories"><iconify-icon icon="lucide:git-branch" width="20" height="20"></iconify-icon><ion-label>Repositorios</ion-label></ion-segment-button>
+            <ion-segment-button value="apidocs"><iconify-icon icon="lucide:book-open" width="20" height="20"></iconify-icon><ion-label>API Docs</ion-label></ion-segment-button>
+          </ion-segment>
+        </footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/developer/',
+        title: 'Ingresos',
         body: `
-          <ok-page-header
-            heading="Ingresos de vendor"
-            description="15 movimientos · marzo 2026 · net 1 456,00 €">
-            <div slot="actions">
-              <ion-button size="small" id="btn-payout">
-                <ion-icon slot="start" name="cash-outline"></ion-icon>
-                Solicitar payout
-              </ion-button>
+          <div class="developer-page">
+            <section class="developer-kpis" style="--developer-kpi-columns:4" aria-label="Resumen de ingresos">
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:wallet" width="12" height="12"></iconify-icon>Neto total</div>
+                <div class="developer-kpi-value">140,25 €</div>
+                <div class="developer-kpi-sub">Tus ingresos</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:clock" width="12" height="12"></iconify-icon>Pendiente</div>
+                <div class="developer-kpi-value">16,15 €</div>
+                <div class="developer-kpi-sub">A la espera del pago</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:trending-up" width="12" height="12"></iconify-icon>Ingresos brutos</div>
+                <div class="developer-kpi-value">165,00 €</div>
+                <div class="developer-kpi-sub">Antes de la comisión</div>
+              </div>
+              <div class="developer-kpi alert">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:tag" width="12" height="12"></iconify-icon>Comisión (15%)</div>
+                <div class="developer-kpi-value">24,75 €</div>
+                <div class="developer-kpi-sub">Comisión de plataforma</div>
+              </div>
+            </section>
+
+            <div class="developer-table-wrap">
+              <div class="dash-fill">
+                <ok-data-table id="earnings-dt" server-side fill>
+                  <div slot="toolbar" class="okdt-filters">
+                    <ion-select class="okdt-filter" data-okdt-param="status" interface="popover" aria-label="Estado" placeholder="Todos los estados">
+                      <ion-select-option value="">Todos los estados</ion-select-option>
+                      <ion-select-option value="pending">Pendiente</ion-select-option>
+                      <ion-select-option value="processing">Procesando</ion-select-option>
+                      <ion-select-option value="paid">Pagado</ion-select-option>
+                      <ion-select-option value="failed">Fallido</ion-select-option>
+                    </ion-select>
+                    <ion-select class="okdt-filter" data-okdt-param="module" interface="popover" aria-label="Módulo" placeholder="Todos los módulos">
+                      <ion-select-option value="">Todos los módulos</ion-select-option>
+                      <ion-select-option value="inventory">Inventario</ion-select-option>
+                      <ion-select-option value="accounting">Contabilidad</ion-select-option>
+                      <ion-select-option value="hr">Recursos humanos</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ok-data-table>
+              </div>
             </div>
-          </ok-page-header>
 
-          <ok-data-table id="earn-dt" style="display:block"></ok-data-table>
-        `,
+            <div class="developer-alert developer-after-table" role="note">
+              <iconify-icon icon="lucide:info" width="18" height="18" style="color:var(--ion-color-primary)"></iconify-icon>
+              <div class="developer-alert-body">
+                <div class="developer-alert-title">Cómo funcionan las comisiones</div>
+                <div class="developer-alert-text">ERPlora aplica una comisión del 15% a todas las ventas de módulos. Recibes el 85% del precio de venta. Por ejemplo, de una venta de 100 €, recibes 85 €.</div>
+              </div>
+            </div>
+          </div>`,
+        footer,
         setup(doc) {
-          const dt = doc.getElementById('earn-dt');
-          if (!dt) return;
+          const table = doc.getElementById('earnings-dt');
+          if (!table) return;
 
-          dt.rowKey     = (r) => r.fecha + r.modulo + r.hub;
-          dt.csv        = true;
-          dt.searchable = true;
-          dt.searchKeys = ['modulo', 'hub', 'tipo', 'fecha'];
-
-          dt.columns = [
-            { key: 'fecha',  header: 'Fecha',   width: 'minmax(8rem,1fr)',    sortable: true },
-            {
-              key: 'modulo', header: 'Módulo',  width: 'minmax(11rem,1.4fr)',
-              render: (r) => h`
-                <span class="ui-module-cell">
-                  <span class="ui-module-icon"
-                    style="background:color-mix(in srgb, var(--ion-color-${r.moduloColor}) 20%, transparent);color:var(--ion-color-${r.moduloColor})">
-                    <ion-icon name="grid-outline" style="font-size:11px"></ion-icon>
-                  </span>
-                  <span class="ui-module-name">${r.modulo}</span>
-                </span>`,
-            },
-            {
-              key: 'hub',    header: 'Hub',     width: 'minmax(8rem,1fr)',
-              render: (r) => h`<span style="color:var(--ion-color-medium);font-size:.85rem">${r.hub}</span>`,
-            },
-            {
-              key: 'tipo',   header: 'Tipo',    width: '8rem',
-              render: (r) => {
-                const c = TIPO_COLOR[r.tipo] ?? 'medium';
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px">${r.tipo}</ion-badge>`;
-              },
-            },
-            {
-              key: 'bruto',  header: 'Bruto',   width: '7rem', align: 'right', sortable: true,
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${fmt(r.bruto)}</span>`,
-            },
-            {
-              key: 'fees',   header: 'Fees',    width: '7rem', align: 'right',
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums;color:var(--ion-color-medium)">${fmtNeg(r.fees)}</span>`,
-            },
-            {
-              key: 'net',    header: 'Net',     width: '7rem', align: 'right', sortable: true,
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums;color:var(--ion-color-success);font-weight:700">${fmt(r.net)}</span>`,
-            },
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'module', header: 'Módulo', width: 'minmax(13rem,1.35fr)', sortable: true, render: moduleCell },
+            { key: 'createdAt', header: 'Fecha', width: '11rem', sortable: true, format: (row) => date.format(new Date(row.createdAt)) },
+            { key: 'gross', header: 'Bruto', width: '8rem', align: 'right', sortable: true, format: (row) => money.format(row.gross) },
+            { key: 'commission', header: 'Comisión', width: '9rem', align: 'right', format: (row) => `−${money.format(row.commission)}` },
+            { key: 'net', header: 'Neto', width: '8rem', align: 'right', sortable: true, format: (row) => money.format(row.net) },
+            { key: 'status', header: 'Estado', width: '9rem', render: statusCell },
           ];
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar por módulo…';
+          table.actions = [{ id: 'view', label: 'Ver', icon: 'eye-outline' }];
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50, 100];
+          table.labels = {
+            empty: 'Todavía no hay ingresos',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            showing: 'Mostrando {from}–{to} de',
+            recordSingular: 'ingreso',
+            recordPlural: 'ingresos',
+            actions: 'Acciones',
+          };
 
-          dt.rows = ROWS;
-
-          // Acción de solicitar payout desde la cabecera.
-          doc.getElementById('btn-payout')?.addEventListener('click', () => {
-            const t = document.createElement('ion-toast');
-            t.message  = 'Solicitud de payout enviada.';
-            t.duration = 1500;
-            t.position = 'bottom';
-            document.body.appendChild(t);
-            t.present();
-            t.addEventListener('didDismiss', () => t.remove());
-          });
+          const state = { query: '', sort: 'createdAt', dir: 'desc' };
+          const valueOf = (name) => doc.querySelector(`[data-okdt-param="${name}"]`)?.value || '';
+          const refresh = () => {
+            const query = state.query.trim().toLocaleLowerCase('es');
+            const status = valueOf('status');
+            const moduleId = valueOf('module');
+            let rows = EARNINGS.filter((row) =>
+              (!query || row.module.toLocaleLowerCase('es').includes(query)) &&
+              (!status || row.status === status) && (!moduleId || row.moduleId === moduleId));
+            rows = [...rows].sort((a, b) => String(a[state.sort] ?? '').localeCompare(String(b[state.sort] ?? ''), 'es') * (state.dir === 'asc' ? 1 : -1));
+            table.rows = rows;
+            table.total = rows.length;
+            table.page = 0;
+          };
+          doc.querySelectorAll('[data-okdt-param]').forEach((control) => control.addEventListener('ionChange', refresh));
+          table.addEventListener('searchChange', (event) => { state.query = String(event.detail || ''); refresh(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; refresh(); });
+          table.addEventListener('rowAction', (event) => console.info('/dashboard/developer/earnings/', event.detail.row.id));
+          refresh();
         },
       });
     </script>

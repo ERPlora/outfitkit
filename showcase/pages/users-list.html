@@ -3,191 +3,194 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Usuarios de hubs</title>
+    <title>Usuarios - ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Celda usuario: avatar + nombre + email. */
-      .user-cell { display: inline-flex; align-items: center; gap: 10px; }
-      .user-cell__info { line-height: 1.3; }
-      .user-cell__name { font-weight: 600; font-size: .9rem; }
-      .user-cell__email { font-size: .78rem; color: var(--ion-color-medium); }
-    </style>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-data-table.js"></script>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      /* ──────────────────────────────────────────────────────
-         Datos de filas. Cada fila tiene:
-           id, name, email, initials, role, hubs (array de slugs),
-           lastConn, status ('active'|'inactive'|'pending'|'suspended')
-         ────────────────────────────────────────────────────── */
+      /* Esquema de la vista real: una fila por membresía de organización gestionable.
+       * Los nombres son datos de muestra; columnas, filtros y acciones proceden de users/views.py. */
       const USERS = [
-        { id:'u1',  name:'Juan García',    email:'juan.garcia@acme.com',                 initials:'JG', role:'admin',    hubs:['acme-prod','bodegas-casadejus','mariola-tienda-1'], lastConn:'hace 2 min',  status:'active'    },
-        { id:'u2',  name:'María López',    email:'maria.lopez@bodegas-casadejus.com',    initials:'ML', role:'editor',   hubs:['bodegas-casadejus'],                               lastConn:'hace 14 min', status:'active'    },
-        { id:'u3',  name:'Carlos Ruiz',    email:'c.ruiz@logistica-peninsular.es',       initials:'CR', role:'admin',    hubs:['logistica-peninsular','ferreteria-puig'],           lastConn:'hace 32 min', status:'active'    },
-        { id:'u4',  name:'Ana Martín',     email:'ana.martin@mariola.com',               initials:'AM', role:'pos',      hubs:['mariola-tienda-1'],                                lastConn:'hace 1 h',    status:'active'    },
-        { id:'u5',  name:'Sergi Puig',     email:'sergi@ferreteria-puig.cat',            initials:'SP', role:'admin',    hubs:['ferreteria-puig'],                                 lastConn:'hace 1 h',    status:'active'    },
-        { id:'u6',  name:'Núria Roca',     email:'nuria.roca@vinos-roca.es',             initials:'NR', role:'editor',   hubs:['vinos-roca-staging','bodegas-casadejus'],           lastConn:'hace 2 h',    status:'active'    },
-        { id:'u7',  name:'Javier Castaño', email:'j.castano@acme.com',                  initials:'JC', role:'admin',    hubs:['acme-prod','bodegas-casadejus','mariola-tienda-1','ferreteria-puig'], lastConn:'hace 3 h', status:'active' },
-        { id:'u8',  name:'Elena Ferrer',   email:'elena.ferrer@bodegas-casadejus.com',  initials:'EF', role:'viewer',   hubs:['bodegas-casadejus'],                               lastConn:'hace 5 h',    status:'active'    },
-        { id:'u9',  name:'Marta Vidal',    email:'marta.vidal@mariola.com',             initials:'MV', role:'pos',      hubs:['mariola-tienda-1'],                                lastConn:'hace 7 h',    status:'active'    },
-        { id:'u10', name:'Pau Bonet',      email:'pau.bonet@logistica-peninsular.es',   initials:'PB', role:'editor',   hubs:['logistica-peninsular','ferreteria-puig','acme-prod'],lastConn:'hace 1 d',   status:'inactive'  },
-        { id:'u11', name:'Cristina Ortiz', email:'c.ortiz@vinos-roca.es',              initials:'CO', role:'admin',    hubs:['vinos-roca-staging'],                              lastConn:'hace 1 d',    status:'inactive'  },
-        { id:'u12', name:'David Iglesias', email:'david.iglesias@ferreteria-puig.cat',  initials:'DI', role:'viewer',   hubs:['ferreteria-puig'],                                 lastConn:'hace 2 d',    status:'inactive'  },
-        { id:'u13', name:'Rocío Mendoza',  email:'rocio.mendoza@acme.com',              initials:'RM', role:'editor',   hubs:['acme-prod','mariola-tienda-1'],                    lastConn:'hace 4 d',    status:'inactive'  },
-        { id:'u14', name:'Andrés Tovar',   email:'a.tovar@bodegas-casadejus.com',       initials:'AT', role:'pending',  hubs:['bodegas-casadejus'],                               lastConn:'—',           status:'pending'   },
-        { id:'u15', name:'Laura Pérez',    email:'laura.perez@mariola.com',             initials:'LP', role:'pending',  hubs:['mariola-tienda-1'],                                lastConn:'—',           status:'pending'   },
-        { id:'u16', name:'Xavi Fontana',   email:'xavi@vinos-roca.es',                 initials:'XF', role:'editor',   hubs:['vinos-roca-staging','bodegas-casadejus','ferreteria-puig'], lastConn:'hace 14 d', status:'inactive' },
-        { id:'u17', name:'Sara Moreno',    email:'sara.moreno@acme.com',               initials:'SM', role:'viewer',   hubs:['acme-prod'],                                       lastConn:'hace 31 d',   status:'suspended' },
-        { id:'u18', name:'Manuel Ortega',  email:'manuel.ortega@logistica-peninsular.es',initials:'MO',role:'pos',      hubs:['logistica-peninsular','ferreteria-puig'],           lastConn:'hace 42 d',   status:'suspended' },
+        { id: 'm1', name: 'Lucía Torres', email: 'lucia@demo.es', organization: 'ERPlora Demo', role: 'Owner', joined: '14 jul 2026' },
+        { id: 'm2', name: 'Adrián Vega', email: 'adrian@demo.es', organization: 'ERPlora Demo', role: 'Admin', joined: '2 jul 2026' },
+        { id: 'm3', name: 'Marta Soler', email: 'marta@central.es', organization: 'Central Barcelona', role: 'Manager', joined: '26 jun 2026' },
+        { id: 'm4', name: 'Pablo Ríos', email: 'pablo@central.es', organization: 'Central Barcelona', role: 'Employee', joined: '18 jun 2026' },
+        { id: 'm5', name: 'Nuria Vidal', email: 'nuria@norte.es', organization: 'Sucursal Norte', role: 'Admin', joined: '9 jun 2026' },
+        { id: 'm6', name: 'Álex Romero', email: 'alex@norte.es', organization: 'Sucursal Norte', role: 'Manager', joined: '28 may 2026' },
+        { id: 'm7', name: 'Elena Martí', email: 'elena@demo.es', organization: 'ERPlora Demo', role: 'Employee', joined: '12 may 2026' },
       ];
 
-      /* ── helpers de render ── */
-      const ROL_LABEL = { admin:'Admin', editor:'Editor', viewer:'Viewer', pos:'Solo POS', pending:'Pendiente' };
-      const ROL_COLOR = { admin:'primary', editor:'tertiary', viewer:'medium', pos:'medium', pending:'warning' };
+      const FILTERS = [
+        { id: 'users-role-filter', key: 'role', label: 'Todos los roles' },
+        { id: 'users-organization-filter', key: 'organization', label: 'Todas las organizaciones' },
+      ];
 
-      const statusBadge = (status) => {
-        if (status === 'active')    return h`<ok-status-dot tone="ok"     show-label label="Activo"></ok-status-dot>`;
-        if (status === 'inactive')  return h`<ok-status-dot tone="off"    show-label label="Inactivo"></ok-status-dot>`;
-        if (status === 'pending')   return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning);--padding-top:4px;--padding-bottom:4px">Pendiente</ion-badge>`;
-        if (status === 'suspended') return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-danger) 15%,transparent);--color:var(--ion-color-danger);--padding-top:4px;--padding-bottom:4px">Suspendido</ion-badge>`;
-        return null;
+      const roleTone = {
+        Owner: 'success',
+        Admin: 'warning',
+        Manager: 'medium',
+        Employee: 'tertiary',
       };
 
-      const hubsCell = (hubs) => {
-        const label = hubs.length === 1 ? '1 hub' : `${hubs.length} hubs`;
-        return h`<ion-chip style="margin:0;font-size:.78rem" title=${hubs.join(' · ')}>
-          <ion-label>${label}</ion-label>
-        </ion-chip>`;
-      };
-
-      const rolBadge = (role) => {
-        const color = ROL_COLOR[role] ?? 'medium';
-        const label = ROL_LABEL[role] ?? role;
-        return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-${color}) 15%,transparent);--color:var(--ion-color-${color});--padding-top:4px;--padding-bottom:4px">${label}</ion-badge>`;
-      };
-
-      const userCell = (r) => h`
-        <span class="user-cell">
-          <ok-avatar name=${r.name} size="sm" tone="auto"></ok-avatar>
-          <span class="user-cell__info">
-            <div class="user-cell__name">${r.name}</div>
-            <div class="user-cell__email">${r.email}</div>
+      const userCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.6rem;min-width:0">
+          <ion-avatar style="display:grid;place-items:center;flex:0 0 auto;width:2rem;height:2rem;color:var(--ion-color-primary);font-size:12px;font-weight:700;background:rgba(var(--ion-color-primary-rgb),.15)">
+            <span style="display:grid;width:100%;height:100%;place-items:center">${row.name.charAt(0)}</span>
+          </ion-avatar>
+          <span style="display:flex;flex-direction:column;min-width:0">
+            <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}</span>
+            <span style="font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.email}</span>
           </span>
         </span>`;
 
-      definePage({
-        bare: true,
+      const roleCell = (row) => {
+        const tone = roleTone[row.role] || 'medium';
+        return h`
+          <ion-badge style="--background:rgba(var(--ion-color-${tone}-rgb),.14);--color:var(--ion-color-${tone}-shade,var(--ion-color-${tone}));--padding-start:10px;--padding-end:10px;--padding-top:4px;--padding-bottom:4px">
+            ${row.role}
+          </ion-badge>`;
+      };
+
+      defineSaasDashboardPage({
+        active: '/dashboard/users/',
+        title: 'Usuarios',
         body: `
-          <ok-page-header
-            heading="Usuarios de hubs"
-            description="Vista global · todos los usuarios con acceso a uno o más hubs de la organización">
-            <ion-button slot="actions" fill="outline" size="small">
-              <ion-icon slot="start" name="download-outline"></ion-icon>
-              Exportar CSV
-            </ion-button>
-            <ion-button slot="actions" size="small" href="users-invite.html">
-              <ion-icon slot="start" name="person-add-outline"></ion-icon>
-              Invitar a hubs
-            </ion-button>
-          </ok-page-header>
-
-          <ok-data-table id="users-dt" style="display:block"></ok-data-table>
-        `,
-
+          <div class="dash-fill">
+            <ok-data-table id="users-dt" server-side fill>
+              <div slot="toolbar" class="okdt-filters">
+                <ion-select id="users-role-filter" class="okdt-filter" interface="popover"
+                            aria-label="Rol" placeholder="Todos los roles">
+                  <ion-select-option value="">Todos los roles</ion-select-option>
+                  <ion-select-option value="Owner">Owner</ion-select-option>
+                  <ion-select-option value="Admin">Admin</ion-select-option>
+                  <ion-select-option value="Manager">Manager</ion-select-option>
+                  <ion-select-option value="Employee">Employee</ion-select-option>
+                </ion-select>
+                <ion-select id="users-organization-filter" class="okdt-filter" interface="popover"
+                            aria-label="Organización" placeholder="Todas las organizaciones">
+                  <ion-select-option value="">Todas las organizaciones</ion-select-option>
+                  <ion-select-option value="ERPlora Demo">ERPlora Demo</ion-select-option>
+                  <ion-select-option value="Central Barcelona">Central Barcelona</ion-select-option>
+                  <ion-select-option value="Sucursal Norte">Sucursal Norte</ion-select-option>
+                </ion-select>
+              </div>
+            </ok-data-table>
+          </div>`,
+        footer: `
+          <footer id="section-tabbar">
+            <ion-segment value="users" aria-label="Navegación de usuarios">
+              <ion-segment-button value="users">
+                <iconify-icon icon="lucide:users" width="20" height="20"></iconify-icon>
+                <ion-label>Usuarios</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="invite">
+                <iconify-icon icon="lucide:user-plus" width="20" height="20"></iconify-icon>
+                <ion-label>Invitar</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+          </footer>`,
         setup(doc) {
-          const dt = doc.getElementById('users-dt');
+          const table = doc.getElementById('users-dt');
+          if (!table) return;
 
-          /* ── Columnas de la tabla ── */
-          dt.columns = [
-            {
-              key: 'name',
-              header: 'Usuario',
-              width: 'minmax(14rem,1.6fr)',
-              render: (r) => userCell(r),
-            },
-            {
-              key: 'hubs',
-              header: 'Hubs accesibles',
-              width: 'minmax(7rem,1fr)',
-              sortable: false,
-              render: (r) => hubsCell(r.hubs),
-            },
-            {
-              key: 'role',
-              header: 'Rol',
-              width: '9rem',
-              render: (r) => rolBadge(r.role),
-            },
-            {
-              key: 'lastConn',
-              header: 'Última conexión',
-              width: '10rem',
-            },
-            {
-              key: 'status',
-              header: 'Estado',
-              width: '10rem',
-              render: (r) => statusBadge(r.status),
-            },
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'name', header: 'Usuario', width: 'minmax(14rem,1.5fr)', render: userCell },
+            { key: 'organization', header: 'Organización', width: 'minmax(11rem,1fr)', sortable: true },
+            { key: 'role', header: 'Rol', width: '8rem', render: roleCell },
+            { key: 'joined', header: 'Alta', width: '9rem', sortable: true },
           ];
+          table.rows = USERS;
+          table.searchKeys = ['name', 'email', 'organization', 'role'];
+          table.searchPlaceholder = 'Buscar usuarios…';
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50];
+          table.views = true;
+          table.primaryAction = { label: 'Invitar usuario', icon: 'add' };
+          table.labels = {
+            empty: 'Sin usuarios',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            viewList: 'Vista lista',
+            viewCards: 'Vista tarjetas',
+            showing: 'Mostrando {from}–{to} de',
+            recordSingular: 'registro',
+            recordPlural: 'registros',
+          };
 
-          dt.rowKey = (r) => r.id;
-          dt.rows = USERS.slice();
+          const state = { query: '', page: 0, pageSize: 10, sort: 'joined', dir: 'desc' };
+          const refresh = () => {
+            let rows = USERS.filter((row) => FILTERS.every((filter) => {
+              const control = doc.getElementById(filter.id);
+              return !control?.value || row[filter.key] === control.value;
+            }));
+            if (state.query) {
+              const query = state.query.toLocaleLowerCase('es');
+              rows = rows.filter((row) => table.searchKeys.some((key) =>
+                String(row[key] || '').toLocaleLowerCase('es').includes(query)));
+            }
+            rows.sort((left, right) => {
+              const result = String(left[state.sort] || '').localeCompare(String(right[state.sort] || ''), 'es');
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.rows = rows.slice(start, start + state.pageSize);
+            table.total = rows.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          };
+          FILTERS.forEach((filter) => doc.getElementById(filter.id)?.addEventListener('ionChange', () => {
+            state.page = 0;
+            refresh();
+          }));
 
-          /* Acciones por fila */
-          dt.actions = [
-            { id: 'menu', icon: 'ellipsis-horizontal', label: 'Más acciones' },
-          ];
+          table.addEventListener('searchChange', (event) => {
+            state.query = String(event.detail || '');
+            state.page = 0;
+            refresh();
+          });
+          table.addEventListener('pageChange', (event) => {
+            state.page = Number(event.detail) || 0;
+            refresh();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 10;
+            state.page = 0;
+            refresh();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'joined';
+            state.dir = event.detail?.dir || 'desc';
+            state.page = 0;
+            refresh();
+          });
+          refresh();
 
-          /* ── Menú de acciones ⋮ por fila ── */
-          dt.addEventListener('rowAction', (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId !== 'menu') return;
-
-            const isPending   = row.status === 'pending';
-            const isSuspended = row.status === 'suspended';
-
-            const buttons = isPending
-              ? [
-                  { text: 'Reenviar invitación', icon: 'paper-plane-outline' },
-                  { text: 'Cancelar invitación', role: 'destructive', icon: 'close-circle-outline' },
-                  { text: 'Cancelar', role: 'cancel' },
-                ]
-              : isSuspended
-              ? [
-                  { text: 'Reactivar', icon: 'checkmark-circle-outline' },
-                  { text: 'Eliminar acceso', role: 'destructive', icon: 'trash-outline' },
-                  { text: 'Cancelar', role: 'cancel' },
-                ]
-              : [
-                  { text: 'Ver perfil', icon: 'person-outline' },
-                  { text: 'Cambiar rol', icon: 'swap-horizontal-outline' },
-                  { text: 'Suspender', role: 'destructive', icon: 'ban-outline' },
-                  { text: 'Cancelar', role: 'cancel' },
-                ];
-
-            const sheet = document.createElement('ion-action-sheet');
-            sheet.header = row.name;
-            sheet.subHeader = row.email;
-            sheet.buttons = buttons;
-            document.body.appendChild(sheet);
-            sheet.present();
-            sheet.addEventListener('didDismiss', () => sheet.remove());
+          table.addEventListener('primaryAction', () => {
+            const segment = doc.querySelector('ion-segment');
+            if (segment) segment.value = 'invite';
+            const toast = doc.createElement('ion-toast');
+            toast.message = 'La invitación se completa en la pestaña Invitar.';
+            toast.duration = 1800;
+            toast.position = 'bottom';
+            doc.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
           });
         },
       });

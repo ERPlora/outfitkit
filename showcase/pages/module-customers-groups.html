@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Grupos de clientes</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .customer-groups-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .customer-groups-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .customer-group-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .customer-group-form h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .customer-group-active {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .customer-group-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .customer-group-feedback {
+        margin: 0 0 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .customer-group-feedback.error {
+        color: var(--ion-color-danger);
+      }
+
+      .customer-group-feedback.success {
+        color: var(--ion-color-success);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .customer-group-actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-customers-groups.test.ts.
+      const GROUP_FIXTURE = [
+        {
+          "id": "g1",
+          "name": "VIP",
+          "description": "Clientes VIP",
+          "discount_percent": 10,
+          "color": "primary",
+          "sort_order": 1,
+          "is_active": 1,
+          "customer_count": 3
+        }
+      ];
+
+      defineHubPage({
+        active: '/m/customers/groups',
+        title: 'Grupos de clientes',
+        body: `
+          <div class="customer-groups-page">
+            <p id="customer-group-feedback" class="customer-group-feedback" role="status" hidden></p>
+
+            <ok-data-table id="customer-groups-table" fill>
+              <form id="customer-group-form" slot="create" class="customer-group-form">
+                <h3 id="customer-group-form-title" hidden>Editar grupo</h3>
+                <ion-input
+                  id="customer-group-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="customer-group-description"
+                  fill="outline"
+                  label="Descripción"
+                  label-placement="floating"
+                ></ion-input>
+                <ion-input
+                  id="customer-group-discount-percent"
+                  fill="outline"
+                  label="Descuento (%)"
+                  label-placement="floating"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                ></ion-input>
+                <ion-input
+                  id="customer-group-color"
+                  fill="outline"
+                  label="Color"
+                  label-placement="floating"
+                ></ion-input>
+                <ion-input
+                  id="customer-group-sort-order"
+                  fill="outline"
+                  label="Orden"
+                  label-placement="floating"
+                  type="number"
+                  min="0"
+                ></ion-input>
+                <label id="customer-group-active-row" class="customer-group-active" hidden>
+                  <ion-checkbox id="customer-group-is-active"></ion-checkbox>
+                  Activo
+                </label>
+                <div class="customer-group-actions">
+                  <ion-button id="customer-group-cancel" size="small" fill="outline" hidden>Cancelar</ion-button>
+                  <ion-button id="customer-group-save" size="small" type="submit">Guardar</ion-button>
+                </div>
+              </form>
+            </ok-data-table>
+
+            <ion-alert id="customer-group-delete-alert"></ion-alert>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('customer-groups-table');
+          const form = doc.getElementById('customer-group-form');
+          const formTitle = doc.getElementById('customer-group-form-title');
+          const nameInput = doc.getElementById('customer-group-name');
+          const descriptionInput = doc.getElementById('customer-group-description');
+          const discountInput = doc.getElementById('customer-group-discount-percent');
+          const colorInput = doc.getElementById('customer-group-color');
+          const sortOrderInput = doc.getElementById('customer-group-sort-order');
+          const activeInput = doc.getElementById('customer-group-is-active');
+          const activeRow = doc.getElementById('customer-group-active-row');
+          const cancelButton = doc.getElementById('customer-group-cancel');
+          const saveButton = doc.getElementById('customer-group-save');
+          const deleteAlert = doc.getElementById('customer-group-delete-alert');
+          const feedback = doc.getElementById('customer-group-feedback');
+
+          let groups = GROUP_FIXTURE.map((row) => ({ ...row }));
+          let editing = null;
+          let pendingDelete = null;
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'name';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+
+          const valueOf = (input) => String(input.value ?? '').trim();
+          const setFeedback = (message = '', type = 'success') => {
+            feedback.textContent = message;
+            feedback.className = `customer-group-feedback ${type}`;
+            feedback.hidden = !message;
+          };
+
+          function emitGroupCommand(name, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', {
+              detail: { name, payload },
+            }));
+          }
+
+          function resetForm() {
+            editing = null;
+            form.reset();
+            nameInput.value = '';
+            descriptionInput.value = '';
+            discountInput.value = '0';
+            colorInput.value = 'primary';
+            sortOrderInput.value = '0';
+            activeInput.checked = true;
+            formTitle.hidden = true;
+            activeRow.hidden = true;
+            cancelButton.hidden = true;
+          }
+
+          function beginEdit(group) {
+            editing = group;
+            nameInput.value = group.name;
+            descriptionInput.value = group.description ?? '';
+            discountInput.value = String(group.discount_percent ?? 0);
+            colorInput.value = group.color || 'primary';
+            sortOrderInput.value = String(group.sort_order ?? 0);
+            activeInput.checked = Boolean(group.is_active);
+            formTitle.textContent = `Editar ${group.name}`;
+            formTitle.hidden = false;
+            activeRow.hidden = false;
+            cancelButton.hidden = false;
+            setFeedback();
+            table.open('create');
+          }
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'description', header: 'Descripción', sortable: true },
+            {
+              key: 'discount_percent',
+              header: 'Descuento',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+              format: (row) => `${Number(row.discount_percent || 0)}%`,
+            },
+            { key: 'customer_count', header: 'Clientes', align: 'right', sortable: true },
+            { key: 'sort_order', header: 'Orden', align: 'right', sortable: true },
+          ];
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'people-outline';
+          table.addable = true;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar grupo…';
+          table.emptyMessage = 'Sin grupos.';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+
+          function rangeMatches(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            const number = Number(value);
+            return (from == null || number >= from) && (to == null || number <= to);
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = groups
+              .filter((row) => {
+                if (term && !`${row.name} ${row.description} ${row.customer_count}`.toLocaleLowerCase('es').includes(term)) return false;
+                for (const [column, value] of Object.entries(filters)) {
+                  if (value == null || value === '') continue;
+                  if (column === 'discount_percent' && !rangeMatches(row.discount_percent, value)) return false;
+                  if (column === 'name' && !String(row.name).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                }
+                return true;
+              })
+              .sort((left, right) => {
+                const a = left[sort];
+                const b = right[sort];
+                const result = typeof a === 'number' && typeof b === 'number'
+                  ? a - b
+                  : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+                return sortDir === 'desc' ? -result : result;
+              });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const group = event.detail?.row;
+            if (!group) return;
+            if (event.detail.actionId === 'edit') beginEdit(group);
+            if (event.detail.actionId === 'delete') {
+              pendingDelete = group;
+              deleteAlert.header = 'Eliminar grupo';
+              deleteAlert.message = `¿Eliminar el grupo «${group.name}»?`;
+              deleteAlert.buttons = [
+                { text: 'Cancelar', role: 'cancel', handler: () => { pendingDelete = null; } },
+                {
+                  text: 'Eliminar',
+                  role: 'destructive',
+                  handler: () => {
+                    if (!pendingDelete) return;
+                    emitGroupCommand('customers.groups.delete', { group_id: pendingDelete.id });
+                    groups = groups.filter((row) => row.id !== pendingDelete.id);
+                    setFeedback(`Grupo ${pendingDelete.name} eliminado.`);
+                    pendingDelete = null;
+                    queryPage();
+                  },
+                },
+              ];
+              deleteAlert.present();
+            }
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail?.sort || 'name';
+            sortDir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const column = event.detail?.col;
+            if (!column) return;
+            filters = { ...filters, [column]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = valueOf(nameInput);
+            if (!name) return;
+
+            const payload = {
+              name,
+              description: valueOf(descriptionInput),
+              discount_percent: Math.min(100, Math.max(0, Number(discountInput.value) || 0)),
+              color: valueOf(colorInput) || 'primary',
+              sort_order: Math.max(0, Number.parseInt(sortOrderInput.value, 10) || 0),
+            };
+
+            saveButton.disabled = true;
+            if (editing) {
+              emitGroupCommand('customers.groups.update', {
+                group_id: editing.id,
+                ...payload,
+                is_active: activeInput.checked ? 1 : 0,
+              });
+              groups = groups.map((row) => row.id === editing.id
+                ? { ...row, ...payload, is_active: activeInput.checked ? 1 : 0 }
+                : row);
+              setFeedback('Grupo actualizado.');
+            } else {
+              const created = {
+                id: `preview-group-${groups.length + 1}`,
+                ...payload,
+                is_active: 1,
+                customer_count: 0,
+              };
+              emitGroupCommand('customers.groups.create', payload);
+              groups = [...groups, created];
+              setFeedback('Grupo creado.');
+            }
+
+            resetForm();
+            table.close();
+            page = 0;
+            queryPage();
+            saveButton.disabled = false;
+          });
+
+          cancelButton.addEventListener('click', () => {
+            resetForm();
+            table.close();
+          });
+
+          resetForm();
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

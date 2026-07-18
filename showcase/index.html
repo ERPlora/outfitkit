@@ -13,12 +13,13 @@
     <!-- ── Carga CSP-safe (script-src 'self', sin eval) ──────────────────────────
          Ionic Core (registra los ion-* del chrome) + su tema, lit external vía import-map,
          ionicons, y OutfitKit desde el bundle CDN local + el theme de tokens --ok-*. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
+    <script src="pages/_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <link rel="stylesheet" href="../dist/theme.example.css" />
     <!-- Paletas opcionales (data-ok-palette) — la demo de ok-theme-picker las aplica en vivo. -->
     <link rel="stylesheet" href="../dist/palettes.css" />

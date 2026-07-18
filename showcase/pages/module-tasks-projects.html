@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Tareas · Proyectos</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .task-projects-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .task-projects-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .project-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .project-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .project-error {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .project-create-form ion-button {
+          align-self: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Proyecto canónico de erp-tasks-projects.test.ts: no mantenemos un fixture paralelo.
+      const PROJECT_FIXTURE = [
+        {
+          "id": "p1",
+          "code": "q3-audit",
+          "name": "Auditoría Q3",
+          "color": "#ff0000",
+          "is_active": 1
+        }
+      ];
+
+      let projects = PROJECT_FIXTURE.map((row) => ({ ...row }));
+
+      defineHubPage({
+        active: '/m/tasks/projects',
+        title: 'Proyectos',
+        body: `
+          <div class="task-projects-page">
+            <p id="project-error" class="project-error" role="alert" hidden></p>
+            <ok-data-table id="task-projects-table" fill>
+              <form id="project-create-form" slot="create" class="project-create-form">
+                <ion-input id="project-code" fill="outline"
+                  label="Código"
+                  label-placement="floating"
+                  placeholder="Código (q3-audit)"
+                  maxlength="40"
+                  required
+                ></ion-input>
+                <ion-input id="project-name" fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  maxlength="200"
+                  required
+                ></ion-input>
+                <ion-input id="project-color" fill="outline"
+                  label="Color"
+                  label-placement="floating"
+                  placeholder="Color (opcional)"
+                  maxlength="20"
+                ></ion-input>
+                <ion-button id="project-save" type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('task-projects-table');
+          const form = doc.getElementById('project-create-form');
+          const codeInput = doc.getElementById('project-code');
+          const nameInput = doc.getElementById('project-name');
+          const colorInput = doc.getElementById('project-color');
+          const saveButton = doc.getElementById('project-save');
+          const error = doc.getElementById('project-error');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'created_at';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const activeOptions = [
+            { value: '1', label: 'Sí' },
+            { value: '0', label: 'No' },
+          ];
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          table.columns = [
+            { key: 'code', header: 'Código', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'color',
+              header: 'Color',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+              format: (row) => row.color || '—',
+            },
+            {
+              key: 'is_active',
+              header: 'Activo',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: activeOptions,
+              format: (row) => row.is_active ? 'Sí' : 'No',
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'folder-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar código o nombre…';
+          table.emptyMessage = 'Sin proyectos.';
+          table.pageSizeOptions = [10, 25, 50];
+
+          function queryPage() {
+            const normalizedSearch = search.trim().toLocaleLowerCase('es');
+            let filtered = projects.filter((project) => {
+              if (normalizedSearch) {
+                const haystack = `${project.code} ${project.name} ${project.owner_ref ?? ''}`
+                  .toLocaleLowerCase('es');
+                if (!haystack.includes(normalizedSearch)) return false;
+              }
+
+              return Object.entries(filters).every(([key, value]) => {
+                if (value === '' || value == null) return true;
+                const actual = String(project[key] ?? '').toLocaleLowerCase('es');
+                const expected = String(value).toLocaleLowerCase('es');
+                if (key === 'name') return actual.includes(expected);
+                return actual === expected;
+              });
+            });
+
+            filtered = [...filtered].sort((left, right) => {
+              const result = String(left[sort] ?? '').localeCompare(
+                String(right[sort] ?? ''),
+                'es',
+                { numeric: true, sensitivity: 'base' },
+              );
+              return sortDir === 'asc' ? result : -result;
+            });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail?.sort || 'created_at';
+            sortDir = event.detail?.dir === 'asc' ? 'asc' : 'desc';
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col;
+            if (!key) return;
+            filters = { ...filters, [key]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            showError();
+
+            const code = String(codeInput.value ?? '').trim();
+            const name = String(nameInput.value ?? '').trim();
+            const color = String(colorInput.value ?? '').trim();
+            if (!code || !name) return;
+            if (projects.some((project) => project.code.toLocaleLowerCase('es') === code.toLocaleLowerCase('es'))) {
+              showError('Ya existe un proyecto con ese código.');
+              return;
+            }
+
+            saveButton.disabled = true;
+            projects = [
+              {
+                id: `preview-project-${projects.length + 1}`,
+                code,
+                name,
+                color,
+                is_active: 1,
+                owner_ref: null,
+                created_at: new Date().toISOString(),
+              },
+              ...projects,
+            ];
+            codeInput.value = '';
+            nameInput.value = '';
+            colorInput.value = '';
+            page = 0;
+            table.close();
+            queryPage();
+            saveButton.disabled = false;
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

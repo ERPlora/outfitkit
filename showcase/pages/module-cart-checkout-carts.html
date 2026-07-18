@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Carritos</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .cart-checkout-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      .cart-checkout-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .cart-checkout-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .cart-checkout-form ion-button { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // La primera fila procede del test del componente real. Los importes se expresan en céntimos
+      // como exige la migración vigente; el resto completa los estados cerrados de ese contrato.
+      const CART_FIXTURE = [
+        {
+          "id": "c1",
+          "session_token": "sess_a1b2c3",
+          "customer_email": "ana@ejemplo.com",
+          "customer_name": "Ana García",
+          "status": "active",
+          "total_items": 2,
+          "total_amount": 3150,
+          "currency": "EUR",
+          "last_activity_at": "2026-07-18T18:42:00Z",
+          "created_at": "2026-07-18T18:20:00Z"
+        },
+        {
+          "id": "c2",
+          "session_token": "sess_d4e5f6",
+          "customer_email": "carlos@ejemplo.com",
+          "customer_name": "Carlos Pérez",
+          "status": "abandoned",
+          "total_items": 1,
+          "total_amount": 1490,
+          "currency": "EUR",
+          "last_activity_at": "2026-07-18T17:10:00Z",
+          "created_at": "2026-07-18T16:55:00Z"
+        },
+        {
+          "id": "c3",
+          "session_token": "sess_g7h8i9",
+          "customer_email": "marta@ejemplo.com",
+          "customer_name": "Marta Ruiz",
+          "status": "converted",
+          "total_items": 3,
+          "total_amount": 4825,
+          "currency": "EUR",
+          "last_activity_at": "2026-07-18T15:48:00Z",
+          "created_at": "2026-07-18T15:21:00Z"
+        }
+      ];
+
+      const STATUS_LABELS = {
+        active: 'Activo',
+        abandoned: 'Abandonado',
+        converted: 'Convertido',
+        expired: 'Expirado',
+      };
+      let carts = CART_FIXTURE.map((row) => ({ ...row }));
+      const state = { page: 0, pageSize: 50, sort: 'created_at', dir: 'desc', search: '', filters: {} };
+
+      const formatMoney = (value, currency = 'EUR') => new Intl.NumberFormat('es-ES', {
+        style: 'currency', currency,
+      }).format((Number(value) || 0) / 100);
+
+      function statusBadge(status) {
+        const badge = document.createElement('ion-badge');
+        badge.textContent = STATUS_LABELS[status] ?? status;
+        badge.color = status === 'active' ? 'success'
+          : status === 'converted' ? 'primary'
+            : status === 'abandoned' ? 'warning' : 'medium';
+        return badge;
+      }
+
+      defineHubPage({
+        active: '/m/cart_checkout/carts',
+        title: 'Carritos',
+        body: `
+          <div class="cart-checkout-page">
+            <ok-data-table id="cart-checkout-carts-table" fill>
+              <form id="cart-checkout-create-form" slot="create" class="cart-checkout-form">
+                <ion-input
+                  id="cart-session-token"
+                  fill="outline"
+                  label="Sesión"
+                  label-placement="floating"
+                  placeholder="sess_a1b2c3"
+                  maxlength="128"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="cart-customer-email"
+                  type="email"
+                  fill="outline"
+                  label="Email"
+                  label-placement="floating"
+                  placeholder="cliente@ejemplo.com"
+                  maxlength="255"
+                ></ion-input>
+                <ion-input
+                  id="cart-customer-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  placeholder="Ana García"
+                  maxlength="255"
+                ></ion-input>
+                <ion-button id="cart-create-save" type="submit" size="small">Guardar</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="cart-checkout-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('cart-checkout-carts-table');
+          const form = doc.getElementById('cart-checkout-create-form');
+          const sessionInput = doc.getElementById('cart-session-token');
+          const emailInput = doc.getElementById('cart-customer-email');
+          const nameInput = doc.getElementById('cart-customer-name');
+          const saveButton = doc.getElementById('cart-create-save');
+          const toast = doc.getElementById('cart-checkout-toast');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.customer_email || row.session_token || '—');
+          table.cardIcon = () => 'cart-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar sesión o email…';
+          table.emptyMessage = 'Sin carritos.';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+          table.columns = [
+            { key: 'session_token', header: 'Sesión', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'customer_email', header: 'Email', sortable: true, filterable: true, filterType: 'text',
+              format: (row) => row.customer_email || '—',
+            },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'active', label: 'Activo' },
+                { value: 'abandoned', label: 'Abandonado' },
+                { value: 'converted', label: 'Convertido' },
+                { value: 'expired', label: 'Expirado' },
+              ],
+              render: (row) => statusBadge(row.status),
+            },
+            {
+              key: 'total_items', header: 'Ítems', align: 'right', sortable: true,
+              filterable: true, filterType: 'range', format: (row) => String(row.total_items ?? 0),
+            },
+            {
+              key: 'total_amount', header: 'Total', align: 'right', sortable: true,
+              filterable: true, filterType: 'range', format: (row) => formatMoney(row.total_amount, row.currency || 'EUR'),
+            },
+          ];
+          table.actions = [
+            { id: 'abandon', label: 'Abandonar', icon: 'close-circle-outline', color: 'warning' },
+            { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
+          ];
+
+          function recordCommand(name, payload, message) {
+            console.info('[showcase command]', name, payload);
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+            toast.message = message;
+            toast.present();
+          }
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = carts
+              .filter((cart) => {
+                if (term && !`${cart.session_token} ${cart.customer_email} ${cart.customer_name}`.toLocaleLowerCase('es').includes(term)) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
+                  if (key === 'total_items' || key === 'total_amount') return matchesRange(cart[key], value);
+                  if (Array.isArray(value)) return value.map(String).includes(String(cart[key]));
+                  return String(cart[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                });
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+                return state.dir === 'desc' ? -result : result;
+              });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const sessionToken = String(sessionInput.value || '').trim();
+            if (!sessionToken || carts.some((cart) => cart.session_token === sessionToken)) return;
+
+            saveButton.disabled = true;
+            const payload = {
+              session_token: sessionToken,
+              customer_email: String(emailInput.value || '').trim(),
+              customer_name: String(nameInput.value || '').trim(),
+              currency: 'EUR',
+              expires_at: null,
+            };
+            recordCommand('cart_checkout.carts.create', payload, 'Carrito creado');
+            carts = [{
+              id: `preview-cart-${Date.now()}`,
+              ...payload,
+              status: 'active',
+              total_items: 0,
+              total_amount: 0,
+              last_activity_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+            }, ...carts];
+            sessionInput.value = '';
+            emailInput.value = '';
+            nameInput.value = '';
+            table.close();
+            state.page = 0;
+            queryPage();
+            saveButton.disabled = false;
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row: cart } = event.detail;
+            if (actionId === 'abandon') {
+              recordCommand('cart_checkout.carts.mark_abandoned', { cart_id: cart.id, reason: '' }, 'Carrito abandonado');
+              carts = carts.map((current) => current.id === cart.id ? { ...current, status: 'abandoned' } : current);
+            } else if (actionId === 'delete') {
+              recordCommand('cart_checkout.carts.delete', { cart_id: cart.id }, 'Carrito borrado');
+              carts = carts.filter((current) => current.id !== cart.id);
+            } else return;
+            queryPage();
+          });
+
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail.sort;
+            state.dir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail || '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            state.filters[event.detail.col] = event.detail.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

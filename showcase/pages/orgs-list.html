@@ -5,141 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ERPlora Cloud · Organizaciones</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      .role-filter {
+        width: min(100%, 185px);
+        min-height: 36px;
+      }
+
+      ok-data-table[fill] {
+        height: 100%;
+      }
+    </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      const ORGS = [
-        {
-          name: 'Acme Industries SL',
-          sector: 'Manufactura ligera',
-          members: 12,
-          hubs: 5,
-          plan: 'Business',
-          planColor: 'primary',
-          rol: 'Owner',
-          rolColor: 'primary',
-          current: true,
-        },
-        {
-          name: 'Bodegas Casadejus',
-          sector: 'Vinos y crianza',
-          members: 7,
-          hubs: 3,
-          plan: 'Pro',
-          planColor: 'tertiary',
-          rol: 'Admin',
-          rolColor: 'primary',
-          current: false,
-        },
-        {
-          name: 'Pastelerías Mariola',
-          sector: 'Repostería artesanal',
-          members: 6,
-          hubs: 2,
-          plan: 'Pro',
-          planColor: 'tertiary',
-          rol: 'Member',
-          rolColor: 'medium',
-          current: false,
-        },
-        {
-          name: 'Logística Peninsular',
-          sector: 'Transporte y almacén',
-          members: 3,
-          hubs: 2,
-          plan: 'Enterprise',
-          planColor: 'dark',
-          rol: 'Admin',
-          rolColor: 'primary',
-          current: false,
-        },
+      // Datos representativos con el mismo contrato que OrganizationMember del SaaS.
+      const ORGANIZATIONS = [
+        { id: 'org-1', name: 'Demo Partner', slug: 'demo-partner', hubs: 3, members: 8, role: 'Propietario', roleValue: 'owner', joinedAt: '2025-01-12' },
+        { id: 'org-2', name: 'Comercial Rambla', slug: 'comercial-rambla', hubs: 2, members: 5, role: 'Administrador', roleValue: 'admin', joinedAt: '2025-03-04' },
+        { id: 'org-3', name: 'Servicios Norte', slug: 'servicios-norte', hubs: 1, members: 4, role: 'Miembro', roleValue: 'member', joinedAt: '2025-05-18' },
       ];
 
-      definePage({
-        active: 'orgs',
-        search: 'Buscar organizaciones, hubs…',
-        bare: true,
-        body: `
-          <ok-page-header
-            heading="Organizaciones"
-            description="4 organizaciones en tu cuenta">
-            <ion-button slot="actions">
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Crear organización
-            </ion-button>
-          </ok-page-header>
+      const formatDate = (iso) => new Date(iso).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
 
-          <ok-data-table id="orgs-dt" style="display:block"></ok-data-table>
+      function organizationCell(row) {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:flex;align-items:center;gap:.65rem;min-width:0';
+
+        const avatar = document.createElement('span');
+        avatar.textContent = String(row.name || '?').charAt(0).toUpperCase();
+        avatar.style.cssText =
+          'display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:999px;' +
+          'font-size:12px;font-weight:700;color:var(--ion-color-primary);' +
+          'background:color-mix(in srgb,var(--ion-color-primary) 15%,transparent)';
+
+        const copy = document.createElement('span');
+        copy.style.cssText = 'display:grid;min-width:0';
+        const name = document.createElement('strong');
+        name.textContent = row.name;
+        const slug = document.createElement('small');
+        slug.textContent = row.slug;
+        slug.style.color = 'var(--ion-color-medium)';
+        copy.append(name, slug);
+        wrap.append(avatar, copy);
+        return wrap;
+      }
+
+      function roleCell(row) {
+        const badge = document.createElement('ion-badge');
+        const tone = row.roleValue === 'owner' ? 'primary' : row.roleValue === 'admin' ? 'warning' : 'medium';
+        badge.textContent = row.role;
+        badge.style.cssText =
+          `--background:color-mix(in srgb,var(--ion-color-${tone}) 15%,transparent);` +
+          `--color:var(--ion-color-${tone});--padding-top:5px;--padding-bottom:5px`;
+        return badge;
+      }
+
+      defineSaasDashboardPage({
+        active: '/dashboard/organizations/',
+        title: 'Organizaciones',
+        body: `
+          <div class="dash-fill">
+            <ok-data-table id="organizations-dt" server-side fill>
+              <ion-select id="organizations-role-filter" class="role-filter" slot="toolbar"
+                          interface="popover" aria-label="Rol" value="">
+                <ion-select-option value="">Todos los roles</ion-select-option>
+                <ion-select-option value="owner">Propietario</ion-select-option>
+                <ion-select-option value="admin">Administrador</ion-select-option>
+                <ion-select-option value="member">Miembro</ion-select-option>
+              </ion-select>
+            </ok-data-table>
+          </div>
         `,
         setup(doc) {
-          const dt = doc.getElementById('orgs-dt');
+          const table = doc.getElementById('organizations-dt');
+          const roleFilter = doc.getElementById('organizations-role-filter');
 
-          dt.rowKey = (r) => r.name;
-          dt.columns = [
-            {
-              key: 'name',
-              header: 'Organización',
-              width: 'minmax(14rem,1.5fr)',
-              render: (r) => h`
-                <span style="display:inline-flex;align-items:center;gap:.6rem">
-                  <ok-avatar name=${r.name} size="sm" tone=${r.current ? 'primary' : 'auto'}></ok-avatar>
-                  <span>
-                    <span style="font-weight:600">${r.name}</span>
-                    ${r.current ? h`<ion-badge style="margin-left:.4rem;--background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);--color:var(--ion-color-success);--padding-top:3px;--padding-bottom:3px">Tu org</ion-badge>` : ''}
-                  </span>
-                </span>`,
-            },
-            { key: 'sector', header: 'Sector', width: 'minmax(10rem,1fr)' },
-            { key: 'members', header: 'Miembros', width: '7rem', align: 'right' },
-            { key: 'hubs', header: 'Hubs', width: '5rem', align: 'right' },
-            {
-              key: 'plan',
-              header: 'Plan',
-              width: '8rem',
-              render: (r) => {
-                const c = r.planColor;
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.plan}</ion-badge>`;
-              },
-            },
-            {
-              key: 'rol',
-              header: 'Rol',
-              width: '7rem',
-              render: (r) => {
-                const c = r.rolColor;
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.rol}</ion-badge>`;
-              },
-            },
+          table.columns = [
+            { key: 'name', header: 'Organización', sortable: true, render: organizationCell },
+            { key: 'hubs', header: 'Hubs', align: 'left' },
+            { key: 'members', header: 'Miembros', align: 'left' },
+            { key: 'role', header: 'Rol', render: roleCell },
+            { key: 'joinedAt', header: 'Alta', sortable: true, format: (row) => formatDate(row.joinedAt) },
           ];
-          dt.actions = [
-            { id: 'open', icon: 'open-outline', label: 'Abrir organización', color: 'primary' },
-          ];
-          dt.rows = ORGS;
+          table.rows = ORGANIZATIONS;
+          table.rowKey = (row) => row.id;
+          table.searchKeys = ['name', 'slug'];
+          table.searchPlaceholder = 'Buscar organizaciones…';
+          table.primaryAction = { label: 'Nueva organización', icon: 'add' };
+          table.actions = [{ id: 'view', label: 'Ver', icon: 'eye-outline' }];
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50];
 
-          dt.addEventListener('rowAction', (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId !== 'open') return;
-            const t = document.createElement('ion-toast');
-            t.message = `Abriendo ${row?.name ?? 'organización'}…`;
-            t.duration = 1200;
-            t.position = 'bottom';
-            document.body.appendChild(t);
-            t.present();
-            t.addEventListener('didDismiss', () => t.remove());
+          const roles = [
+            { value: 'owner', label: 'Propietario' },
+            { value: 'admin', label: 'Administrador' },
+            { value: 'member', label: 'Miembro' },
+          ];
+          table.columns[3].options = roles;
+
+          roleFilter?.addEventListener('ionChange', (event) => {
+            const role = event.detail.value;
+            table.rows = role
+              ? ORGANIZATIONS.filter((organization) => organization.roleValue === role)
+              : ORGANIZATIONS;
           });
         },
       });

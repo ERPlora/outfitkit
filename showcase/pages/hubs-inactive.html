@@ -3,141 +3,171 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Hubs inactivos</title>
+    <title>Terminales inactivos - ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Punto verde/medio que precede al nombre del hub en la celda. */
-      .dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        flex: 0 0 auto;
-        background: var(--ion-color-medium);
-      }
-    </style>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-data-table.js"></script>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      // Datos de los 5 hubs inactivos (copiados de la referencia UX).
-      const INACTIVE = [
+      /* La lista inactiva usa los mismos campos del DataTableConfig de Django y un conjunto de
+       * acciones deliberadamente menor: Reactivar es la única acción válida por fila. */
+      const HUBS = [
         {
-          name: 'restaurante-mas-bonet',
-          company: 'Restaurante Mas Bonet S.L.',
-          since: '12 mar 2026',
-          plan: 'Pro',
-          region: 'EU-West-1',
-          reason: 'Sin actividad durante 47 días · 2 terminales suspendidos',
+          id: 'hub-suspended', name: 'Terminal suspendido', slug: 'terminal-suspendido',
+          plan: 'Standard', status: 'suspended', statusLabel: 'Suspendido', statusTone: 'warning',
+          created: '14 ene 2026',
         },
         {
-          name: 'tienda-pirineos',
-          company: 'Comercial Pirineos S.A.',
-          since: '28 feb 2026',
-          plan: 'Starter',
-          region: 'EU-Central-1',
-          reason: 'Sin actividad durante 70 días · 1 terminal sin sincronizar',
+          id: 'hub-stopped', name: 'Terminal detenido', slug: 'terminal-detenido',
+          plan: 'Starter', status: 'stopped', statusLabel: 'Detenido', statusTone: 'medium',
+          created: '3 dic 2025',
         },
         {
-          name: 'obrador-baleares-test',
-          company: 'Obrador Baleares',
-          since: '04 mar 2026',
-          plan: 'Test',
-          region: 'EU-West-1',
-          reason: 'Hub de pruebas · sin renovación de plan',
-        },
-        {
-          name: 'cafe-central-vella',
-          company: 'Café Central Vella S.L.',
-          since: '19 mar 2026',
-          plan: 'Pro',
-          region: 'EU-West-1',
-          reason: 'Pago fallido · revisar método de pago',
-        },
-        {
-          name: 'jose-mariola-pop-up',
-          company: 'Mariola Pop-Up',
-          since: '02 abr 2026',
-          plan: 'Starter',
-          region: 'EU-West-1',
-          reason: 'Evento estacional finalizado',
+          id: 'hub-error', name: 'Terminal con incidencia', slug: 'terminal-incidencia',
+          plan: 'Pro', status: 'error', statusLabel: 'Error', statusTone: 'danger',
+          created: '18 nov 2025',
         },
       ];
 
-      definePage({
-        bare: true,
-        body: [
-          '<ok-inline-feedback class="pg-mb-4" tone="warning" heading="Política de retención">',
-          '  Los hubs cancelados se eliminan automáticamente tras 60 días. Reactiva o exporta los datos antes del vencimiento para no perderlos.',
-          '</ok-inline-feedback>',
+      const REACTIVATE_ACTION = {
+        id: 'reactivate',
+        label: 'Reactivar',
+        icon: 'refresh-outline',
+        color: 'primary',
+      };
 
-          '<ok-page-header heading="Hubs inactivos" description="8 hubs no operativos · revisión periódica recomendada"></ok-page-header>',
+      const terminalCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.6rem;min-width:0">
+          <span style="display:grid;place-items:center;flex:none;width:2rem;height:2rem;border-radius:999px;font-size:12px;font-weight:700;color:var(--ion-color-warning);background:rgba(var(--ion-color-warning-rgb),.14)">
+            ${row.name.charAt(0)}
+          </span>
+          <span style="display:flex;flex-direction:column;min-width:0">
+            <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}</span>
+            <span style="font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.slug}</span>
+          </span>
+        </span>`;
 
-          '<ok-data-table id="inactive-dt" style="display:block"></ok-data-table>',
-        ].join('\n'),
+      const statusCell = (row) => h`
+        <ion-badge style="--background:rgba(var(--ion-color-${row.statusTone}-rgb),.14);--color:var(--ion-color-${row.statusTone});--padding-start:10px;--padding-end:10px;--padding-top:4px;--padding-bottom:4px">
+          ${row.statusLabel}
+        </ion-badge>`;
 
+      function showToast(message) {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 1600;
+        toast.position = 'bottom';
+        document.body.appendChild(toast);
+        toast.present();
+        toast.addEventListener('didDismiss', () => toast.remove());
+      }
+
+      const footer = `
+        <footer id="section-tabbar">
+          <ion-segment value="inactive" aria-label="Navegación de Hubs">
+            <ion-segment-button value="active">
+              <iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Activo</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="inactive">
+              <iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Inactivo</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="create">
+              <iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Crear</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="domain">
+              <iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon>
+              <ion-label>Dominio</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Terminales inactivos',
+        body: `
+          <div class="dash-fill">
+            <ok-data-table id="hubs-inactive" fill>
+              <div slot="toolbar" class="okdt-filters">
+                <ion-select id="hubs-status-filter" class="okdt-filter" interface="popover"
+                            aria-label="Estado" placeholder="Todos los estados">
+                  <ion-select-option value="">Todos los estados</ion-select-option>
+                  <ion-select-option value="suspended">Suspendido</ion-select-option>
+                  <ion-select-option value="stopped">Detenido</ion-select-option>
+                  <ion-select-option value="error">Error</ion-select-option>
+                </ion-select>
+                <ion-select id="hubs-plan-filter" class="okdt-filter" interface="popover"
+                            aria-label="Plan" placeholder="Todos los planes">
+                  <ion-select-option value="">Todos los planes</ion-select-option>
+                  <ion-select-option value="Starter">Starter</ion-select-option>
+                  <ion-select-option value="Standard">Standard</ion-select-option>
+                  <ion-select-option value="Pro">Pro</ion-select-option>
+                  <ion-select-option value="Enterprise">Enterprise</ion-select-option>
+                  <ion-select-option value="Max">Max</ion-select-option>
+                </ion-select>
+              </div>
+            </ok-data-table>
+          </div>`,
+        footer,
         setup(doc) {
-          const dt = doc.getElementById('inactive-dt');
-          if (!dt) return;
+          const table = doc.getElementById('hubs-inactive');
+          const statusFilter = doc.getElementById('hubs-status-filter');
+          const planFilter = doc.getElementById('hubs-plan-filter');
+          if (!table) return;
 
-          dt.title = 'Hubs inactivos';
-          dt.rowKey = (r) => r.name;
-          dt.searchable = true;
-          dt.searchKeys = ['name', 'company'];
-          dt.csv = true; // "Exportar histórico" ~ Exportar CSV de la toolbar
-          dt.views = ['table', 'cards'];
-
-          const muted = (txt) =>
-            h`<span style="color:var(--ion-color-medium)">${txt}</span>`;
-
-          // Anchos explícitos con UN SOLO track flexible (1fr). Si todas las columnas usan el
-          // ancho por defecto minmax(8rem,1fr), el grid desborda el contenedor overflow-x:auto y
-          // las últimas columnas + acciones quedan fuera de vista. Empresa se apila bajo el nombre.
-          dt.columns = [
-            {
-              key: 'name',
-              header: 'Hub',
-              width: 'minmax(13rem,1.4fr)',
-              render: (r) =>
-                h`<span style="display:flex;flex-direction:column;min-width:0">
-                    <span style="display:inline-flex;align-items:center;gap:.45rem"><span class="dot"></span><code>${r.name}</code></span>
-                    <span style="color:var(--ion-color-medium);font-size:12px;overflow:hidden;text-overflow:ellipsis">${r.company}</span>
-                  </span>`,
-            },
-            {
-              key: 'since',
-              header: 'Inactivo desde',
-              width: '10rem',
-              render: (r) => h`<ion-badge color="warning">${r.since}</ion-badge>`,
-            },
-            { key: 'plan', header: 'Plan', width: '6rem' },
-            { key: 'region', header: 'Región', width: '9rem' },
-            { key: 'reason', header: 'Motivo', width: '16rem', render: (r) => muted(r.reason) },
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'name', header: 'Terminal', width: 'minmax(13rem,1.4fr)', sortable: true, render: terminalCell },
+            { key: 'plan', header: 'Plan', width: '8rem' },
+            { key: 'status', header: 'Estado', width: '9rem', render: statusCell },
+            { key: 'created', header: 'Creado', width: '10rem', sortable: true },
           ];
+          table.rows = HUBS;
+          table.searchKeys = ['name', 'slug'];
+          table.searchPlaceholder = 'Buscar terminales…';
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50, 100];
+          table.views = true;
+          table.actions = [REACTIVATE_ACTION];
+          table.cardTitle = (row) => row.name;
+          table.cardIcon = () => 'git-network-outline';
+          table.labels = {
+            empty: 'No hay terminales inactivos',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            viewList: 'Vista lista',
+            viewCards: 'Vista tarjetas',
+          };
 
-          dt.actions = [
-            { id: 'reactivate', icon: 'refresh-outline', label: 'Reactivar', color: 'primary' },
-            { id: 'delete', icon: 'trash-outline', label: 'Eliminar', color: 'danger' },
-          ];
+          const applyFilters = () => {
+            table.rows = HUBS.filter((row) => {
+              const status = statusFilter?.value;
+              const plan = planFilter?.value;
+              const statusMatch = !status || row.status === status;
+              const planMatch = !plan || row.plan === plan;
+              return statusMatch && planMatch;
+            });
+          };
+          statusFilter?.addEventListener('ionChange', applyFilters);
+          planFilter?.addEventListener('ionChange', applyFilters);
 
-          dt.rows = INACTIVE;
-
-          // Mock CSP-safe: solo registra la acción de fila en consola.
-          dt.addEventListener('rowAction', (e) => {
-            console.log('[hubs-inactive] rowAction', e.detail);
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail?.actionId !== REACTIVATE_ACTION.id) return;
+            showToast(`Reactivar: ${event.detail?.row?.name || 'Terminal'}`);
           });
         },
       });

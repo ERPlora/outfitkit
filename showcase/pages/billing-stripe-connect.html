@@ -3,475 +3,61 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Stripe Connect</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Stripe Connect · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Tarjeta héroe de estado de conexión */
-      .ui-hero-card {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        padding: 24px;
-        flex-wrap: wrap;
-      }
-      .ui-hero-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-      }
-      .ui-hero-body {
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      .ui-hero-title {
-        margin: 0 0 6px;
-        font-size: 18px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .ui-hero-meta {
-        font-size: 13px;
-        color: var(--ion-color-medium);
-        line-height: 1.5;
-      }
-      .ui-hero-meta code {
-        font-size: 12px;
-      }
-
-      /* Documentos */
-      .ui-doc-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-      .ui-doc-item:last-of-type { border-bottom: 0; padding-bottom: 0; }
-      .ui-doc-item:first-of-type { padding-top: 0; }
-      .ui-doc-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-      }
-      .ui-doc-body { flex: 1 1 auto; min-width: 0; }
-      .ui-doc-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-      .ui-doc-desc { font-size: 12px; color: var(--ion-color-medium); line-height: 1.4; }
-      .ui-doc-aside { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-      .ui-doc-expand {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.25s ease;
-        font-size: 13px;
-        color: var(--ion-color-medium);
-        line-height: 1.6;
-        background: var(--ion-color-step-50, rgba(127,127,127,.04));
-        border-radius: 8px;
-        padding: 0 14px;
-        margin-left: 50px;
-      }
-      .ui-doc-expand.is-open { max-height: 200px; padding: 10px 14px; margin-bottom: 8px; }
-      .ui-doc-expand b { color: var(--ion-text-color, inherit); }
-
-      /* Footer desconectar */
-      .ui-disconnect-footer {
-        display: flex;
-        justify-content: flex-end;
-        padding: 14px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        margin-top: 4px;
-      }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'payouts',
+        title: 'Stripe Connect',
         body: `
-          <ok-page-header
-            heading="Stripe Connect"
-            description="Cobra ventas del marketplace de módulos directamente en tu cuenta">
-            <span slot="actions">
-              <ion-button fill="outline" id="btn-stripe-dashboard">
-                <ion-icon slot="start" name="open-outline"></ion-icon>
-                Dashboard Stripe
-              </ion-button>
-            </span>
-          </ok-page-header>
+          <div class="developer-page developer-section-stack">
+            <div class="developer-grid">
+              <ion-card>
+                <ion-card-content>
+                  <h2 class="developer-card-title">Crear cuenta de Stripe Connect</h2>
+                  <p class="developer-card-subtitle">Para recibir pagos por las ventas de tus módulos, conecta una cuenta bancaria mediante Stripe.</p>
+                  <form class="developer-fields">
+                    <ion-select id="country-select" label="País" label-placement="stacked" fill="outline" interface="popover" value="ES">
+                      <ion-select-option value="ES">España</ion-select-option>
+                      <ion-select-option value="PT">Portugal</ion-select-option>
+                      <ion-select-option value="FR">Francia</ion-select-option>
+                      <ion-select-option value="DE">Alemania</ion-select-option>
+                    </ion-select>
+                    <ion-button type="submit" expand="block">
+                      <iconify-icon slot="start" icon="simple-icons:stripe" width="16" height="16"></iconify-icon>
+                      Conectar con Stripe
+                    </ion-button>
+                  </form>
+                </ion-card-content>
+              </ion-card>
 
-          <!-- Tarjeta de estado de conexión -->
-          <ion-card class="pg-mb-4" id="hero-card">
-            <div class="ui-hero-card">
-              <div class="ui-hero-icon" id="hero-icon"
-                style="background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);color:var(--ion-color-success)">
-                <ion-icon name="checkmark-circle-outline" style="font-size:28px"></ion-icon>
-              </div>
-              <div class="ui-hero-body">
-                <div class="ui-hero-title">
-                  <span id="hero-title">Cuenta conectada y verificada</span>
-                  <ok-status-pill id="hero-pill" tone="success" dot label="Verified" size="sm"></ok-status-pill>
-                </div>
-                <div class="ui-hero-meta">
-                  <span id="hero-desc">Lista para recibir pagos. Configurada el 12 mar 2026.</span><br/>
-                  <code id="hero-code">acct_1ABC12345 · Express · card_payments + transfers</code>
-                </div>
-              </div>
-              <div id="hero-reconnect" style="display:none">
-                <ion-button size="small" id="btn-reconnect">
-                  <ion-icon slot="start" name="link-outline"></ion-icon>
-                  Reconectar
-                </ion-button>
-              </div>
+              <ion-card>
+                <ion-card-content>
+                  <h2 class="developer-card-title">Cómo funciona</h2>
+                  <div class="developer-step"><div class="developer-step-number">1</div><div><strong>Crear cuenta</strong><small>Selecciona tu país y crea la cuenta de Stripe Connect.</small></div></div>
+                  <div class="developer-step"><div class="developer-step-number">2</div><div><strong>Completar onboarding</strong><small>Verifica tu identidad y conecta tu cuenta bancaria.</small></div></div>
+                  <div class="developer-step"><div class="developer-step-number">3</div><div><strong>Recibir pagos</strong><small>Solicita el pago cuando el saldo llegue a 50 €.</small></div></div>
+                </ion-card-content>
+              </ion-card>
             </div>
-          </ion-card>
 
-          <!-- Información de la cuenta -->
-          <ion-card class="pg-mb-4">
-            <ion-card-header>
-              <ion-card-title>Información de la cuenta</ion-card-title>
-              <ion-card-subtitle>Datos de la cuenta Stripe Express</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <ok-detail-list id="account-dl" columns="2"></ok-detail-list>
-            </ion-card-content>
-          </ion-card>
-
-          <!-- Cuenta bancaria -->
-          <ion-card class="pg-mb-4">
-            <ion-card-header>
-              <ion-card-title>Cuenta bancaria</ion-card-title>
-              <ion-card-subtitle>Destino de las transferencias automáticas</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <ok-detail-list id="bank-dl"></ok-detail-list>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-                <ion-button fill="outline" size="small">
-                  <ion-icon slot="start" name="swap-horizontal-outline"></ion-icon>
-                  Cambiar cuenta bancaria
-                </ion-button>
-                <ion-button fill="clear" size="small">
-                  <ion-icon slot="start" name="time-outline"></ion-icon>
-                  Ver historial
-                </ion-button>
-              </div>
-            </ion-card-content>
-          </ion-card>
-
-          <!-- Documentos de verificación -->
-          <ion-card class="pg-mb-4">
-            <ion-card-header>
-              <ion-card-title>Documentos</ion-card-title>
-              <ion-card-subtitle>Verificación de identidad y compliance</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <!-- NIF -->
-              <div class="ui-doc-item">
-                <div class="ui-doc-icon" style="background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);color:var(--ion-color-success)">
-                  <ion-icon name="checkmark-outline" style="font-size:16px"></ion-icon>
-                </div>
-                <div class="ui-doc-body">
-                  <div class="ui-doc-title">NIF de la empresa</div>
-                  <div class="ui-doc-desc">B-12345678 · Acme Industries SL</div>
-                </div>
-                <div class="ui-doc-aside">
-                  <ok-status-pill tone="success" dot label="Verificado" size="sm"></ok-status-pill>
-                  <ion-button fill="clear" size="small" id="btn-expand-nif" aria-expanded="false">
-                    <ion-icon slot="icon-only" name="chevron-down-outline" id="chevron-nif"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-              <div class="ui-doc-expand" id="expand-nif">
-                <b>Verificado por:</b> Stripe Identity · 14 mar 2026<br/>
-                <b>Documento:</b> Acme_Industries_NIF.pdf<br/>
-                <b>Próxima revisión:</b> 14 mar 2027
-              </div>
-
-              <!-- DNI -->
-              <div class="ui-doc-item">
-                <div class="ui-doc-icon" style="background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);color:var(--ion-color-success)">
-                  <ion-icon name="checkmark-outline" style="font-size:16px"></ion-icon>
-                </div>
-                <div class="ui-doc-body">
-                  <div class="ui-doc-title">DNI representante legal</div>
-                  <div class="ui-doc-desc">Ioan Beilic · DNI verificado vía Onfido</div>
-                </div>
-                <div class="ui-doc-aside">
-                  <ok-status-pill tone="success" dot label="Verificado" size="sm"></ok-status-pill>
-                  <ion-button fill="clear" size="small" id="btn-expand-dni" aria-expanded="false">
-                    <ion-icon slot="icon-only" name="chevron-down-outline" id="chevron-dni"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-              <div class="ui-doc-expand" id="expand-dni">
-                <b>Proveedor:</b> Onfido (KYC)<br/>
-                <b>Verificado:</b> 12 mar 2026<br/>
-                <b>DNI:</b> ••••••07X
-              </div>
-
-              <!-- W-8BEN-E (pendiente) -->
-              <div class="ui-doc-item" id="doc-w8ben">
-                <div class="ui-doc-icon" style="background:color-mix(in srgb, var(--ion-color-warning) 15%, transparent);color:var(--ion-color-warning)">
-                  <ion-icon name="warning-outline" style="font-size:16px"></ion-icon>
-                </div>
-                <div class="ui-doc-body">
-                  <div class="ui-doc-title">Certificado IRS / W-8BEN-E</div>
-                  <div class="ui-doc-desc" id="w8-desc">Necesario para ventas a residentes en EE.UU. · Pendiente de subir</div>
-                </div>
-                <div class="ui-doc-aside">
-                  <ok-status-pill id="w8-pill" tone="warning" dot label="Pendiente" size="sm"></ok-status-pill>
-                  <ion-button size="small" id="btn-upload-w8">
-                    <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-                    Subir
-                  </ion-button>
-                </div>
-              </div>
-
-              <!-- IAE -->
-              <div class="ui-doc-item">
-                <div class="ui-doc-icon" style="background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);color:var(--ion-color-success)">
-                  <ion-icon name="checkmark-outline" style="font-size:16px"></ion-icon>
-                </div>
-                <div class="ui-doc-body">
-                  <div class="ui-doc-title">Justificante de actividad</div>
-                  <div class="ui-doc-desc">Modelo 036 · IAE 631 · subido 14 mar 2026</div>
-                </div>
-                <div class="ui-doc-aside">
-                  <ok-status-pill tone="success" dot label="Verificado" size="sm"></ok-status-pill>
-                  <ion-button fill="clear" size="small" id="btn-expand-iae" aria-expanded="false">
-                    <ion-icon slot="icon-only" name="chevron-down-outline" id="chevron-iae"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-              <div class="ui-doc-expand" id="expand-iae">
-                <b>IAE:</b> 631 — Comercio al por menor<br/>
-                <b>Subido:</b> 14 mar 2026<br/>
-                <b>Validez:</b> indefinida (mientras no varíe la actividad)
-              </div>
-            </ion-card-content>
-          </ion-card>
-
-          <!-- Webhooks -->
-          <section class="pg-mb-4">
-            <ok-inline-feedback id="webhook-test-feedback" tone="info" heading="Test event enviado" style="display:none;margin-bottom:12px">
-              Esperando respuesta del endpoint…
+            <ok-inline-feedback tone="success" heading="Seguro y fiable">
+              <p>Stripe protege y cifra tu información financiera y es utilizado por millones de empresas en todo el mundo.</p>
             </ok-inline-feedback>
-            <ok-data-table id="webhooks-dt" style="display:block"></ok-data-table>
-          </section>
-
-          <!-- Footer: desconectar -->
-          <div class="ui-disconnect-footer">
-            <ion-button fill="clear" color="danger" id="btn-disconnect">
-              <ion-icon slot="start" name="power-outline"></ion-icon>
-              Desconectar Stripe
-            </ion-button>
-          </div>
-        `,
-        setup(doc) {
-          // ── Estado ───────────────────────────────────────────────────────────
-          const state = { connected: true, uploadDone: false };
-
-          const $ = (id) => doc.getElementById(id);
-
-          // ── Hero: estado de conexión ─────────────────────────────────────────
-          function updateHero() {
-            const heroCard = $('hero-card');
-            const heroIcon = $('hero-icon');
-            const heroPill = $('hero-pill');
-            const heroTitle = $('hero-title');
-            const heroDesc = $('hero-desc');
-            const heroCode = $('hero-code');
-            const heroReconnect = $('hero-reconnect');
-
-            if (state.connected) {
-              heroCard.style.borderLeft = '3px solid var(--ion-color-success)';
-              heroIcon.style.background = 'color-mix(in srgb, var(--ion-color-success) 15%, transparent)';
-              heroIcon.style.color = 'var(--ion-color-success)';
-              heroIcon.querySelector('ion-icon').name = 'checkmark-circle-outline';
-              heroTitle.textContent = 'Cuenta conectada y verificada';
-              heroDesc.textContent = 'Lista para recibir pagos. Configurada el 12 mar 2026.';
-              heroCode.style.display = '';
-              heroPill.setAttribute('tone', 'success');
-              heroPill.setAttribute('label', 'Verified');
-              heroReconnect.style.display = 'none';
-            } else {
-              heroCard.style.borderLeft = '3px solid var(--ion-color-danger)';
-              heroIcon.style.background = 'color-mix(in srgb, var(--ion-color-danger) 15%, transparent)';
-              heroIcon.style.color = 'var(--ion-color-danger)';
-              heroIcon.querySelector('ion-icon').name = 'warning-outline';
-              heroTitle.textContent = 'Cuenta desconectada';
-              heroDesc.textContent = 'Los cobros del marketplace están detenidos.';
-              heroCode.style.display = 'none';
-              heroPill.setAttribute('tone', 'danger');
-              heroPill.setAttribute('label', 'Desconectada');
-              heroReconnect.style.display = '';
-            }
-          }
-
-          // ── ok-detail-list: información de la cuenta ─────────────────────────
-          const accountDl = $('account-dl');
-          accountDl.items = [
-            { label: 'Tipo de cuenta', value: 'Express' },
-            { label: 'País', value: '🇪🇸 España' },
-            { label: 'Moneda', value: 'EUR' },
-            { label: 'Comisión', value: '1,4% + €0,25' },
-          ];
-
-          // ── ok-detail-list: cuenta bancaria ──────────────────────────────────
-          const bankDl = $('bank-dl');
-          bankDl.items = [
-            { label: 'Entidad', value: 'Banco Sabadell' },
-            { label: 'IBAN', value: 'ES•• •••• •••• •••• 5547' },
-            { label: 'Titular', value: 'Acme Industries SL' },
-            { label: 'SWIFT', value: 'BSABESBB' },
-            { label: 'Tipo transferencia', value: 'SEPA Instant' },
-            { label: 'Titular verificado', value: '12 mar 2026' },
-          ];
-
-          // ── Expandir/colapsar documentos ─────────────────────────────────────
-          function toggleExpand(expandId, btnId, chevronId) {
-            const panel = $(expandId);
-            const btn = $(btnId);
-            const chevron = $(chevronId);
-            if (!panel) return;
-            const isOpen = panel.classList.contains('is-open');
-            panel.classList.toggle('is-open', !isOpen);
-            if (btn) btn.setAttribute('aria-expanded', String(!isOpen));
-            if (chevron) {
-              chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-              chevron.style.transition = 'transform 0.2s';
-            }
-          }
-
-          $('btn-expand-nif').addEventListener('click', () => toggleExpand('expand-nif', 'btn-expand-nif', 'chevron-nif'));
-          $('btn-expand-dni').addEventListener('click', () => toggleExpand('expand-dni', 'btn-expand-dni', 'chevron-dni'));
-          $('btn-expand-iae').addEventListener('click', () => toggleExpand('expand-iae', 'btn-expand-iae', 'chevron-iae'));
-
-          // ── Subida simulada W-8BEN-E ──────────────────────────────────────────
-          const w8Desc = $('w8-desc');
-          const w8Pill = $('w8-pill');
-          const btnUpload = $('btn-upload-w8');
-
-          btnUpload.addEventListener('click', () => {
-            if (state.uploadDone) {
-              state.uploadDone = false;
-              w8Desc.textContent = 'Necesario para ventas a residentes en EE.UU. · Pendiente de subir';
-              w8Pill.setAttribute('tone', 'warning');
-              w8Pill.setAttribute('label', 'Pendiente');
-              btnUpload.innerHTML = '<ion-icon slot="start" name="cloud-upload-outline"></ion-icon>Subir';
-              return;
-            }
-            w8Desc.textContent = 'Subiendo W-8BEN-E.pdf…';
-            w8Pill.setAttribute('label', 'Subiendo…');
-            btnUpload.setAttribute('disabled', '');
-            setTimeout(() => {
-              state.uploadDone = true;
-              w8Desc.textContent = 'Subido y en revisión por Stripe';
-              w8Pill.setAttribute('tone', 'success');
-              w8Pill.setAttribute('label', 'En revisión');
-              btnUpload.removeAttribute('disabled');
-              btnUpload.setAttribute('fill', 'clear');
-              btnUpload.innerHTML = '<ion-icon slot="start" name="swap-horizontal-outline"></ion-icon>Reemplazar';
-            }, 1200);
-          });
-
-          // ── Webhooks data-table ───────────────────────────────────────────────
-          const feedbackEl = $('webhook-test-feedback');
-          const webhooksDt = $('webhooks-dt');
-
-          webhooksDt.title = 'Webhooks';
-          webhooksDt.rowKey = (r) => r.endpoint;
-          webhooksDt.searchable = false;
-          webhooksDt.primaryAction = { label: 'Añadir endpoint', icon: 'add' };
-          webhooksDt.menuActions = [
-            { id: 'test-global', label: 'Probar webhook', icon: 'flash-outline' },
-          ];
-
-          const wTone = (s) => s === 'Activo' ? 'success' : 'neutral';
-
-          webhooksDt.columns = [
-            { key: 'endpoint', header: 'Endpoint', width: 'minmax(18rem,1.8fr)',
-              render: (r) => h`<code style="font-size:12px;word-break:break-all">${r.endpoint}</code>` },
-            { key: 'events', header: 'Eventos', width: 'minmax(12rem,1fr)',
-              render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-text-color) 10%, transparent);--color:var(--ion-text-color);font-size:11px;font-weight:500">${r.events}</ion-badge>` },
-            { key: 'last', header: 'Última ejecución', width: '11rem',
-              render: (r) => h`<span style="color:var(--ion-color-medium);font-size:12px">${r.last}</span>` },
-            { key: 'status', header: 'Estado', width: '8rem',
-              render: (r) => {
-                const c = wTone(r.status) === 'success' ? 'success' : 'medium';
-                return h`<ok-status-pill tone=${wTone(r.status)} dot label=${r.status} size="sm"></ok-status-pill>`;
-              } },
-          ];
-          webhooksDt.actions = [
-            { id: 'test', label: 'Probar', icon: 'flash-outline' },
-            { id: 'edit', label: 'Editar', icon: 'create-outline' },
-            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
-          ];
-          webhooksDt.rows = [
-            { endpoint: 'https://api.erplora.cloud/stripe/payment.succeeded', events: 'payment_intent.succeeded', last: 'hace 8 min · 200 OK', status: 'Activo' },
-            { endpoint: 'https://api.erplora.cloud/stripe/transfer.created', events: 'transfer.created', last: 'hace 2 h · 200 OK', status: 'Activo' },
-            { endpoint: 'https://api.erplora.cloud/stripe/payout.paid', events: 'payout.paid + payout.failed', last: 'hace 18 h · 200 OK', status: 'Activo' },
-            { endpoint: 'https://api.erplora.cloud/stripe/charge.dispute.created', events: 'charge.dispute.* (3)', last: 'nunca ejecutado', status: 'Listo' },
-          ];
-
-          webhooksDt.addEventListener('menuAction', (e) => {
-            if (e.detail?.actionId === 'test-global') {
-              feedbackEl.style.display = '';
-              setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000);
-            }
-          });
-
-          // ── Desconectar → ion-alert ───────────────────────────────────────────
-          $('btn-disconnect').addEventListener('click', () => {
-            const alert = document.createElement('ion-alert');
-            alert.header = 'Desconectar Stripe Connect';
-            alert.message = 'Esta acción detendrá todos los cobros del marketplace. Las ventas en curso quedarán pendientes hasta reconectar.';
-            alert.buttons = [
-              { text: 'Cancelar', role: 'cancel' },
-              {
-                text: 'Desconectar',
-                role: 'destructive',
-                handler: () => {
-                  state.connected = false;
-                  updateHero();
-                },
-              },
-            ];
-            document.body.appendChild(alert);
-            alert.present();
-            alert.addEventListener('didDismiss', () => alert.remove());
-          });
-
-          $('btn-reconnect').addEventListener('click', () => {
-            state.connected = true;
-            updateHero();
-          });
-
-          // ── Init ──────────────────────────────────────────────────────────────
-          updateHero();
-        },
+          </div>`,
       });
     </script>
   </body>

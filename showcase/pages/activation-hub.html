@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Activación</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <link rel="stylesheet" href="../../dist/erplora.css" />
+    <style>
+      .activation-card { max-width: 420px; margin: 12vh auto 0; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+      .activation-card h1 { font-size: 1.5rem; font-weight: 700; margin: 8px 0 0; }
+      .activation-card p { color: var(--ion-color-medium); margin: 0; }
+      .activation-card ion-button { width: 100%; margin-top: 4px; }
+      .activation-mark { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 16px; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); font-size: 2rem; }
+    </style>
+  </head>
+  <body>
+    <ion-app>
+      <ion-content class="ion-padding">
+        <div class="activation-card">
+          <span class="activation-mark" aria-hidden="true"><ion-icon name="key-outline"></ion-icon></span>
+          <h1>Necesita activación</h1>
+          <p>Este Hub todavía no tiene una licencia activa. Vuelve a comprobarla cuando termines la configuración.</p>
+          <p id="activation-reason">No se ha encontrado un derecho válido para este dispositivo.</p>
+          <ion-button id="activation-retry" expand="block">
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+            Volver a intentar
+          </ion-button>
+          <ion-button id="activation-logout" expand="block" fill="clear" color="medium">Cerrar sesión</ion-button>
+        </div>
+      </ion-content>
+    </ion-app>
+    <script type="module">
+      const retry = document.getElementById('activation-retry');
+      const reason = document.getElementById('activation-reason');
+      retry.addEventListener('click', () => {
+        retry.disabled = true;
+        retry.innerHTML = '<ion-spinner name="crescent"></ion-spinner> Comprobando…';
+        window.setTimeout(() => {
+          retry.disabled = false;
+          retry.innerHTML = '<ion-icon slot="start" name="refresh-outline"></ion-icon> Volver a intentar';
+          reason.textContent = 'La activación sigue pendiente.';
+        }, 700);
+      });
+      document.getElementById('activation-logout').addEventListener('click', () => {
+        window.location.hash = '#/p/auth-login-hub';
+      });
+    </script>
+  </body>
+</html>

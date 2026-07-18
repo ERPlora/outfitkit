@@ -89,9 +89,13 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
 
 ## Inventario de componentes
 
-97 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
+92 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
 los **eventos `ok-*`** que emite cada uno (`—` = presentacional, sin eventos). La **referencia viva
 de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
+
+Los patrones que Ionic ya resuelve no se exportan como `ok-*`: drawer lateral (`ion-modal`),
+skeleton (`ion-skeleton-text`), fecha/hora (`ion-datetime`) y rango doble (`ion-range dual-knobs`)
+viven como recetas copiables en el showcase.
 
 ### Datos y tablas
 
@@ -128,7 +132,6 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 | `ok-error-page` | Plantilla full-screen para errores HTTP (403/404/500), retry con cuenta atrás, modo bootstrap con checklist. | `ok-retry`, `ok-shortcut` |
 | `ok-status-pill` | Pill de estado con fondo tonal suave + icono/punto (celdas de tabla). | — |
 | `ok-status-dot` | Punto de presencia coloreado con pulso opcional. | — |
-| `ok-skeleton` | Placeholders de carga (shimmer) con variantes y presets (card/table/chart). | — |
 | `ok-coachmark` | Tour guiado con spotlight, bubble anclado y navegación por teclado. | `ok-step`, `ok-next`, `ok-prev`, `ok-finish`, `ok-skip` |
 | `ok-hover-card` | Popover de previsualización (avatar/título/stats/acciones) anclada a hover/focus. | `ok-action`, `ok-open` |
 
@@ -163,9 +166,6 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 | `ok-currency` | Input monetario con máscara (miles/decimales/símbolo `Intl`). | `ok-change` |
 | `ok-phone` | Teléfono con prefijo de país (bandera + dial) y número (E.164). | `ok-change` |
 | `ok-dropzone` | Subida drag&drop + click con validación de tipo/tamaño. | `ok-change`, `ok-error` |
-| `ok-date-picker` | Campo fecha + popover calendario, single/range, chips de preset. | `ok-change` |
-| `ok-time-picker` | Pastilla HH:MM + popover de listas (horas/minutos/AM-PM), canónico 24h. | `ok-change` |
-| `ok-range-dual` | Slider min-max de doble thumb con readout. | `ok-change` |
 | `ok-color-picker` | Selector de color (SV + hue + hex + presets). | `ok-change`, `ok-open` |
 | `ok-theme-picker` | Selector de tema compartido Cloud↔Hub: paleta de marca (swatches) + modo claro/oscuro/sistema. | `ok-change` |
 | `ok-rich-text` | Editor WYSIWYG con toolbar y contador de palabras. | `ok-input` |
@@ -182,7 +182,6 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 | `ok-split-button` | Botón principal pegado a un caret que abre menú. | `ok-main`, `ok-select`, `ok-open` |
 | `ok-menu` | Menú desplegable/contextual con submenús, checkbox/radio, divisores. | `ok-select`, `ok-open` |
 | `ok-menubar` | Barra de menús de app (Archivo/Editar/Ver) con dropdowns. | `ok-select`, `ok-open` |
-| `ok-drawer` | Panel lateral deslizante (slide-over) modal con focus-trap y cierre por ESC/scrim. | `ok-open`, `ok-close` |
 | `ok-spotlight-search` | Buscador overlay estilo Spotlight (macOS): `<dialog>` top-layer translúcido, chrome solo (input+✕+panel); resultados los pone el consumidor por slot. | `ok-input`, `ok-open` |
 
 ### Media y archivos

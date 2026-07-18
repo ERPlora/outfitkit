@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dominio del Hub - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-inline-feedback.js"></script>
+    <style>
+      .hub-card { max-width:56rem; }
+      .card-head,.url-row { display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap; }
+      .card-head h2 { margin:0;font-size:1.05rem; }
+      .url-box,.instructions { margin-top:1rem;padding:1rem;border:1px solid var(--ion-color-step-150);border-radius:.75rem;background:var(--ion-color-step-50); }
+      .eyebrow { margin:0 0 .25rem;color:var(--ion-color-medium);font-size:.7rem;text-transform:uppercase; }
+      .url { margin:0;font-family:monospace;overflow-wrap:anywhere; }
+      .instructions ol { margin:.75rem 0; }
+      .dns { display:flex;gap:1rem;flex-wrap:wrap;padding:.75rem;border:1px solid var(--ion-color-step-150);border-radius:.6rem;background:var(--ion-card-background);font-family:monospace;font-size:.8rem; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const footer = `
+        <footer id="section-tabbar"><ion-segment value="domain" aria-label="Navegación de Hubs">
+          <ion-segment-button value="active"><iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon><ion-label>Activo</ion-label></ion-segment-button>
+          <ion-segment-button value="inactive"><iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon><ion-label>Inactivo</ion-label></ion-segment-button>
+          <ion-segment-button value="create"><iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon><ion-label>Crear</ion-label></ion-segment-button>
+          <ion-segment-button value="domain"><iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon><ion-label>Dominio</ion-label></ion-segment-button>
+        </ion-segment></footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Dominio',
+        body: `
+          <ion-card class="hub-card">
+            <ion-card-content>
+              <div class="card-head"><h2>Terminal principal</h2><ion-badge color="success">Online</ion-badge></div>
+              <div class="url-box">
+                <div class="url-row">
+                  <div><p class="eyebrow">URL del Hub</p><p class="url">terminal-principal.erplora.com</p></div>
+                  <ion-button size="small"><iconify-icon slot="start" icon="lucide:external-link" width="14" height="14"></iconify-icon>Abrir Terminal</ion-button>
+                </div>
+                <p style="margin-bottom:0;color:var(--ion-color-medium);font-size:.82rem">Esta es la dirección permanente del Hub y funciona automáticamente.</p>
+              </div>
+              <div class="instructions">
+                <h3 style="margin:0">Dominio personalizado <small style="font-weight:400">(opcional)</small></h3>
+                <p>Puedes usar tu propio dominio en lugar de terminal-principal.erplora.com.</p>
+                <h4>Instrucciones de configuración</h4>
+                <ol>
+                  <li>Entra en el proveedor de tu dominio.</li>
+                  <li>Añade un registro CNAME con estos valores:</li>
+                </ol>
+                <div class="dns"><span>Tipo: CNAME</span><span>Nombre: erp</span><span>Valor: terminal-principal.erplora.com</span></div>
+                <ol start="3">
+                  <li>Espera la propagación DNS, normalmente entre 5 y 30 minutos.</li>
+                  <li>El Hub quedará accesible desde el dominio personalizado.</li>
+                </ol>
+                <ok-inline-feedback tone="warning">
+                  Los certificados SSL para dominios personalizados se generan automáticamente y pueden tardar unos minutos tras la propagación DNS.
+                </ok-inline-feedback>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        `,
+        footer,
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,487 @@
+/* _saas-dashboard.css — snapshot del shell SaaS actual para el showcase.
+ * Fuente: saas/static/css/dashboard-shell.css. Los colores proceden del tema canónico
+ * dist/erplora.css; aquí solo viven composición, geometría y responsive. */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ion-text-color);
+  font-family: var(--ion-font-family);
+  background: var(--ion-background-color);
+  -webkit-font-smoothing: antialiased;
+}
+
+ion-app,
+ion-split-pane.saas-dashboard-shell {
+  background: var(--ion-background-color);
+}
+
+ion-split-pane.saas-dashboard-shell {
+  --side-min-width: 248px;
+  --side-max-width: 248px;
+  --side-width: 248px;
+  --border: none;
+}
+
+ion-split-pane.saas-dashboard-shell.rail {
+  --side-min-width: 68px;
+  --side-max-width: 68px;
+  --side-width: 68px;
+}
+
+ion-menu.dash-menu {
+  --background: var(--ion-background-color);
+  --width: 280px;
+  border-inline-end: 0;
+}
+
+ion-menu.dash-menu ion-header,
+ion-menu.dash-menu ion-toolbar,
+ion-menu.dash-menu ion-content.sidebar-content,
+.sidebar-foot {
+  --background: var(--ion-background-color);
+}
+
+ion-header::after,
+ion-footer::before {
+  display: none;
+}
+
+/* Marca del Cloud: el mismo módulo 3×3 del sidebar real. */
+.brand-toolbar {
+  --background: transparent;
+  --min-height: 56px;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.erp-logo {
+  --u: 0.444px;
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: calc(72 * var(--u));
+  height: calc(72 * var(--u));
+}
+
+.erp-logo > i {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  border-radius: calc(2 * var(--u));
+}
+
+.erp-nw { top: calc(6 * var(--u)); left: calc(6 * var(--u)); background: #ef4444; }
+.erp-n { top: calc(6 * var(--u)); left: calc(30 * var(--u)); background: #10b981; }
+.erp-ne { top: calc(6 * var(--u)); left: calc(54 * var(--u)); background: #f59e0b; }
+.erp-w { top: calc(30 * var(--u)); left: calc(6 * var(--u)); background: #10b981; }
+.erp-e { top: calc(30 * var(--u)); left: calc(54 * var(--u)); background: #ef4444; }
+.erp-sw { top: calc(54 * var(--u)); left: calc(6 * var(--u)); background: #f59e0b; }
+.erp-s { top: calc(54 * var(--u)); left: calc(30 * var(--u)); background: #ef4444; }
+.erp-se { top: calc(54 * var(--u)); left: calc(54 * var(--u)); background: #10b981; }
+
+.erp-hub {
+  top: calc(24 * var(--u));
+  left: calc(24 * var(--u));
+  width: calc(24 * var(--u)) !important;
+  height: calc(24 * var(--u)) !important;
+  background: var(--ion-color-primary);
+  border-radius: calc(4 * var(--u)) !important;
+}
+
+.erp-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.erp-wordmark {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+/* Navegación. aria-current es la única señal de activo, igual que en Django. */
+.nav-list {
+  padding: 0.25rem 0;
+  background: transparent;
+}
+
+.nav-section-label {
+  min-height: 1.9rem;
+  padding-inline: 1rem;
+  margin-top: 0.35rem;
+  color: color-mix(in oklab, var(--ion-text-color) 50%, transparent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nav-item {
+  --background: transparent;
+  --background-hover: color-mix(in oklab, var(--ion-text-color) 6%, transparent);
+  --background-hover-opacity: 1;
+  --border-radius: 9px;
+  --color: color-mix(in oklab, var(--ion-text-color) 78%, transparent);
+  --inner-padding-end: 0.5rem;
+  --min-height: 42px;
+  --padding-start: 0.7rem;
+  margin: 1px 8px;
+  font-size: 0.9rem;
+}
+
+.nav-item[aria-current="page"] {
+  --background: color-mix(in oklab, var(--ion-color-primary) 13%, transparent);
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+.nav-item[aria-current="page"]::part(native) {
+  box-shadow: inset 3px 0 0 var(--ion-color-primary);
+}
+
+.nav-icon {
+  flex: none;
+  margin-inline-end: 0.7rem;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Usuario y sesión al pie del menú. ion-avatar sustituye al wrapper porque Ionic basta. */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.65rem 0.2rem 0.85rem;
+}
+
+.sidebar-user-avatar,
+.topbar-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--ion-color-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: color-mix(in oklab, var(--ion-color-primary) 16%, transparent);
+}
+
+.sidebar-user-avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.sidebar-user-avatar span,
+.topbar-avatar span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+
+.sidebar-user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name,
+.sidebar-user-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sidebar-user-email {
+  color: color-mix(in oklab, var(--ion-text-color) 55%, transparent);
+  font-size: 0.72rem;
+}
+
+.sidebar-user ion-button,
+.sidebar-foot-actions ion-button {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+}
+
+.sidebar-foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.85rem 0.6rem;
+}
+
+.sidebar-version {
+  margin-inline-start: auto;
+  color: color-mix(in oklab, var(--ion-text-color) 55%, transparent);
+  font-size: 0.72rem;
+}
+
+/* Rail de escritorio. */
+.rail-toggle {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .rail-toggle {
+    display: inline-flex;
+  }
+}
+
+ion-split-pane.saas-dashboard-shell.rail .erp-wordmark,
+ion-split-pane.saas-dashboard-shell.rail .nav-label,
+ion-split-pane.saas-dashboard-shell.rail .nav-section-label,
+ion-split-pane.saas-dashboard-shell.rail .sidebar-user-meta,
+ion-split-pane.saas-dashboard-shell.rail .sidebar-foot-actions {
+  display: none;
+}
+
+ion-split-pane.saas-dashboard-shell.rail .brand-link,
+ion-split-pane.saas-dashboard-shell.rail .sidebar-user,
+ion-split-pane.saas-dashboard-shell.rail .nav-item::part(native) {
+  justify-content: center;
+}
+
+ion-split-pane.saas-dashboard-shell.rail .nav-item {
+  --inner-padding-end: 0;
+}
+
+ion-split-pane.saas-dashboard-shell.rail .nav-icon {
+  margin-inline-end: 0;
+}
+
+/* Pane principal: topbar + tarjeta central + tabbar. */
+.dash-main {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  background: var(--ion-background-color);
+}
+
+.dash-main > ion-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dash-header {
+  position: relative;
+}
+
+.dash-header ion-toolbar {
+  --background: var(--ion-background-color);
+  --border-width: 0;
+  --min-height: 56px;
+}
+
+.dash-header ion-title {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+ion-button {
+  --border-radius: 10px;
+  --box-shadow: none;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.topbar-avatar {
+  width: 30px;
+  height: 30px;
+  margin-inline: 6px;
+}
+
+.dash-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  overflow: hidden;
+}
+
+.dash-progress > div {
+  height: 100%;
+  background: var(--ion-color-primary);
+}
+
+.dash-content {
+  --background: var(--ion-card-background);
+  overflow: hidden;
+  border-radius: 25px;
+}
+
+.dash-content::part(background),
+.dash-content::part(scroll) {
+  border-radius: 25px;
+}
+
+.dash-page {
+  padding: 16px;
+  margin-inline: auto;
+}
+
+/* Los listados ricos llenan el espacio en escritorio. En móvil vuelve a existir un solo scroll. */
+@media (min-width: 768px) {
+  .dash-page:has(.dash-fill) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .dash-page:has(.dash-fill) > *,
+  .dash-page:has(.dash-fill) *:has(.dash-fill) > * {
+    flex: 0 0 auto;
+  }
+
+  .dash-page:has(.dash-fill) *:has(.dash-fill),
+  .dash-page:has(.dash-fill) .dash-fill {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .dash-page:has(.dash-fill) .dash-fill {
+    min-height: 320px;
+  }
+
+  .dash-page:has(.dash-fill) .dash-fill > ok-data-table[fill] {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+ok-data-table {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--ok-radius, 14px);
+  box-shadow: var(--ok-shadow-sm);
+}
+
+ok-data-table[fill] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Filtros server-rendered del slot toolbar, iguales al include okdt.html del SaaS. */
+.okdt-filters {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.okdt-filter {
+  min-height: 44px;
+  padding: 0.35rem 0.65rem;
+  color: var(--ion-text-color);
+  font-family: inherit;
+  font-size: 13px;
+  background: var(--ion-card-background);
+  border: 1px solid color-mix(in oklab, var(--ion-text-color) 22%, transparent);
+  border-radius: 10px;
+}
+
+ion-select.okdt-filter {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  min-width: 7.5rem;
+  max-width: 13rem;
+  padding: 0;
+  --padding-start: 0.65rem;
+  --padding-end: 0.4rem;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+/* Tabbar de sección, anclada fuera del scroll. */
+.dash-tabbar {
+  --background: var(--ion-background-color);
+  box-shadow: none;
+}
+
+.dash-tabbar #section-tabbar {
+  display: block;
+}
+
+.dash-tabbar ion-segment {
+  --background: transparent;
+  gap: 4px;
+  padding: 4px;
+}
+
+.dash-tabbar ion-segment-button {
+  --border-radius: 10px;
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-primary);
+  --indicator-color: transparent;
+  min-height: 50px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dash-tabbar ion-segment-button::part(indicator-background) {
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .okdt-filters {
+    flex-basis: 100%;
+  }
+
+  .okdt-filter {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .dash-tabbar ion-segment {
+    grid-auto-columns: max-content;
+    justify-content: flex-start;
+    justify-content: safe center;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .dash-tabbar ion-segment::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+  }
+}

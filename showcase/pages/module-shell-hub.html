@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Módulo Ventas</title>
+    <script type="importmap">{ "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }</script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>#module-outlet{height:100%;min-height:28rem}.module-pane[hidden]{display:none}.module-table{display:block;height:100%}.module-tabs{width:min(100%,34rem);margin:0 auto}</style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+      defineHubPage({
+        active: '/apps', title: 'Ventas',
+        body: `<div id="module-outlet"><section class="module-pane" data-pane="sales"><ok-data-table id="module-demo-table" class="module-table" fill></ok-data-table></section><section class="module-pane" data-pane="settings" hidden><ion-card class="ion-no-margin"><ion-card-header><ion-card-title>Ajustes de Ventas</ion-card-title></ion-card-header><ion-card-content><ion-list><ion-item lines="none"><ion-label><h2>Permitir ventas sin stock</h2></ion-label><ion-toggle slot="end"></ion-toggle></ion-item></ion-list></ion-card-content></ion-card></section><section class="module-pane" data-pane="plan" hidden><ion-card color="light" class="ion-no-margin"><ion-card-header><ion-card-title>Plan Profesional</ion-card-title></ion-card-header><ion-card-content><p>El módulo está activo en este Hub.</p><ion-button fill="outline">Gestionar suscripción</ion-button></ion-card-content></ion-card></section></div>`,
+        footer: `<ion-footer class="ion-no-border"><ion-toolbar><ion-segment id="module-tabs" class="module-tabs" value="sales"><ion-segment-button value="sales"><ion-icon name="receipt-outline"></ion-icon><ion-label>Ventas</ion-label></ion-segment-button><ion-segment-button value="settings"><ion-icon name="settings-outline"></ion-icon><ion-label>Ajustes</ion-label></ion-segment-button><ion-segment-button value="plan"><ion-icon name="pricetag-outline"></ion-icon><ion-label>Plan</ion-label></ion-segment-button></ion-segment></ion-toolbar></ion-footer>`,
+        setup(doc) {
+          const table = doc.getElementById('module-demo-table'); table.fill = true; table.searchable = true; table.views = ['table', 'cards']; table.columns = [{key:'number',header:'Venta'},{key:'customer',header:'Cliente'},{key:'total',header:'Total',align:'right'},{key:'status',header:'Estado'}]; table.rows = [{number:'V-1042',customer:'Marta Soler',total:'42,50 €',status:'Completada'},{number:'V-1041',customer:'Joan Martí',total:'18,90 €',status:'Completada'}];
+          doc.getElementById('module-tabs')?.addEventListener('ionChange', (event) => { doc.querySelectorAll('.module-pane').forEach((pane) => { pane.hidden = pane.dataset.pane !== event.detail.value; }); });
+        },
+      });
+    </script>
+  </body>
+</html>

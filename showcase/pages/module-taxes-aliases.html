@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Alias de categorías</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .taxes-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .taxes-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .taxes-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .taxes-form ion-button {
+        align-self: flex-end;
+      }
+
+      @media (max-width: 520px) {
+        .taxes-form ion-button {
+          width: 100%;
+          margin-inline: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de los catorce alias de fábrica de seed/install.sqlite.sql (ADR-0085).
+      const ALIAS_FIXTURE = [
+        { "id": "taxalias-food", "alias": "food", "tax_category_key": "restaurant.food", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-prepared-food", "alias": "prepared_food", "tax_category_key": "restaurant.food", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-meal", "alias": "meal", "tax_category_key": "restaurant.food", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-pizza", "alias": "pizza", "tax_category_key": "restaurant.food", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-drink", "alias": "drink", "tax_category_key": "restaurant.drink", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-beverage", "alias": "beverage", "tax_category_key": "restaurant.drink", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-soft-drink", "alias": "soft_drink", "tax_category_key": "restaurant.drink", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-alcohol", "alias": "alcohol", "tax_category_key": "restaurant.alcohol", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-beer", "alias": "beer", "tax_category_key": "restaurant.alcohol", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-wine", "alias": "wine", "tax_category_key": "restaurant.alcohol", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-delivery", "alias": "delivery", "tax_category_key": "restaurant.delivery", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-service", "alias": "service", "tax_category_key": "service.generic", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-product", "alias": "product", "tax_category_key": "product.generic", "source": "shipped", "is_active": 1 },
+        { "id": "taxalias-goods", "alias": "goods", "tax_category_key": "product.generic", "source": "shipped", "is_active": 1 }
+      ];
+
+      const CATEGORIES = [
+        ['restaurant.food', 'Restaurant — food'],
+        ['restaurant.drink', 'Restaurant — drink'],
+        ['restaurant.alcohol', 'Restaurant — alcohol'],
+        ['restaurant.delivery', 'Restaurant — delivery'],
+        ['service.generic', 'Service — generic'],
+        ['product.generic', 'Product — generic'],
+      ];
+      let aliases = ALIAS_FIXTURE.map((row) => ({ ...row }));
+      const commandLog = [];
+      const queryLog = [];
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params: { ...params } });
+      }
+
+      defineHubPage({
+        active: '/m/taxes/aliases',
+        title: 'Alias de categorías',
+        body: `
+          <div class="taxes-page">
+            <ok-data-table id="taxes-aliases-table" fill>
+              <form id="taxes-alias-form" slot="create" class="taxes-form">
+                <ion-input
+                  id="tax-alias-value"
+                  fill="outline"
+                  label="Alias"
+                  label-placement="floating"
+                  placeholder="comida"
+                  maxlength="200"
+                  required
+                ></ion-input>
+                <ion-select
+                  id="tax-alias-category"
+                  fill="outline"
+                  label="Categoría"
+                  label-placement="floating"
+                  interface="popover"
+                  required
+                >
+                  ${CATEGORIES.map(([key, name]) => `<ion-select-option value="${key}">${key} · ${name}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-select
+                  id="tax-alias-source"
+                  fill="outline"
+                  label="Origen"
+                  label-placement="floating"
+                  interface="popover"
+                  value="learned"
+                >
+                  <ion-select-option value="learned">Aprendido</ion-select-option>
+                  <ion-select-option value="shipped">De fábrica</ion-select-option>
+                </ion-select>
+                <ion-button id="tax-alias-save" type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('taxes-aliases-table');
+          const form = doc.getElementById('taxes-alias-form');
+          const aliasInput = doc.getElementById('tax-alias-value');
+          const categoryInput = doc.getElementById('tax-alias-category');
+          const sourceInput = doc.getElementById('tax-alias-source');
+          const saveButton = doc.getElementById('tax-alias-save');
+          const state = {
+            page: 0,
+            pageSize: 50,
+            sort: 'alias',
+            dir: 'asc',
+            search: '',
+            filters: {},
+          };
+
+          table.columns = [
+            { key: 'alias', header: 'Alias', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'tax_category_key',
+              header: 'Categoría',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: CATEGORIES.map(([value, name]) => ({ value, label: `${value} · ${name}` })),
+            },
+            {
+              key: 'source',
+              header: 'Origen',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [
+                { value: 'shipped', label: 'De fábrica' },
+                { value: 'learned', label: 'Aprendido' },
+              ],
+              format: (row) => row.source === 'shipped' ? 'De fábrica' : 'Aprendido',
+            },
+            {
+              key: 'is_active',
+              header: 'Activa',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              format: (row) => Number(row.is_active) ? 'Sí' : 'No',
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.alias || '—');
+          table.cardIcon = () => 'link-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar alias o categoría…';
+          table.emptyMessage = 'Sin alias de categorías.';
+          table.pageSize = 50;
+          table.sort = 'alias';
+          table.sortDir = 'asc';
+
+          function queryPage() {
+            recordQuery('taxes.aliases.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = aliases
+              .filter((row) => {
+                if (term && !`${row.alias} ${row.tax_category_key}`.toLocaleLowerCase('es').includes(term)) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value == null || value === '') return true;
+                  if (key === 'alias') {
+                    return row.alias.toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                  }
+                  return String(row[key] ?? '') === String(value);
+                });
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+                return state.dir === 'desc' ? -result : result;
+              });
+
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const alias = String(aliasInput.value || '').trim();
+            const tax_category_key = String(categoryInput.value || '').trim();
+            if (!alias || !tax_category_key || aliases.some((row) => row.alias.toLocaleLowerCase('es') === alias.toLocaleLowerCase('es'))) return;
+
+            saveButton.disabled = true;
+            const payload = {
+              alias,
+              tax_category_key,
+              source: String(sourceInput.value || 'learned'),
+            };
+            recordCommand('taxes.aliases.create', payload);
+            aliases = [...aliases, {
+              id: `preview-tax-alias-${aliases.length + 1}`,
+              ...payload,
+              is_active: 1,
+            }];
+            aliasInput.value = '';
+            categoryInput.value = '';
+            sourceInput.value = 'learned';
+            table.close();
+            state.page = 0;
+            queryPage();
+            saveButton.disabled = false;
+          });
+
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail.sort;
+            state.dir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail || '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            state.filters[event.detail.col] = event.detail.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

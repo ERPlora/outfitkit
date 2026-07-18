@@ -127,7 +127,6 @@ export default defineConfig({
         'ok-color-picker': resolve(__dirname, 'src/components/ok-color-picker/ok-color-picker.ts'),
         'ok-avatar': resolve(__dirname, 'src/components/ok-avatar/ok-avatar.ts'),
         'ok-status-pill': resolve(__dirname, 'src/components/ok-status-pill/ok-status-pill.ts'),
-        'ok-drawer': resolve(__dirname, 'src/components/ok-drawer/ok-drawer.ts'),
         'ok-page-header': resolve(__dirname, 'src/components/ok-page-header/ok-page-header.ts'),
         // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
         'ok-bento': resolve(__dirname, 'src/components/ok-bento/ok-bento.ts'),
@@ -146,7 +145,6 @@ export default defineConfig({
         'ok-hero': resolve(__dirname, 'src/components/ok-hero/ok-hero.ts'),
         // ── ux-legacy port (Tier 1+2) ──
         'ok-pagination': resolve(__dirname, 'src/components/ok-pagination/ok-pagination.ts'),
-        'ok-skeleton': resolve(__dirname, 'src/components/ok-skeleton/ok-skeleton.ts'),
         'ok-gauge': resolve(__dirname, 'src/components/ok-gauge/ok-gauge.ts'),
         'ok-chart': resolve(__dirname, 'src/components/ok-chart/ok-chart.ts'),
         'ok-donut': resolve(__dirname, 'src/components/ok-donut/ok-donut.ts'),
@@ -164,9 +162,6 @@ export default defineConfig({
         'ok-select-card': resolve(__dirname, 'src/components/ok-select-card/ok-select-card.ts'),
         'ok-theme-picker': resolve(__dirname, 'src/components/ok-theme-picker/ok-theme-picker.ts'),
         'ok-error-page': resolve(__dirname, 'src/components/ok-error-page/ok-error-page.ts'),
-        'ok-date-picker': resolve(__dirname, 'src/components/ok-date-picker/ok-date-picker.ts'),
-        'ok-time-picker': resolve(__dirname, 'src/components/ok-time-picker/ok-time-picker.ts'),
-        'ok-range-dual': resolve(__dirname, 'src/components/ok-range-dual/ok-range-dual.ts'),
         'ok-file-item': resolve(__dirname, 'src/components/ok-file-item/ok-file-item.ts'),
         'ok-rich-text': resolve(__dirname, 'src/components/ok-rich-text/ok-rich-text.ts'),
         'ok-code': resolve(__dirname, 'src/components/ok-code/ok-code.ts'),

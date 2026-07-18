@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Caja</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .cash-page { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0.75rem; }
+      .cash-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .cash-toolbar { display: flex; justify-content: flex-end; }
+      .cash-panel { border: 1px solid var(--ion-color-step-150); border-radius: 12px; padding: 0.8rem; }
+      .cash-panel[hidden] { display: none; }
+      .cash-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+      .cash-form { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: end; }
+      .cash-form ion-input, .cash-form ion-select { flex: 1 1 11rem; }
+      .cash-denominations { display: grid; grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); gap: 0.5rem; width: 100%; }
+      .cash-total { width: 100%; margin: 0.25rem 0; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const SESSION_FIXTURE = [
+        {
+          "id": "s-1",
+          "session_number": "S-260718-090000",
+          "status": "open",
+          "register_id": "r-1",
+          "opening_balance": 15000,
+          "expected_balance": 42850,
+          "closing_balance": null,
+          "difference": null
+        },
+        {
+          "id": "s-2",
+          "session_number": "S-260717-090000",
+          "status": "closed",
+          "register_id": "r-1",
+          "opening_balance": 15000,
+          "expected_balance": 68420,
+          "closing_balance": 68400,
+          "difference": -20
+        }
+      ];
+
+      const REGISTER_FIXTURE = [
+        { "id": "r-1", "name": "Caja mostrador", "is_active": 1 },
+        { "id": "r-2", "name": "Caja terraza", "is_active": 1 }
+      ];
+
+      const BILLS = ['500', '200', '100', '50', '20', '10', '5'];
+      const COINS = ['2', '1', '0.50', '0.20', '0.10', '0.05', '0.02', '0.01'];
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin sesiones de caja.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'sesión', recordPlural: 'sesiones',
+      };
+
+      let sessions = SESSION_FIXTURE.map((session) => ({ ...session }));
+      let target = null;
+      const state = { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} };
+
+      const money = (cents) => cents == null
+        ? '—'
+        : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+      const toCents = (value) => Math.round((Number(String(value ?? '').replace(',', '.')) || 0) * 100);
+
+      function badge(text, color) {
+        const element = document.createElement('ion-badge');
+        element.textContent = text;
+        element.color = color;
+        return element;
+      }
+
+      defineHubPage({
+        active: '/m/cash_register/cash_register',
+        title: 'Caja',
+        body: `
+          <div class="cash-page">
+            <div class="cash-toolbar">
+              <ion-button id="cash-open-button" size="small">
+                <ion-icon slot="start" name="add-outline"></ion-icon>Abrir sesión
+              </ion-button>
+            </div>
+
+            <section id="cash-open-panel" class="cash-panel" hidden>
+              <h3>Abrir sesión de caja</h3>
+              <form id="cash-open-form" class="cash-form">
+                <ion-select id="cash-open-register" fill="outline" label="Cajón" label-placement="floating"></ion-select>
+                <ion-input id="cash-opening-balance" fill="outline" type="number" min="0" step="0.01" label="Fondo de apertura" label-placement="floating"></ion-input>
+                <ion-input id="cash-open-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small">Abrir sesión</ion-button>
+                <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
+              </form>
+            </section>
+
+            <section id="cash-close-panel" class="cash-panel" hidden>
+              <h3>Cerrar sesión</h3>
+              <form id="cash-close-form" class="cash-form">
+                <ion-input id="cash-closing-balance" fill="outline" type="number" min="0" step="0.01" label="Efectivo contado" label-placement="floating"></ion-input>
+                <ion-input id="cash-close-notes" fill="outline" label="Notas de cierre" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small" color="danger">Cerrar sesión</ion-button>
+                <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
+              </form>
+            </section>
+
+            <section id="cash-movement-panel" class="cash-panel" hidden>
+              <h3>Movimiento de caja</h3>
+              <form id="cash-movement-form" class="cash-form">
+                <ion-select id="cash-movement-type" value="in" fill="outline" label="Tipo" label-placement="floating">
+                  <ion-select-option value="in">Entrada</ion-select-option>
+                  <ion-select-option value="out">Salida</ion-select-option>
+                </ion-select>
+                <ion-input id="cash-movement-amount" fill="outline" type="number" min="0.01" step="0.01" label="Importe" label-placement="floating"></ion-input>
+                <ion-input id="cash-movement-description" fill="outline" label="Concepto" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small">Registrar</ion-button>
+                <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
+              </form>
+            </section>
+
+            <section id="cash-count-panel" class="cash-panel" hidden>
+              <h3>Arqueo de caja</h3>
+              <form id="cash-count-form" class="cash-form">
+                <ion-select id="cash-count-type" value="closing" fill="outline" label="Tipo de arqueo" label-placement="floating">
+                  <ion-select-option value="opening">Apertura</ion-select-option>
+                  <ion-select-option value="closing">Cierre</ion-select-option>
+                </ion-select>
+                <ion-input id="cash-count-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                <div id="cash-bills" class="cash-denominations" aria-label="Billetes"></div>
+                <div id="cash-coins" class="cash-denominations" aria-label="Monedas"></div>
+                <p id="cash-count-total" class="cash-total">Total contado: 0,00 €</p>
+                <ion-button type="submit" size="small">Registrar arqueo</ion-button>
+                <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
+              </form>
+            </section>
+
+            <ok-data-table id="cash-register-table" fill></ok-data-table>
+          </div>
+          <ion-toast id="cash-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('cash-register-table');
+          const toast = doc.getElementById('cash-toast');
+          const panels = ['open', 'close', 'movement', 'count'].map((name) => doc.getElementById(`cash-${name}-panel`));
+          const openRegister = doc.getElementById('cash-open-register');
+          const openingBalance = doc.getElementById('cash-opening-balance');
+          const movementType = doc.getElementById('cash-movement-type');
+          const movementAmount = doc.getElementById('cash-movement-amount');
+          const countTotal = doc.getElementById('cash-count-total');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.session_number ?? '—');
+          table.cardIcon = () => 'cash-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar sesión o estado…';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'session_number', header: 'Sesión', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [{ value: 'open', label: 'Abierta' }, { value: 'closed', label: 'Cerrada' }],
+              render: (row) => badge(row.status === 'open' ? 'Abierta' : 'Cerrada', row.status === 'open' ? 'success' : 'medium'),
+            },
+            { key: 'opening_balance', header: 'Apertura', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.opening_balance) },
+            { key: 'expected_balance', header: 'Esperado', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.expected_balance) },
+            { key: 'closing_balance', header: 'Contado', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.closing_balance) },
+            { key: 'difference', header: 'Diferencia', align: 'right', sortable: true, filterable: true, filterType: 'text', format: (row) => money(row.difference) },
+          ];
+          table.actions = [
+            { id: 'movement', label: 'Movimiento', icon: 'swap-vertical-outline' },
+            { id: 'count', label: 'Arqueo', icon: 'calculator-outline' },
+            { id: 'close', label: 'Cerrar', icon: 'lock-closed-outline', color: 'danger' },
+          ];
+
+          REGISTER_FIXTURE.forEach((register) => {
+            const option = document.createElement('ion-select-option');
+            option.value = register.id;
+            option.textContent = register.name;
+            openRegister.append(option);
+          });
+
+          function createDenominationInputs(containerId, values) {
+            const container = doc.getElementById(containerId);
+            values.forEach((value) => {
+              const input = document.createElement('ion-input');
+              input.dataset.denomination = value;
+              input.fill = 'outline';
+              input.type = 'number';
+              input.min = '0';
+              input.step = '1';
+              input.label = `${value} €`;
+              input.labelPlacement = 'floating';
+              input.addEventListener('ionInput', updateCountTotal);
+              container.append(input);
+            });
+          }
+
+          function denominationPayload() {
+            const pick = (containerId) => Object.fromEntries(
+              [...doc.querySelectorAll(`#${containerId} [data-denomination]`)]
+                .map((input) => [input.dataset.denomination, Number(input.value || 0)])
+                .filter(([, count]) => count > 0),
+            );
+            return { bills: pick('cash-bills'), coins: pick('cash-coins') };
+          }
+
+          function updateCountTotal() {
+            const denominations = denominationPayload();
+            const entries = [...Object.entries(denominations.bills), ...Object.entries(denominations.coins)];
+            const total = entries.reduce((sum, [value, count]) => sum + Number(value) * Number(count), 0);
+            countTotal.textContent = `Total contado: ${money(Math.round(total * 100))}`;
+          }
+
+          createDenominationInputs('cash-bills', BILLS);
+          createDenominationInputs('cash-coins', COINS);
+
+          function closePanels() {
+            panels.forEach((panel) => { panel.hidden = true; });
+            target = null;
+          }
+
+          function openPanel(name, session = null) {
+            closePanels();
+            target = session;
+            doc.getElementById(`cash-${name}-panel`).hidden = false;
+          }
+
+          function recordCommand(name, payload, message) {
+            console.info('[showcase command]', name, payload);
+            toast.message = message;
+            toast.present();
+          }
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = sessions.filter((session) => {
+              if (search && !`${session.session_number} ${session.status}`.toLocaleLowerCase('es').includes(search)) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
+                if (['opening_balance', 'expected_balance', 'closing_balance'].includes(key)) return matchesRange(session[key], value);
+                if (Array.isArray(value)) return value.map(String).includes(String(session[key]));
+                return String(session[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+              });
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          doc.getElementById('cash-open-button').addEventListener('click', () => openPanel('open'));
+          doc.querySelectorAll('[data-close-panel]').forEach((button) => button.addEventListener('click', closePanels));
+
+          doc.getElementById('cash-open-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const payload = {
+              register_id: openRegister.value || null,
+              session_number: `S-${Date.now()}`,
+              opening_balance: toCents(openingBalance.value),
+              opening_notes: doc.getElementById('cash-open-notes').value || '',
+            };
+            sessions.unshift({ id: `s-${Date.now()}`, status: 'open', expected_balance: payload.opening_balance, closing_balance: null, difference: null, ...payload });
+            recordCommand('cash_register.session.open', payload, 'Sesión abierta');
+            closePanels();
+            queryPage();
+          });
+
+          doc.getElementById('cash-close-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!target) return;
+            const closingBalance = toCents(doc.getElementById('cash-closing-balance').value);
+            const payload = { session_id: target.id, closing_balance: closingBalance, closing_notes: doc.getElementById('cash-close-notes').value || '' };
+            sessions = sessions.map((session) => session.id === target.id
+              ? { ...session, status: 'closed', closing_balance: closingBalance, difference: closingBalance - Number(session.expected_balance || 0) }
+              : session);
+            recordCommand('cash_register.session.close', payload, 'Sesión cerrada');
+            closePanels();
+            queryPage();
+          });
+
+          doc.getElementById('cash-movement-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!target) return;
+            const amount = toCents(movementAmount.value);
+            const payload = {
+              session_id: target.id,
+              movement_type: movementType.value,
+              amount: movementType.value === 'out' ? -amount : amount,
+              payment_method: 'cash',
+              sale_reference: '',
+              description: doc.getElementById('cash-movement-description').value || '',
+            };
+            sessions = sessions.map((session) => session.id === target.id
+              ? { ...session, expected_balance: Number(session.expected_balance || 0) + payload.amount }
+              : session);
+            recordCommand('cash_register.movement.add', payload, 'Movimiento registrado');
+            closePanels();
+            queryPage();
+          });
+
+          doc.getElementById('cash-count-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!target) return;
+            const payload = {
+              session_id: target.id,
+              count_type: doc.getElementById('cash-count-type').value,
+              denominations: denominationPayload(),
+              notes: doc.getElementById('cash-count-notes').value || '',
+            };
+            recordCommand('cash_register.count.add', payload, 'Arqueo registrado');
+            closePanels();
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            if (!['movement', 'count', 'close'].includes(event.detail.actionId)) return;
+            if (event.detail.row.status !== 'open') {
+              toast.message = 'La sesión ya está cerrada';
+              toast.present();
+              return;
+            }
+            openPanel(event.detail.actionId, event.detail.row);
+          });
+          table.addEventListener('pageChange', (event) => { state.page = event.detail; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = event.detail; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = event.detail; state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Campos personalizados</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .fields-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .fields-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .field-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .field-form h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .field-form ion-button {
+        align-self: flex-end;
+      }
+
+      .field-delete-confirm {
+        padding: 0.8rem 1rem;
+        margin-bottom: 0.8rem;
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 12px;
+        background: var(--ion-card-background, #fff);
+      }
+
+      .field-delete-confirm h3,
+      .field-delete-confirm p {
+        margin: 0 0 0.6rem;
+      }
+
+      .field-feedback {
+        margin: 0 0 0.75rem;
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fila canónica de erp-customers-fields.test.ts.
+      const FIELD_FIXTURE = [
+        {
+          "id": "f1",
+          "name": "Alergias",
+          "field_type": "text",
+          "options": "[]",
+          "is_required": 1,
+          "sort_order": 2,
+          "is_active": 1
+        }
+      ];
+
+      const FIELD_TYPES = [
+        { value: 'text', label: 'Texto' },
+        { value: 'number', label: 'Número' },
+        { value: 'date', label: 'Fecha' },
+        { value: 'boolean', label: 'Sí/No' },
+        { value: 'select', label: 'Selección' },
+        { value: 'textarea', label: 'Texto largo' },
+      ];
+
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin campos personalizados.', filters: 'Filtros',
+        clear: 'Limpiar', apply: 'Aplicar', moreActions: 'Más acciones',
+        rowsPerPage: 'Filas por página', perPageShort: '{n} / pág.',
+        viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'campo', recordPlural: 'campos',
+      };
+
+      let fields = FIELD_FIXTURE.map((field) => ({ ...field }));
+      let editing = null;
+      let pendingDelete = null;
+      const state = {
+        page: 0,
+        pageSize: 50,
+        sort: 'sort_order',
+        dir: 'asc',
+        search: '',
+        filters: {},
+      };
+
+      function badge(text, color = 'medium') {
+        const el = document.createElement('ion-badge');
+        el.textContent = text;
+        el.color = color;
+        return el;
+      }
+
+      function typeLabel(value) {
+        return FIELD_TYPES.find((type) => type.value === value)?.label ?? String(value ?? '—');
+      }
+
+      defineHubPage({
+        active: '/m/customers/fields',
+        title: 'Campos',
+        body: `
+          <div class="fields-page">
+            <p id="field-feedback" class="field-feedback" role="status" hidden></p>
+            <section id="field-delete-confirm" class="field-delete-confirm" hidden>
+              <h3>Eliminar campo</h3>
+              <p>¿Eliminar <strong id="field-delete-name"></strong>?</p>
+              <ion-button id="field-delete-accept" size="small" color="danger">Eliminar</ion-button>
+              <ion-button id="field-delete-cancel" size="small" fill="outline">Cancelar</ion-button>
+            </section>
+
+            <ok-data-table id="fields-table" fill>
+              <form id="field-form" slot="create" class="field-form">
+                <h3 id="field-form-title" hidden></h3>
+                <ion-input id="field-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-select id="field-type" fill="outline" label="Tipo" label-placement="floating" value="text">
+                  <ion-select-option value="text">Texto</ion-select-option>
+                  <ion-select-option value="number">Número</ion-select-option>
+                  <ion-select-option value="date">Fecha</ion-select-option>
+                  <ion-select-option value="boolean">Sí/No</ion-select-option>
+                  <ion-select-option value="select">Selección</ion-select-option>
+                  <ion-select-option value="textarea">Texto largo</ion-select-option>
+                </ion-select>
+                <ion-input id="field-options" fill="outline" label="Opciones (separadas por comas)" label-placement="floating" hidden></ion-input>
+                <ion-input id="field-order" type="number" min="0" fill="outline" label="Orden" label-placement="floating" value="0"></ion-input>
+                <ion-checkbox id="field-required">Obligatorio</ion-checkbox>
+                <ion-checkbox id="field-active" checked hidden>Activo</ion-checkbox>
+                <ion-button type="submit" size="small">Guardar</ion-button>
+                <ion-button id="field-edit-cancel" type="button" size="small" fill="outline" hidden>Cancelar edición</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="field-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('fields-table');
+          const form = doc.getElementById('field-form');
+          const formTitle = doc.getElementById('field-form-title');
+          const nameInput = doc.getElementById('field-name');
+          const typeInput = doc.getElementById('field-type');
+          const optionsInput = doc.getElementById('field-options');
+          const orderInput = doc.getElementById('field-order');
+          const requiredInput = doc.getElementById('field-required');
+          const activeInput = doc.getElementById('field-active');
+          const editCancel = doc.getElementById('field-edit-cancel');
+          const deletePanel = doc.getElementById('field-delete-confirm');
+          const deleteName = doc.getElementById('field-delete-name');
+          const feedback = doc.getElementById('field-feedback');
+          const toast = doc.getElementById('field-toast');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.addable = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'layers-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar campos…';
+          table.pageSize = 50;
+          table.sort = 'sort_order';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'field_type', header: 'Tipo', sortable: true, filterable: true,
+              filterType: 'select', options: FIELD_TYPES,
+              render: (row) => badge(typeLabel(row.field_type)),
+            },
+            {
+              key: 'is_required', header: 'Obligatorio', sortable: true, filterable: true,
+              filterType: 'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              render: (row) => badge(Number(row.is_required) ? 'Sí' : 'No', Number(row.is_required) ? 'success' : 'medium'),
+            },
+            { key: 'sort_order', header: 'Orden', align: 'right', sortable: true },
+          ];
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = fields.filter((field) => {
+              if (search && !`${field.name} ${typeLabel(field.field_type)}`.toLocaleLowerCase('es').includes(search)) return false;
+              for (const [key, value] of Object.entries(state.filters)) {
+                if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+                const values = Array.isArray(value) ? value.map(String) : [String(value)];
+                if (!values.includes(String(field[key]))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = left[state.sort] ?? '';
+              const b = right[state.sort] ?? '';
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          function emitCommand(commandName, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:demo-command', {
+              detail: { commandName, payload },
+              bubbles: true,
+            }));
+          }
+
+          function optionsToText(options) {
+            try {
+              const parsed = JSON.parse(options || '[]');
+              return Array.isArray(parsed) ? parsed.join(', ') : '';
+            } catch {
+              return '';
+            }
+          }
+
+          function optionsPayload() {
+            if (typeInput.value !== 'select') return '[]';
+            return JSON.stringify(String(optionsInput.value ?? '').split(',').map((value) => value.trim()).filter(Boolean));
+          }
+
+          function syncConditionalFields() {
+            optionsInput.hidden = typeInput.value !== 'select';
+          }
+
+          function resetForm() {
+            editing = null;
+            nameInput.value = '';
+            typeInput.value = 'text';
+            optionsInput.value = '';
+            orderInput.value = '0';
+            requiredInput.checked = false;
+            activeInput.checked = true;
+            activeInput.hidden = true;
+            formTitle.hidden = true;
+            editCancel.hidden = true;
+            syncConditionalFields();
+          }
+
+          function startEdit(field) {
+            editing = field;
+            nameInput.value = field.name;
+            typeInput.value = field.field_type || 'text';
+            optionsInput.value = optionsToText(field.options);
+            orderInput.value = String(field.sort_order ?? 0);
+            requiredInput.checked = Boolean(field.is_required);
+            activeInput.checked = Boolean(field.is_active);
+            activeInput.hidden = false;
+            formTitle.textContent = `Editar ${field.name}`;
+            formTitle.hidden = false;
+            editCancel.hidden = false;
+            syncConditionalFields();
+            table.open('create');
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail || {};
+            if (!row) return;
+            if (actionId === 'edit') startEdit(row);
+            if (actionId === 'delete') {
+              pendingDelete = row;
+              deleteName.textContent = row.name;
+              deletePanel.hidden = false;
+            }
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'sort_order';
+            state.dir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col ?? event.detail?.key;
+            if (!key) return;
+            state.filters[key] = event.detail?.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          typeInput.addEventListener('ionChange', syncConditionalFields);
+          editCancel.addEventListener('click', resetForm);
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            if (!name) return;
+            const base = {
+              name,
+              field_type: String(typeInput.value ?? 'text'),
+              options: optionsPayload(),
+              is_required: requiredInput.checked ? 1 : 0,
+              sort_order: Number(orderInput.value) || 0,
+            };
+
+            if (editing) {
+              const updated = { ...editing, ...base, is_active: activeInput.checked ? 1 : 0 };
+              fields = fields.map((field) => field.id === editing.id ? updated : field);
+              emitCommand('customers.fields.update', { field_id: editing.id, ...base, is_active: updated.is_active });
+              toast.message = 'Campo actualizado.';
+            } else {
+              const created = { id: `field-demo-${Date.now()}`, ...base, is_active: 1 };
+              fields = [...fields, created];
+              emitCommand('customers.fields.create', base);
+              toast.message = 'Campo creado.';
+            }
+            toast.color = 'success';
+            toast.isOpen = true;
+            resetForm();
+            table.close();
+            queryPage();
+          });
+
+          doc.getElementById('field-delete-accept').addEventListener('click', () => {
+            if (!pendingDelete) return;
+            emitCommand('customers.fields.delete', { field_id: pendingDelete.id });
+            fields = fields.filter((field) => field.id !== pendingDelete.id);
+            pendingDelete = null;
+            deletePanel.hidden = true;
+            feedback.textContent = 'Campo eliminado.';
+            feedback.hidden = false;
+            queryPage();
+          });
+          doc.getElementById('field-delete-cancel').addEventListener('click', () => {
+            pendingDelete = null;
+            deletePanel.hidden = true;
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          resetForm();
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

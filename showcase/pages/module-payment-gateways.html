@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Pasarelas de pago</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .payment-gateways-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .payment-gateways-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .payment-gateway-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .payment-gateway-form ion-button {
+        align-self: flex-end;
+      }
+
+      .payment-gateway-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-success);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 520px) {
+        .payment-gateway-form ion-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de PASARELA en erp-payment-gateways-gateways.test.ts.
+      const GATEWAY_FIXTURE = [
+        {
+          "id": "g1",
+          "code": "stripe-eu",
+          "name": "Stripe UE",
+          "provider": "stripe",
+          "is_active": 1,
+          "is_test_mode": 1,
+          "supports_refunds": 1
+        }
+      ];
+
+      const PROVIDERS = ['stripe', 'redsys', 'paypal', 'manual', 'other'];
+      let gateways = GATEWAY_FIXTURE.map((row) => ({
+        created_at: '2026-07-18T10:00:00Z',
+        ...row,
+      }));
+      const commandLog = [];
+      const queryLog = [];
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', {
+          detail: { name, payload },
+        }));
+      }
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params: { ...params } });
+      }
+
+      defineHubPage({
+        active: '/m/payment_gateways/gateways',
+        title: 'Pasarelas de pago',
+        body: `
+          <div class="payment-gateways-page">
+            <p id="payment-gateway-feedback" class="payment-gateway-feedback" role="status" hidden></p>
+            <ok-data-table id="payment-gateways-table" fill>
+              <form id="payment-gateway-form" slot="create" class="payment-gateway-form">
+                <ion-input
+                  id="gateway-code"
+                  fill="outline"
+                  label="Código"
+                  label-placement="floating"
+                  placeholder="Código (p. ej. stripe_main)"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="gateway-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-select
+                  id="gateway-provider"
+                  fill="outline"
+                  label="Proveedor"
+                  label-placement="floating"
+                  interface="popover"
+                  value="manual"
+                >
+                  <ion-select-option value="stripe">stripe</ion-select-option>
+                  <ion-select-option value="redsys">redsys</ion-select-option>
+                  <ion-select-option value="paypal">paypal</ion-select-option>
+                  <ion-select-option value="manual">manual</ion-select-option>
+                  <ion-select-option value="other">other</ion-select-option>
+                </ion-select>
+                <ion-button id="payment-gateway-save" type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('payment-gateways-table');
+          const form = doc.getElementById('payment-gateway-form');
+          const codeInput = doc.getElementById('gateway-code');
+          const nameInput = doc.getElementById('gateway-name');
+          const providerInput = doc.getElementById('gateway-provider');
+          const saveButton = doc.getElementById('payment-gateway-save');
+          const feedback = doc.getElementById('payment-gateway-feedback');
+
+          const state = {
+            page: 0,
+            pageSize: 50,
+            sort: 'created_at',
+            dir: 'desc',
+            search: '',
+            filters: {},
+          };
+
+          table.columns = [
+            { key: 'code', header: 'Código', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'provider',
+              header: 'Proveedor',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: PROVIDERS.map((value) => ({ value, label: value })),
+            },
+            {
+              key: 'is_test_mode',
+              header: 'Modo',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [
+                { value: '1', label: 'test' },
+                { value: '0', label: 'live' },
+              ],
+              format: (row) => row.is_test_mode ? 'test' : 'live',
+            },
+            {
+              key: 'supports_refunds',
+              header: 'Reembolsos',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [
+                { value: '1', label: 'Sí' },
+                { value: '0', label: 'No' },
+              ],
+              format: (row) => row.supports_refunds ? 'Sí' : 'No',
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name || row.code || '—');
+          table.cardIcon = () => 'card-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar código, nombre o proveedor…';
+          table.emptyMessage = 'Sin pasarelas configuradas.';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+
+          function queryPage() {
+            recordQuery('payment_gateways.gateways.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = gateways
+              .filter((row) => {
+                if (term && ![row.code, row.name]
+                  .some((value) => String(value ?? '').toLocaleLowerCase('es').includes(term))) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value === '' || value == null) return true;
+                  if (key === 'name') {
+                    return String(row.name ?? '').toLocaleLowerCase('es')
+                      .includes(String(value).toLocaleLowerCase('es'));
+                  }
+                  return String(row[key] ?? '') === String(value);
+                });
+              })
+              .sort((left, right) => {
+                const a = left[state.sort] ?? '';
+                const b = right[state.sort] ?? '';
+                const result = String(a).localeCompare(String(b), 'es');
+                return state.dir === 'desc' ? -result : result;
+              });
+
+            table.total = filtered.length;
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize).map((row) => ({ ...row }));
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          function showFeedback(message = '') {
+            feedback.textContent = message;
+            feedback.hidden = !message;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const code = String(codeInput.value ?? '').trim();
+            const name = String(nameInput.value ?? '').trim();
+            const provider = String(providerInput.value ?? 'manual');
+            if (!code || !name || !PROVIDERS.includes(provider)) return;
+
+            saveButton.disabled = true;
+            const payload = {
+              code,
+              name,
+              provider,
+              is_test_mode: 1,
+              config: '{}',
+              supports_refunds: 1,
+              supported_currencies: '[]',
+            };
+            recordCommand('payment_gateways.gateways.create', payload);
+            gateways = [
+              {
+                id: `preview-gateway-${gateways.length + 1}`,
+                created_at: new Date().toISOString(),
+                is_active: 1,
+                ...payload,
+              },
+              ...gateways,
+            ];
+            codeInput.value = '';
+            nameInput.value = '';
+            providerInput.value = 'manual';
+            showFeedback(`Pasarela ${name} añadida.`);
+            table.close();
+            state.page = 0;
+            queryPage();
+            saveButton.disabled = false;
+          });
+
+          table.addEventListener('pageChange', (event) => {
+            state.page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail.sort;
+            state.dir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            state.filters[event.detail.col] = event.detail.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

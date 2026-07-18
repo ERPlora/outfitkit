@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Cola de contingencia</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .verifactu-queue-page { display:flex; flex-direction:column; height:100%; min-height:0; gap:.65rem; }
+      .verifactu-queue-actions { display:flex; justify-content:flex-end; }
+      .verifactu-queue-page > ok-data-table { flex:1 1 auto; min-height:0; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // El módulo no instala una cola demo: estas filas siguen la forma y dominios de contingency_list.sql.
+      const CONTINGENCY_FIXTURE = [
+        { "id":"queue-003", "record_id":"vf-0005", "priority":1, "queued_at":"2026-07-18T14:10:00", "attempts":0, "last_attempt_at":null, "last_error":"", "next_attempt_at":"2026-07-18T14:15:00", "status":"pending" },
+        { "id":"queue-002", "record_id":"vf-0002", "priority":2, "queued_at":"2026-07-18T09:41:25", "attempts":1, "last_attempt_at":"2026-07-18T09:46:25", "last_error":"Tiempo de espera agotado al conectar con la AEAT", "next_attempt_at":"2026-07-18T09:56:25", "status":"retrying" },
+        { "id":"queue-001", "record_id":"vf-0001", "priority":2, "queued_at":"2026-07-17T18:30:45", "attempts":3, "last_attempt_at":"2026-07-17T19:05:45", "last_error":"Certificado rechazado por el servicio", "next_attempt_at":null, "status":"failed" }
+      ];
+
+      defineHubPage({
+        active: '/m/verifactu/contingency',
+        title: 'Contingencia',
+        body: `
+          <div class="verifactu-queue-page">
+            <div class="verifactu-queue-actions"><ion-button id="verifactu-process-queue" size="small">Procesar cola</ion-button></div>
+            <ok-data-table id="verifactu-contingency-table" fill></ok-data-table>
+          </div>
+          <ion-toast id="verifactu-queue-toast" duration="1800" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('verifactu-contingency-table');
+          const processButton = doc.getElementById('verifactu-process-queue');
+          const toast = doc.getElementById('verifactu-queue-toast');
+          let rows = CONTINGENCY_FIXTURE.map((row) => ({ ...row }));
+          const state = { page:0, pageSize:50, sort:'id', dir:'asc', search:'', filters:{} };
+
+          function recordCommand(name, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+          }
+          table.columns = [
+            { key: 'record_id', header: 'Registro', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'priority', header: 'Prioridad', align: 'right', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'attempts', header: 'Intentos', align: 'right', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value:'pending', label:'Pendiente' }, { value:'retrying', label:'Reintentando' },
+                { value:'failed', label:'Fallido' }, { value:'cancelled', label:'Cancelado' },
+              ],
+            },
+            { key: 'next_attempt_at', header: 'Próximo intento', sortable: true, filterable: true, filterType: 'daterange', format: (row) => row.next_attempt_at || '—' },
+            { key: 'last_error', header: 'Último error', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.last_error || '').slice(0, 80) || '—' },
+          ];
+          table.actions = [
+            { id: 'retry', label: 'Reintentar', icon: 'refresh-outline' },
+            { id: 'cancel', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.record_id || '—');
+          table.cardIcon = () => 'warning-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar registro o estado…';
+          table.emptyMessage = 'Cola vacía.';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+
+          function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail:{ name:'verifactu.contingency.list', params:{ ...state } } }));
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = rows.filter((row) => {
+              if (term && !`${row.record_id} ${row.status} ${row.last_error}`.toLocaleLowerCase('es').includes(term)) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value == null || value === '') return true;
+                if (key === 'status') return row.status === value;
+                if (key === 'next_attempt_at' && typeof value === 'object') return (!value.from || String(row[key] || '') >= value.from) && (!value.to || String(row[key] || '') <= value.to);
+                return String(row[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+              });
+            }).sort((a, b) => {
+              const left = a[state.sort]; const right = b[state.sort];
+              const result = typeof left === 'number' && typeof right === 'number' ? left - right : String(left ?? '').localeCompare(String(right ?? ''), 'es', { numeric:true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize); table.total = filtered.length;
+            table.page = state.page; table.pageSize = state.pageSize; table.sort = state.sort; table.sortDir = state.dir;
+          }
+          function show(message, color = 'success') { toast.message = message; toast.color = color; toast.isOpen = true; }
+
+          processButton.addEventListener('click', () => {
+            recordCommand('verifactu.contingency.process', { limit: 100 });
+            show('Procesamiento de la cola solicitado.');
+          });
+          table.addEventListener('rowAction', (event) => {
+            const row = event.detail?.row;
+            if (!row) return;
+            if (event.detail.actionId === 'retry') {
+              recordCommand('verifactu.contingency.retry', { queue_id: row.id });
+              rows = rows.map((item) => item.id === row.id ? { ...item, status:'pending', attempts:0, last_error:'' } : item);
+              show('Registro reencolado.');
+            } else if (event.detail.actionId === 'cancel') {
+              recordCommand('verifactu.contingency.cancel', { queue_id: row.id });
+              rows = rows.map((item) => item.id === row.id ? { ...item, status:'cancelled', next_attempt_at:null } : item);
+              show('Reintento cancelado.', 'medium');
+            }
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; state.page = 0; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -2,174 +2,141 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Hub · Dashboard — Vista general</title>
-
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Inicio</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
     <style>
-      .sec-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--ion-color-medium); margin: 0 0 12px; }
-      .sec-wrap { margin-bottom: 24px; }
-      .mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
-      .mod-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; background: var(--ion-card-background, #fff); border: 1px solid var(--ion-border-color, rgba(0,0,0,.08)); border-radius: 12px; cursor: pointer; position: relative; color: var(--ion-text-color); }
-      .mod-card__label { font-size: 12px; font-weight: 500; text-align: center; line-height: 1.2; }
-      .mod-card__badge { position: absolute; top: 8px; right: 8px; font-size: 10px; }
+      .dashboard-pane[hidden] { display: none; }
+      .dashboard-pane { min-height: 100%; }
+      .dashboard-summary { display: grid; gap: 1rem; }
+      .dashboard-app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 1rem; padding: 0.5rem; }
+      .dashboard-app { border: 0; background: transparent; color: inherit; display: grid; justify-items: center; gap: 0.45rem; cursor: pointer; }
+      .dashboard-app-box { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 15px; background: var(--ion-color-step-100); font-size: 1.7rem; }
+      .dashboard-app-label { font-size: 0.8rem; text-align: center; }
+      .dashboard-activity { display: flex; flex-direction: column; height: 100%; min-height: 24rem; }
+      .dashboard-activity > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .dashboard-tabs { width: min(100%, 34rem); margin: 0 auto; }
     </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
+      import { defineHubPage } from './_hub.js';
 
-      // Helper para construir el cuerpo (DOM) de cada widget con SUS datos.
-      const el = (tag, { attrs = {}, props = {}, style = '', text } = {}) => {
-        const n = document.createElement(tag);
-        for (const [k, v] of Object.entries(attrs)) v === true ? n.setAttribute(k, '') : v != null && n.setAttribute(k, v);
-        for (const [k, v] of Object.entries(props)) n[k] = v;
-        if (style) n.style.cssText = style;
-        if (text != null) n.textContent = text;
-        return n;
-      };
-      const card = (cell, title, sub) => {
-        const c = el('ion-card', { style: 'margin:0' });
-        const hd = el('ion-card-header');
-        hd.appendChild(el('ion-card-title', { text: title, style: 'font-size:1rem' }));
-        if (sub) hd.appendChild(el('ion-card-subtitle', { text: sub }));
-        c.appendChild(hd);
-        const body = el('ion-card-content'); c.appendChild(body); cell.appendChild(c);
-        return body;
-      };
-
-      // ── Catálogo de widgets: cada `render(cell)` construye su cuerpo con sus datos ──
-      const WIDGETS = [
-        { id: 'ventas-hoy', title: 'Ventas hoy', icon: 'trending-up-outline', category: 'Ventas', size: 'sm',
-          render: (cell) => {
-            const k = el('ok-kpi', { attrs: { label: 'Ventas hoy', value: '€2.481,30', delta: '+12,4% vs ayer', trend: 'up', icon: 'trending-up-outline' } });
-            k.appendChild(el('ok-sparkline', { attrs: { type: 'line', filled: true, height: '32' }, props: { values: [24, 20, 22, 16, 18, 12, 14, 8, 6] }, style: 'display:block;margin-top:6px' }));
-            cell.appendChild(k);
-          } },
-        { id: 'tickets', title: 'Tickets', icon: 'receipt-outline', category: 'Ventas', size: 'sm',
-          render: (cell) => cell.appendChild(el('ok-kpi', { attrs: { label: 'Tickets', value: '184', delta: '+8 vs media', trend: 'up', icon: 'receipt-outline' } })) },
-        { id: 'caja', title: 'Caja', icon: 'wallet-outline', category: 'Caja', size: 'sm',
-          render: (cell) => {
-            const k = el('ok-kpi', { attrs: { label: 'Caja', value: '€842,15', icon: 'wallet-outline' } });
-            k.appendChild(el('ok-status-pill', { attrs: { tone: 'success', dot: true, label: 'Cierre OK' }, style: 'margin-top:6px' }));
-            cell.appendChild(k);
-          } },
-        { id: 'stock-bajo', title: 'Stock bajo', icon: 'alert-circle-outline', category: 'Inventario', size: 'sm',
-          render: (cell) => cell.appendChild(el('ok-kpi', { attrs: { label: 'Stock bajo', value: '7 productos', delta: 'Reposición pendiente', trend: 'down', icon: 'alert-circle-outline' } })) },
-        { id: 'ventas-semana', title: 'Ventas — última semana', icon: 'bar-chart-outline', category: 'Ventas', size: 'lg',
-          render: (cell) => {
-            const body = card(cell, 'Ventas — última semana', '€14.218 totales · objetivo €15.000');
-            body.appendChild(el('ok-chart', { attrs: { type: 'bar', height: '180', gridlines: true }, props: {
-              labels: ['L', 'M', 'X', 'J', 'V', 'S', 'D'], axis: ['€3K', '€2K', '€1K', '€0'],
-              series: [{ name: 'Ventas', data: [1500, 1900, 2100, 2450, 2900, 2750, 2250] }] } }));
-          } },
-        { id: 'top-productos', title: 'Top productos', icon: 'podium-outline', category: 'Inventario', size: 'md',
-          render: (cell) => {
-            const body = card(cell, 'Top productos', 'Esta semana · por importe');
-            body.appendChild(el('ok-bar-list', { attrs: { 'value-format': 'currency', currency: 'EUR', locale: 'es-ES' }, props: { items: [
-              { label: 'Café con leche', value: 1820, color: 'brand' }, { label: 'Tostada', value: 1240, color: 'leaf' },
-              { label: 'Menú del día', value: 980, color: 'info' }, { label: 'Cerveza', value: 760, color: 'warn' },
-              { label: 'Agua', value: 410, color: 'neutral' } ] } }));
-          } },
-        { id: 'actividad', title: 'Actividad reciente', icon: 'time-outline', category: 'General', size: 'md',
-          render: (cell) => {
-            const body = card(cell, 'Actividad reciente', 'Últimos 30 minutos');
-            body.appendChild(el('ok-timeline', { props: { items: [
-              { id: 'e1', icon: 'bag-handle-outline', color: 'primary', title: 'Ticket #2041 cobrado', description: 'Mostrador 2 · €23,40 · tarjeta', time: 'hace 2 min' },
-              { id: 'e2', icon: 'checkmark-outline', color: 'success', title: 'VeriFactu — F-2026-0142 enviada', description: 'CSV recibido de la AEAT', time: 'hace 8 min' },
-              { id: 'e3', icon: 'warning-outline', color: 'warning', title: 'Stock bajo · Café en grano 1kg', description: 'Quedan 4 unidades', time: 'hace 14 min' },
-              { id: 'e4', icon: 'person-outline', color: 'medium', title: 'Marta Soler ha fichado entrada', description: 'Turno de tarde · 14:00 → 22:00', time: 'hace 22 min' } ] } }));
-          } },
-        { id: 'verifactu', title: 'Cumplimiento VeriFactu', icon: 'shield-checkmark-outline', category: 'Fiscal', size: 'md',
-          render: (cell) => {
-            const fb = el('ok-inline-feedback', { attrs: { tone: 'warning', heading: 'VeriFactu — 2 facturas pendientes de envío', icon: 'warning-outline' },
-              text: 'Las facturas F-2026-0143 y F-2026-0144 deben enviarse a la AEAT antes de las 23:59.' });
-            fb.appendChild(el('ion-button', { attrs: { slot: 'actions', fill: 'clear', size: 'small', color: 'warning' }, text: 'Revisar' }));
-            cell.appendChild(fb);
-          } },
-        { id: 'vencimientos', title: 'Próximos vencimientos', icon: 'calendar-number-outline', category: 'Gestoría', size: 'md',
-          render: (cell) => {
-            const body = card(cell, 'Próximos vencimientos', 'Obligaciones fiscales y administrativas');
-            body.appendChild(el('ok-timeline', { props: { items: [
-              { id: 'v1', icon: 'document-text-outline', color: 'danger', title: 'IVA trimestral (Modelo 303)', description: 'Presentación AEAT', time: 'en 3 días' },
-              { id: 'v2', icon: 'people-outline', color: 'warning', title: 'Seguros sociales (TC1/TC2)', description: 'Liquidación TGSS', time: 'en 9 días' },
-              { id: 'v3', icon: 'cash-outline', color: 'medium', title: 'Retenciones IRPF (Modelo 111)', description: 'Trabajadores y profesionales', time: 'en 14 días' } ] } }));
-          } },
-        { id: 'fichajes', title: 'Fichajes de hoy', icon: 'finger-print-outline', category: 'RRHH', size: 'md',
-          render: (cell) => {
-            const body = card(cell, 'Fichajes de hoy', '3 sedes · turno de tarde');
-            const dt = el('ok-data-table');
-            dt.labels = { actions: 'Acciones' };
-            dt.rowKey = (r) => r.nombre;
-            dt.columns = [
-              { key: 'nombre', header: 'Empleado', width: 'minmax(8rem,1.4fr)' },
-              { key: 'entrada', header: 'Entrada', width: '6rem' },
-              { key: 'estado', header: 'Estado', width: '7rem', render: (r) => {
-                  const tone = r.estado === 'Dentro' ? 'success' : r.estado === 'Pausa' ? 'warning' : 'medium';
-                  const b = document.createElement('ion-badge');
-                  b.style.cssText = `--background:color-mix(in srgb, var(--ion-color-${tone}) 15%, transparent);--color:var(--ion-color-${tone})`;
-                  b.textContent = r.estado; return b;
-                } },
-            ];
-            dt.rows = [
-              { nombre: 'Marta Soler', entrada: '14:00', estado: 'Dentro' },
-              { nombre: 'Juan Pérez', entrada: '14:05', estado: 'Pausa' },
-              { nombre: 'Ana Ruiz', entrada: '—', estado: 'Ausente' },
-            ];
-            body.appendChild(dt);
-          } },
+      const APPS = [
+        { id: 'sales', label: 'Ventas', icon: 'trending-up-outline' },
+        { id: 'inventory', label: 'Inventario', icon: 'cube-outline' },
+        { id: 'customers', label: 'Clientes', icon: 'people-outline' },
+        { id: 'staff', label: 'Personal', icon: 'person-outline' },
+      ];
+      const ACTIVITY = [
+        { id: 'a1', time: '18:42', module: 'Ventas', event: 'Venta completada', actor: 'Marta Soler', status: 'ok' },
+        { id: 'a2', time: '18:34', module: 'Inventario', event: 'Stock actualizado', actor: 'Sistema', status: 'ok' },
+        { id: 'a3', time: '18:20', module: 'Caja', event: 'Movimiento registrado', actor: 'Joan Castell', status: 'info' },
       ];
 
-      const PRESETS = [
-        { id: 'hosteleria', label: 'Hostelería', widgets: ['ventas-hoy', 'tickets', 'caja', 'ventas-semana', 'actividad'] },
-        { id: 'retail', label: 'Retail', widgets: ['ventas-hoy', 'stock-bajo', 'top-productos', 'ventas-semana'] },
-        { id: 'gestoria', label: 'Gestoría', widgets: ['verifactu', 'vencimientos', 'actividad'] },
-        { id: 'rrhh', label: 'RRHH', widgets: ['fichajes', 'actividad', 'caja'] },
-      ];
-
-      definePage({
-        bare: true,
+      defineHubPage({
+        active: '/dashboard',
+        title: 'Inicio',
         body: `
-          <ok-page-header heading="Vista general" description="Hoy, 8 de mayo de 2026 · 3 sedes activas"></ok-page-header>
+          <section id="dashboard-summary" class="dashboard-pane dashboard-summary">
+            <ion-list inset id="dashboard-setup-list">
+              <ion-list-header><ion-label color="danger">1 módulo necesita configuración</ion-label></ion-list-header>
+              <ion-item lines="none">
+                <ion-icon slot="start" name="receipt-outline"></ion-icon>
+                <ion-label class="ion-text-wrap"><h3>Facturación</h3><p>Completa los datos fiscales antes de emitir facturas.</p></ion-label>
+                <ion-button slot="end" size="small">Configurar</ion-button>
+              </ion-item>
+            </ion-list>
+            <ok-widget-board id="dashboard-board" editable storage-key="dashboard-hub"></ok-widget-board>
+            <ion-list inset>
+              <ion-list-header>Este terminal</ion-list-header>
+              <ion-item><ion-label>Plan</ion-label><ion-note slot="end">Profesional</ion-note></ion-item>
+              <ion-item><ion-label>Estado</ion-label><ion-badge slot="end" color="success">Activo</ion-badge></ion-item>
+              <ion-item><ion-label>Próxima factura</ion-label><ion-note slot="end">1 ago 2026</ion-note></ion-item>
+              <ion-item lines="none"><ion-label>Bridge</ion-label><ion-badge slot="end" color="success">Conectado</ion-badge></ion-item>
+            </ion-list>
+            <ion-button expand="block" fill="outline" id="dashboard-open-system">
+              <ion-icon slot="start" name="hardware-chip-outline"></ion-icon>Sistema
+            </ion-button>
+          </section>
 
-          <div class="sec-wrap">
-            <ok-widget-board id="board" editable storage-key="dashboard-hub">
-              <span slot="title" class="sec-title" style="margin:0">Mi panel</span>
-            </ok-widget-board>
-          </div>
+          <section id="dashboard-apps" class="dashboard-pane" hidden>
+            <div id="dashboard-app-grid" class="dashboard-app-grid"></div>
+          </section>
 
-          <!-- Aplicaciones (navegación a módulos) -->
-          <div class="sec-wrap">
-            <p class="sec-title">Aplicaciones</p>
-            <div class="mod-grid">
-              <div class="mod-card"><ion-badge class="mod-card__badge" color="primary">Live</ion-badge><ok-icon-tile color="brand" size="lg" icon="card-outline"></ok-icon-tile><span class="mod-card__label">POS</span></div>
-              <div class="mod-card"><ok-icon-tile color="info" size="lg" icon="trending-up-outline"></ok-icon-tile><span class="mod-card__label">Ventas</span></div>
-              <div class="mod-card"><ok-icon-tile color="leaf" size="lg" icon="people-outline"></ok-icon-tile><span class="mod-card__label">Clientes</span></div>
-              <div class="mod-card"><ok-icon-tile color="neutral" size="lg" icon="grid-outline"></ok-icon-tile><span class="mod-card__label">Productos</span></div>
-              <div class="mod-card"><ion-badge class="mod-card__badge" color="warning">2</ion-badge><ok-icon-tile color="warn" size="lg" icon="cart-outline"></ok-icon-tile><span class="mod-card__label">Compras</span></div>
-              <div class="mod-card"><ok-icon-tile color="neutral" size="lg" icon="person-add-outline"></ok-icon-tile><span class="mod-card__label">Empleados</span></div>
-              <div class="mod-card"><ok-icon-tile color="info" size="lg" icon="briefcase-outline"></ok-icon-tile><span class="mod-card__label">RRHH</span></div>
-              <div class="mod-card"><ion-badge class="mod-card__badge" color="danger">2</ion-badge><ok-icon-tile color="danger" size="lg" icon="document-text-outline"></ok-icon-tile><span class="mod-card__label">VeriFactu</span></div>
-              <div class="mod-card"><ok-icon-tile color="info" size="lg" icon="stats-chart-outline"></ok-icon-tile><span class="mod-card__label">Informes</span></div>
-              <div class="mod-card" style="border-style:dashed;opacity:.7"><ok-icon-tile color="neutral" size="lg" icon="add-outline"></ok-icon-tile><span class="mod-card__label">Más</span></div>
-            </div>
-          </div>
+          <section id="dashboard-activity" class="dashboard-pane dashboard-activity" hidden>
+            <ok-data-table id="dashboard-activity-table" fill></ok-data-table>
+          </section>
+        `,
+        footer: `
+          <ion-toolbar>
+            <ion-segment id="dashboard-tabs" class="dashboard-tabs" value="resumen">
+              <ion-segment-button value="resumen"><ion-icon name="home-outline"></ion-icon><ion-label>Resumen</ion-label></ion-segment-button>
+              <ion-segment-button value="apps"><ion-icon name="apps-outline"></ion-icon><ion-label>Aplicaciones</ion-label></ion-segment-button>
+              <ion-segment-button value="actividad"><ion-icon name="time-outline"></ion-icon><ion-label>Actividad</ion-label></ion-segment-button>
+            </ion-segment>
+          </ion-toolbar>
         `,
         setup(doc) {
-          const board = doc.getElementById('board');
-          board.widgets = WIDGETS;
-          board.presets = PRESETS;
-          board.labels = { customize: 'Personalizar panel', close: 'Cerrar', presets: 'Empezar con un preset', active: 'Activos · arrastra para ordenar', available: 'Disponibles', empty: 'Panel vacío. Pulsa ⋮ para añadir widgets.' };
+          const board = doc.getElementById('dashboard-board');
+          board.widgets = [
+            {
+              id: 'data-export', title: 'Exportar e importar datos', icon: 'cloud-download-outline', category: 'Sistema', size: 'md',
+              render(cell) {
+                const card = doc.createElement('ion-card');
+                card.innerHTML = '<ion-card-header><ion-card-title>Exportar e importar datos</ion-card-title></ion-card-header><ion-card-content>Copias portables de los datos del Hub.</ion-card-content>';
+                cell.append(card);
+              },
+            },
+          ];
+          board.presets = [{ id: 'default', label: 'Predeterminado', widgets: ['data-export'] }];
+          board.labels = { customize: 'Personalizar panel', close: 'Cerrar', presets: 'Presets', active: 'Activos', available: 'Disponibles', empty: 'Panel vacío' };
+
+          const appGrid = doc.getElementById('dashboard-app-grid');
+          APPS.forEach((app) => {
+            const button = doc.createElement('button');
+            button.type = 'button';
+            button.className = 'dashboard-app';
+            button.innerHTML = `<span class="dashboard-app-box"><ion-icon name="${app.icon}"></ion-icon></span><span class="dashboard-app-label">${app.label}</span>`;
+            button.addEventListener('click', () => { window.location.hash = `#/p/module-${app.id}`; });
+            appGrid.append(button);
+          });
+          const addApp = doc.createElement('button');
+          addApp.type = 'button';
+          addApp.className = 'dashboard-app';
+          addApp.innerHTML = '<span class="dashboard-app-box"><ion-icon name="add-outline"></ion-icon></span><span class="dashboard-app-label">Añadir módulo</span>';
+          appGrid.append(addApp);
+
+          const activityTable = doc.getElementById('dashboard-activity-table');
+          activityTable.fill = true;
+          activityTable.searchable = true;
+          activityTable.views = ['table', 'cards'];
+          activityTable.pageSize = 25;
+          activityTable.columns = [
+            { key: 'time', header: 'Hora', sortable: true },
+            { key: 'module', header: 'Módulo', sortable: true, filterable: true, filterType: 'select', options: [...new Set(ACTIVITY.map((row) => row.module))].map((value) => ({ value, label: value })) },
+            { key: 'event', header: 'Actividad', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'actor', header: 'Usuario', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'status', header: 'Estado', filterable: true, filterType: 'select', options: [{ value: 'ok', label: 'Correcto' }, { value: 'info', label: 'Información' }] },
+          ];
+          activityTable.rows = ACTIVITY;
+
+          doc.getElementById('dashboard-tabs').addEventListener('ionChange', (event) => {
+            const target = event.detail.value;
+            doc.getElementById('dashboard-summary').hidden = target !== 'resumen';
+            doc.getElementById('dashboard-apps').hidden = target !== 'apps';
+            doc.getElementById('dashboard-activity').hidden = target !== 'actividad';
+          });
+          doc.getElementById('dashboard-open-system').addEventListener('click', () => {
+            window.parent.location.hash = '#/p/system-index';
+          });
         },
       });
     </script>

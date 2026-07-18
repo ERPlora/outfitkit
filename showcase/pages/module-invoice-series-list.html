@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Series de numeración</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .invoice-series-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .invoice-series-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .invoice-series-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .invoice-series-form ion-button {
+        align-self: flex-end;
+      }
+
+      .invoice-series-error,
+      .invoice-series-peek {
+        margin: 0 0 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+
+      .invoice-series-error {
+        color: var(--ion-color-danger);
+      }
+
+      .invoice-series-peek {
+        color: var(--ion-color-primary);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 520px) {
+        .invoice-series-form ion-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de SERIE en erp-invoice-series-list.test.ts.
+      const SERIES_FIXTURE = [
+        {
+          "id": "s1",
+          "code": "FA",
+          "name": "Facturas",
+          "document_type": "invoice",
+          "prefix": "FA",
+          "fiscal_year": 2026,
+          "current_sequence": 12,
+          "is_default": 1,
+          "is_active": 1
+        }
+      ];
+
+      const DOCUMENT_TYPES = ['invoice', 'credit_note', 'proforma', 'receipt', 'quote'];
+      const DOCUMENT_LABELS = {
+        invoice: 'Factura',
+        credit_note: 'Abono',
+        proforma: 'Proforma',
+        receipt: 'Recibo',
+        quote: 'Presupuesto',
+      };
+
+      let series = SERIES_FIXTURE.map((row) => ({
+        suffix: '',
+        format: '{prefix}-{year}-{seq:05d}',
+        country_code: 'ES',
+        region_code: '',
+        created_at: '2026-07-18T10:00:00Z',
+        ...row,
+      }));
+      const commandLog = [];
+      const queryLog = [];
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+      }
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params: { ...params } });
+      }
+
+      function renderNextNumber(row) {
+        return `${row.prefix || row.code}-${row.fiscal_year}-${String(row.current_sequence + 1).padStart(5, '0')}`;
+      }
+
+      defineHubPage({
+        active: '/m/invoice_series/list',
+        title: 'Series de numeración',
+        body: `
+          <div class="invoice-series-page">
+            <p id="invoice-series-error" class="invoice-series-error" hidden></p>
+            <p id="invoice-series-peek" class="invoice-series-peek" hidden></p>
+            <ok-data-table id="invoice-series-table" fill>
+              <form id="invoice-series-form" slot="create" class="invoice-series-form">
+                <ion-input
+                  id="series-code"
+                  fill="outline"
+                  label="Código"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="series-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="series-prefix"
+                  fill="outline"
+                  label="Prefijo"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-select
+                  id="series-type"
+                  fill="outline"
+                  label="Tipo"
+                  label-placement="floating"
+                  interface="popover"
+                  value="invoice"
+                >
+                  <ion-select-option value="invoice">Factura</ion-select-option>
+                  <ion-select-option value="credit_note">Abono</ion-select-option>
+                  <ion-select-option value="proforma">Proforma</ion-select-option>
+                  <ion-select-option value="receipt">Recibo</ion-select-option>
+                  <ion-select-option value="quote">Presupuesto</ion-select-option>
+                </ion-select>
+                <ion-input
+                  id="series-country"
+                  fill="outline"
+                  label="País"
+                  label-placement="floating"
+                  maxlength="2"
+                ></ion-input>
+                <ion-input
+                  id="series-year"
+                  fill="outline"
+                  label="Año"
+                  label-placement="floating"
+                  type="number"
+                  value="2026"
+                  required
+                ></ion-input>
+                <ion-button id="invoice-series-submit" type="submit">Crear serie</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('invoice-series-table');
+          const form = doc.getElementById('invoice-series-form');
+          const error = doc.getElementById('invoice-series-error');
+          const peek = doc.getElementById('invoice-series-peek');
+          const codeInput = doc.getElementById('series-code');
+          const nameInput = doc.getElementById('series-name');
+          const prefixInput = doc.getElementById('series-prefix');
+          const typeInput = doc.getElementById('series-type');
+          const countryInput = doc.getElementById('series-country');
+          const yearInput = doc.getElementById('series-year');
+
+          const state = {
+            page: 0,
+            pageSize: 50,
+            sort: 'created_at',
+            dir: 'desc',
+            search: '',
+            filters: {},
+          };
+
+          const columns = [
+            {
+              key: 'code',
+              header: 'Código',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+              format: (row) => `${row.code}${row.is_default ? '  ★' : ''}`,
+            },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'document_type',
+              header: 'Tipo',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: DOCUMENT_TYPES.map((value) => ({ value, label: DOCUMENT_LABELS[value] })),
+              format: (row) => DOCUMENT_LABELS[row.document_type] ?? row.document_type,
+            },
+            {
+              key: 'fiscal_year',
+              header: 'Año',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+            },
+            {
+              key: 'current_sequence',
+              header: 'Secuencia',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+            },
+          ];
+
+          function setMessage(element, message = '') {
+            element.textContent = message;
+            element.hidden = !message;
+          }
+
+          function queryPage() {
+            recordQuery('invoice_series.series.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            let filtered = series.filter((row) => {
+              if (term && ![row.code, row.name, row.country_code, row.region_code]
+                .some((value) => String(value ?? '').toLocaleLowerCase('es').includes(term))) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value === '' || value == null) return true;
+                return String(row[key] ?? '').toLocaleLowerCase('es')
+                  .includes(String(value).toLocaleLowerCase('es'));
+              });
+            });
+
+            filtered.sort((left, right) => {
+              const a = left[state.sort] ?? '';
+              const b = right[state.sort] ?? '';
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es');
+              return state.dir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize).map((row) => ({ ...row }));
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.columns = columns;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'bookmark-outline';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar código o nombre…';
+          table.actions = [
+            { id: 'peek', label: 'Ver siguiente', icon: 'eye', color: 'medium' },
+            { id: 'next', label: 'Siguiente nº', icon: 'arrow-forward' },
+            { id: 'default', label: 'Por defecto', icon: 'star', color: 'medium' },
+          ];
+          table.emptyMessage = 'Sin series.';
+          queryPage();
+
+          table.addEventListener('pageChange', (event) => {
+            state.page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail.sort;
+            state.dir = event.detail.dir;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            state.filters = { ...state.filters, [event.detail.col]: event.detail.value };
+            state.page = 0;
+            queryPage();
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            setMessage(error);
+            setMessage(peek);
+
+            if (actionId === 'peek') {
+              recordQuery('invoice_series.series.peek_next', { series_id: row.id });
+              setMessage(peek, `Siguiente nº de ${row.code}: ${renderNextNumber(row)} (vista previa, sin consumir)`);
+            } else if (actionId === 'next' && row.is_active) {
+              recordCommand('invoice_series.series.next_number', { series_id: row.id, document_ref: '' });
+              series = series.map((item) => item.id === row.id
+                ? { ...item, current_sequence: item.current_sequence + 1 }
+                : item);
+              queryPage();
+            } else if (actionId === 'default' && row.is_active && !row.is_default) {
+              recordCommand('invoice_series.series.set_default', { series_id: row.id });
+              series = series.map((item) => ({
+                ...item,
+                is_default: item.document_type === row.document_type && item.country_code === row.country_code
+                  ? Number(item.id === row.id)
+                  : item.is_default,
+              }));
+              queryPage();
+            }
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const code = String(codeInput.value ?? '').trim();
+            const name = String(nameInput.value ?? '').trim();
+            const prefix = String(prefixInput.value ?? '').trim();
+            const documentType = String(typeInput.value ?? 'invoice');
+            const countryCode = String(countryInput.value ?? '').trim().toUpperCase();
+            const fiscalYear = Number(yearInput.value) || 2026;
+
+            if (!code || !name || !prefix) return;
+            const payload = {
+              code,
+              name,
+              document_type: documentType,
+              prefix,
+              suffix: '',
+              format: '{prefix}-{year}-{seq:05d}',
+              country_code: countryCode,
+              region_code: '',
+              fiscal_year: fiscalYear,
+              is_default: 0,
+            };
+            recordCommand('invoice_series.series.create', payload);
+            series = [...series, {
+              id: `s${series.length + 1}`,
+              ...payload,
+              current_sequence: 0,
+              is_active: 1,
+              created_at: new Date().toISOString(),
+            }];
+
+            codeInput.value = '';
+            nameInput.value = '';
+            prefixInput.value = '';
+            countryInput.value = '';
+            state.page = 0;
+            queryPage();
+            table.close();
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -438,53 +438,72 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     ],
   },
   {
-    id: 'ok-drawer',
-    name: 'ok-drawer',
+    id: 'ok-widget-board',
+    name: 'ok-widget-board',
     category: 'dashboard',
-    desc: 'Panel lateral deslizante (slide-over) contextual: asistente, detalle de registro, filtros. Ionic no lo trae (ion-menu es navegación de app; ion-modal sheet es bottom-sheet). Scrim clicable, focus-trap, ESC, slots de cabecera/pie. Modo controlado: los gestos emiten ok-close cancelable. (Overlay display:contents: ábrelo con el botón.)',
-    importPath: "@erplora/outfitkit/ok-drawer",
-    example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
-  <ion-button id="drw-open" size="small">Abrir drawer</ion-button>
-  <small style="color:var(--ion-color-medium)">Cierra con ESC, click fuera o el botón X.</small>
-  <ok-drawer id="drw" heading="Asistente" icon="sparkles-outline" width="380px">
-    <ion-button slot="header-actions" size="small" fill="clear">
-      <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
-    </ion-button>
-    <p style="margin:0 0 .75rem">Hola 👋 Soy el asistente. Este es el cuerpo del drawer, con scroll interno.</p>
-    <ok-inline-feedback tone="info" heading="Contextual">Úsame para detalle de registro o filtros.</ok-inline-feedback>
-    <div slot="footer" style="display:flex;gap:.5rem">
-      <ion-button size="small" expand="block" style="flex:1">Acción principal</ion-button>
-    </div>
-  </ok-drawer>
-</div>`,
+    desc: 'Panel configurable para dashboards: activa, oculta y reordena widgets Ionic/OutfitKit sin apropiarse de sus datos. Admite presets por rol y persistencia opcional.',
+    importPath: "@erplora/outfitkit/ok-widget-board",
+    example: `<ok-widget-board id="widget-board-demo" editable>
+  <span slot="title">Panel operativo</span>
+</ok-widget-board>`,
     setup: (root) => {
-      const drawer = root.querySelector('#drw');
-      root.querySelector('#drw-open').addEventListener('click', () => { drawer.open = true; });
+      const board = root.querySelector('#widget-board-demo');
+      const cardWidget = (title, value, note) => (cell) => {
+        const card = document.createElement('ion-card');
+        const header = document.createElement('ion-card-header');
+        const subtitle = document.createElement('ion-card-subtitle');
+        const heading = document.createElement('ion-card-title');
+        const content = document.createElement('ion-card-content');
+        subtitle.textContent = title;
+        heading.textContent = value;
+        content.textContent = note;
+        header.append(subtitle, heading);
+        card.append(header, content);
+        cell.append(card);
+      };
+      board.widgets = [
+        { id: 'sales', title: 'Ventas', icon: 'trending-up-outline', category: 'Operaciones', size: 'sm', render: cardWidget('VENTAS HOY', '4.820 €', '+12 % frente a ayer') },
+        { id: 'orders', title: 'Pedidos', icon: 'receipt-outline', category: 'Operaciones', size: 'sm', render: cardWidget('PEDIDOS', '86', '7 pendientes') },
+        { id: 'stock', title: 'Stock crítico', icon: 'cube-outline', category: 'Inventario', size: 'md', render: cardWidget('STOCK CRÍTICO', '14 referencias', 'Revisión necesaria') },
+      ];
+      board.presets = [
+        { id: 'manager', label: 'Gerencia', widgets: ['sales', 'orders', 'stock'] },
+        { id: 'warehouse', label: 'Almacén', widgets: ['stock', 'orders'] },
+      ];
+      board.value = ['sales', 'orders', 'stock'];
+      board.labels = {
+        customize: 'Personalizar panel',
+        close: 'Cerrar',
+        presets: 'Presets',
+        active: 'Activos · arrastra para reordenar',
+        available: 'Disponibles',
+        empty: 'Panel vacío',
+      };
     },
-    code: `<ok-drawer heading="Asistente" icon="sparkles-outline" side="end" width="420px">
-  <ion-button slot="header-actions" size="small" fill="clear">…</ion-button>
-  … cuerpo con scroll interno …
-  <div slot="footer">…</div>
-</ok-drawer>
-drawer.open = true;                       // controlado por el padre (señal/ref)
-drawer.addEventListener('ok-close', (e) => {
-  // e.detail.reason: 'scrim' | 'esc' | 'button'
-  // e.preventDefault() para vetar el cierre (modo controlado);
-  // si nadie lo veta, el drawer se cierra solo.
-});`,
+    code: `<ok-widget-board id="board" editable storage-key="dashboard"></ok-widget-board>
+
+const board = document.querySelector('#board');
+board.widgets = [
+  {
+    id: 'sales',
+    title: 'Ventas',
+    size: 'sm',
+    render(cell) {
+      const card = document.createElement('ion-card');
+      // El host compone aquí sus ion-* y ok-* con datos reales.
+      cell.append(card);
+    },
+  },
+];
+board.presets = [{ id: 'manager', label: 'Gerencia', widgets: ['sales'] }];`,
     api: [
-      { kind: 'prop', name: 'open', type: 'bool (reflejado)', detail: 'Abierto/cerrado; el padre puede controlarlo' },
-      { kind: 'prop', name: 'side · width', type: 'end|start · string', detail: 'Lado (def end) · ancho (def 420px; móvil 100%)' },
-      { kind: 'prop', name: 'heading · icon', type: 'string', detail: 'Título e icono de la cabecera' },
-      { kind: 'prop', name: 'scrim · dismissible', type: 'bool · bool', detail: 'Fondo clicable (def true) · ESC/scrim/X cierran (def true)' },
-      { kind: 'prop', name: '.labels', type: '{close}', detail: 'Textos traducibles (default inglés)' },
-      { kind: 'slot', name: '(default) · header-actions · footer', type: '—', detail: 'Cuerpo (scroll) · botones extra cabecera · pie fijo' },
-      { kind: 'event', name: 'ok-open', type: '{open:true}', detail: 'Al abrirse' },
-      { kind: 'event', name: 'ok-close', type: '{reason} cancelable', detail: 'Gesto de cierre; preventDefault() lo veta' },
+      { kind: 'prop', name: '.widgets', type: 'WidgetDef[]', detail: 'Catálogo {id,title,icon?,category?,size?,render(cell)}' },
+      { kind: 'prop', name: '.value', type: 'string[]', detail: 'Ids activos en su orden actual' },
+      { kind: 'prop', name: '.presets', type: 'WidgetPreset[]', detail: 'Combinaciones recomendadas por rol o sector' },
+      { kind: 'prop', name: 'editable · storage-key', type: 'boolean · string', detail: 'Abre el configurador · persiste la selección' },
+      { kind: 'event', name: 'ok-change', type: '{value:string[]}', detail: 'Al activar, ocultar o reordenar widgets' },
     ],
   },
-
-  // ════════════════════════════════ FLUJO ═════════════════════════════════
   {
     id: 'ok-stepper',
     name: 'ok-stepper',
@@ -985,6 +1004,51 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
       { kind: 'event', name: 'openPalette() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
       { kind: 'event', name: 'ok-select', type: '{id, command}', detail: 'Comando ejecutado' },
       { kind: 'event', name: 'ok-open', type: '{open}', detail: 'Apertura/cierre de la paleta' },
+    ],
+  },
+  {
+    id: 'ok-spotlight-search',
+    name: 'ok-spotlight-search',
+    category: 'acciones',
+    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante que no rompe la vista de debajo. Aporta el campo, cierre, trigger opcional, autofoco y Esc; los resultados los pone el consumidor por slot, con datos síncronos o asíncronos.',
+    importPath: "@erplora/outfitkit/ok-spotlight-search",
+    example: `<div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-start">
+  <small style="color:var(--ion-color-medium)">Pulsa el icono para abrir el buscador.</small>
+  <ok-spotlight-search id="sp" trigger-icon="person" trigger-label="Buscar cliente" placeholder="Buscar cliente…">
+    <ion-list id="sp-list" lines="none">
+      <ion-item button detail="false"><ion-label><h3>Ana García</h3><p>600 111 222</p></ion-label></ion-item>
+      <ion-item button detail="false"><ion-label><h3>Bar Manolo</h3><p>600 333 444</p></ion-label></ion-item>
+      <ion-item button detail="false"><ion-label><h3>Café Central</h3><p>600 555 666</p></ion-label></ion-item>
+    </ion-list>
+    <ion-button slot="footer" fill="clear" size="small">Quitar</ion-button>
+  </ok-spotlight-search>
+</div>`,
+    setup: (root) => {
+      const spotlight = root.querySelector('#sp');
+      const items = [...root.querySelectorAll('#sp-list ion-item')];
+      spotlight.addEventListener('ok-input', (event) => {
+        const query = (event.detail.value || '').toLowerCase();
+        items.forEach((item) => {
+          item.style.display = item.textContent.toLowerCase().includes(query) ? '' : 'none';
+        });
+      });
+      items.forEach((item) => item.addEventListener('click', () => spotlight.close()));
+      root.querySelector('[slot="footer"]').addEventListener('click', () => spotlight.close());
+    },
+    code: `<ok-spotlight-search trigger-icon="person" placeholder="Buscar cliente…">
+  <ion-list><!-- el consumidor pinta y estila los resultados --></ion-list>
+  <ion-button slot="footer">Quitar</ion-button>
+</ok-spotlight-search>
+
+spotlight.addEventListener('ok-input', (e) => buscar(e.detail.value));
+spotlight.addEventListener('ok-open', (e) => { if (e.detail.open) cargar(); });
+spotlight.openSearch();  // close() / toggle()`,
+    api: [
+      { kind: 'prop', name: 'open · placeholder · value', type: 'bool · string · string', detail: 'Abierto · guía del input · texto de búsqueda' },
+      { kind: 'prop', name: 'trigger-icon · trigger-label', type: 'string · string', detail: 'Botón opcional para abrir; si no se indica, el consumidor controla la apertura' },
+      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados · acciones del pie' },
+      { kind: 'event', name: 'openSearch() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
+      { kind: 'event', name: 'ok-input · ok-open', type: '{value} · {open}', detail: 'Al escribir · al abrir o cerrar' },
     ],
   },
 
@@ -1886,16 +1950,6 @@ if (full) {
     api: [{"kind": "prop", "name": "total · page · page-size", "type": "number · number · number", "detail": "Total de elementos, página actual (base 1) y tamaño de página"}, {"kind": "prop", "name": "variant", "type": "'default'|'compact'", "detail": "Numerado completo o compacto (prev/valor/next)"}, {"kind": "prop", "name": "info", "type": "boolean", "detail": "Muestra el texto \"X–Y de Z\""}, {"kind": "prop", "name": ".pageSizeOptions", "type": "number[]", "detail": "Si se pasan, muestra un ion-select de filas por página"}, {"kind": "prop", "name": "sibling-count · boundary-count", "type": "number · number", "detail": "Páginas vecinas a cada lado de la activa y fijas en cada extremo"}, {"kind": "event", "name": "ok-page-change", "type": "CustomEvent<{page:number}>", "detail": "Emitido al pulsar una página o chevron"}, {"kind": "event", "name": "ok-page-size-change", "type": "CustomEvent<{size:number}>", "detail": "Emitido al cambiar filas por página en el selector"}],
   },
   {
-    id: "ok-skeleton",
-    name: "ok-skeleton",
-    category: "feedback",
-    desc: "Placeholder de carga (shimmer) con variantes de forma (text/title/circle/avatar/button/chip/card/row), stack de líneas de anchos decrecientes (lines) y presets compuestos (preset=\"card\"/\"table\"/\"chart\"). Respeta prefers-reduced-motion. Sin eventos.",
-    importPath: "@erplora/outfitkit/ok-skeleton",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem\">\n  <ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n  <ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n  <div style=\"display:flex;gap:1rem;align-items:center;flex-wrap:wrap\">\n    <ok-skeleton variant=\"avatar\" width=\"48px\" height=\"48px\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"chip\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"button\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"circle\" width=\"56px\" height=\"56px\" style=\"width:auto\"></ok-skeleton>\n  </div>\n  <ok-skeleton preset=\"card\"></ok-skeleton>\n  <ok-skeleton preset=\"table\" rows=\"4\" cols=\"4\"></ok-skeleton>\n  <ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>\n</div>",
-    code: "// Variante simple\n<ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n<ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n\n// Presets compuestos\n<ok-skeleton preset=\"card\"></ok-skeleton>\n<ok-skeleton preset=\"table\" rows=\"5\" cols=\"4\"></ok-skeleton>\n<ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>",
-    api: [{"kind": "prop", "name": "variant", "type": "text|title|circle|avatar|button|chip|card|row", "detail": "Forma del bloque individual"}, {"kind": "prop", "name": "lines", "type": "number", "detail": "Nº de líneas apiladas (text/title; >1 activa el stack 92/78/60%)"}, {"kind": "prop", "name": "preset", "type": "none|card|table|chart", "detail": "Scaffold de placeholder compuesto"}, {"kind": "prop", "name": "rows", "type": "number", "detail": "Filas del preset table (incluye cabecera)"}, {"kind": "prop", "name": "cols", "type": "number", "detail": "Columnas del preset table / nº de barras del preset chart"}, {"kind": "prop", "name": "width · height · radius", "type": "string", "detail": "Overrides CSS explícitos de la variante (p.ej. \"120px\", \"40%\")"}],
-  },
-  {
     id: "ok-gauge",
     name: "ok-gauge",
     category: "graficos",
@@ -2289,53 +2343,6 @@ el.addEventListener('ok-shortcut', (e) => console.log('shortcut', e.detail.short
     },
     code: "// Error HTTP con atajos y acciones\nconst p = document.querySelector('ok-error-page');\np.code = '500';\np.title = 'Algo salió mal';\np.message = 'Estamos trabajando para solucionarlo.';\np.variant = 'danger';\np.trace = 'Traceback (most recent call last)\\n  File \"runtime.rs\", line 142...';\np.shortcuts = [{ title: 'Inicio', icon: 'home-outline', href: '/' }];\np.addEventListener('ok-shortcut', e => navigate(e.detail.shortcut.href));\n\n// Pantalla de arranque (bootstrap) con health-check + reintento\n// <ok-error-page mode=\"bootstrap\" retry-seconds=\"10\" .checks=${checks}>",
     api: [{"kind": "prop", "name": "code · title · message", "type": "string", "detail": "Código HTTP, título destacado y mensaje explicativo"}, {"kind": "prop", "name": "variant · mode", "type": "info|warn|danger · http|bootstrap", "detail": "Acento/ilustración · error HTTP o pantalla de arranque"}, {"kind": "prop", "name": ".shortcuts", "type": "OkErrorShortcut[]", "detail": "Tiles de atajo {title, desc?, href?, icon?}"}, {"kind": "prop", "name": ".checks", "type": "OkErrorCheck[]", "detail": "Checklist de salud (solo mode=bootstrap): {name, message?, status?, time?}"}, {"kind": "prop", "name": "trace · meta", "type": "string", "detail": "Traza en <details> colapsable · línea de meta (trace id·timestamp)"}, {"kind": "prop", "name": "retry-seconds · retry-label", "type": "number · string", "detail": "Cuenta atrás de reintento (chip+barra) y su etiqueta"}, {"kind": "event", "name": "ok-retry · ok-shortcut", "type": "CustomEvent", "detail": "Al acabar la cuenta atrás · al pulsar un atajo (detail.shortcut)"}],
-  },
-  {
-    id: "ok-date-picker",
-    name: "ok-date-picker",
-    category: "inputs",
-    desc: "Campo de fecha con popover de calendario propio (lo que Ionic no trae cómodo): selección single o range con chips de preset (Hoy/7d/Esta semana/Mes/Trimestre/YTD), navegación de mes, min/max y 1-2 paneles. Props .value, mode, min/max, .presets, months; evento ok-change.",
-    importPath: "@erplora/outfitkit/ok-date-picker",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;max-width:340px\">\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">FECHA DE FACTURA\n    <ok-date-picker id=\"dpSingle\" mode=\"single\" placeholder=\"Seleccionar fecha\"></ok-date-picker>\n  </label>\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">PERIODO DEL INFORME\n    <ok-date-picker id=\"dpRange\" mode=\"range\" months=\"1\"></ok-date-picker>\n  </label>\n</div>",
-    setup: (root, ctx) => {
-root.querySelector('#dpSingle').value = '2026-06-09';
-const range = root.querySelector('#dpRange');
-range.value = { start: '2026-06-01', end: '2026-06-14' };
-range.presets = [
-  { id: '7d', label: '7d' },
-  { id: 'week', label: 'Esta semana' },
-  { id: 'month', label: 'Mes' },
-  { id: 'quarter', label: 'Trimestre' },
-  { id: 'ytd', label: 'YTD' },
-];
-    },
-    code: "const dp = document.querySelector('ok-date-picker');\ndp.mode = 'range';\ndp.value = { start: '2026-06-01', end: '2026-06-14' };\ndp.addEventListener('ok-change', (e) => console.log(e.detail.value));\n// <ok-date-picker mode=\"range\" min=\"2026-01-01\" max=\"2026-12-31\"></ok-date-picker>",
-    api: [{"kind": "prop", "name": "mode", "type": "'single'|'range'", "detail": "Una fecha o un rango {start,end}"}, {"kind": "prop", "name": ".value", "type": "string | {start,end} | null", "detail": "ISO YYYY-MM-DD (single) o rango (range)"}, {"kind": "prop", "name": "min · max", "type": "string", "detail": "Límites ISO; los días fuera quedan deshabilitados"}, {"kind": "prop", "name": ".presets", "type": "OkDatePreset[]", "detail": "Chips de atajo; [] oculta la fila"}, {"kind": "prop", "name": "months", "type": "1|2", "detail": "Paneles de mes lado a lado en pantalla ancha"}, {"kind": "prop", "name": "locale · placeholder", "type": "string", "detail": "Locale del mes (es-ES) · texto sin valor"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{value}>", "detail": "Emite ISO (single) o {start,end} (range) al elegir"}],
-  },
-  {
-    id: "ok-time-picker",
-    name: "ok-time-picker",
-    category: "inputs",
-    desc: "Selector compacto de hora del día (pastilla HH:MM mono + popover con listas de horas/minutos): más ligero que ion-datetime. Props value \"HH:MM\" (24h), step, use-ampm, min/max, disabled; emite ok-change { value }.",
-    importPath: "@erplora/outfitkit/ok-time-picker",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;padding:.5rem 0\">\n  <div style=\"display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap\">\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      APERTURA\n      <ok-time-picker value=\"09:30\" step=\"15\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      CIERRE (12h)\n      <ok-time-picker value=\"21:00\" step=\"30\" use-ampm></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      RESERVA\n      <ok-time-picker id=\"tp-resa\" value=\"13:45\" step=\"5\" min=\"12:00\" max=\"16:30\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      BLOQUEADO\n      <ok-time-picker value=\"08:00\" disabled></ok-time-picker>\n    </label>\n  </div>\n  <p style=\"margin:0;font:.85rem system-ui;color:#374151\">\n    Reserva seleccionada: <strong id=\"tp-out\" style=\"font-variant-numeric:tabular-nums\">13:45</strong>\n  </p>\n</div>",
-    setup: (root, ctx) => {
-const resa = root.querySelector('#tp-resa');
-const out = root.querySelector('#tp-out');
-resa.addEventListener('ok-change', (e) => { out.textContent = e.detail.value; });
-    },
-    code: "<ok-time-picker value=\"13:45\" step=\"15\" min=\"12:00\" max=\"16:30\"></ok-time-picker>\n<ok-time-picker value=\"21:00\" use-ampm></ok-time-picker>\n\npicker.addEventListener('ok-change', (e) => console.log(e.detail.value)); // \"HH:MM\" 24h",
-    api: [{"kind": "prop", "name": "value", "type": "string", "detail": "Hora canónica \"HH:MM\" en 24h (valor que entra y sale)"}, {"kind": "prop", "name": "step", "type": "number", "detail": "Paso de minutos de la lista (default 5, 1-30)"}, {"kind": "prop", "name": "use-ampm", "type": "boolean", "detail": "Presentación 12h con columna AM/PM (el valor sigue en 24h)"}, {"kind": "prop", "name": "min · max", "type": "string · string", "detail": "\"HH:MM\" que acotan las horas/minutos seleccionables (inclusive)"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Desactiva la interacción (refleja a atributo)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{ value: string }>", "detail": "Al elegir hora; value canónico \"HH:MM\" 24h (bubbles + composed)"}],
-  },
-  {
-    id: "ok-range-dual",
-    name: "ok-range-dual",
-    category: "inputs",
-    desc: "Slider de rango min–max con doble thumb (el hueco que ion-range no cubre): pista con relleno coloreado entre los dos thumbs y readout «low – high». Props low/high/min/max/step + prefix/suffix; emite ok-change con {low, high}.",
-    importPath: "@erplora/outfitkit/ok-range-dual",
-    example: "<div style=\"display:grid;gap:2rem;max-width:420px;padding:0.5rem\">\n  <ok-range-dual id=\"precio\" label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"></ok-range-dual>\n  <ok-range-dual id=\"desc\" label=\"Descuento\" min=\"0\" max=\"100\" step=\"5\" low=\"10\" high=\"40\" suffix=\"%\"></ok-range-dual>\n  <ok-range-dual id=\"peso\" label=\"Peso (kg)\" min=\"0\" max=\"50\" step=\"0.5\" low=\"5\" high=\"22.5\" suffix=\" kg\"></ok-range-dual>\n  <ok-range-dual id=\"off\" label=\"Deshabilitado\" min=\"0\" max=\"100\" low=\"20\" high=\"80\" suffix=\"%\" disabled></ok-range-dual>\n</div>",
-    code: "&lt;ok-range-dual label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"&gt;&lt;/ok-range-dual&gt;\n\nrange.addEventListener('ok-change', (e) =&gt; {\n  console.log(e.detail.low, e.detail.high); // { low, high }\n});",
-    api: [{"kind": "prop", "name": "low", "type": "number", "detail": "Valor inferior actual del rango"}, {"kind": "prop", "name": "high", "type": "number", "detail": "Valor superior actual del rango"}, {"kind": "prop", "name": "min · max · step", "type": "number", "detail": "Límites del rango y paso de incremento"}, {"kind": "prop", "name": "label", "type": "string", "detail": "Etiqueta opcional a la izquierda del readout"}, {"kind": "prop", "name": "prefix · suffix", "type": "string", "detail": "Prefijo/sufijo en el readout (ej. '€', '%', ' kg')"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Deshabilita la interacción (atenúa el control)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{low,high}>", "detail": "Emitido al mover cualquiera de los dos thumbs"}],
   },
   {
     id: "ok-file-item",

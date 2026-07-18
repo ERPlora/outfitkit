@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Ajustes de facturación</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .invoice-settings-page { display:flex; flex-direction:column; height:100%; min-height:0; }
+      .invoice-settings-page > ok-data-table { flex:1 1 auto; min-height:0; }
+      .invoice-settings-intro { margin:0 0 .75rem; color:var(--ion-color-medium); font-size:.86rem; }
+      .invoice-settings-form { display:flex; flex-direction:column; gap:.7rem; }
+      .invoice-settings-form h3 { margin:0; font-size:1rem; }
+      .invoice-settings-actions { display:flex; gap:.5rem; justify-content:flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Series canónicas de erp-invoice-settings.test.ts.
+      const SERIES_FIXTURE = [
+        {
+          "id": "sr1",
+          "code": "FACT",
+          "name": "Facturas",
+          "invoice_type": "F1",
+          "year": 2026,
+          "current_number": 12,
+          "prefix": "",
+          "is_active": 1,
+          "is_default": 1
+        },
+        {
+          "id": "sr2",
+          "code": "TICKET",
+          "name": "Tickets",
+          "invoice_type": "F2",
+          "year": 2026,
+          "current_number": 340,
+          "prefix": "T",
+          "is_active": 1,
+          "is_default": 0
+        }
+      ];
+
+      const TYPE_OPTIONS = [
+        { value: 'F1', label: 'Factura (F1)' },
+        { value: 'F2', label: 'Ticket (F2)' },
+        { value: 'F3', label: 'Factura (F3)' },
+        { value: 'R1', label: 'Rectificativa (R1)' },
+        { value: 'R2', label: 'Rectificativa (R2)' },
+        { value: 'R3', label: 'Rectificativa (R3)' },
+        { value: 'R4', label: 'Rectificativa (R4)' },
+        { value: 'R5', label: 'Rectificativa (R5)' },
+      ];
+      const BOOL_OPTIONS = [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }];
+      const LABELS = {
+        search:'Buscar…', empty:'Sin series configuradas.', filters:'Filtros', clear:'Limpiar',
+        apply:'Aplicar', moreActions:'Más acciones', rowsPerPage:'Filas por página',
+        perPageShort:'{n} / pág.', viewList:'Vista lista', viewCards:'Vista tarjetas',
+        columnsVisible:'Columnas visibles', columns:'Columnas', actions:'Acciones', close:'Cerrar',
+        filterPlaceholder:'Filtrar…', noValues:'Sin valores', showing:'Mostrando {from}–{to} de',
+        recordSingular:'serie', recordPlural:'series',
+      };
+
+      let series = SERIES_FIXTURE.map((row) => ({ ...row }));
+      let editingId = '';
+
+      function badge(text, color = 'medium') {
+        const el = document.createElement('ion-badge');
+        el.textContent = text;
+        el.color = color;
+        return el;
+      }
+
+      function typeLabel(code) {
+        return TYPE_OPTIONS.find((option) => option.value === code)?.label ?? String(code ?? '—');
+      }
+
+      defineHubPage({
+        active: '/m/invoice/settings',
+        title: 'Ajustes de facturación',
+        body: `
+          <div class="invoice-settings-page">
+            <p class="invoice-settings-intro">Configura las series que numeran las facturas y rectificativas.</p>
+            <ok-data-table id="invoice-settings-table" fill>
+              <form id="invoice-settings-form" slot="create" class="invoice-settings-form">
+                <h3 id="invoice-settings-form-title">Crear serie</h3>
+                <ion-input id="series-code" fill="outline" label="Código" label-placement="floating"></ion-input>
+                <ion-input id="series-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-select id="series-type" fill="outline" label="Tipo" label-placement="floating" value="F1">
+                  <ion-select-option value="F1">Factura (F1)</ion-select-option>
+                  <ion-select-option value="F2">Ticket (F2)</ion-select-option>
+                  <ion-select-option value="F3">Factura (F3)</ion-select-option>
+                  <ion-select-option value="R1">Rectificativa (R1)</ion-select-option>
+                  <ion-select-option value="R2">Rectificativa (R2)</ion-select-option>
+                  <ion-select-option value="R3">Rectificativa (R3)</ion-select-option>
+                  <ion-select-option value="R4">Rectificativa (R4)</ion-select-option>
+                  <ion-select-option value="R5">Rectificativa (R5)</ion-select-option>
+                </ion-select>
+                <ion-input id="series-year" type="number" fill="outline" label="Año" label-placement="floating" value="2026"></ion-input>
+                <ion-input id="series-prefix" fill="outline" label="Prefijo" label-placement="floating"></ion-input>
+                <ion-toggle id="series-active" checked>Activa</ion-toggle>
+                <ion-toggle id="series-default">Predeterminada</ion-toggle>
+                <div class="invoice-settings-actions">
+                  <ion-button type="submit" size="small">Guardar</ion-button>
+                  <ion-button id="invoice-settings-cancel" type="button" size="small" fill="clear" color="medium">Cancelar</ion-button>
+                </div>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="invoice-settings-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('invoice-settings-table');
+          const form = doc.getElementById('invoice-settings-form');
+          const formTitle = doc.getElementById('invoice-settings-form-title');
+          const codeInput = doc.getElementById('series-code');
+          const nameInput = doc.getElementById('series-name');
+          const typeInput = doc.getElementById('series-type');
+          const yearInput = doc.getElementById('series-year');
+          const prefixInput = doc.getElementById('series-prefix');
+          const activeInput = doc.getElementById('series-active');
+          const defaultInput = doc.getElementById('series-default');
+          const toast = doc.getElementById('invoice-settings-toast');
+
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name || row.code || '—');
+          table.cardIcon = () => 'bookmark-outline';
+          table.searchable = true;
+          table.searchKeys = ['code', 'name', 'invoice_type', 'prefix'];
+          table.searchPlaceholder = 'Buscar series…';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'code', header: 'Código', sortable:true, filterable:true, filterType:'text' },
+            { key: 'name', header: 'Nombre', sortable:true, filterable:true, filterType:'text', format:(row) => row.name || '—' },
+            {
+              key: 'invoice_type', header: 'Tipo', sortable:true, filterable:true,
+              filterType:'select', options:TYPE_OPTIONS, format:(row) => typeLabel(row.invoice_type),
+            },
+            { key: 'year', header: 'Año', align:'right', sortable:true },
+            { key: 'prefix', header: 'Prefijo', format:(row) => row.prefix || '—' },
+            { key: 'current_number', header: 'Número actual', align:'right', sortable:true },
+            {
+              key: 'is_active', header: 'Activa', filterable:true, filterType:'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              render:(row) => badge(Number(row.is_active) ? 'Sí' : 'No', Number(row.is_active) ? 'success' : 'medium'),
+            },
+            {
+              key: 'is_default', header: 'Predeterminada', filterable:true,
+              filterType:'select', options:BOOL_OPTIONS,
+              render:(row) => Number(row.is_default) ? badge('Sí', 'primary') : '—',
+            },
+          ];
+          table.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
+
+          function emitCommand(commandName, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:demo-command', {
+              detail:{ commandName, payload }, bubbles:true,
+            }));
+          }
+
+          function resetForm() {
+            editingId = '';
+            formTitle.textContent = 'Crear serie';
+            codeInput.value = '';
+            codeInput.disabled = false;
+            nameInput.value = '';
+            typeInput.value = 'F1';
+            typeInput.disabled = false;
+            yearInput.value = '2026';
+            yearInput.disabled = false;
+            prefixInput.value = '';
+            activeInput.checked = true;
+            defaultInput.checked = false;
+          }
+
+          function startEdit(row) {
+            editingId = row.id;
+            formTitle.textContent = `Editar ${row.code}`;
+            codeInput.value = row.code;
+            codeInput.disabled = true;
+            nameInput.value = row.name || '';
+            typeInput.value = row.invoice_type;
+            typeInput.disabled = true;
+            yearInput.value = String(row.year ?? '');
+            yearInput.disabled = true;
+            prefixInput.value = row.prefix || '';
+            activeInput.checked = Boolean(row.is_active);
+            defaultInput.checked = Boolean(row.is_default);
+            table.open('create');
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail?.actionId === 'edit' && event.detail?.row) startEdit(event.detail.row);
+          });
+          doc.getElementById('invoice-settings-cancel').addEventListener('click', () => {
+            resetForm();
+            table.close();
+          });
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const code = String(codeInput.value ?? '').trim();
+            if (!editingId && !code) return;
+            if (editingId) {
+              const payload = {
+                series_id:editingId,
+                name:String(nameInput.value ?? '').trim(),
+                prefix:String(prefixInput.value ?? '').trim(),
+                is_active:Boolean(activeInput.checked),
+                is_default:Boolean(defaultInput.checked),
+              };
+              series = series.map((row) => row.id === editingId
+                ? { ...row, ...payload, is_active:payload.is_active ? 1 : 0, is_default:payload.is_default ? 1 : 0 }
+                : row);
+              emitCommand('invoice.series.update', payload);
+              toast.message = 'Serie actualizada.';
+            } else {
+              const payload = {
+                code,
+                name:String(nameInput.value ?? '').trim(),
+                invoice_type:String(typeInput.value ?? 'F1'),
+                year:Number(yearInput.value) || 2026,
+                prefix:String(prefixInput.value ?? '').trim(),
+                is_active:Boolean(activeInput.checked),
+                is_default:Boolean(defaultInput.checked),
+              };
+              series = [...series, {
+                id:`invoice-series-demo-${Date.now()}`,
+                ...payload,
+                current_number:0,
+                is_active:payload.is_active ? 1 : 0,
+                is_default:payload.is_default ? 1 : 0,
+              }];
+              emitCommand('invoice.series.create', payload);
+              toast.message = 'Serie creada.';
+            }
+            table.rows = series;
+            resetForm();
+            table.close();
+            toast.color = 'success';
+            toast.isOpen = true;
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          table.rows = series;
+          resetForm();
+        },
+      });
+    </script>
+  </body>
+</html>

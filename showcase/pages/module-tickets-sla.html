@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Objetivos SLA</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .sla-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .sla-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .sla-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .sla-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .sla-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fila canónica de erp-tickets-sla.test.ts. La demo trabaja sobre una copia local.
+      const SLA_FIXTURE = [
+        {
+          "id": "s1",
+          "name": "Oro",
+          "description": "",
+          "priority": "high",
+          "response_time_hours": 4,
+          "resolution_time_hours": 24,
+          "is_active": 1
+        }
+      ];
+
+      const PRIORITY_OPTIONS = [
+        { value: 'low', label: 'Baja' },
+        { value: 'medium', label: 'Media' },
+        { value: 'high', label: 'Alta' },
+        { value: 'urgent', label: 'Urgente' },
+      ];
+
+      const LABELS = {
+        search: 'Buscar…',
+        empty: 'Sin SLAs configurados.',
+        filters: 'Filtros',
+        clear: 'Limpiar',
+        apply: 'Aplicar',
+        moreActions: 'Más acciones',
+        rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.',
+        viewList: 'Vista lista',
+        viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles',
+        columns: 'Columnas',
+        actions: 'Acciones',
+        close: 'Cerrar',
+        filterPlaceholder: 'Filtrar…',
+        noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de',
+        recordSingular: 'objetivo',
+        recordPlural: 'objetivos',
+      };
+
+      let slas = SLA_FIXTURE.map((sla) => ({ ...sla }));
+      const state = {
+        page: 0,
+        pageSize: 50,
+        sort: 'name',
+        dir: 'asc',
+        search: '',
+        filters: {},
+      };
+
+      function badge(text, color = 'medium') {
+        const el = document.createElement('ion-badge');
+        el.textContent = text;
+        el.color = color;
+        return el;
+      }
+
+      function priorityLabel(value) {
+        return PRIORITY_OPTIONS.find((option) => option.value === value)?.label ?? String(value ?? '—');
+      }
+
+      defineHubPage({
+        active: '/m/tickets/sla',
+        title: 'Objetivos SLA',
+        body: `
+          <div class="sla-page">
+            <p id="sla-feedback" class="sla-feedback" role="alert" hidden></p>
+            <ok-data-table id="sla-table" fill>
+              <form id="sla-create-form" slot="create" class="sla-create-form">
+                <ion-input id="sla-name" fill="outline" label="Nombre" label-placement="floating" placeholder="Nombre"></ion-input>
+                <ion-select id="sla-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                  <ion-select-option value="low">Baja</ion-select-option>
+                  <ion-select-option value="medium">Media</ion-select-option>
+                  <ion-select-option value="high">Alta</ion-select-option>
+                  <ion-select-option value="urgent">Urgente</ion-select-option>
+                </ion-select>
+                <ion-input id="sla-response" type="number" min="1" fill="outline" label="Respuesta (h)" label-placement="floating" value="24"></ion-input>
+                <ion-input id="sla-resolution" type="number" min="1" fill="outline" label="Resolución (h)" label-placement="floating" value="72"></ion-input>
+                <ion-button type="submit">Añadir SLA</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="sla-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('sla-table');
+          const form = doc.getElementById('sla-create-form');
+          const feedback = doc.getElementById('sla-feedback');
+          const toast = doc.getElementById('sla-toast');
+          const nameInput = doc.getElementById('sla-name');
+          const priorityInput = doc.getElementById('sla-priority');
+          const responseInput = doc.getElementById('sla-response');
+          const resolutionInput = doc.getElementById('sla-resolution');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'timer-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nombre o prioridad…';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            {
+              key: 'priority',
+              header: 'Prioridad',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: PRIORITY_OPTIONS,
+              render: (row) => badge(
+                priorityLabel(row.priority),
+                row.priority === 'urgent' ? 'danger' : row.priority === 'high' ? 'warning' : 'medium',
+              ),
+            },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'response_time_hours',
+              header: 'Respuesta (h)',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+            },
+            {
+              key: 'resolution_time_hours',
+              header: 'Resolución (h)',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+            },
+            {
+              key: 'is_active',
+              header: 'Activo',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              render: (row) => badge(Number(row.is_active) ? 'Sí' : 'No', Number(row.is_active) ? 'success' : 'medium'),
+            },
+          ];
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = slas.filter((sla) => {
+              if (search && !`${sla.name} ${sla.priority}`.toLocaleLowerCase('es').includes(search)) return false;
+              for (const [key, value] of Object.entries(state.filters)) {
+                if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+                if (key === 'response_time_hours' || key === 'resolution_time_hours') {
+                  if (!matchesRange(sla[key], value)) return false;
+                } else if (Array.isArray(value)) {
+                  if (!value.map(String).includes(String(sla[key]))) return false;
+                } else if (String(sla[key]).toLocaleLowerCase('es') !== String(value).toLocaleLowerCase('es')) {
+                  return false;
+                }
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = left[state.sort] ?? '';
+              const b = right[state.sort] ?? '';
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          function emitSlaEvent(name, detail) {
+            doc.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            state.page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'name';
+            state.dir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col ?? event.detail?.key;
+            if (!key) return;
+            state.filters[key] = event.detail?.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            if (!name) {
+              feedback.textContent = 'El nombre es obligatorio.';
+              feedback.hidden = false;
+              return;
+            }
+
+            const created = {
+              id: `sla-demo-${Date.now()}`,
+              name,
+              description: '',
+              priority: String(priorityInput.value ?? 'medium'),
+              response_time_hours: Number(responseInput.value) || 24,
+              resolution_time_hours: Number(resolutionInput.value) || 72,
+              is_active: 1,
+            };
+            slas = [...slas, created];
+            emitSlaEvent('tickets.sla.created', {
+              commandName: 'tickets.slas.create',
+              row: created,
+            });
+            feedback.hidden = true;
+            nameInput.value = '';
+            priorityInput.value = 'medium';
+            responseInput.value = '24';
+            resolutionInput.value = '72';
+            table.close();
+            toast.message = 'Objetivo SLA creado.';
+            toast.color = 'success';
+            toast.isOpen = true;
+            queryPage();
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

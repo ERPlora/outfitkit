@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Bandeja de WhatsApp</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .whatsapp-inbox-page {
+        min-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // No existe fixture oficial para esta query: son ejemplos de preview ajustados al SELECT y a la migración vigentes.
+      const DEMO_CONVERSATIONS = [
+        {
+          id: 'conv-001', customer_id: 'customer-001', assigned_to_id: 'employee-001',
+          phone_number_id: 'phone-main', wa_contact_id: 'wa-34612030405',
+          contact_name: 'Marta López', contact_phone: '+34 612 030 405', status: 'active',
+          last_message_at: '2026-07-18T10:42:00', unread_count: 3,
+        },
+        {
+          id: 'conv-002', customer_id: 'customer-002', assigned_to_id: null,
+          phone_number_id: 'phone-main', wa_contact_id: 'wa-34658741129',
+          contact_name: 'Restaurante Sol', contact_phone: '+34 658 741 129', status: 'active',
+          last_message_at: '2026-07-18T09:15:00', unread_count: 1,
+        },
+        {
+          id: 'conv-003', customer_id: 'customer-003', assigned_to_id: 'employee-002',
+          phone_number_id: 'phone-main', wa_contact_id: 'wa-34677008831',
+          contact_name: 'Diego Romero', contact_phone: '+34 677 008 831', status: 'closed',
+          last_message_at: '2026-07-17T18:06:00', unread_count: 0,
+        },
+        {
+          id: 'conv-004', customer_id: null, assigned_to_id: null,
+          phone_number_id: 'phone-main', wa_contact_id: 'wa-34604192873',
+          contact_name: 'Lucía Martín', contact_phone: '+34 604 192 873', status: 'active',
+          last_message_at: '2026-07-16T12:30:00', unread_count: 0,
+        },
+      ];
+
+      defineHubPage({
+        active: '/m/whatsapp_inbox/inbox',
+        title: 'Bandeja de WhatsApp',
+        body: `
+          <div class="whatsapp-inbox-page">
+            <ok-data-table id="whatsapp-inbox-table"></ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('whatsapp-inbox-table');
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'id';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+
+          table.columns = [
+            { key: 'contact_name', header: 'Contacto', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'contact_phone', header: 'Teléfono', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'active', label: 'Activas' },
+                { value: 'closed', label: 'Cerradas' },
+              ],
+            },
+            {
+              key: 'unread_count', header: 'Sin leer', align: 'right', sortable: true,
+              filterable: true, filterType: 'range',
+              format: (row) => Number(row.unread_count) > 0 ? String(row.unread_count) : '—',
+            },
+            {
+              key: 'last_message_at', header: 'Último mensaje', sortable: true,
+              filterable: true, filterType: 'daterange',
+              format: (row) => row.last_message_at
+                ? new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(row.last_message_at))
+                : '—',
+            },
+          ];
+          table.serverSide = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.contact_name || row.contact_phone || '—');
+          table.cardIcon = () => 'chatbubbles-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Filtrar contacto o teléfono…';
+          table.emptyMessage = 'Sin conversaciones.';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+
+          const matchesRange = (candidate, range, numeric = false) => {
+            if (!range || typeof range !== 'object') return true;
+            const raw = numeric ? Number(candidate) : String(candidate ?? '');
+            const from = range.from === '' || range.from == null ? null : (numeric ? Number(range.from) : String(range.from));
+            const to = range.to === '' || range.to == null ? null : (numeric ? Number(range.to) : String(range.to));
+            return (from == null || raw >= from) && (to == null || raw <= to);
+          };
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = DEMO_CONVERSATIONS
+              .filter((row) => {
+                if (term && !`${row.customer_id ?? ''} ${row.phone_number_id} ${row.contact_name} ${row.contact_phone}`.toLocaleLowerCase('es').includes(term)) return false;
+                for (const [key, value] of Object.entries(filters)) {
+                  if (value == null || value === '') continue;
+                  if (key === 'status' && row.status !== value) return false;
+                  if (key === 'unread_count' && !matchesRange(row.unread_count, value, true)) return false;
+                  if (key === 'last_message_at' && !matchesRange(row.last_message_at, value)) return false;
+                  if (key === 'contact_name' && !row.contact_name.toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                  if (key === 'contact_phone' && !row.contact_phone.includes(String(value))) return false;
+                }
+                return true;
+              })
+              .sort((left, right) => {
+                const a = left[sort];
+                const b = right[sort];
+                const result = typeof a === 'number' && typeof b === 'number'
+                  ? a - b
+                  : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+                return sortDir === 'desc' ? -result : result;
+              });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail?.sort || 'id';
+            sortDir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const column = event.detail?.col;
+            if (!column) return;
+            filters = { ...filters, [column]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>
