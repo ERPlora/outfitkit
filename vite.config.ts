@@ -25,6 +25,14 @@ const emitTheme = {
       fileName: 'layout.css',
       source: readFileSync(resolve(__dirname, 'src/styles/layout.css'), 'utf8'),
     });
+    // tabbar.css — tabbar de footer (ion-segment como barra de navegación): llenar el ancho,
+    // scroll con mínimo táctil y degradado de borde. Pareja del JS `@erplora/outfitkit/tabbar`.
+    // @ts-expect-error — rollup `this.emitFile` disponible en el hook.
+    this.emitFile({
+      type: 'asset',
+      fileName: 'tabbar.css',
+      source: readFileSync(resolve(__dirname, 'src/styles/tabbar.css'), 'utf8'),
+    });
     // erplora.css — tema CANÓNICO de marca (tokens --ion-*/--ok-* compartidos Cloud↔Hub, #10).
     // @ts-expect-error — rollup `this.emitFile` disponible en el hook.
     this.emitFile({
@@ -71,6 +79,8 @@ export default defineConfig({
         // Estado (store reactivo IndexedDB) + ReactiveController de Lit.
         store: resolve(__dirname, 'src/store/store.ts'),
         'store-controller': resolve(__dirname, 'src/store/controller.ts'),
+        // Tabbar de footer (ion-segment como barra de navegación): overflow + degradado + pista.
+        tabbar: resolve(__dirname, 'src/tabbar/tabbar.ts'),
         'ok-store': resolve(__dirname, 'src/components/ok-store/ok-store.ts'),
         // Compuesto / datos
         'ok-data-table': resolve(__dirname, 'src/components/ok-data-table/ok-data-table.ts'),

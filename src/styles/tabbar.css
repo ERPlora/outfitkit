@@ -1,0 +1,72 @@
+/* OutfitKit — tabbar.css
+ *
+ * Un `ion-segment` usado como barra de NAVEGACIÓN de footer (no como el pill de filtro de iOS).
+ * Complementa a Ionic en un hueco real, no lo envuelve: Ionic no tiene ninguna estrategia para un
+ * tabbar con más pestañas de las que caben, y su geometría cambia según el modo.
+ *
+ * La clase `.ok-tabbar` la pone `bindTabbar()` (`@erplora/outfitkit/tabbar`), no el consumidor:
+ * así el CSS y el comportamiento no pueden desincronizarse. Ese mismo JS mantiene `data-overflow`,
+ * que es lo único que CSS no puede calcular solo (si desborda y por dónde va el scroll).
+ *
+ * Tokens:
+ *   --ok-tabbar-min   ancho mínimo de pestaña antes de scrollear (default 88px)
+ *   --ok-tabbar-fade  anchura del degradado de borde (default 36px)
+ *
+ * Export del paquete: `@erplora/outfitkit/tabbar.css`. Cargar después del tema.
+ */
+
+.ok-tabbar {
+  /* En modo `ios` Ionic trata el segment como el segmented control compacto y le pone
+     `:host(.in-toolbar){ width:auto; margin-inline:auto }`, así que el host se encoge a su
+     contenido (medido: 289px dentro de una toolbar de 1560px) sin importar cómo dimensiones las
+     columnas. Esto es lo que lo arregla; el `grid-auto-columns` por sí solo NO basta. */
+  width: 100%;
+  margin-inline: 0;
+  box-sizing: border-box;
+
+  /* Con pocas pestañas manda el `1fr` y llenan el ancho; con muchas manda el mínimo y NO se
+     aplastan. El default de 88px sale de MEDIR el umbral en que se trunca el label más largo del
+     Hub (86px) más 2px de margen por si el render de la fuente es algo más ancho. Cada producto
+     puede ajustarlo con `--ok-tabbar-min`: preferimos scroll antes que labels cortados. */
+  grid-auto-columns: minmax(var(--ok-tabbar-min, 88px), 1fr);
+  justify-content: start;
+
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ok-tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Degradado de borde. Al esconder la barra de scroll hay que señalar de otro modo que quedan
+   pestañas fuera: sin esto el único indicio es una pestaña cortada a medias, que se lee como un
+   fallo de maquetación y no como una invitación a deslizar.
+   Va SOLO en el lado que esconde algo — uno fijo a la derecha seguiría oscureciendo la última
+   pestaña al llegar al final, que es justo el efecto de "roto" que se quiere evitar. */
+.ok-tabbar[data-overflow='end'] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--ok-tabbar-fade, 36px)), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--ok-tabbar-fade, 36px)), transparent 100%);
+}
+
+.ok-tabbar[data-overflow='start'] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--ok-tabbar-fade, 36px)), transparent 100%);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--ok-tabbar-fade, 36px)), transparent 100%);
+}
+
+.ok-tabbar[data-overflow='both'] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--ok-tabbar-fade, 36px),
+    #000 calc(100% - var(--ok-tabbar-fade, 36px)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--ok-tabbar-fade, 36px),
+    #000 calc(100% - var(--ok-tabbar-fade, 36px)),
+    transparent 100%
+  );
+}

@@ -8,6 +8,10 @@ export type { Store, StoreOptions, StoreSubscriber } from './store/store.js';
 export { StoreController } from './store/controller.js';
 export { OkStore } from './components/ok-store/ok-store.js';
 
+// ── Tabbar de footer (comportamiento compartido Cloud↔Hub; pareja de tabbar.css) ───────────
+export { bindTabbar, tabbarOverflow, syncTabbarOverflow, scrollActiveTabIntoView, shouldHintScroll, hintScroll } from './tabbar/tabbar.js';
+export type { TabbarOverflow } from './tabbar/tabbar.js';
+
 // ── Compuesto / datos ─────────────────────────────────────────────────────────────────────
 export { OkDataTable } from './components/ok-data-table/ok-data-table.js';
 export type {
