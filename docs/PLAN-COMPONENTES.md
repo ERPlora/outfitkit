@@ -89,7 +89,7 @@ event-card, product-card). Se construyen en sus módulos reusando los genéricos
 ## Limpieza (retirar YA — usar Ionic directo)
 `ok-button`, `ok-icon`, `ok-input`, `ok-select`, `ok-searchbar`, `ok-badge`, `ok-card`(+familia),
 `ok-item`/`ok-list`/`ok-label`, `ok-spinner`, `ok-toggle`, `ok-checkbox`, `ok-chip`, `ok-segment`,
-`ok-app-shell`, `ok-sidebar`, `ok-topbar`, `ok-page`, `ok-content`, `ok-split-pane`, `ok-menu`,
+`ok-app-shell`, `ok-sidebar`, `ok-topbar`, `ok-page`, `ok-content`, `ok-split-pane`,
 `ok-tabbar`, `ok-modal`, `ok-alert`, `ok-toast`, `ok-action-sheet`.
 + Borrar `ok-utilities.css`, `scripts/gen-utilities.mjs`, `src/theme/UTILITIES.md`.
 → Quitar de `vite.config.ts` (entries), `package.json` (exports), `src/index.ts`, `src/cdn.ts`.
