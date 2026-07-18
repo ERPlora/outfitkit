@@ -1,8 +1,17 @@
 # Roadmap / Backlog — OutfitKit + sistema de módulos ERPlora
 
-> Lista única de todo lo pendiente, priorizada. **Primero acabar OutfitKit** (`@erplora/outfitkit`)
-> para tener el set `ok-*` completo; luego migrar los consumidores a usar **solo `ok-*`**.
-> Última actualización: 2026-06-08.
+> 🔴 **ARCHIVADO / HISTÓRICO — premisa revertida.** Este documento describe una estrategia de
+> **wrappers `ok-*` 1:1 sobre Ionic** (`ok-button`, `ok-icon`, `ok-input`, `ok-select`,
+> `ok-searchbar`, `ok-modal`, `ok-alert`, `ok-list`/`ok-item`, `ok-tabbar`, `ok-app-shell`…) que se
+> **decidió retirar** (ver [`CLAUDE.md`](CLAUDE.md) y [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
+> §"Limpieza — retirar YA"): OutfitKit **NO** envuelve los primitivos de Ionic — se usa `ion-*`
+> directo para botón/icono/input/select/searchbar/modal/list/tabs/layout — y ya está ejecutado
+> (ninguno de esos `ok-*` existe en `src/components/`; `ok-data-table` usa `ion-button`/`ion-icon`
+> nativos por dentro). El roadmap **vivo** es [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md).
+> Se conserva este fichero solo como referencia histórica de lo ya hecho (sección "Hecho" al final);
+> no lo uses para priorizar trabajo nuevo.
+>
+> Última actualización: 2026-06-08 (sin tocar desde entonces — de ahí la deriva).
 
 ## Estado actual (de dónde partimos)
 
