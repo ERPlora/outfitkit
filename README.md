@@ -89,7 +89,7 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
 
 ## Inventario de componentes
 
-95 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
+97 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
 los **eventos `ok-*`** que emite cada uno (`—` = presentacional, sin eventos). La **referencia viva
 de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 
@@ -167,6 +167,7 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 | `ok-time-picker` | Pastilla HH:MM + popover de listas (horas/minutos/AM-PM), canónico 24h. | `ok-change` |
 | `ok-range-dual` | Slider min-max de doble thumb con readout. | `ok-change` |
 | `ok-color-picker` | Selector de color (SV + hue + hex + presets). | `ok-change`, `ok-open` |
+| `ok-theme-picker` | Selector de tema compartido Cloud↔Hub: paleta de marca (swatches) + modo claro/oscuro/sistema. | `ok-change` |
 | `ok-rich-text` | Editor WYSIWYG con toolbar y contador de palabras. | `ok-input` |
 | `ok-signature` | Pad de firma sobre canvas con limpiar/exportar. | `ok-change`, `ok-clear` |
 | `ok-calculator` | Calculadora con teclado 4×4 y máquina de estados. | `ok-input`, `ok-change` |
@@ -182,6 +183,7 @@ de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
 | `ok-menu` | Menú desplegable/contextual con submenús, checkbox/radio, divisores. | `ok-select`, `ok-open` |
 | `ok-menubar` | Barra de menús de app (Archivo/Editar/Ver) con dropdowns. | `ok-select`, `ok-open` |
 | `ok-drawer` | Panel lateral deslizante (slide-over) modal con focus-trap y cierre por ESC/scrim. | `ok-open`, `ok-close` |
+| `ok-spotlight-search` | Buscador overlay estilo Spotlight (macOS): `<dialog>` top-layer translúcido, chrome solo (input+✕+panel); resultados los pone el consumidor por slot. | `ok-input`, `ok-open` |
 
 ### Media y archivos
 

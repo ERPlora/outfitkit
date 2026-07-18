@@ -62,58 +62,22 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
 
 ---
 
-## Backlog de construcción (lo que hay que crear)
+## Backlog de construcción
 
-> Marca `[x]` al completar. Prefijo `ok-`. Todos: responsive, ancho máx. del contenedor, autocontenido.
+Todo lo que listaba este backlog (Tier 0–3: web/marketing, genéricos núcleo, inputs, multimedia)
+**ya está construido**. Este documento no rastrea componente a componente qué falta — eso caduca en
+cuanto se construye algo y nadie vuelve a marcar la casilla. La fuente de verdad es el código y el
+inventario del README:
 
-### Tier 0 — Web / marketing (Ionic no cubre la web pública)
-- [ ] `ok-navbar` — navbar responsive con burger (existe; revisar/pulir)
-- [ ] `ok-footer` — pie de página (existe; revisar/pulir)
-- [ ] `ok-hero` — hero de cabecera (existe; revisar)
-- [x] `.ok-container` / `.ok-container-fluid` / `.ok-grid` — layout.css (CSS plano; los WC se eliminaron)
-- [ ] `ok-contact-form` — formulario de contacto responsive (NUEVO)
+- Inventario con qué-hace + eventos: [`README.md` § Inventario de componentes](../README.md).
+- Lista viva de carpetas: `ls src/components/`.
+- Si falta un `ok-*` que de verdad no existe, se abre una Issue (trabajo abierto vive en el
+  [board](https://github.com/orgs/ERPlora/projects/3), no en checkboxes de este `.md`).
 
-### Tier 1 — genéricos núcleo
-- [ ] `ok-tree` — árbol expandible ⭐
-- [ ] `ok-inline-feedback` — banners / callouts (info/warn/danger/ok) ⭐
-- [ ] `ok-calendar` — calendario mes/semana/agenda ⭐
-- [ ] `ok-kanban` — tablero de tareas (columnas + tarjetas, drag) ⭐
-- [ ] `ok-timeline` — línea de tiempo
-- [ ] `ok-tooltip` — tooltip (Ionic NO lo tiene)
-- [ ] `ok-command-palette` — Cmd+K / paleta de comandos
-- [ ] `ok-stepper` / `ok-wizard` — asistente multi-paso
-- [ ] `ok-kpi` — tarjeta KPI
-- [ ] `ok-stat` — estadística / métrica
-- [ ] `ok-empty-state` — estado vacío
-- [ ] `ok-app-launcher` — botón estilo "Google apps" (icono cuadrícula 3×3) que abre una rejilla de accesos/apps en un popover
-- [x] `ok-data-table` — tabla rica (look `/employees`) — **EN CURSO**
-
-### Tier 2 — inputs que faltan
-- [ ] `ok-combo` / `ok-autocomplete` — combobox con búsqueda
-- [ ] `ok-tag-input` — entrada de chips/tags
-- [ ] `ok-rating` — estrellas
-- [ ] `ok-otp` — código de un solo uso
-- [ ] `ok-pinpad` — teclado PIN
-- [ ] `ok-color-picker` — selector de color
-- [ ] `ok-currency` — input monetario con máscara
-- [ ] `ok-phone` — input de teléfono con prefijo país
-- [ ] `ok-dropzone` — subida drag & drop
-- [ ] `ok-qty-stepper` — +/− cantidad
-- [ ] `ok-split-button` — botón con acción + menú
-- [ ] `ok-sparkline` — mini-gráfico en línea
-
-### Tier 3 — visualización / multimedia
-- ~~`ok-chart` / `ok-donut` / `ok-gauge`~~ — **DESCARTADO**: para gráficos se usa una librería
-  externa (Chart.js / ApexCharts / uPlot…); no se reinventan como WC. (`ok-sparkline`, ya hecho,
-  cubre el mini-gráfico ligero en SVG.)
-- [ ] `ok-chat` — hilo de mensajes ⭐ (importante)
-- [ ] `ok-qr` — generador de QR
-- [ ] `ok-carousel` — carrusel (Ionic recomienda Swiper aparte)
-- [ ] `ok-signature` — firma en canvas
-- [ ] `ok-audio` / `ok-video` / `ok-pdf` — visores multimedia
-- [ ] `ok-scheduler` — agenda de turnos/recursos
-- [ ] `ok-chat` — hilo de mensajes
-- [ ] `ok-menubar` — barra de menú desktop
+### Descartes (decisión, no pendientes)
+`radio-card`, `tooltip` (usar `ion-popover` con `trigger-action="hover"`) — no se construyen.
+`ok-chart`/`ok-donut`/`ok-gauge` **sí se acabaron construyendo** (SVG a mano, sin librería externa;
+ver README) — se revirtió la decisión inicial de esta sección de usar Chart.js/ApexCharts/uPlot.
 
 ### Tier 4 — DOMINIO → en los MÓDULOS (no en el core)
 POS (canvas, numpad, payment, receipt, KDS) · Manufactura (machine, prodline, QC, batch, OEE,
