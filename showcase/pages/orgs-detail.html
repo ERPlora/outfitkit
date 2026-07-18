@@ -3,563 +3,169 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Acme Industries SL</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>ERPlora Demo - Organización</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
     <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-
-      /* Cabecera de org: avatar grande + título/subtítulo en línea. */
-      .org-header-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-      .org-header-meta ok-avatar { flex: 0 0 auto; }
-      .org-header-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-      .org-header-title h1 { margin: 0; font-size: 1.4rem; font-weight: 700; }
-      .org-header-title .sub { color: var(--ion-color-medium); font-size: .85rem; }
-
-      /* Tabs row: segment a ancho completo. */
-      .tab-content-panel { display: none; }
-      .tab-content-panel.active { display: block; }
-
-      /* Grilla de info (key-value). */
-      .info-grid {
-        display: grid;
-        grid-template-columns: minmax(110px, 140px) 1fr;
-        gap: 10px 16px;
-        font-size: .87rem;
-      }
-      .info-grid .lbl { color: var(--ion-color-medium); }
-      .info-grid .val { font-weight: 500; }
-      .info-grid a { color: var(--ion-color-primary); text-decoration: none; }
-
-      /* Bloque de dirección. */
-      .addr-block {
-        padding: 12px;
-        background: var(--ion-color-step-50, rgba(127,127,127,.05));
-        border-radius: 10px;
-        font-size: .82rem;
-        line-height: 1.55;
-      }
-      .addr-block__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-      .addr-block__name { font-weight: 600; font-size: .85rem; }
-      .addr-block__body { color: var(--ion-color-medium); }
-
-      /* Lista de miembros (overview). */
-      .member-list-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 10px 0;
-        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-        cursor: pointer;
-      }
-      .member-list-row:last-child { border-bottom: 0; }
-      .member-info { flex: 1 1 auto; min-width: 0; }
-      .member-name { font-weight: 600; font-size: .9rem; display: flex; align-items: center; gap: 6px; }
-      .member-desc { color: var(--ion-color-medium); font-size: .78rem; margin-top: 1px; }
-      .member-time { color: var(--ion-color-medium); font-size: .78rem; white-space: nowrap; }
-
-      /* Sección con cabecera (title + sub + botón). */
-      .section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-      .section-head__left {}
-      .section-head__title { font-size: 1rem; font-weight: 700; margin: 0 0 2px; }
-      .section-head__sub { color: var(--ion-color-medium); font-size: .82rem; }
-
-      /* Toggle-row de settings. */
-      .toggle-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 14px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-      .toggle-row:first-of-type { border-top: 0; padding-top: 0; }
-      .toggle-row__text { flex: 1 1 auto; }
-      .toggle-row__label { font-weight: 600; font-size: .9rem; margin-bottom: 2px; }
-      .toggle-row__desc { color: var(--ion-color-medium); font-size: .8rem; }
+      .stack { display:grid;gap:1rem; }
+      .kpis { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem; }
+      .two-columns { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem; }
+      .card-title { display:flex;align-items:center;justify-content:space-between;gap:.75rem; }
+      .card-title h2 { margin:0;font-size:1rem; }
+      .detail-row { padding:.65rem 0;border-bottom:1px solid var(--ion-color-step-150); }
+      .detail-row:last-child { border-bottom:0; }
+      .detail-row small { display:block;color:var(--ion-color-medium);text-transform:uppercase; }
+      .danger-card { border:1px solid color-mix(in srgb,var(--ion-color-danger) 42%,transparent); }
+      .danger-action { display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap; }
+      .danger-action + .danger-action { margin-top:1rem;padding-top:1rem;border-top:1px solid var(--ion-color-step-150); }
+      .danger-action h3,.danger-action p { margin:0; }
+      .danger-action p { margin-top:.25rem;color:var(--ion-color-medium);font-size:.85rem; }
+      ok-data-table { min-height:18rem; }
+      @media (max-width:760px) { .kpis,.two-columns { grid-template-columns:1fr 1fr; } }
+      @media (max-width:520px) { .kpis,.two-columns { grid-template-columns:1fr; } }
     </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      definePage({
-        active: 'orgs',
-        search: 'Buscar en Acme…',
-        bare: true,
+      const MEMBERS = [
+        { id: 'member-1', email: 'demo@erplora.com', joined: '12 ene 2025', role: 'Propietario', tone: 'primary' },
+        { id: 'member-2', email: 'admin@erplora.com', joined: '18 feb 2025', role: 'Administrador', tone: 'warning' },
+        { id: 'member-3', email: 'equipo@erplora.com', joined: '6 mar 2025', role: 'Miembro', tone: 'medium' },
+      ];
+      const HUBS = [
+        { id: 'hub-1', name: 'Terminal principal', slug: 'terminal-principal', status: 'Online', tone: 'success' },
+        { id: 'hub-2', name: 'Tienda Centro', slug: 'tienda-centro', status: 'Offline', tone: 'medium' },
+      ];
+
+      const badge = (label, tone) => h`<ion-badge color=${tone}>${label}</ion-badge>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/organizations/',
+        title: 'ERPlora Demo',
         body: `
-          <!-- Cabecera de organización: avatar grande + título + acciones -->
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:20px">
-            <div class="org-header-meta">
-              <ok-avatar id="org-avatar" name="Acme Industries SL" size="lg" tone="primary"></ok-avatar>
-              <div class="org-header-title">
-                <h1>Acme Industries SL</h1>
-                <span class="sub">Manufactura ligera · 12 miembros · 5 hubs · Plan Business</span>
-              </div>
-            </div>
-            <div class="pg-row" style="flex-wrap:wrap">
-              <ion-button fill="clear" size="small">
-                <ion-icon slot="start" name="exit-outline"></ion-icon>
-                Salir
-              </ion-button>
-              <ion-button fill="outline" size="small">
-                <ion-icon slot="start" name="settings-outline"></ion-icon>
-                Configuración
-              </ion-button>
-              <ion-button size="small">
-                <ion-icon slot="start" name="pencil-outline"></ion-icon>
-                Editar
-              </ion-button>
-            </div>
-          </div>
-
-          <!-- Tabs de navegación -->
-          <ion-segment id="org-tabs" value="overview" style="margin-bottom:20px">
-            <ion-segment-button value="overview"><ion-label>Overview</ion-label></ion-segment-button>
-            <ion-segment-button value="members">
-              <ion-label>Miembros</ion-label>
-              <ion-badge>12</ion-badge>
-            </ion-segment-button>
-            <ion-segment-button value="hubs">
-              <ion-label>Hubs</ion-label>
-              <ion-badge>5</ion-badge>
-            </ion-segment-button>
-            <ion-segment-button value="billing"><ion-label>Facturación</ion-label></ion-segment-button>
-            <ion-segment-button value="settings"><ion-label>Settings</ion-label></ion-segment-button>
-          </ion-segment>
-
-          <!-- ── OVERVIEW ─────────────────────────────────────────────────── -->
-          <div id="panel-overview" class="tab-content-panel active">
-
-            <!-- Información + Direcciones -->
-            <div class="pg-grid pg-grid-2 pg-mb-4">
-
-              <ion-card>
-                <ion-card-header>
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <ion-card-title>Información</ion-card-title>
-                    <ion-button fill="clear" size="small">Editar</ion-button>
-                  </div>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="info-grid">
-                    <span class="lbl">Logo</span>
-                    <span><ok-avatar name="Acme Industries SL" size="sm" tone="primary"></ok-avatar></span>
-
-                    <span class="lbl">Razón social</span>
-                    <span class="val">Acme Industries SL</span>
-
-                    <span class="lbl">CIF</span>
-                    <span class="val" style="font-family:monospace">B-87654321</span>
-
-                    <span class="lbl">Sector</span>
-                    <span class="val">Manufactura ligera</span>
-
-                    <span class="lbl">Fundada</span>
-                    <span class="val">2014</span>
-
-                    <span class="lbl">Tamaño</span>
-                    <span class="val">11-50 empleados</span>
-
-                    <span class="lbl">Sitio web</span>
-                    <a href="#">acme-industries.es</a>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-              <ion-card>
-                <ion-card-header>
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <ion-card-title>Direcciones</ion-card-title>
-                    <ion-button fill="clear" size="small">Gestionar</ion-button>
-                  </div>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="pg-stack">
-                    <div class="addr-block">
-                      <div class="addr-block__head">
-                        <span class="addr-block__name">Domicilio fiscal</span>
-                        <ion-badge color="success">Principal</ion-badge>
-                      </div>
-                      <div class="addr-block__body">
-                        C/ Industria 24, nave 7<br/>
-                        08940 Cornellà de Llobregat<br/>
-                        Barcelona, España
-                      </div>
-                    </div>
-                    <div class="addr-block">
-                      <div class="addr-block__head">
-                        <span class="addr-block__name">Almacén central</span>
-                        <ion-badge color="primary">Envío</ion-badge>
-                      </div>
-                      <div class="addr-block__body">
-                        Polígono Mas Blau, c/ Selva 18<br/>
-                        08820 El Prat de Llobregat<br/>
-                        Barcelona, España
-                      </div>
-                    </div>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
+          <div class="stack">
+            <div class="kpis">
+              <ok-kpi label="Hubs" value="2" icon="server-outline"></ok-kpi>
+              <ok-kpi label="Miembros" value="3" icon="people-outline"></ok-kpi>
+              <ok-kpi label="Plan" value="Standard" icon="pricetag-outline"></ok-kpi>
+              <ok-kpi label="Rol" value="Propietario" icon="key-outline"></ok-kpi>
             </div>
 
-            <!-- Miembros recientes -->
-            <ion-card class="pg-mb-4">
-              <ion-card-header>
-                <div class="section-head">
-                  <div class="section-head__left">
-                    <div class="section-head__title">Miembros recientes</div>
-                    <div class="section-head__sub">Últimos accesos al panel</div>
-                  </div>
-                  <ion-button fill="clear" size="small">Ver todos →</ion-button>
-                </div>
-              </ion-card-header>
-              <ion-card-content>
-                <div>
-                  <div class="member-list-row">
-                    <ok-avatar name="Ioan Beilic" size="sm" tone="primary"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">Ioan Beilic <ion-badge color="primary">Owner</ion-badge></div>
-                      <div class="member-desc">Ioan@acme.com</div>
-                    </div>
-                    <span class="member-time">Hace 1 h</span>
-                  </div>
-                  <div class="member-list-row">
-                    <ok-avatar name="María Rovira" size="sm"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">María Rovira <ion-badge color="tertiary">Admin</ion-badge></div>
-                      <div class="member-desc">maria@acme.com · Operaciones</div>
-                    </div>
-                    <span class="member-time">Hace 4 h</span>
-                  </div>
-                  <div class="member-list-row">
-                    <ok-avatar name="Jordi Soler" size="sm"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">Jordi Soler <ion-badge color="medium">Editor</ion-badge></div>
-                      <div class="member-desc">jordi.soler@acme.com · Compras</div>
-                    </div>
-                    <span class="member-time">Hace 1 d</span>
-                  </div>
-                  <div class="member-list-row">
-                    <ok-avatar name="Laia Borràs" size="sm"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">Laia Borràs <ion-badge color="medium">Editor</ion-badge></div>
-                      <div class="member-desc">laia@acme.com · Producción</div>
-                    </div>
-                    <span class="member-time">Hace 2 d</span>
-                  </div>
-                  <div class="member-list-row">
-                    <ok-avatar name="Anna Calvet" size="sm"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">Anna Calvet <ion-badge color="tertiary">Admin</ion-badge></div>
-                      <div class="member-desc">anna@acme.com · Finanzas</div>
-                    </div>
-                    <span class="member-time">Hace 3 d</span>
-                  </div>
-                  <div class="member-list-row">
-                    <ok-avatar name="Pere Gual" size="sm"></ok-avatar>
-                    <div class="member-info">
-                      <div class="member-name">Pere Gual <ion-badge color="medium">Viewer</ion-badge></div>
-                      <div class="member-desc">pere.gual@externo.com · Auditoría</div>
-                    </div>
-                    <span class="member-time">Hace 5 d</span>
-                  </div>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Hubs (overview) -->
             <ion-card>
-              <ion-card-header>
-                <div class="section-head">
-                  <div class="section-head__left">
-                    <div class="section-head__title">Hubs</div>
-                    <div class="section-head__sub">Espacios de trabajo conectados</div>
-                  </div>
-                  <ion-button size="small">
-                    <ion-icon slot="start" name="add-outline"></ion-icon>
-                    Nuevo hub
-                  </ion-button>
-                </div>
-              </ion-card-header>
               <ion-card-content>
-                <div class="pg-grid pg-grid-3">
-
-                  <ion-card>
-                    <ion-card-header>
-                      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                        <div>
-                          <ion-card-title style="font-size:.95rem">Hub Cornellà</ion-card-title>
-                          <ion-card-subtitle>Producción · 12 terminales</ion-card-subtitle>
-                        </div>
-                        <ok-status-pill tone="success" dot label="Activo"></ok-status-pill>
-                      </div>
-                    </ion-card-header>
-                    <ion-card-content>
-                      <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span style="color:var(--ion-color-medium);font-size:.8rem">Plan Business</span>
-                        <ion-button fill="clear" size="small">Abrir →</ion-button>
-                      </div>
-                    </ion-card-content>
-                  </ion-card>
-
-                  <ion-card>
-                    <ion-card-header>
-                      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                        <div>
-                          <ion-card-title style="font-size:.95rem">Hub El Prat</ion-card-title>
-                          <ion-card-subtitle>Logística · 8 terminales</ion-card-subtitle>
-                        </div>
-                        <ok-status-pill tone="success" dot label="Activo"></ok-status-pill>
-                      </div>
-                    </ion-card-header>
-                    <ion-card-content>
-                      <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span style="color:var(--ion-color-medium);font-size:.8rem">Plan Business</span>
-                        <ion-button fill="clear" size="small">Abrir →</ion-button>
-                      </div>
-                    </ion-card-content>
-                  </ion-card>
-
-                  <ion-card>
-                    <ion-card-header>
-                      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                        <div>
-                          <ion-card-title style="font-size:.95rem">Hub Manresa</ion-card-title>
-                          <ion-card-subtitle>Almacén · 4 terminales</ion-card-subtitle>
-                        </div>
-                        <ok-status-pill tone="warning" dot label="Staging"></ok-status-pill>
-                      </div>
-                    </ion-card-header>
-                    <ion-card-content>
-                      <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span style="color:var(--ion-color-medium);font-size:.8rem">Plan Pro</span>
-                        <ion-button fill="clear" size="small">Abrir →</ion-button>
-                      </div>
-                    </ion-card-content>
-                  </ion-card>
-
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <!-- ── MIEMBROS ──────────────────────────────────────────────────── -->
-          <div id="panel-members" class="tab-content-panel">
-            <ok-data-table id="members-dt" style="display:block"></ok-data-table>
-          </div>
-
-          <!-- ── HUBS ──────────────────────────────────────────────────────── -->
-          <div id="panel-hubs" class="tab-content-panel">
-            <ok-data-table id="hubs-dt" style="display:block"></ok-data-table>
-          </div>
-
-          <!-- ── FACTURACIÓN ────────────────────────────────────────────────── -->
-          <div id="panel-billing" class="tab-content-panel">
-            <ok-data-table id="invoices-dt" style="display:block"></ok-data-table>
-          </div>
-
-          <!-- ── SETTINGS ───────────────────────────────────────────────────── -->
-          <div id="panel-settings" class="tab-content-panel">
-
-            <ion-card class="pg-mb-4">
-              <ion-card-header>
-                <ion-card-title>Información general</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="pg-grid pg-grid-2">
-                  <ion-input label="Razón social" label-placement="stacked" fill="outline" value="Acme Industries SL"></ion-input>
-                  <ion-input label="CIF" label-placement="stacked" fill="outline" value="B-87654321"></ion-input>
-                  <ion-input label="Sitio web" label-placement="stacked" fill="outline" value="acme-industries.es"></ion-input>
-                  <div>
-                    <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--ion-color-medium)">Idioma</div>
-                    <ion-segment id="locale-seg" value="es">
-                      <ion-segment-button value="es"><ion-label>ES</ion-label></ion-segment-button>
-                      <ion-segment-button value="ca"><ion-label>CA</ion-label></ion-segment-button>
-                      <ion-segment-button value="en"><ion-label>EN</ion-label></ion-segment-button>
-                    </ion-segment>
-                  </div>
-                </div>
-                <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
-                  <ion-button fill="outline" size="small">
-                    <ion-icon slot="start" name="close-outline"></ion-icon>
-                    Cancelar
-                  </ion-button>
-                  <ion-button size="small">
-                    <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                <div class="card-title"><h2>Ajustes de la organización</h2></div>
+                <form id="organization-settings-form">
+                  <ion-input label="Nombre de la organización" label-placement="floating"
+                             fill="outline" value="ERPlora Demo" required></ion-input>
+                  <ion-button type="submit" size="small">
+                    <iconify-icon slot="start" icon="lucide:save" width="15" height="15"></iconify-icon>
                     Guardar cambios
                   </ion-button>
-                </div>
+                </form>
               </ion-card-content>
             </ion-card>
+
+            <div class="two-columns">
+              <ion-card>
+                <ion-card-content>
+                  <div class="card-title">
+                    <h2>Información de facturación</h2>
+                    <ion-button fill="clear" size="small" aria-label="Editar facturación">
+                      <iconify-icon slot="icon-only" icon="lucide:pencil" width="16" height="16"></iconify-icon>
+                    </ion-button>
+                  </div>
+                  <div class="detail-row"><small>Razón social</small><strong>ERPlora Demo S.L.</strong></div>
+                  <div class="detail-row"><small>NIF / CIF / IVA</small><span>B12345678</span></div>
+                  <div class="detail-row"><small>Correo de facturación</small><span>facturacion@erplora.com</span></div>
+                </ion-card-content>
+              </ion-card>
+              <ion-card>
+                <ion-card-content>
+                  <div class="card-title">
+                    <h2>Dirección de envío</h2>
+                    <ion-button fill="clear" size="small" aria-label="Editar dirección">
+                      <iconify-icon slot="icon-only" icon="lucide:pencil" width="16" height="16"></iconify-icon>
+                    </ion-button>
+                  </div>
+                  <div class="detail-row"><small>Destinatario</small><strong>ERPlora Demo</strong></div>
+                  <div class="detail-row"><small>Dirección</small><span>Carrer de Mallorca, 401 · 08013 Barcelona · ES</span></div>
+                  <div class="detail-row"><small>Teléfono</small><span>+34 930 000 000</span></div>
+                </ion-card-content>
+              </ion-card>
+            </div>
 
             <ion-card>
-              <ion-card-header>
-                <ion-card-title>Seguridad</ion-card-title>
-              </ion-card-header>
               <ion-card-content>
-                <div class="toggle-row">
-                  <div class="toggle-row__text">
-                    <div class="toggle-row__label">Requerir 2FA</div>
-                    <div class="toggle-row__desc">Todos los miembros deben tener 2FA activo.</div>
-                  </div>
-                  <ion-toggle id="toggle-2fa" checked></ion-toggle>
-                </div>
-                <div class="toggle-row">
-                  <div class="toggle-row__text">
-                    <div class="toggle-row__label">SSO empresarial</div>
-                    <div class="toggle-row__desc">SAML / OIDC con tu IdP.</div>
-                  </div>
-                  <ion-toggle id="toggle-sso"></ion-toggle>
-                </div>
-                <div class="toggle-row">
-                  <div class="toggle-row__text">
-                    <div class="toggle-row__label">Audit log</div>
-                    <div class="toggle-row__desc">Registra todas las acciones del equipo.</div>
-                  </div>
-                  <ion-toggle id="toggle-audit" checked></ion-toggle>
-                </div>
+                <div class="card-title"><h2>Métodos de pago</h2></div>
+                <p>Los métodos de pago se gestionan de forma segura con Stripe.</p>
+                <ion-button size="small">
+                  <iconify-icon slot="start" icon="lucide:external-link" width="15" height="15"></iconify-icon>
+                  Gestionar pagos
+                </ion-button>
               </ion-card-content>
             </ion-card>
 
+            <ok-data-table id="organization-members"></ok-data-table>
+            <ok-inline-feedback tone="info" heading="Base de datos compartida">
+              Todos los Hubs de esta organización comparten la misma base de datos. Productos, clientes, inventario y otros datos son compartidos.
+            </ok-inline-feedback>
+            <ok-data-table id="organization-hubs"></ok-data-table>
+
+            <ion-card class="danger-card">
+              <ion-card-content>
+                <h2 style="margin:0 0 1rem;color:var(--ion-color-danger);font-size:1rem">Zona de peligro</h2>
+                <div class="danger-action">
+                  <div><h3>Salir de la organización</h3><p>Perderás el acceso a todos los Hubs de esta organización.</p></div>
+                  <ion-button fill="outline" color="danger" size="small">Salir de la organización</ion-button>
+                </div>
+                <div class="danger-action">
+                  <div><h3>Eliminar organización</h3><p>Primero debes eliminar todos los Hubs de la organización.</p></div>
+                  <ion-button fill="outline" color="danger" size="small" disabled>Eliminar organización</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
           </div>
         `,
         setup(doc) {
-          // ── Datos de miembros ─────────────────────────────────────────────
-          const MEMBERS = [
-            { name: 'Ioan Beilic',  email: 'Ioan@acme.com',           dept: '—',           role: 'Owner',  roleColor: 'primary',  last: 'Hace 1 h' },
-            { name: 'María Rovira', email: 'maria@acme.com',          dept: 'Operaciones', role: 'Admin',  roleColor: 'tertiary', last: 'Hace 4 h' },
-            { name: 'Jordi Soler',  email: 'jordi.soler@acme.com',    dept: 'Compras',     role: 'Editor', roleColor: 'medium',   last: 'Hace 1 d' },
-            { name: 'Laia Borràs',  email: 'laia@acme.com',           dept: 'Producción',  role: 'Editor', roleColor: 'medium',   last: 'Hace 2 d' },
-            { name: 'Anna Calvet',  email: 'anna@acme.com',           dept: 'Finanzas',    role: 'Admin',  roleColor: 'tertiary', last: 'Hace 3 d' },
-            { name: 'Pere Gual',    email: 'pere.gual@externo.com',   dept: 'Auditoría',   role: 'Viewer', roleColor: 'medium',   last: 'Hace 5 d' },
-            { name: 'Marc Vidal',   email: 'marc.vidal@acme.com',     dept: 'IT',          role: 'Editor', roleColor: 'medium',   last: 'Hace 6 d' },
-            { name: 'Eva Serra',    email: 'eva.serra@acme.com',      dept: 'RRHH',        role: 'Editor', roleColor: 'medium',   last: 'Hace 7 d' },
-            { name: 'Pau Gómez',    email: 'pau.gomez@acme.com',      dept: 'Ventas',      role: 'Viewer', roleColor: 'medium',   last: 'Hace 8 d' },
-            { name: 'Núria Mas',    email: 'nuria.mas@acme.com',      dept: 'Marketing',   role: 'Editor', roleColor: 'medium',   last: 'Hace 9 d' },
-            { name: 'Carles Font',  email: 'carles.font@acme.com',    dept: 'Finanzas',    role: 'Viewer', roleColor: 'medium',   last: 'Hace 12 d' },
-            { name: 'Rosa Ibáñez',  email: 'rosa.ibanez@acme.com',    dept: 'Dirección',   role: 'Admin',  roleColor: 'tertiary', last: 'Hace 14 d' },
+          doc.getElementById('organization-settings-form')?.addEventListener('submit', (event) => event.preventDefault());
+
+          const members = doc.getElementById('organization-members');
+          members.title = 'Miembros';
+          members.rowKey = 'id';
+          members.rows = MEMBERS;
+          members.columns = [
+            { key: 'email', header: 'Miembro', sortable: true },
+            { key: 'joined', header: 'Alta', sortable: true },
+            { key: 'role', header: 'Rol', render: (row) => badge(row.role, row.tone) },
+          ];
+          members.searchKeys = ['email', 'role'];
+          members.searchPlaceholder = 'Buscar miembros…';
+          members.primaryAction = { label: 'Invitar', icon: 'person-add-outline' };
+          members.actions = [
+            { id: 'change-role', label: 'Cambiar rol', icon: 'swap-horizontal-outline' },
+            { id: 'remove', label: 'Quitar', icon: 'person-remove-outline', color: 'danger' },
           ];
 
-          // ── Datos de hubs ────────────────────────────────────────────────
-          const HUBS = [
-            { name: 'Hub Cornellà',  sub: 'Producción · 12 terminales', plan: 'Business', stateColor: 'success', stateLabel: 'Activo'  },
-            { name: 'Hub El Prat',   sub: 'Logística · 8 terminales',   plan: 'Business', stateColor: 'success', stateLabel: 'Activo'  },
-            { name: 'Hub Manresa',   sub: 'Almacén · 4 terminales',     plan: 'Pro',      stateColor: 'warning', stateLabel: 'Staging' },
-            { name: 'Hub Barcelona', sub: 'Retail · 6 terminales',      plan: 'Business', stateColor: 'success', stateLabel: 'Activo'  },
-            { name: 'Hub Demo',      sub: 'Sandbox · 1 terminal',       plan: 'Free',     stateColor: 'warning', stateLabel: 'Staging' },
+          const hubs = doc.getElementById('organization-hubs');
+          hubs.title = 'Hubs';
+          hubs.rowKey = 'id';
+          hubs.rows = HUBS;
+          hubs.columns = [
+            { key: 'name', header: 'Hub', sortable: true },
+            { key: 'slug', header: 'Slug' },
+            { key: 'status', header: 'Estado', render: (row) => badge(row.status, row.tone) },
           ];
-
-          // ── Datos de facturas ────────────────────────────────────────────
-          const INVOICES = [
-            { id: 'F-2026-0042', date: '01 may 2026', amount: '€890,00', status: 'pending', label: 'Pendiente', color: 'warning' },
-            { id: 'F-2026-0038', date: '01 abr 2026', amount: '€890,00', status: 'paid',    label: 'Pagada',    color: 'success' },
-            { id: 'F-2026-0034', date: '01 mar 2026', amount: '€890,00', status: 'paid',    label: 'Pagada',    color: 'success' },
-            { id: 'F-2026-0030', date: '01 feb 2026', amount: '€890,00', status: 'paid',    label: 'Pagada',    color: 'success' },
-          ];
-
-          // ── ok-data-table: Miembros ──────────────────────────────────────
-          const membersDt = doc.getElementById('members-dt');
-          if (membersDt) {
-            membersDt.title = 'Miembros';
-            membersDt.rowKey = (r) => r.email;
-            membersDt.views = ['table'];
-            membersDt.searchable = true;
-            membersDt.searchKeys = ['name', 'email', 'dept'];
-            membersDt.primaryAction = { label: 'Invitar', icon: 'person-add-outline' };
-            membersDt.columns = [
-              { key: 'name', header: 'Nombre', width: 'minmax(9rem,1.5fr)',
-                render: (r) => h`<strong>${r.name}</strong>` },
-              { key: 'email', header: 'Email', width: 'minmax(10rem,1.5fr)' },
-              { key: 'dept', header: 'Departamento', width: 'minmax(8rem,1fr)' },
-              { key: 'role', header: 'Rol', width: '7rem',
-                render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.roleColor}) 15%, transparent);--color:var(--ion-color-${r.roleColor});--padding-top:4px;--padding-bottom:4px">${r.role}</ion-badge>` },
-              { key: 'last', header: 'Último acceso', width: '9rem' },
-            ];
-            membersDt.actions = [
-              { id: 'edit',   icon: 'pencil-outline',  label: 'Editar' },
-              { id: 'remove', icon: 'trash-outline',   label: 'Eliminar', color: 'danger' },
-            ];
-            membersDt.rows = MEMBERS.slice();
-          }
-
-          // ── ok-data-table: Hubs ──────────────────────────────────────────
-          const hubsDt = doc.getElementById('hubs-dt');
-          if (hubsDt) {
-            hubsDt.title = 'Hubs de la organización';
-            hubsDt.rowKey = (r) => r.name;
-            hubsDt.views = ['table'];
-            hubsDt.searchable = true;
-            hubsDt.searchKeys = ['name', 'sub', 'plan'];
-            hubsDt.primaryAction = { label: 'Nuevo hub', icon: 'add-outline' };
-            hubsDt.columns = [
-              { key: 'name', header: 'Hub', width: 'minmax(10rem,1.5fr)',
-                render: (r) => h`<strong>${r.name}</strong>` },
-              { key: 'sub', header: 'Descripción', width: 'minmax(12rem,1.5fr)' },
-              { key: 'plan', header: 'Plan', width: '8rem' },
-              { key: 'stateLabel', header: 'Estado', width: '8rem',
-                render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.stateColor}) 15%, transparent);--color:var(--ion-color-${r.stateColor});--padding-top:4px;--padding-bottom:4px">${r.stateLabel}</ion-badge>` },
-            ];
-            hubsDt.actions = [
-              { id: 'open',   icon: 'open-outline',  label: 'Abrir', color: 'primary' },
-              { id: 'remove', icon: 'trash-outline', label: 'Eliminar', color: 'danger' },
-            ];
-            hubsDt.rows = HUBS.slice();
-          }
-
-          // ── ok-data-table: Facturas ───────────────────────────────────────
-          const invoicesDt = doc.getElementById('invoices-dt');
-          if (invoicesDt) {
-            invoicesDt.title = 'Histórico de facturas';
-            invoicesDt.rowKey = (r) => r.id;
-            invoicesDt.views = ['table'];
-            invoicesDt.searchable = false;
-            invoicesDt.columns = [
-              { key: 'id',     header: 'Factura', width: 'minmax(8rem,1fr)' },
-              { key: 'date',   header: 'Fecha',   width: '9rem' },
-              { key: 'amount', header: 'Importe', width: '7rem', align: 'right' },
-              { key: 'label',  header: 'Estado',  width: '8rem',
-                render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.color}) 15%, transparent);--color:var(--ion-color-${r.color});--padding-top:4px;--padding-bottom:4px">${r.label}</ion-badge>` },
-            ];
-            invoicesDt.actions = [
-              { id: 'download', icon: 'download-outline', label: 'Descargar' },
-            ];
-            invoicesDt.rows = INVOICES.slice();
-          }
-
-          // ── Tabs: ion-segment ────────────────────────────────────────────
-          const PANELS = ['overview', 'members', 'hubs', 'billing', 'settings'];
-          function showPanel(id) {
-            PANELS.forEach((p) => {
-              const el = doc.getElementById('panel-' + p);
-              if (el) el.classList.toggle('active', p === id);
-            });
-          }
-
-          const tabs = doc.getElementById('org-tabs');
-          if (tabs) {
-            tabs.addEventListener('ionChange', (e) => {
-              const val = e.detail && e.detail.value;
-              if (val) showPanel(val);
-            });
-          }
-
-          // ── Toggles de Settings ──────────────────────────────────────────
-          const t2fa = doc.getElementById('toggle-2fa');
-          const tsso = doc.getElementById('toggle-sso');
-          const taudit = doc.getElementById('toggle-audit');
-          if (t2fa) t2fa.addEventListener('ionChange', () => { /* no-op mock */ });
-          if (tsso) tsso.addEventListener('ionChange', () => { /* no-op mock */ });
-          if (taudit) taudit.addEventListener('ionChange', () => { /* no-op mock */ });
+          hubs.searchKeys = ['name', 'slug'];
+          hubs.searchPlaceholder = 'Buscar hubs…';
         },
       });
     </script>

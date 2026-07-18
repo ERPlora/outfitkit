@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Tareas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .tasks-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .tasks-view-bar {
+        flex: none;
+        margin-bottom: 0.75rem;
+      }
+
+      .tasks-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .task-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .task-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .task-detail {
+        flex: none;
+        max-height: min(49vh, 34rem);
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        overflow: auto;
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 12px;
+        background: var(--ion-card-background, #fff);
+      }
+
+      .task-detail-head,
+      .task-detail-actions,
+      .task-inline-form {
+        display: flex;
+        align-items: end;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .task-detail-head {
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .task-detail-head h2 {
+        flex: 1 1 16rem;
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .task-detail-actions ion-select,
+      .task-detail-actions ion-input,
+      .task-inline-form ion-input,
+      .task-inline-form ion-textarea {
+        flex: 1 1 12rem;
+        min-width: 10rem;
+      }
+
+      .task-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.5rem;
+        padding: 0.1rem 0.55rem;
+        border-radius: 999px;
+        background: var(--ion-color-step-100, #f1f1f1);
+        font-size: 0.78rem;
+        font-weight: 650;
+      }
+
+      .task-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1.25rem;
+        margin: 0.45rem 0 0.8rem;
+        font-size: 0.88rem;
+      }
+
+      .task-detail h3 {
+        margin: 1rem 0 0.4rem;
+        font-size: 0.94rem;
+      }
+
+      .task-list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      .task-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0;
+        border-top: 1px solid var(--ion-border-color, #e7e2d6);
+      }
+
+      .task-list li > span {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .task-list small {
+        display: block;
+        margin-top: 0.15rem;
+        opacity: 0.62;
+      }
+
+      .tasks-empty,
+      .tasks-error {
+        margin: 0.45rem 0;
+        font-size: 0.9rem;
+      }
+
+      .tasks-empty {
+        opacity: 0.62;
+      }
+
+      .tasks-error {
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .task-detail {
+          max-height: 52vh;
+          padding: 0.75rem;
+        }
+
+        .task-detail-actions,
+        .task-inline-form {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .task-detail-actions > *,
+        .task-inline-form > * {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Tarea canónica de erp-tasks-list.test.ts: el showcase no mantiene otro fixture.
+      const TASK_FIXTURE = [
+        {
+          "id": "t1",
+          "task_number": "TSK-1",
+          "title": "Revisar caja",
+          "description": "",
+          "project_id": null,
+          "status": "todo",
+          "priority": "medium",
+          "assigned_to_ref": null,
+          "created_by_ref": null,
+          "due_date": null,
+          "completed_at": null,
+          "parent_task_id": null,
+          "tags": "",
+          "created_at": "2026-07-13T09:00:00"
+        }
+      ];
+
+      const STATUS_OPTIONS = [
+        { value: 'todo', label: 'Por hacer' },
+        { value: 'in_progress', label: 'En curso' },
+        { value: 'blocked', label: 'Bloqueada' },
+        { value: 'done', label: 'Hecha' },
+        { value: 'cancelled', label: 'Cancelada' },
+      ];
+
+      const PRIORITY_OPTIONS = [
+        { value: 'low', label: 'Baja' },
+        { value: 'medium', label: 'Media' },
+        { value: 'high', label: 'Alta' },
+        { value: 'urgent', label: 'Urgente' },
+      ];
+
+      const DEMO_USER_REF = 'demo-user';
+      let tasks = TASK_FIXTURE.map((row) => ({ ...row }));
+      const comments = [];
+      const subtasks = [];
+
+      defineHubPage({
+        active: '/m/tasks/all',
+        title: 'Tareas',
+        body: `
+          <div class="tasks-page">
+            <header class="tasks-view-bar">
+              <ion-segment id="tasks-view" value="all">
+                <ion-segment-button value="all"><ion-label>Todas</ion-label></ion-segment-button>
+                <ion-segment-button value="mine"><ion-label>Mis tareas</ion-label></ion-segment-button>
+              </ion-segment>
+            </header>
+
+            <p id="tasks-error" class="tasks-error" role="alert" hidden></p>
+
+            <section id="task-detail" class="task-detail" aria-label="Detalle de la tarea" hidden>
+              <header class="task-detail-head">
+                <h2 id="task-detail-title"></h2>
+                <span id="task-detail-status-badge" class="task-badge"></span>
+                <span id="task-detail-priority" class="task-badge"></span>
+                <ion-button id="task-detail-close" size="small" fill="clear">Cerrar</ion-button>
+              </header>
+              <p id="task-detail-description" hidden></p>
+              <div class="task-detail-meta">
+                <span><strong>Vence:</strong> <span id="task-detail-due"></span></span>
+                <span><strong>Completada:</strong> <span id="task-detail-completed"></span></span>
+                <span><strong>Asignada a:</strong> <span id="task-detail-assignee"></span></span>
+                <span><strong>Creada:</strong> <span id="task-detail-created"></span></span>
+              </div>
+
+              <div class="task-detail-actions">
+                <ion-select id="task-detail-status" fill="outline" label="Estado" label-placement="floating">
+                  ${STATUS_OPTIONS.map((option) => `<ion-select-option value="${option.value}">${option.label}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-button id="task-detail-complete" size="small" color="success">Completar</ion-button>
+                <ion-input id="task-detail-assignee-input" fill="outline" label="Asignar a" label-placement="floating" placeholder="uuid del usuario…"></ion-input>
+                <ion-button id="task-detail-assign" size="small" fill="outline">Asignar</ion-button>
+                <ion-button id="task-detail-assign-me" size="small" fill="outline">Asignármela</ion-button>
+                <ion-button id="task-detail-unassign" size="small" fill="clear">Desasignar</ion-button>
+              </div>
+
+              <h3 id="task-subtasks-heading">Subtareas (0)</h3>
+              <ul id="task-subtasks" class="task-list"></ul>
+              <p id="task-subtasks-empty" class="tasks-empty">Sin subtareas.</p>
+              <form id="task-subtask-form" class="task-inline-form">
+                <ion-input id="task-subtask-title" fill="outline" label="Nueva subtarea" label-placement="floating" placeholder="Nueva subtarea…"></ion-input>
+                <ion-button type="submit" size="small">Añadir subtarea</ion-button>
+              </form>
+
+              <h3 id="task-comments-heading">Comentarios (0)</h3>
+              <ul id="task-comments" class="task-list"></ul>
+              <p id="task-comments-empty" class="tasks-empty">Sin comentarios.</p>
+              <form id="task-comment-form" class="task-inline-form">
+                <ion-textarea id="task-comment" fill="outline" label="Comentar" label-placement="floating" auto-grow rows="1" placeholder="Añadir comentario…"></ion-textarea>
+                <ion-button type="submit" size="small">Comentar</ion-button>
+              </form>
+            </section>
+
+            <ok-data-table id="tasks-table" fill>
+              <form id="task-create-form" slot="create" class="task-create-form">
+                <ion-input id="task-title" fill="outline" label="Título" label-placement="floating" placeholder="Nueva tarea…" required></ion-input>
+                <ion-select id="task-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                  ${PRIORITY_OPTIONS.map((option) => `<ion-select-option value="${option.value}">${option.label}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-button type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('tasks-table');
+          const viewSegment = doc.getElementById('tasks-view');
+          const error = doc.getElementById('tasks-error');
+          const createForm = doc.getElementById('task-create-form');
+          const titleInput = doc.getElementById('task-title');
+          const priorityInput = doc.getElementById('task-priority');
+          const detail = doc.getElementById('task-detail');
+          const detailTitle = doc.getElementById('task-detail-title');
+          const detailDescription = doc.getElementById('task-detail-description');
+          const detailStatusBadge = doc.getElementById('task-detail-status-badge');
+          const detailPriority = doc.getElementById('task-detail-priority');
+          const detailDue = doc.getElementById('task-detail-due');
+          const detailCompleted = doc.getElementById('task-detail-completed');
+          const detailAssignee = doc.getElementById('task-detail-assignee');
+          const detailCreated = doc.getElementById('task-detail-created');
+          const detailStatus = doc.getElementById('task-detail-status');
+          const detailAssigneeInput = doc.getElementById('task-detail-assignee-input');
+          const subtaskList = doc.getElementById('task-subtasks');
+          const subtaskEmpty = doc.getElementById('task-subtasks-empty');
+          const subtaskHeading = doc.getElementById('task-subtasks-heading');
+          const subtaskForm = doc.getElementById('task-subtask-form');
+          const subtaskTitle = doc.getElementById('task-subtask-title');
+          const commentList = doc.getElementById('task-comments');
+          const commentEmpty = doc.getElementById('task-comments-empty');
+          const commentHeading = doc.getElementById('task-comments-heading');
+          const commentForm = doc.getElementById('task-comment-form');
+          const commentInput = doc.getElementById('task-comment');
+
+          let view = 'all';
+          let selectedTaskId = null;
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'created_at';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const statusLabel = (value) => STATUS_OPTIONS.find((option) => option.value === value)?.label ?? value;
+          const priorityLabel = (value) => PRIORITY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+          const formatDate = (value) => value ? String(value).slice(0, 10) : '—';
+          const selectedTask = () => tasks.find((task) => task.id === selectedTaskId) ?? null;
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          table.columns = [
+            { key: 'task_number', header: 'Nº', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'title', header: 'Título', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status',
+              header: 'Estado',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: STATUS_OPTIONS,
+              format: (row) => statusLabel(row.status),
+            },
+            {
+              key: 'priority',
+              header: 'Prioridad',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: PRIORITY_OPTIONS,
+              format: (row) => priorityLabel(row.priority),
+            },
+            {
+              key: 'due_date',
+              header: 'Vence',
+              sortable: true,
+              filterable: true,
+              filterType: 'daterange',
+              format: (row) => formatDate(row.due_date),
+            },
+          ];
+          table.actions = [
+            { id: 'detail', label: 'Detalle', icon: 'open-outline', color: 'primary' },
+            { id: 'start', label: 'Iniciar', icon: 'play-circle-outline', color: 'primary' },
+            { id: 'complete', label: 'Completar', icon: 'checkmark-done-outline', color: 'success' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.title ?? '—');
+          table.cardIcon = () => 'checkbox-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nº o título…';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+          table.emptyMessage = 'Sin tareas.';
+
+          function dateRangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const date = String(value ?? '').slice(0, 10);
+            if (!date && (range.from || range.to)) return false;
+            return (!range.from || date >= String(range.from).slice(0, 10))
+              && (!range.to || date <= String(range.to).slice(0, 10));
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const rootTasks = tasks.filter((task) => !task.parent_task_id);
+            const source = view === 'mine'
+              ? rootTasks.filter((task) => task.assigned_to_ref === DEMO_USER_REF)
+              : rootTasks;
+            const filtered = source.filter((task) => {
+              if (term && !`${task.task_number} ${task.title} ${task.description} ${task.assigned_to_ref ?? ''}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'due_date' && !dateRangeMatch(task.due_date, value)) return false;
+                if ((column === 'status' || column === 'priority') && task[column] !== value) return false;
+                if ((column === 'task_number' || column === 'title')
+                  && !String(task[column]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const result = String(left[sort] ?? '').localeCompare(String(right[sort] ?? ''), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+            table.addable = view === 'all';
+            table.emptyMessage = view === 'mine'
+              ? 'Sin tareas abiertas asignadas a ti.'
+              : 'Sin tareas.';
+          }
+
+          function renderDetail() {
+            const task = selectedTask();
+            detail.hidden = !task;
+            if (!task) return;
+
+            detailTitle.textContent = `${task.task_number} — ${task.title}`;
+            detailDescription.textContent = task.description;
+            detailDescription.hidden = !task.description;
+            detailStatusBadge.textContent = statusLabel(task.status);
+            detailPriority.textContent = priorityLabel(task.priority);
+            detailDue.textContent = formatDate(task.due_date);
+            detailCompleted.textContent = formatDate(task.completed_at);
+            detailAssignee.textContent = task.assigned_to_ref || '—';
+            detailCreated.textContent = formatDate(task.created_at);
+            detailStatus.value = task.status;
+            detailAssigneeInput.value = task.assigned_to_ref ?? '';
+
+            const taskSubtasks = subtasks.filter((row) => row.parent_task_id === task.id);
+            subtaskHeading.textContent = `Subtareas (${taskSubtasks.length})`;
+            subtaskEmpty.hidden = taskSubtasks.length > 0;
+            subtaskList.replaceChildren(...taskSubtasks.map((row) => {
+              const item = doc.createElement('li');
+              const text = doc.createElement('span');
+              text.textContent = `${row.task_number} — ${row.title}`;
+              const open = doc.createElement('ion-button');
+              open.size = 'small';
+              open.fill = 'clear';
+              open.textContent = 'Abrir';
+              open.addEventListener('click', () => {
+                tasks.push(row);
+                selectedTaskId = row.id;
+                renderDetail();
+              }, { once: true });
+              item.append(text, open);
+              return item;
+            }));
+
+            const taskComments = comments.filter((row) => row.task_id === task.id);
+            commentHeading.textContent = `Comentarios (${taskComments.length})`;
+            commentEmpty.hidden = taskComments.length > 0;
+            commentList.replaceChildren(...taskComments.map((row) => {
+              const item = doc.createElement('li');
+              const text = doc.createElement('span');
+              text.textContent = row.comment;
+              const meta = doc.createElement('small');
+              meta.textContent = `${row.author_ref || 'anónimo'} · ${String(row.created_at).slice(0, 16).replace('T', ' ')}`;
+              text.append(meta);
+              item.append(text);
+              return item;
+            }));
+          }
+
+          function updateTaskStatus(task, status) {
+            task.status = status;
+            task.completed_at = status === 'done' ? new Date().toISOString() : null;
+            showError();
+            queryPage();
+            renderDetail();
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const task = tasks.find((candidate) => candidate.id === row.id);
+            if (!task) return;
+
+            if (actionId === 'detail') {
+              selectedTaskId = task.id;
+              renderDetail();
+            }
+            if (actionId === 'start') {
+              task.status = 'in_progress';
+              task.completed_at = null;
+              queryPage();
+              renderDetail();
+            }
+            if (actionId === 'complete') {
+              task.status = 'done';
+              task.completed_at = new Date().toISOString();
+              queryPage();
+              renderDetail();
+            }
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          viewSegment.addEventListener('ionChange', (event) => {
+            view = event.detail.value === 'mine' ? 'mine' : 'all';
+            page = 0;
+            selectedTaskId = null;
+            renderDetail();
+            queryPage();
+          });
+
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const title = String(titleInput.value ?? '').trim();
+            if (!title) return;
+            const next = tasks.length + subtasks.length + 1;
+            tasks.push({
+              id: `task-preview-${next}`,
+              task_number: `TSK-${next}`,
+              title,
+              description: '',
+              project_id: null,
+              status: 'todo',
+              priority: String(priorityInput.value || 'medium'),
+              assigned_to_ref: null,
+              created_by_ref: null,
+              due_date: null,
+              completed_at: null,
+              parent_task_id: null,
+              tags: '',
+              created_at: new Date().toISOString(),
+            });
+            titleInput.value = '';
+            priorityInput.value = 'medium';
+            table.close();
+            queryPage();
+          });
+
+          doc.getElementById('task-detail-close').addEventListener('click', () => {
+            selectedTaskId = null;
+            renderDetail();
+          });
+          detailStatus.addEventListener('ionChange', (event) => {
+            const task = selectedTask();
+            if (task && event.detail.value && event.detail.value !== task.status) {
+              updateTaskStatus(task, event.detail.value);
+            }
+          });
+          doc.getElementById('task-detail-complete').addEventListener('click', () => {
+            const task = selectedTask();
+            if (task) updateTaskStatus(task, 'done');
+          });
+          doc.getElementById('task-detail-assign').addEventListener('click', () => {
+            const task = selectedTask();
+            if (!task) return;
+            task.assigned_to_ref = String(detailAssigneeInput.value ?? '').trim() || null;
+            queryPage();
+            renderDetail();
+          });
+          doc.getElementById('task-detail-assign-me').addEventListener('click', () => {
+            const task = selectedTask();
+            if (!task) return;
+            task.assigned_to_ref = DEMO_USER_REF;
+            queryPage();
+            renderDetail();
+          });
+          doc.getElementById('task-detail-unassign').addEventListener('click', () => {
+            const task = selectedTask();
+            if (!task) return;
+            task.assigned_to_ref = null;
+            queryPage();
+            renderDetail();
+          });
+
+          commentForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const task = selectedTask();
+            const text = String(commentInput.value ?? '').trim();
+            if (!task || !text) return;
+            comments.push({
+              id: `comment-preview-${comments.length + 1}`,
+              task_id: task.id,
+              author_ref: DEMO_USER_REF,
+              comment: text,
+              created_at: new Date().toISOString(),
+            });
+            commentInput.value = '';
+            renderDetail();
+          });
+
+          subtaskForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const task = selectedTask();
+            const title = String(subtaskTitle.value ?? '').trim();
+            if (!task || !title) return;
+            const next = tasks.length + subtasks.length + 1;
+            subtasks.push({
+              id: `subtask-preview-${next}`,
+              task_number: `${task.task_number}.${subtasks.length + 1}`,
+              title,
+              description: '',
+              project_id: task.project_id,
+              status: 'todo',
+              priority: 'medium',
+              assigned_to_ref: null,
+              created_by_ref: null,
+              due_date: null,
+              completed_at: null,
+              parent_task_id: task.id,
+              tags: '',
+              created_at: new Date().toISOString(),
+            });
+            subtaskTitle.value = '';
+            renderDetail();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

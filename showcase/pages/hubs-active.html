@@ -3,160 +3,312 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Hubs activos</title>
+    <title>Terminales activos - ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-data-table.js"></script>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      // ── Color del recurso según ocupación (verde <70, warning 70-84, danger >=85) ──
-      const resColor = (pct) =>
-        pct >= 85 ? 'var(--ion-color-danger)' : pct >= 70 ? 'var(--ion-color-warning)' : 'var(--ion-color-success)';
+      /* Datos representativos del contrato Hub actual. No son métricas de producción: sirven para
+       * mostrar todos los estados que _build_hubs_datatable_config admite en la lista activa. */
+      const HUBS = [
+        {
+          id: 'hub-active', kind: 'cloud', name: 'Terminal principal', slug: 'terminal-principal',
+          plan: 'Standard', status: 'active', statusLabel: 'Activo', statusTone: 'success',
+          nextInvoice: '31 jul 2026', cpu: [20, 28, 24, 35, 31, 38, 34],
+          ram: [42, 46, 45, 49, 52, 50, 54], db: [6, 7, 7, 8, 8, 9, 9],
+        },
+        {
+          id: 'hub-deploying', kind: 'cloud', name: 'Nueva tienda', slug: 'nueva-tienda',
+          plan: 'Starter', status: 'deploying', statusLabel: 'Desplegando', statusTone: 'primary',
+          nextInvoice: '31 jul 2026', cpu: [], ram: [], db: [],
+        },
+        {
+          id: 'hub-stopped', kind: 'cloud', name: 'Terminal detenido', slug: 'terminal-detenido',
+          plan: 'Pro', status: 'stopped', statusLabel: 'Detenido', statusTone: 'medium',
+          nextInvoice: '31 jul 2026', cpu: [0, 0, 0], ram: [0, 0, 0], db: [4, 4, 4],
+        },
+        {
+          id: 'hub-payment', kind: 'cloud', name: 'Pendiente de pago', slug: 'pendiente-pago',
+          plan: 'Starter', status: 'pending_payment', statusLabel: 'Pago pendiente', statusTone: 'warning',
+          nextInvoice: '—', cpu: [], ram: [], db: [],
+        },
+        {
+          id: 'hub-local', kind: 'local', name: 'Caja local', slug: 'caja-local',
+          plan: '—', status: 'local', statusLabel: 'Local', statusTone: 'primary',
+          nextInvoice: '—', cpu: [], ram: [], db: [],
+        },
+        {
+          id: 'hub-error', kind: 'cloud', name: 'Terminal con incidencia', slug: 'terminal-incidencia',
+          plan: 'Enterprise', status: 'error', statusLabel: 'Error', statusTone: 'danger',
+          nextInvoice: '31 jul 2026', cpu: [], ram: [], db: [],
+        },
+      ];
 
-      // Celda de un recurso: sparkline coloreado + valor actual en %.
-      const spark = (values, pct) => h`<span style="display:inline-flex;align-items:center;gap:.5rem">
-          <ok-sparkline .values=${values} filled width="80" height="26" color=${resColor(pct)}></ok-sparkline>
-          <span style="font-weight:700;font-variant-numeric:tabular-nums;color:${resColor(pct)}">${pct}%</span>
+      const OPEN_ACTION = { id: 'open', label: 'Abrir Terminal', icon: 'lucide:external-link' };
+      const LOCAL_ACTIONS = [
+        { id: 'migrate', label: 'Migrar a Cloud', icon: 'lucide:upload-cloud' },
+      ];
+      const PENDING_ACTIONS = [
+        { id: 'resume-payment', label: 'Reanudar pago', icon: 'lucide:credit-card' },
+        { id: 'edit', label: 'Editar', icon: 'lucide:pencil' },
+        { id: 'users', label: 'Usuarios', icon: 'lucide:users' },
+        { id: 'modules', label: 'Módulos', icon: 'lucide:box' },
+        { id: 'qr', label: 'Código QR', icon: 'lucide:qr-code' },
+        { id: 'delete', label: 'Eliminar', icon: 'lucide:trash-2', danger: true },
+      ];
+      const CLOUD_ACTIONS = [
+        { id: 'edit', label: 'Editar', icon: 'lucide:pencil' },
+        { id: 'update', label: 'Actualizar Hub', icon: 'lucide:download-cloud' },
+        { id: 'restart', label: 'Reiniciar', icon: 'lucide:rotate-ccw' },
+        { id: 'shutdown', label: 'Apagar', icon: 'lucide:power' },
+        { id: 'upgrade-plan', label: 'Mejorar plan', icon: 'lucide:trending-up' },
+        { id: 'users', label: 'Usuarios', icon: 'lucide:users' },
+        { id: 'modules', label: 'Módulos', icon: 'lucide:box' },
+        { id: 'qr', label: 'Código QR', icon: 'lucide:qr-code' },
+        { id: 'delete', label: 'Eliminar', icon: 'lucide:trash-2', danger: true },
+      ];
+      const BULK_ACTIONS = [
+        { id: 'bulk-restart', label: 'Reiniciar seleccionados', icon: 'refresh-outline' },
+        { id: 'bulk-update', label: 'Actualizar seleccionados', icon: 'cloud-download-outline' },
+        { id: 'bulk-shutdown', label: 'Apagar seleccionados', icon: 'power-outline', color: 'danger' },
+      ];
+
+      function rowActionsFor(row) {
+        if (row.kind === 'local') {
+          return [{ id: 'manage', label: 'Gestionar', icon: 'lucide:more-horizontal', children: LOCAL_ACTIONS }];
+        }
+        if (row.status === 'pending_payment') {
+          return [{ id: 'manage', label: 'Gestionar', icon: 'lucide:more-horizontal', children: PENDING_ACTIONS }];
+        }
+        return [
+          OPEN_ACTION,
+          { id: 'manage', label: 'Gestionar', icon: 'lucide:more-horizontal', children: CLOUD_ACTIONS },
+        ];
+      }
+
+      function showToast(message) {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 1600;
+        toast.position = 'bottom';
+        document.body.appendChild(toast);
+        toast.present();
+        toast.addEventListener('didDismiss', () => toast.remove());
+      }
+
+      function runAction(action, row) {
+        if (action.id === 'migrate') {
+          const alert = document.createElement('ion-alert');
+          alert.header = action.label;
+          alert.message = 'Esta función está en desarrollo.';
+          alert.buttons = ['Cerrar'];
+          document.body.appendChild(alert);
+          alert.present();
+          alert.addEventListener('didDismiss', () => alert.remove());
+          return;
+        }
+        showToast(`${action.label}: ${row.name}`);
+      }
+
+      function openActions(parent, row) {
+        const sheet = document.createElement('ion-action-sheet');
+        sheet.header = parent.label;
+        sheet.buttons = [
+          ...parent.children.map((action) => ({
+            text: action.label,
+            role: action.danger ? 'destructive' : undefined,
+            handler: () => runAction(action, row),
+          })),
+          { text: 'Cerrar', role: 'cancel' },
+        ];
+        document.body.appendChild(sheet);
+        sheet.present();
+        sheet.addEventListener('didDismiss', () => sheet.remove());
+      }
+
+      function actionsCell(row) {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:inline-flex;align-items:center;justify-content:flex-end;gap:2px';
+        for (const action of rowActionsFor(row)) {
+          const button = document.createElement('ion-button');
+          button.setAttribute('size', 'small');
+          button.setAttribute('fill', 'clear');
+          button.setAttribute('aria-label', action.label);
+          button.title = action.label;
+          button.style.cssText = 'margin:0;min-width:44px;min-height:44px';
+          const icon = document.createElement('iconify-icon');
+          icon.setAttribute('icon', action.icon);
+          icon.setAttribute('width', '18');
+          icon.setAttribute('height', '18');
+          button.appendChild(icon);
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (action.children) openActions(action, row);
+            else runAction(action, row);
+          });
+          wrap.appendChild(button);
+        }
+        return wrap;
+      }
+
+      const terminalCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.6rem;min-width:0">
+          <span style="display:grid;place-items:center;flex:none;width:2rem;height:2rem;border-radius:999px;font-size:12px;font-weight:700;color:var(--ion-color-${row.statusTone});background:rgba(var(--ion-color-${row.statusTone}-rgb),.14)">
+            ${row.name.charAt(0)}
+          </span>
+          <span style="display:flex;flex-direction:column;min-width:0">
+            <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}</span>
+            <span style="font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.slug}</span>
+          </span>
         </span>`;
 
-      // Badge de estado con tinte (las clases .ion-color-* NO penetran el shadow del data-table;
-      // se colorea con CSS vars inline, que sí heredan).
-      const ESTADO = { 'Running': 'success', 'Actualizando': 'primary', 'Renueva en 9 d': 'warning', 'Staging': 'medium', 'Test': 'medium' };
-      const estadoBadge = (s) => {
-        const c = ESTADO[s] ?? 'medium';
-        return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${s}</ion-badge>`;
-      };
-      const stateDot = (s) => {
-        const c = ESTADO[s] ?? 'medium';
-        return h`<span style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--ion-color-${c})"></span>`;
-      };
+      const statusCell = (row) => h`
+        <ion-badge style="--background:rgba(var(--ion-color-${row.statusTone}-rgb),.14);--color:var(--ion-color-${row.statusTone});--padding-start:10px;--padding-end:10px;--padding-top:4px;--padding-bottom:4px">
+          ${row.statusLabel}
+        </ion-badge>`;
 
-      definePage({
-        bare: true,
-        body: '<ok-page-header heading="Hubs activos" description="7 hubs en producción · 24 terminales · región EU-West-1"></ok-page-header><ok-data-table id="hubs-dt" style="display:block"></ok-data-table>',
+      function sparklineCell(row, key) {
+        const values = row[key];
+        if (!values?.length) return '—';
+        const width = 88;
+        const height = 28;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const span = Math.max(max - min, 1);
+        const points = values.map((value, index) => {
+          const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
+          const y = height - 3 - ((value - min) / span) * (height - 6);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        return h`
+          <svg viewBox="0 0 ${width} ${height}" width="88" height="28" aria-label="Serie de ${key}">
+            <polyline points=${points} fill="none" stroke="var(--ion-color-primary)" stroke-width="1.75" vector-effect="non-scaling-stroke"></polyline>
+          </svg>`;
+      }
+
+      const footer = `
+        <footer id="section-tabbar">
+          <ion-segment value="active" aria-label="Navegación de Hubs">
+            <ion-segment-button value="active">
+              <iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Activo</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="inactive">
+              <iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Inactivo</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="create">
+              <iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon>
+              <ion-label>Crear</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="domain">
+              <iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon>
+              <ion-label>Dominio</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Terminales activos',
+        body: `
+          <div class="dash-fill">
+            <ok-data-table id="hubs-active" fill>
+              <div slot="toolbar" class="okdt-filters">
+                <ion-select id="hubs-status-filter" class="okdt-filter" interface="popover"
+                            aria-label="Estado" placeholder="Todos los estados">
+                  <ion-select-option value="">Todos los estados</ion-select-option>
+                  <ion-select-option value="active">Activo</ion-select-option>
+                  <ion-select-option value="deploying">Desplegando</ion-select-option>
+                  <ion-select-option value="stopped">Detenido</ion-select-option>
+                  <ion-select-option value="error">Error</ion-select-option>
+                  <ion-select-option value="pending_payment">Pago pendiente</ion-select-option>
+                </ion-select>
+                <ion-select id="hubs-plan-filter" class="okdt-filter" interface="popover"
+                            aria-label="Plan" placeholder="Todos los planes">
+                  <ion-select-option value="">Todos los planes</ion-select-option>
+                  <ion-select-option value="Starter">Starter</ion-select-option>
+                  <ion-select-option value="Standard">Standard</ion-select-option>
+                  <ion-select-option value="Pro">Pro</ion-select-option>
+                  <ion-select-option value="Enterprise">Enterprise</ion-select-option>
+                  <ion-select-option value="Max">Max</ion-select-option>
+                </ion-select>
+              </div>
+            </ok-data-table>
+          </div>`,
+        footer,
         setup(doc) {
-          const dt = doc.getElementById('hubs-dt');
+          const table = doc.getElementById('hubs-active');
+          const statusFilter = doc.getElementById('hubs-status-filter');
+          const planFilter = doc.getElementById('hubs-plan-filter');
+          if (!table) return;
 
-          dt.title = 'Hubs';
-          dt.rowKey = (r) => r.name;
-          dt.views = ['cards', 'table'];
-          dt.viewMode = 'cards';
-          dt.searchable = true;
-          dt.searchKeys = ['name', 'company'];
-          dt.csv = true;
-          dt.primaryAction = { label: 'Crear hub', icon: 'add' };
-
-          // Columnas → vista TABLA. RAM/CPU/DB = consumo de recursos por hub.
-          dt.columns = [
-            { key: 'name', header: 'Hub', width: 'minmax(12rem,1.3fr)', render: (r) => h`<span style="display:inline-flex;align-items:center;gap:.45rem">
-                ${stateDot(r.status)}<code style="font-weight:600">${r.name}</code></span>` },
-            { key: 'company', header: 'Empresa', width: 'minmax(11rem,1fr)' },
-            { key: 'terms', header: 'Terminales', width: '7rem', align: 'right' },
-            { key: 'orders', header: 'Pedidos', width: '7rem', align: 'right' },
-            { key: 'uptime', header: 'Uptime', width: '7rem', align: 'right' },
-            { key: 'ram', header: 'RAM', width: '9rem', sortable: false, render: (r) => spark(r.ram, r.ramPct) },
-            { key: 'cpu', header: 'CPU', width: '9rem', sortable: false, render: (r) => spark(r.cpu, r.cpuPct) },
-            { key: 'db', header: 'DB', width: '9rem', sortable: false, render: (r) => spark(r.db, r.dbPct) },
-            { key: 'status', header: 'Estado', width: '9rem', render: (r) => estadoBadge(r.status) },
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'name', header: 'Terminal', width: 'minmax(13rem,1.35fr)', sortable: true, render: terminalCell },
+            { key: 'plan', header: 'Plan', width: '8rem' },
+            { key: 'status', header: 'Estado', width: '9rem', render: statusCell },
+            { key: 'nextInvoice', header: 'Próxima factura', width: '10rem', sortable: true },
+            { key: 'cpu', header: 'CPU', width: '7rem', render: (row) => sparklineCell(row, 'cpu') },
+            { key: 'ram', header: 'RAM', width: '7rem', render: (row) => sparklineCell(row, 'ram') },
+            { key: 'db', header: 'Conexiones (org)', width: '9rem', render: (row) => sparklineCell(row, 'db') },
+            { key: '_actions', header: '', width: 'max-content', align: 'right', render: actionsCell },
           ];
+          table.rows = HUBS;
+          table.searchKeys = ['name', 'slug'];
+          table.searchPlaceholder = 'Buscar terminales…';
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50, 100];
+          table.views = true;
+          table.selectable = true;
+          table.primaryAction = { label: 'Crear Terminal', icon: 'add' };
+          table.menuActions = BULK_ACTIONS;
+          table.cardTitle = (row) => row.name;
+          table.cardIcon = () => 'git-network-outline';
+          table.labels = {
+            empty: 'No hay terminales activos',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            viewList: 'Vista lista',
+            viewCards: 'Vista tarjetas',
+            selected: '{n} seleccionados',
+          };
 
-          // Vista TARJETAS (por defecto).
-          dt.cardIcon = () => 'cube-outline';
-          dt.cardTitle = (r) => h`<span style="display:inline-flex;align-items:center;gap:.4rem">
-              ${stateDot(r.status)}<code>${r.name}</code></span>`;
-          const metric = (label, value, color) => h`<div style="min-width:0">
-              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--ion-color-medium)">${label}</div>
-              <div style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:${color || 'inherit'}">${value}</div>
-            </div>`;
-          const resRow = (label, values, pct) => h`<div style="display:flex;align-items:center;gap:.6rem">
-              <span style="width:2.4rem;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ion-color-medium)">${label}</span>
-              <ok-sparkline .values=${values} filled height="24" color=${resColor(pct)} style="flex:1 1 auto"></ok-sparkline>
-              <span style="width:3rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:${resColor(pct)}">${pct}%</span>
-            </div>`;
-          dt.renderCard = (r) => h`
-            <div style="color:var(--ion-color-medium);font-size:12px;margin-bottom:.6rem">${r.company}</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.8rem">
-              ${metric('Terminales', r.terms)}
-              ${metric('Pedidos', r.orders)}
-              ${metric('Uptime', r.uptime)}
-              ${metric('Activ.', r.activ, 'var(--ion-color-success)')}
-            </div>
-            <div style="display:flex;flex-direction:column;gap:.4rem;padding-top:.6rem;border-top:1px solid color-mix(in srgb, var(--ion-text-color) 10%, transparent)">
-              ${resRow('RAM', r.ram, r.ramPct)}
-              ${resRow('CPU', r.cpu, r.cpuPct)}
-              ${resRow('DB', r.db, r.dbPct)}
-            </div>
-            <div style="margin-top:.6rem">${estadoBadge(r.status)}</div>`;
+          const applyFilters = () => {
+            table.rows = HUBS.filter((row) => {
+              const status = statusFilter?.value;
+              const plan = planFilter?.value;
+              const statusMatch = !status || row.status === status;
+              const planMatch = !plan || row.plan === plan;
+              return statusMatch && planMatch;
+            });
+          };
+          statusFilter?.addEventListener('ionChange', applyFilters);
+          planFilter?.addEventListener('ionChange', applyFilters);
 
-          // Acción rápida (Abrir) + menú ⋮ por fila.
-          dt.actions = [
-            { id: 'open', icon: 'open-outline', label: 'Abrir', color: 'primary' },
-            { id: 'menu', icon: 'ellipsis-horizontal', label: 'Más acciones' },
-          ];
-
-          // 7 hubs. ram/cpu/db = series (~10 pts) + ramPct/cpuPct/dbPct = valor actual.
-          // Incluye casos >=85% (acme RAM 91, panaderia DB 93, ferreteria DB 88) → "necesita ampliar".
-          dt.rows = [
-            { name: 'acme-prod', company: 'Acme Industries S.L.', status: 'Running', terms: 4, orders: 142, uptime: '99,91%', activ: '2 min',
-              ram: [62, 68, 71, 74, 79, 82, 85, 88, 90, 91], ramPct: 91,
-              cpu: [30, 34, 28, 41, 38, 45, 40, 47, 44, 49], cpuPct: 49,
-              db:  [40, 44, 46, 50, 52, 55, 58, 60, 62, 64], dbPct: 64 },
-            { name: 'bodegas-casadejus', company: 'Bodegas Casadejús S.A.', status: 'Actualizando', terms: 6, orders: 98, uptime: '99,76%', activ: '8 min',
-              ram: [48, 52, 55, 58, 60, 63, 65, 68, 70, 72], ramPct: 72,
-              cpu: [55, 58, 62, 60, 66, 70, 68, 73, 71, 76], cpuPct: 76,
-              db:  [30, 34, 38, 41, 44, 47, 50, 52, 55, 58], dbPct: 58 },
-            { name: 'mariola-tienda-1', company: 'Distribuciones Mariola', status: 'Renueva en 9 d', terms: 2, orders: 68, uptime: '99,98%', activ: '1 min',
-              ram: [40, 42, 44, 43, 46, 48, 50, 49, 52, 54], ramPct: 54,
-              cpu: [22, 24, 20, 27, 25, 30, 28, 32, 30, 35], cpuPct: 35,
-              db:  [33, 35, 38, 40, 42, 45, 47, 49, 51, 53], dbPct: 53 },
-            { name: 'vinos-roca-staging', company: 'Vinos Roca · Staging', status: 'Staging', terms: 1, orders: 12, uptime: '99,40%', activ: '2 h',
-              ram: [20, 22, 25, 23, 28, 26, 30, 28, 32, 31], ramPct: 31,
-              cpu: [15, 18, 14, 20, 17, 22, 19, 24, 21, 26], cpuPct: 26,
-              db:  [18, 20, 22, 21, 24, 23, 26, 25, 28, 27], dbPct: 27 },
-            { name: 'ferreteria-puig', company: 'Ferretería Puig & Hijos', status: 'Running', terms: 3, orders: 211, uptime: '99,99%', activ: 'ahora',
-              ram: [55, 58, 60, 62, 64, 66, 68, 70, 71, 73], ramPct: 73,
-              cpu: [40, 44, 42, 48, 46, 52, 50, 55, 53, 58], cpuPct: 58,
-              db:  [60, 64, 68, 72, 76, 79, 82, 85, 87, 88], dbPct: 88 },
-            { name: 'panaderia-cabrera', company: 'Panadería Cabrera S.L.', status: 'Running', terms: 5, orders: 389, uptime: '99,87%', activ: '3 min',
-              ram: [58, 62, 64, 67, 70, 72, 74, 76, 78, 80], ramPct: 80,
-              cpu: [50, 54, 52, 58, 60, 63, 66, 64, 68, 71], cpuPct: 71,
-              db:  [66, 70, 74, 78, 82, 85, 88, 90, 92, 93], dbPct: 93 },
-            { name: 'cafeteria-rambla-test', company: 'Cafetería La Rambla · Test', status: 'Test', terms: 3, orders: 5, uptime: '99,71%', activ: '42 min',
-              ram: [25, 28, 26, 31, 29, 33, 30, 35, 32, 36], ramPct: 36,
-              cpu: [18, 20, 16, 23, 19, 25, 21, 27, 23, 28], cpuPct: 28,
-              db:  [12, 14, 16, 15, 18, 17, 20, 19, 22, 21], dbPct: 21 },
-          ];
-
-          // Menú ⋮ → action sheet con la funcionalidad actual.
-          dt.addEventListener('rowAction', (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId !== 'menu') return;
-            const s = document.createElement('ion-action-sheet');
-            s.header = row.name;
-            s.buttons = [
-              { text: 'Reiniciar', icon: 'refresh-outline' },
-              { text: 'Actualizar', icon: 'cloud-download-outline' },
-              { text: 'Ver QR', icon: 'qr-code-outline' },
-              { text: 'Eliminar', role: 'destructive', icon: 'trash-outline' },
-              { text: 'Cancelar', role: 'cancel' },
-            ];
-            document.body.appendChild(s);
-            s.present();
-            s.addEventListener('didDismiss', () => s.remove());
+          let selected = [];
+          table.addEventListener('selectionChange', (event) => {
+            selected = event.detail?.keys || [];
           });
+          table.addEventListener('menuAction', (event) => {
+            const action = BULK_ACTIONS.find((item) => item.id === event.detail?.actionId);
+            if (!action) return;
+            showToast(selected.length ? `${action.label}: ${selected.length}` : 'Selecciona al menos un terminal.');
+          });
+          table.addEventListener('primaryAction', () => showToast('Abrir creación de Terminal'));
         },
       });
     </script>

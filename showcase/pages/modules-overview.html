@@ -3,342 +3,101 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Developer Hub</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Resumen developer · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-
-      /* KPI grid (4 columnas → 2 en móvil) */
-      .ui-kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
-      }
-      @media (max-width: 900px) {
-        .ui-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      }
-      @media (max-width: 480px) {
-        .ui-kpi-grid { grid-template-columns: 1fr 1fr; }
-      }
-
-      /* Dos gráficos en paralelo (2 cols → 1 en móvil) */
-      .ui-charts-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 20px;
-      }
-      @media (max-width: 768px) {
-        .ui-charts-grid { grid-template-columns: 1fr; }
-      }
-
-      /* Cabecera interior de tarjeta de gráfico */
-      .ui-chart-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        gap: 12px;
-      }
-      .ui-chart-title {
-        margin: 0;
-        font-size: .95rem;
-        font-weight: 700;
-      }
-      .ui-chart-sub {
-        margin: 2px 0 0;
-        font-size: .8rem;
-        color: var(--ion-color-medium);
-      }
-      .ui-chart-big {
-        font-size: 1.6rem;
-        font-weight: 700;
-        text-align: right;
-        font-variant-numeric: tabular-nums;
-        line-height: 1;
-      }
-      .ui-chart-delta {
-        font-size: .78rem;
-        text-align: right;
-        color: var(--ion-color-success);
-        font-weight: 600;
-        margin-top: 2px;
-      }
-
-      /* Dos paneles en paralelo abajo (actividad + sidebar) */
-      .ui-bottom-grid {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 16px;
-        align-items: start;
-      }
-      @media (max-width: 900px) {
-        .ui-bottom-grid { grid-template-columns: 1fr; }
-      }
-
-      /* Panel de actividad reciente */
-      .ui-activity-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-      }
-      .ui-activity-title {
-        font-size: .95rem;
-        font-weight: 700;
-        margin: 0;
-      }
-
-      /* Stats Stripe (3 en fila) */
-      .ui-stripe-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 4px;
-      }
-
-      /* Footer de tarjeta con estado y botón */
-      .ui-card-foot {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid var(--ion-border-color);
-        font-size: .75rem;
-        color: var(--ion-color-medium);
-      }
-
-      /* Acciones rápidas: pila de botones */
-      .ui-quick-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      /* Sidebar: pila de tarjetas */
-      .ui-sidebar-stack {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      /* ok-kpi override: quitar el padding extra si ion-card lo mete */
-      .ui-kpi-card ion-card-content {
-        padding: 12px 16px;
-      }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'overview',
+        title: 'Developer Dashboard',
         body: `
-          <ok-page-header
-            heading="Developer Hub"
-            description="12 módulos publicados · 4 colaboradores · €1 480 este mes">
-            <div slot="actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <ion-button fill="outline">
-                <ion-icon slot="start" name="document-text-outline"></ion-icon>
-                Documentación
+          <div class="developer-page developer-section-stack">
+            <ok-inline-feedback tone="info" heading="Hazte vendedor">
+              <p>Publica y vende tus módulos en el marketplace de ERPlora.</p>
+              <ion-button size="small">Empezar</ion-button>
+            </ok-inline-feedback>
+
+            <ok-inline-feedback tone="warning" heading="Conecta Stripe para recibir pagos">
+              <p>Configura tu cuenta bancaria para retirar tus ingresos.</p>
+              <ion-button size="small">
+                <iconify-icon slot="start" icon="simple-icons:stripe" width="14" height="14"></iconify-icon>
+                Conectar
               </ion-button>
-              <ion-button>
-                <ion-icon slot="start" name="add-outline"></ion-icon>
-                Subir nuevo módulo
-              </ion-button>
-            </div>
-          </ok-page-header>
+            </ok-inline-feedback>
 
-          <!-- Tabs de sub-sección (Resumen / Mis módulos / Repos) -->
-          <ion-segment id="sub-seg" value="overview" style="margin-bottom:20px">
-            <ion-segment-button value="overview"><ion-label>Resumen</ion-label></ion-segment-button>
-            <ion-segment-button value="my"><ion-label>Mis módulos</ion-label></ion-segment-button>
-            <ion-segment-button value="repos"><ion-label>Repos</ion-label></ion-segment-button>
-          </ion-segment>
+            <section class="developer-kpis" style="--developer-kpi-columns:4" aria-label="Resumen del vendedor">
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:wallet" width="12" height="12"></iconify-icon>Ingresos totales</div>
+                <div class="developer-kpi-value">4.682,00 €</div>
+                <div class="developer-kpi-sub">Neto, después de comisión</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:clock" width="12" height="12"></iconify-icon>Saldo pendiente</div>
+                <div class="developer-kpi-value">386,40 €</div>
+                <div class="developer-kpi-sub">Disponible en el próximo pago</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:download" width="12" height="12"></iconify-icon>Descargas</div>
+                <div class="developer-kpi-value">2.037</div>
+                <div class="developer-kpi-sub">Todos los módulos</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:box" width="12" height="12"></iconify-icon>Mis módulos</div>
+                <div class="developer-kpi-value">5</div>
+                <div class="developer-kpi-sub">3 publicados</div>
+              </div>
+            </section>
 
-          <!-- Banner informativo -->
-          <ok-inline-feedback
-            class="pg-mb-4"
-            tone="info"
-            heading="Tienes 3 módulos pendientes de actualización"
-            dismissible>
-            Hay nuevas guidelines de la marketplace · revisa los manifiestos antes del 31 de mayo de 2026.
-            <div slot="actions">
-              <ion-button fill="clear" size="small">Ver guidelines</ion-button>
-              <ion-button fill="clear" size="small" color="primary">Ver todos</ion-button>
-            </div>
-          </ok-inline-feedback>
-
-          <!-- KPIs (4 en fila) -->
-          <div class="ui-kpi-grid">
-            <ok-kpi id="kpi-modulos" label="Módulos publicados" value="12" delta="10 activos · 1 borrador · 1 pausado" trend="flat" icon="cube-outline"></ok-kpi>
-            <ok-kpi id="kpi-descargas" label="Descargas mes" value="3 240" delta="▲ +18% vs abril" trend="up" icon="cloud-download-outline"></ok-kpi>
-            <ok-kpi id="kpi-ingresos" label="Ingresos mes" value="€1 480" delta="▲ +€220 vs abril" trend="up" icon="cash-outline"></ok-kpi>
-            <ok-kpi id="kpi-rating" label="Rating medio" value="4.7" delta="412 reseñas totales" trend="flat" icon="star-outline"></ok-kpi>
-          </div>
-
-          <!-- Gráficos: descargas (línea/área) + top 5 módulos (barras) -->
-          <div class="ui-charts-grid">
-
-            <ion-card>
-              <ion-card-content>
-                <div class="ui-chart-head">
-                  <div>
-                    <h3 id="chart-title" class="ui-chart-title">Descargas últimos 30 días</h3>
-                    <p id="chart-sub" class="ui-chart-sub">Total mes · 3 240</p>
-                  </div>
-                  <div>
-                    <div id="chart-big" class="ui-chart-big">3 240</div>
-                    <div id="chart-delta" class="ui-chart-delta">▲ +18%</div>
-                  </div>
-                </div>
-                <ok-chart id="downloads-chart" type="area" height="180" endpoint></ok-chart>
-                <div style="margin-top:8px;font-size:.72rem;color:var(--ion-color-medium);display:flex;align-items:center;gap:6px">
-                  <span style="width:8px;height:8px;border-radius:2px;background:var(--ion-color-primary);display:inline-block"></span>
-                  Descargas diarias
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <ion-card>
-              <ion-card-content>
-                <div class="ui-chart-head">
-                  <div>
-                    <h3 class="ui-chart-title">Top 5 módulos por descargas</h3>
-                    <p class="ui-chart-sub">Mayo 2026</p>
-                  </div>
-                </div>
-                <ok-bar-list id="top-modules"></ok-bar-list>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <!-- Fila inferior: actividad reciente + sidebar (Stripe + acciones rápidas) -->
-          <div class="ui-bottom-grid">
-
-            <!-- Panel de actividad reciente -->
-            <ion-card>
-              <ion-card-content>
-                <div class="ui-activity-head">
-                  <h3 class="ui-activity-title">Actividad reciente</h3>
-                  <ion-button fill="clear" size="small">Ver todo</ion-button>
-                </div>
-
-                <!-- Línea de tiempo de actividad -->
-                <ok-timeline id="activity-timeline"></ok-timeline>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Sidebar -->
-            <div class="ui-sidebar-stack">
-
-              <!-- Tarjeta Stripe Connect -->
+            <div class="developer-grid">
               <ion-card>
-                <ion-card-header>
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                    <div>
-                      <ion-card-title>Stripe Connect</ion-card-title>
-                      <div style="font-size:.8rem;color:var(--ion-color-medium);margin-top:2px">acct_1QJ8 ··· connected</div>
-                    </div>
-                    <ok-status-pill tone="success" dot label="Conectado"></ok-status-pill>
-                  </div>
-                </ion-card-header>
                 <ion-card-content>
-                  <div class="ui-stripe-stats">
-                    <ok-stat label="Saldo pendiente" value="€1 240"></ok-stat>
-                    <ok-stat label="Próximo payout" value="15 may"></ok-stat>
-                    <ok-stat label="Pagado total" value="€8 920"></ok-stat>
-                  </div>
-                  <div class="ui-card-foot">
-                    <span>Cuenta verificada · IBAN ES12 ··· 4521</span>
-                    <ion-button fill="outline" size="small" color="medium">Desconectar</ion-button>
-                  </div>
+                  <h2 class="developer-card-title">Ingresos recientes</h2>
+                  <p class="developer-card-subtitle">Últimas transacciones</p>
+                  <ion-list lines="full">
+                    <ion-item>
+                      <ion-label><strong>Inventario Avanzado</strong><p>16 jul 2026</p></ion-label>
+                      <ion-note slot="end" color="success"><strong>41,65 €</strong><br /><ion-badge color="success">Pagado</ion-badge></ion-note>
+                    </ion-item>
+                    <ion-item>
+                      <ion-label><strong>Reservas Online</strong><p>14 jul 2026</p></ion-label>
+                      <ion-note slot="end" color="success"><strong>24,65 €</strong><br /><ion-badge color="warning">Pendiente</ion-badge></ion-note>
+                    </ion-item>
+                  </ion-list>
+                  <ion-button fill="clear" size="small">Ver todos<iconify-icon slot="end" icon="lucide:arrow-right" width="13" height="13"></iconify-icon></ion-button>
                 </ion-card-content>
               </ion-card>
 
-              <!-- Tarjeta acciones rápidas -->
               <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Acciones rápidas</ion-card-title>
-                </ion-card-header>
                 <ion-card-content>
-                  <div class="ui-quick-actions">
-                    <ion-button fill="outline" expand="block">
-                      <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-                      Subir módulo
-                    </ion-button>
-                    <ion-button fill="outline" expand="block">
-                      <ion-icon slot="start" name="logo-github"></ion-icon>
-                      Conectar GitHub
-                    </ion-button>
-                    <ion-button fill="outline" expand="block">
-                      <ion-icon slot="start" name="document-text-outline"></ion-icon>
-                      Ver guidelines
-                    </ion-button>
-                    <ion-button fill="outline" expand="block">
-                      <ion-icon slot="start" name="chatbubble-outline"></ion-icon>
-                      Soporte developers
-                    </ion-button>
-                  </div>
+                  <h2 class="developer-card-title">Pagos recientes</h2>
+                  <p class="developer-card-subtitle">Transferencias bancarias directas</p>
+                  <ion-list lines="full">
+                    <ion-item button detail="true">
+                      <ion-label><strong>612,30 €</strong><p>05 jul 2026, 09:40</p></ion-label>
+                      <ion-badge slot="end" color="success">Pagado</ion-badge>
+                    </ion-item>
+                    <ion-item button detail="true">
+                      <ion-label><strong>438,70 €</strong><p>05 jun 2026, 10:15</p></ion-label>
+                      <ion-badge slot="end" color="success">Pagado</ion-badge>
+                    </ion-item>
+                  </ion-list>
+                  <ion-button fill="clear" size="small">Ver todos<iconify-icon slot="end" icon="lucide:arrow-right" width="13" height="13"></iconify-icon></ion-button>
                 </ion-card-content>
               </ion-card>
-
             </div>
-          </div>
-        `,
-        setup(doc) {
-          // ─── Gráfico de descargas (ok-chart) — datos últimos 30 días ────────
-          const chart = doc.getElementById('downloads-chart');
-          if (chart) {
-            chart.series = [{ name: 'Descargas diarias', data: [80, 95, 88, 105, 98, 112, 120, 108, 130, 118, 125, 140, 128, 145, 138, 155, 148, 162, 155, 170, 165, 180, 175, 190, 185, 200, 195, 210, 205, 220] }];
-          }
-
-          // ─── Top 5 módulos (ok-bar-list) ──────────────────────────────────────
-          const barList = doc.getElementById('top-modules');
-          if (barList) {
-            barList.items = [
-              { label: 'POS Caja Registradora Pro', value: 892, color: 'brand' },
-              { label: 'Contabilidad Plus PGC07', value: 718, color: 'brand' },
-              { label: 'Conciliación bancaria SEPA', value: 562, color: 'leaf' },
-              { label: 'Inventario multitienda', value: 448, color: 'info' },
-              { label: 'RRHH Nóminas España', value: 312, color: 'warn' },
-            ];
-          }
-
-          // ─── Actividad reciente (ok-timeline) ────────────────────────────────
-          const timeline = doc.getElementById('activity-timeline');
-          if (timeline) {
-            timeline.items = [
-              { id: 'a1', title: 'Venta · POS Caja Registradora Pro',        description: 'Hub bodegas-casadejus · plan Business · +€89,00',               time: 'hace 12 min', icon: 'cash-outline',         color: 'success', status: 'done' },
-              { id: 'a2', title: 'Venta · Contabilidad Plus PGC07',           description: 'Hub acme-industries · plan Pro · +€59,00',                      time: 'hace 47 min', icon: 'cash-outline',         color: 'success', status: 'done' },
-              { id: 'a3', title: 'Reseña · Conciliación bancaria SEPA',       description: '★★★★★ · "Funciona perfecto con Sabadell y BBVA"',               time: 'hace 2 h',   icon: 'star-outline',         color: 'primary', status: 'done' },
-              { id: 'a4', title: 'Venta · Inventario multitienda',            description: 'Hub pasteleria-mariola · plan Pro · +€49,00',                   time: 'hace 3 h',   icon: 'cash-outline',         color: 'success', status: 'done' },
-              { id: 'a5', title: 'Issue · RRHH Nóminas España',               description: '"Error al exportar A3 con conceptos extra-salariales" · #142', time: 'hace 5 h',   icon: 'alert-circle-outline', color: 'danger',  status: 'done' },
-              { id: 'a6', title: 'Venta · POS Caja Registradora Pro',         description: 'Hub logistica-peninsular · plan Business · +€89,00',            time: 'hace 7 h',   icon: 'cash-outline',         color: 'success', status: 'done' },
-              { id: 'a7', title: 'Reseña · Catálogo productos avanzado',      description: '★★★★☆ · "Buen módulo, faltaría export CSV nativo"',             time: 'hace 14 h',  icon: 'star-outline',         color: 'primary', status: 'done' },
-              { id: 'a8', title: 'Venta · Pasarela Stripe Avanzada',          description: 'Hub nordenbikes-store · plan Pro · +€39,00',                   time: 'ayer · 18:32', icon: 'cash-outline',        color: 'success', status: 'done' },
-            ];
-          }
-        },
+          </div>`,
       });
     </script>
   </body>

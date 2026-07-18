@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Reservas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .reservations-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .reservations-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .reservation-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .reservation-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .reservations-error {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Reserva canónica de erp-reservations-list.test.ts.
+      const RESERVATION_FIXTURE = [
+        {
+          "id": "r1",
+          "guest_name": "Ana",
+          "guest_phone": "600",
+          "guest_email": "",
+          "date": "2026-07-13",
+          "time": "20:00:00",
+          "party_size": 2,
+          "duration_minutes": 120,
+          "table_id": null,
+          "status": "pending",
+          "notes": ""
+        }
+      ];
+
+      const STATUS_OPTIONS = [
+        { value: 'pending', label: 'Pendiente' },
+        { value: 'confirmed', label: 'Confirmada' },
+        { value: 'seated', label: 'Sentada' },
+        { value: 'completed', label: 'Completada' },
+        { value: 'cancelled', label: 'Cancelada' },
+        { value: 'no_show', label: 'No-show' },
+      ];
+
+      const STATUS_LABELS = Object.fromEntries(STATUS_OPTIONS.map(({ value, label }) => [value, label]));
+      let reservations = RESERVATION_FIXTURE.map((row) => ({ ...row }));
+
+      defineHubPage({
+        active: '/m/reservations/list',
+        title: 'Reservas',
+        body: `
+          <div class="reservations-page">
+            <p id="reservations-error" class="reservations-error" role="alert" hidden></p>
+            <ok-data-table id="reservations-table" fill>
+              <form id="reservation-create-form" slot="create" class="reservation-create-form">
+                <ion-input id="reservation-name" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-input id="reservation-phone" fill="outline" label="Teléfono" label-placement="floating" type="tel"></ion-input>
+                <ion-input id="reservation-date" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
+                <ion-input id="reservation-time" fill="outline" label="Hora" label-placement="floating" type="time" required></ion-input>
+                <ion-input id="reservation-party" fill="outline" label="Pax" label-placement="floating" type="number" min="1" value="2" required></ion-input>
+                <ion-button id="reservation-save" type="submit">Reservar</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('reservations-table');
+          const form = doc.getElementById('reservation-create-form');
+          const nameInput = doc.getElementById('reservation-name');
+          const phoneInput = doc.getElementById('reservation-phone');
+          const dateInput = doc.getElementById('reservation-date');
+          const timeInput = doc.getElementById('reservation-time');
+          const partyInput = doc.getElementById('reservation-party');
+          const error = doc.getElementById('reservations-error');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'id';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          const emitReservationEvent = (name, detail) => {
+            window.dispatchEvent(new CustomEvent(name, { detail }));
+          };
+
+          table.columns = [
+            { key: 'date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
+            { key: 'time', header: 'Hora', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.time ?? '').slice(0, 5) },
+            { key: 'guest_name', header: 'Cliente', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'guest_phone', header: 'Teléfono', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'party_size', header: 'Pax', align: 'right', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status',
+              header: 'Estado',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: STATUS_OPTIONS,
+              format: (row) => STATUS_LABELS[row.status] ?? String(row.status ?? '—'),
+            },
+          ];
+          table.actions = [
+            { id: 'confirm', label: 'Confirmar', icon: 'checkmark-outline', color: 'primary' },
+            { id: 'seat', label: 'Sentar', icon: 'restaurant-outline', color: 'success' },
+            { id: 'complete', label: 'Completar', icon: 'checkmark-done-outline', color: 'medium' },
+            { id: 'cancel', label: 'Cancelar', icon: 'close-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.guest_name ?? '—');
+          table.cardIcon = () => 'calendar-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar cliente, teléfono o fecha…';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.emptyMessage = 'Sin reservas.';
+
+          function dateRangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const date = String(value ?? '').slice(0, 10);
+            return (!range.from || date >= String(range.from).slice(0, 10))
+              && (!range.to || date <= String(range.to).slice(0, 10));
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = reservations.filter((reservation) => {
+              const searchable = `${reservation.guest_name} ${reservation.guest_phone} ${reservation.guest_email} ${reservation.date}`.toLocaleLowerCase('es');
+              if (term && !searchable.includes(term)) return false;
+
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'date' && !dateRangeMatch(reservation.date, value)) return false;
+                if (column === 'status' && reservation.status !== value) return false;
+                if (column === 'party_size' && Number(reservation.party_size) !== Number(value)) return false;
+                if (!['date', 'status', 'party_size'].includes(column)
+                  && !String(reservation[column] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = sort === 'party_size' ? Number(left[sort]) : String(left[sort] ?? '');
+              const b = sort === 'party_size' ? Number(right[sort]) : String(right[sort] ?? '');
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          const statusMap = {
+            confirm: 'confirmed',
+            seat: 'seated',
+            complete: 'completed',
+            cancel: 'cancelled',
+          };
+          const legalTransitions = {
+            pending: ['confirmed', 'seated', 'cancelled'],
+            confirmed: ['seated', 'cancelled'],
+            seated: ['completed'],
+          };
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const reservation = reservations.find((candidate) => candidate.id === row.id);
+            const nextStatus = statusMap[actionId];
+            if (!reservation || !nextStatus) return;
+            if (!legalTransitions[reservation.status]?.includes(nextStatus)) {
+              showError(`La reserva ${STATUS_LABELS[reservation.status]?.toLocaleLowerCase('es') ?? reservation.status} no admite esa transición.`);
+              return;
+            }
+
+            reservation.status = nextStatus;
+            showError();
+            emitReservationEvent('reservations.reservation.status_changed', {
+              reservation_id: reservation.id,
+              status: nextStatus,
+            });
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const guestName = String(nameInput.value ?? '').trim();
+            const guestPhone = String(phoneInput.value ?? '').trim();
+            const date = String(dateInput.value ?? '');
+            const rawTime = String(timeInput.value ?? '');
+            const partySize = Number(partyInput.value) || 2;
+            if (!guestName || !date || !rawTime) {
+              showError('Indica cliente, fecha y hora.');
+              return;
+            }
+
+            const reservation = {
+              id: `r${reservations.length + 1}`,
+              guest_name: guestName,
+              guest_phone: guestPhone,
+              guest_email: '',
+              date,
+              time: rawTime.length === 5 ? `${rawTime}:00` : rawTime,
+              party_size: partySize,
+              duration_minutes: 120,
+              table_id: null,
+              status: 'pending',
+              notes: '',
+            };
+            reservations = [...reservations, reservation];
+            emitReservationEvent('reservations.reservation.created', reservation);
+            nameInput.value = '';
+            phoneInput.value = '';
+            dateInput.value = '';
+            timeInput.value = '';
+            partyInput.value = '2';
+            page = 0;
+            showError();
+            table.close();
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

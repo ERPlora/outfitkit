@@ -3,187 +3,192 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Mis módulos</title>
+    <title>Mis módulos · ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
+    <link rel="stylesheet" href="./_saas-developer.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      /* ── Datos ─────────────────────────────────────────────────────────────── */
+      /* Datos demostrativos con el contrato actual de developer/modules/views.py. */
       const MODULES = [
-        { id: 'm1',  name: 'POS Caja Registradora Pro',  slug: '@ioanb/pos-pro',           version: 'v3.2.1',          versionWarn: false, category: 'POS',              downloads: 2184, revenue: 2480, rating: 4.8, reviews: 124, updated: 'hace 3 d',       status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm2',  name: 'Contabilidad Plus PGC07',    slug: '@ioanb/contabilidad-plus',  version: 'v2.7.0',          versionWarn: false, category: 'Contabilidad',     downloads: 1612, revenue: 1940, rating: 4.6, reviews: 86,  updated: 'hace 6 d',       status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm3',  name: 'Conciliación bancaria SEPA', slug: '@ioanb/sepa-recon',         version: 'v1.4.2 → 1.5.0', versionWarn: true,  category: 'Bancos',           downloads: 1248, revenue: 1320, rating: 4.9, reviews: 74,  updated: 'hace 1 d',       status: 'update',      tab: ['todos','activos']    },
-        { id: 'm4',  name: 'Catálogo productos avanzado',slug: '@ioanb/catalog-pro',        version: 'v2.1.4',          versionWarn: false, category: 'Inventario',       downloads: 948,  revenue: 780,  rating: 4.5, reviews: 52,  updated: 'hace 12 d',      status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm5',  name: 'TPV pantalla doble',         slug: '@ioanb/dual-screen-tpv',   version: 'v1.2.0',          versionWarn: false, category: 'POS',              downloads: 621,  revenue: 480,  rating: 4.4, reviews: 28,  updated: 'hace 18 d',      status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm6',  name: 'Inventario multitienda',     slug: '@ioanb/inventory-multi',    version: 'v3.0.1 → 3.1.0', versionWarn: true,  category: 'Inventario',       downloads: 588,  revenue: 720,  rating: 4.7, reviews: 42,  updated: 'hoy · 10:24',    status: 'update',      tab: ['todos','activos']    },
-        { id: 'm7',  name: 'RRHH Nóminas España',        slug: '@ioanb/rrhh-nominas-es',    version: 'v1.8.3',          versionWarn: false, category: 'RRHH',             downloads: 412,  revenue: 620,  rating: 4.3, reviews: 31,  updated: 'hace 4 d',       status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm8',  name: 'Marketplace integration',    slug: '@ioanb/marketplace-bridge', version: 'v0.9.4 → 1.0.0', versionWarn: true,  category: 'Integraciones',    downloads: 301,  revenue: 380,  rating: 4.2, reviews: 18,  updated: 'hace 9 d',       status: 'update',      tab: ['todos','activos']    },
-        { id: 'm9',  name: 'Pasarela Stripe Avanzada',   slug: '@ioanb/stripe-pro',         version: 'v2.4.1',          versionWarn: false, category: 'Pasarelas de pago',downloads: 288,  revenue: 220,  rating: 4.7, reviews: 22,  updated: 'ayer',           status: 'publicado',   tab: ['todos','activos']    },
-        { id: 'm10', name: 'Reportes contables IRS',     slug: '@ioanb/reports-irs',        version: 'v0.4.0-beta',     versionWarn: false, category: 'Reportes',         downloads: 12,   revenue: 0,    rating: null, reviews: 0,   updated: 'hace 30 d',      status: 'borrador',    tab: ['todos','borrador']   },
-        { id: 'm11', name: 'Backup automático Drive',    slug: '@ioanb/drive-backup',       version: 'v1.0.2',          versionWarn: false, category: 'Utilidades',       downloads: 88,   revenue: 0,    rating: 3.6, reviews: 7,   updated: 'hace 2 m',       status: 'despublicado',tab: ['todos','despublicados']},
+        { id: 'mod-1', name: 'Inventario', moduleId: 'inventory', version: '1.8.0', downloads: 842, priceDisplay: '49,00 €', type: 'one_time', published: 'true', status: 'published' },
+        { id: 'mod-2', name: 'Punto de venta', moduleId: 'pos', version: '2.3.1', downloads: 621, priceDisplay: 'Gratis', type: 'free', published: 'true', status: 'published' },
+        { id: 'mod-3', name: 'Contabilidad', moduleId: 'accounting', version: '1.4.2', downloads: 418, priceDisplay: '19,00 €/mes', type: 'subscription', published: 'true', status: 'published' },
+        { id: 'mod-4', name: 'Recursos humanos', moduleId: 'hr', version: '0.9.0', downloads: 0, priceDisplay: '29,00 €/mes', type: 'subscription', published: 'false', status: 'draft' },
+        { id: 'mod-5', name: 'Copias de seguridad', moduleId: 'backup', version: '1.0.0', downloads: 156, priceDisplay: 'Gratis', type: 'free', published: 'false', status: 'inactive' },
       ];
 
-      /* ── Helpers de render ─────────────────────────────────────────────────── */
-      const statusBadge = (s) => {
-        if (s === 'publicado')    return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-success) 15%,transparent);--color:var(--ion-color-success)">Publicado</ion-badge>`;
-        if (s === 'update')       return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning)">Update pendiente</ion-badge>`;
-        if (s === 'borrador')     return h`<ion-badge color="medium">Borrador</ion-badge>`;
-        if (s === 'despublicado') return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-danger) 15%,transparent);--color:var(--ion-color-danger)">Despublicado</ion-badge>`;
-        return h`<ion-badge color="medium">${s}</ion-badge>`;
+      const TYPES = {
+        free: 'Gratis',
+        one_time: 'Pago único',
+        subscription: 'Suscripción',
+      };
+      const STATUS = {
+        published: ['Publicado', 'success'],
+        draft: ['Borrador', 'medium'],
+        inactive: ['Inactivo', 'danger'],
       };
 
-      const versionBadge = (r) => {
-        if (r.versionWarn) return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-warning) 15%,transparent);--color:var(--ion-color-warning);font-size:.7rem">${r.version}</ion-badge>`;
-        return h`<ion-badge color="medium" style="font-size:.7rem">${r.version}</ion-badge>`;
+      const moduleCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.65rem;min-width:0">
+          <ion-avatar style="display:grid;place-items:center;flex:none;width:2.1rem;height:2.1rem;color:var(--ion-color-primary);font-size:12px;font-weight:750;background:rgba(var(--ion-color-primary-rgb),.14)">
+            <span style="display:grid;width:100%;height:100%;place-items:center">${row.name.charAt(0)}</span>
+          </ion-avatar>
+          <span style="display:grid;min-width:0">
+            <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}</strong>
+            <small style="color:var(--ion-color-medium);font-family:ui-monospace,monospace">${row.moduleId}</small>
+          </span>
+        </span>`;
+
+      const statusCell = (row) => {
+        const [label, tone] = STATUS[row.status] || [row.status, 'medium'];
+        return h`<ion-badge style="--background:rgba(var(--ion-color-${tone}-rgb),.14);--color:var(--ion-color-${tone});--padding-top:5px;--padding-bottom:5px">${label}</ion-badge>`;
       };
 
-      const ratingCell = (r) => {
-        if (!r.rating) return h`<span style="color:var(--ion-color-medium)">— sin reseñas</span>`;
-        return h`<span>★ ${r.rating} <span style="font-size:.75rem;color:var(--ion-color-medium)">(${r.reviews})</span></span>`;
-      };
-
-      const modNameCell = (r) => h`
-        <div style="font-weight:600;font-size:.9rem">${r.name}</div>
-        <div style="font-size:.75rem;color:var(--ion-color-medium);margin-top:2px">${r.slug}</div>`;
-
-      /* ── Estado de UI ──────────────────────────────────────────────────────── */
-      let currentTab = 'todos';
-
-      /* ── Filtro de filas por tab ───────────────────────────────────────────── */
-      const filterRows = () => MODULES.filter((m) => m.tab.includes(currentTab));
-
-      /* ── definePage ─────────────────────────────────────────────────────────── */
-      definePage({
-        bare: true,
-        body: `
-          <ok-page-header
-            heading="Mis módulos"
-            description="12 módulos · 8 420 descargas totales · €8 920 ingresos totales">
-            <ion-button slot="actions" fill="outline" size="small">
-              <ion-icon slot="start" name="download-outline"></ion-icon>
-              Exportar
-            </ion-button>
-            <ion-button slot="actions" size="small">
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Subir módulo
-            </ion-button>
-          </ok-page-header>
-
-          <!-- Sub-tabs: Todos / Activos / Borradores / Despublicados -->
-          <ion-segment id="mod-tabs" value="todos" style="margin-bottom:14px">
-            <ion-segment-button value="todos">
-              <ion-label>Todos <ion-badge color="primary">12</ion-badge></ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="activos">
-              <ion-label>Activos <ion-badge color="medium">10</ion-badge></ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="borrador">
-              <ion-label>Borradores <ion-badge color="medium">1</ion-badge></ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="despublicados">
-              <ion-label>Despublicados <ion-badge color="medium">1</ion-badge></ion-label>
-            </ion-segment-button>
+      const footer = `
+        <footer id="section-tabbar">
+          <ion-segment value="modules" aria-label="Secciones de desarrollador">
+            <ion-segment-button value="overview"><iconify-icon icon="lucide:layout-grid" width="20" height="20"></iconify-icon><ion-label>Resumen</ion-label></ion-segment-button>
+            <ion-segment-button value="earnings"><iconify-icon icon="lucide:wallet" width="20" height="20"></iconify-icon><ion-label>Ingresos</ion-label></ion-segment-button>
+            <ion-segment-button value="payouts"><iconify-icon icon="lucide:banknote" width="20" height="20"></iconify-icon><ion-label>Pagos</ion-label></ion-segment-button>
+            <ion-segment-button value="modules"><iconify-icon icon="lucide:box" width="20" height="20"></iconify-icon><ion-label>Mis módulos</ion-label></ion-segment-button>
+            <ion-segment-button value="blueprints"><iconify-icon icon="lucide:layers" width="20" height="20"></iconify-icon><ion-label>Blueprints</ion-label></ion-segment-button>
+            <ion-segment-button value="repositories"><iconify-icon icon="lucide:git-branch" width="20" height="20"></iconify-icon><ion-label>Repositorios</ion-label></ion-segment-button>
+            <ion-segment-button value="apidocs"><iconify-icon icon="lucide:book-open" width="20" height="20"></iconify-icon><ion-label>API Docs</ion-label></ion-segment-button>
           </ion-segment>
+        </footer>`;
 
-          <ok-data-table id="mod-dt" style="display:block"></ok-data-table>
-        `,
+      defineSaasDashboardPage({
+        active: '/dashboard/developer/',
+        title: 'Mis módulos',
+        body: `
+          <div class="developer-page">
+            <section class="developer-kpis" aria-label="Resumen de módulos">
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:box" width="12" height="12"></iconify-icon>Total de módulos</div>
+                <div class="developer-kpi-value">5</div>
+                <div class="developer-kpi-sub">Publicados + borradores</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:download" width="12" height="12"></iconify-icon>Descargas totales</div>
+                <div class="developer-kpi-value">2.037</div>
+                <div class="developer-kpi-sub">Desde el inicio</div>
+              </div>
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:wallet" width="12" height="12"></iconify-icon>Ingresos totales</div>
+                <div class="developer-kpi-value">4.682,00 €</div>
+                <div class="developer-kpi-sub">Antes de la comisión</div>
+              </div>
+            </section>
 
-        setup(doc) {
-          const dt   = doc.getElementById('mod-dt');
-          const tabs = doc.getElementById('mod-tabs');
-
-          /* ── Configuración de ok-data-table ───────────────────────────────── */
-          dt.rowKey     = (r) => r.id;
-          dt.searchable = true;
-          dt.searchKeys = ['name', 'slug', 'category'];
-          dt.selectable = true;
-          dt.views      = ['table', 'cards'];
-
-          /* ── Columnas (vista tabla) ────────────────────────────────────────── */
-          dt.columns = [
-            { key: 'name',      header: 'Nombre',       width: 'minmax(200px,2fr)', sortable: true,
-              render: (r) => modNameCell(r) },
-            { key: 'version',   header: 'Versión',      width: '9rem',
-              render: (r) => versionBadge(r) },
-            { key: 'category',  header: 'Categoría',    width: 'minmax(100px,1fr)', sortable: true },
-            { key: 'downloads', header: 'Descargas',    width: '8rem', align: 'right', sortable: true,
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${r.downloads.toLocaleString('es')}</span>` },
-            { key: 'revenue',   header: 'Ingresos',     width: '8rem', align: 'right', sortable: true,
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums">€${r.revenue.toLocaleString('es')}</span>` },
-            { key: 'rating',    header: 'Rating',       width: '9rem',
-              render: (r) => ratingCell(r) },
-            { key: 'updated',   header: 'Última act.',  width: '9rem',
-              render: (r) => h`<span style="font-size:.8rem;color:var(--ion-color-medium)">${r.updated}</span>` },
-            { key: 'status',    header: 'Estado',       width: '10rem',
-              render: (r) => statusBadge(r.status) },
-          ];
-
-          /* ── Vista tarjetas ───────────────────────────────────────────────── */
-          dt.cardIcon  = () => 'cube-outline';
-          dt.cardTitle = (r) => h`<span>${r.name}</span>`;
-          dt.renderCard = (r) => h`
-            <div style="font-size:.78rem;color:var(--ion-color-medium);margin-bottom:.5rem">${r.slug} · ${r.category}</div>
-            <div style="display:flex;gap:14px;font-size:.8rem;color:var(--ion-color-medium);margin-bottom:.5rem">
-              <span><b style="color:var(--ion-text-color)">${r.downloads.toLocaleString('es')}</b> descargas</span>
-              <span><b style="color:var(--ion-text-color)">€${r.revenue.toLocaleString('es')}</b> ingresos</span>
-              ${r.rating ? h`<span>★ ${r.rating}</span>` : h`<span>sin reseñas</span>`}
+            <div class="developer-table-wrap">
+              <div class="dash-fill">
+                <ok-data-table id="my-modules-dt" server-side fill>
+                  <div slot="toolbar" class="okdt-filters">
+                    <ion-select class="okdt-filter" data-okdt-param="module_type" interface="popover" aria-label="Tipo" placeholder="Todos los tipos">
+                      <ion-select-option value="">Todos los tipos</ion-select-option>
+                      <ion-select-option value="free">Gratis</ion-select-option>
+                      <ion-select-option value="one_time">Pago único</ion-select-option>
+                      <ion-select-option value="subscription">Suscripción</ion-select-option>
+                    </ion-select>
+                    <ion-select class="okdt-filter" data-okdt-param="is_published" interface="popover" aria-label="Estado" placeholder="Todos los estados">
+                      <ion-select-option value="">Todos los estados</ion-select-option>
+                      <ion-select-option value="true">Publicado</ion-select-option>
+                      <ion-select-option value="false">Borrador</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ok-data-table>
+              </div>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              ${statusBadge(r.status)}
-              ${versionBadge(r)}
-            </div>`;
 
-          /* ── Menú ⋮ por fila ──────────────────────────────────────────────── */
-          dt.actions = [
-            { id: 'menu', icon: 'ellipsis-vertical', label: 'Acciones' },
+            <ion-card class="developer-after-table">
+              <ion-card-content class="developer-guide">
+                <iconify-icon icon="lucide:help-circle" width="22" height="22" style="color:var(--ion-color-primary)"></iconify-icon>
+                <div>
+                  <h3>Guía para módulos</h3>
+                  <ul>
+                    <li>Los módulos se revisan antes de publicarse (24–48 horas).</li>
+                    <li>Incluye documentación clara e instrucciones de instalación.</li>
+                    <li>Los módulos de pago requieren configurar Stripe Connect.</li>
+                    <li>ERPlora aplica una comisión del 15% a los módulos de pago.</li>
+                  </ul>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </div>`,
+        footer,
+        setup(doc) {
+          const table = doc.getElementById('my-modules-dt');
+          if (!table) return;
+
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'name', header: 'Módulo', width: 'minmax(14rem,1.5fr)', sortable: true, render: moduleCell },
+            { key: 'version', header: 'Versión', width: '8rem' },
+            { key: 'downloads', header: 'Descargas', width: '9rem', align: 'right', sortable: true, format: (row) => Number(row.downloads).toLocaleString('es-ES') },
+            { key: 'priceDisplay', header: 'Precio', width: '10rem' },
+            { key: 'status', header: 'Estado', width: '9rem', render: statusCell },
           ];
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar módulos…';
+          table.actions = [
+            { id: 'stats', label: 'Estadísticas', icon: 'stats-chart-outline' },
+            { id: 'edit', label: 'Editar', icon: 'pencil-outline' },
+          ];
+          table.primaryAction = { label: 'Subir módulo', icon: 'add' };
+          table.selectable = true;
+          table.menuActions = [
+            { id: 'publish', label: 'Publicar', icon: 'cloud-upload-outline' },
+            { id: 'unpublish', label: 'Despublicar', icon: 'eye-off-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50, 100];
+          table.labels = {
+            empty: 'No hay módulos',
+            selected: '{n} seleccionados',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            showing: 'Mostrando {from}–{to} de',
+            recordSingular: 'módulo',
+            recordPlural: 'módulos',
+            actions: 'Acciones',
+          };
 
-          dt.addEventListener('rowAction', (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId !== 'menu') return;
-            const sheet = document.createElement('ion-action-sheet');
-            sheet.header = row.name;
-            const isDraft  = row.status === 'borrador';
-            const isUnpub  = row.status === 'despublicado';
-            const buttons  = [];
-            if (!isDraft && !isUnpub) buttons.push({ text: 'Editar',       icon: 'create-outline'        });
-            if (isDraft)              buttons.push({ text: 'Publicar',      icon: 'cloud-upload-outline'  });
-            if (!isUnpub && !isDraft) buttons.push({ text: 'Pausar',        icon: 'pause-circle-outline'  });
-            if (!isUnpub && !isDraft) buttons.push({ text: 'Despublicar',   icon: 'eye-off-outline', role: 'destructive' });
-            if (isUnpub)              buttons.push({ text: 'Republicar',    icon: 'cloud-upload-outline'  });
-            if (isDraft || isUnpub)   buttons.push({ text: 'Editar',        icon: 'create-outline'        });
-            if (isDraft || isUnpub)   buttons.push({ text: 'Eliminar',      icon: 'trash-outline', role: 'destructive' });
-            buttons.push({ text: 'Cancelar', role: 'cancel' });
-            sheet.buttons = buttons;
-            document.body.appendChild(sheet);
-            sheet.present();
-            sheet.addEventListener('didDismiss', () => sheet.remove());
-          });
-
-          /* ── Tabs ──────────────────────────────────────────────────────────── */
-          if (tabs) {
-            tabs.addEventListener('ionChange', (e) => {
-              currentTab = (e.detail && e.detail.value) || 'todos';
-              dt.rows = filterRows();
-            });
-          }
-
-          /* ── Carga inicial ─────────────────────────────────────────────────── */
-          dt.rows = filterRows();
+          const state = { query: '', sort: 'name', dir: 'asc' };
+          const valueOf = (name) => doc.querySelector(`[data-okdt-param="${name}"]`)?.value || '';
+          const refresh = () => {
+            const query = state.query.trim().toLocaleLowerCase('es');
+            const type = valueOf('module_type');
+            const published = valueOf('is_published');
+            let rows = MODULES.filter((row) =>
+              (!query || [row.name, row.moduleId].some((value) => value.toLocaleLowerCase('es').includes(query))) &&
+              (!type || row.type === type) && (!published || row.published === published));
+            rows = [...rows].sort((a, b) => String(a[state.sort] ?? '').localeCompare(String(b[state.sort] ?? ''), 'es') * (state.dir === 'asc' ? 1 : -1));
+            table.rows = rows;
+            table.total = rows.length;
+            table.page = 0;
+          };
+          doc.querySelectorAll('[data-okdt-param]').forEach((control) => control.addEventListener('ionChange', refresh));
+          table.addEventListener('searchChange', (event) => { state.query = String(event.detail || ''); refresh(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; refresh(); });
+          table.addEventListener('rowAction', (event) => console.info(event.detail.actionId, event.detail.row.id));
+          table.addEventListener('menuAction', (event) => console.info(event.detail.actionId));
+          table.addEventListener('primaryAction', () => console.info('/dashboard/developer/modules/upload/'));
+          refresh();
         },
       });
     </script>

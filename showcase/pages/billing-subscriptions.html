@@ -3,167 +3,165 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Suscripciones</title>
+    <title>Suscripciones · ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
   </head>
   <body>
-    <!--
-      SOBRIO como el Hub real (hub/apps/web/src/views/BillingPage.vue):
-      cabecera + tabs + ok-data-table de suscripciones + ok-data-table de cambios programados.
-      SIN chrome inventado: sin KPIs/stats, sin sub-card custom, sin ion-card wrappers.
-    -->
     <script type="module">
-      import { definePage } from './_page.js';
       import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      const SUBS = [
-        { hub: 'acme-prod',    plan: 'Business', precio: '890,00 €',   ciclo: 'Anual · 12/12', renueva: '15 may 2026', status: 'active'   },
-        { hub: 'mariola-prod', plan: 'Pro',       precio: '340,50 €',   ciclo: 'Mensual',       renueva: '02 jun 2026', status: 'active'   },
-        { hub: 'rambla-prod',  plan: 'Business',  precio: '890,00 €',   ciclo: 'Anual · 7/12',  renueva: '18 oct 2026', status: 'active'   },
-        { hub: 'norte-prod',   plan: 'Trial',     precio: '0,00 €',     ciclo: 'Día 5/14',      renueva: '22 may 2026', status: 'trialing' },
-        { hub: 'lola-prod',    plan: 'Starter',   precio: '120,00 €',   ciclo: 'Mensual',       renueva: '—',           status: 'paused'   },
+      /* Valores de muestra; el esquema procede de subscriptions_page en billing/views.py. */
+      const SUBSCRIPTIONS = [
+        { id: 'sub-1', module: 'Inventario', hub: 'Hub Central', period: 'Mensual', periodValue: 'monthly', status: 'active', price: 79.00, nextBilling: '2026-08-12' },
+        { id: 'sub-2', module: 'Punto de venta', hub: 'Hub Central', period: 'Anual', periodValue: 'yearly', status: 'active', price: 420.00, nextBilling: '2027-02-04' },
+        { id: 'sub-3', module: 'Contabilidad', hub: 'Hub Norte', period: 'Mensual', periodValue: 'monthly', status: 'past_due', price: 59.00, nextBilling: '2026-07-20' },
+        { id: 'sub-4', module: 'Recursos humanos', hub: 'Hub Norte', period: 'Anual', periodValue: 'yearly', status: 'cancelled', price: 360.00, nextBilling: '2026-09-18' },
+        { id: 'sub-5', module: 'Comercio', hub: 'Hub Central', period: 'Mensual', periodValue: 'monthly', status: 'unpaid', price: 49.00, nextBilling: '2026-07-28' },
       ];
 
-      const SCHED = [
-        { fecha: '01 dic 2026', hub: 'rambla-prod', tipo: 'Downgrade', tipoCls: 'warning', planActual: 'Business · 890 €', planFuturo: 'Pro · 340,50 €', delta: '−549,50 €', deltaCls: 'danger'  },
-        { fecha: '15 ene 2027', hub: 'norte-prod',  tipo: 'Upgrade',   tipoCls: 'success', planActual: 'Trial · 0 €',      planFuturo: 'Pro · 340,50 €', delta: '+340,50 €', deltaCls: 'success' },
-      ];
+      const STATUS = {
+        active: ['Activa', 'success'],
+        past_due: ['Pago atrasado', 'danger'],
+        cancelled: ['Cancelada', 'tertiary'],
+        unpaid: ['No pagada', 'warning'],
+      };
 
-      // Estado → etiqueta / color Ionic (alineado con BillingPage.vue del Hub).
-      const SUB_LABEL = { active: 'Activa', trialing: 'Trial', paused: 'Pausada', canceled: 'Cancelada' };
-      const SUB_COLOR = { active: 'success', trialing: 'tertiary', paused: 'warning', canceled: 'medium' };
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const date = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
-      definePage({
-        bare: true,
+      const moduleCell = (row) => h`
+        <span style="display:flex;align-items:center;gap:.6rem;min-width:0">
+          <ion-avatar style="display:grid;place-items:center;flex:none;width:2rem;height:2rem;color:var(--ion-color-tertiary);font-size:12px;font-weight:700;background:rgba(var(--ion-color-tertiary-rgb),.14)">
+            <span style="display:grid;width:100%;height:100%;place-items:center">${row.module.charAt(0)}</span>
+          </ion-avatar>
+          <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.module}</strong>
+        </span>`;
+
+      const statusCell = (row) => {
+        const [label, tone] = STATUS[row.status] || [row.status, 'medium'];
+        return h`<ion-badge style="--background:rgba(var(--ion-color-${tone}-rgb),.14);--color:var(--ion-color-${tone});--padding-start:10px;--padding-end:10px;--padding-top:4px;--padding-bottom:4px">${label}</ion-badge>`;
+      };
+
+      defineSaasDashboardPage({
+        active: '/dashboard/billing/',
+        title: 'Suscripciones',
         body: `
-          <ok-page-header
-            heading="Suscripciones"
-            description="Gestiona los planes activos para cada uno de tus hubs">
-            <ion-button slot="actions" size="small">
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Nuevo plan
-            </ion-button>
-          </ok-page-header>
-
-          <ion-segment id="billing-tabs" value="subscriptions" style="margin-bottom:16px">
-            <ion-segment-button value="invoices"><ion-icon name="receipt-outline"></ion-icon><ion-label>Facturas</ion-label></ion-segment-button>
-            <ion-segment-button value="subscriptions"><ion-icon name="refresh-outline"></ion-icon><ion-label>Suscripciones</ion-label></ion-segment-button>
-            <ion-segment-button value="payments"><ion-icon name="card-outline"></ion-icon><ion-label>Pagos</ion-label></ion-segment-button>
-          </ion-segment>
-
-          <ok-data-table id="subs-dt" style="display:block;margin-bottom:24px"></ok-data-table>
-
-          <ok-data-table id="sched-dt" style="display:block"></ok-data-table>
-        `,
+          <div class="dash-fill">
+            <ok-data-table id="subscriptions-dt" server-side fill>
+              <div slot="toolbar" class="okdt-filters">
+                <ion-select class="okdt-filter" data-okdt-param="hub" interface="popover"
+                            aria-label="Hub" placeholder="Todos los hubs">
+                  <ion-select-option value="">Todos los hubs</ion-select-option>
+                  <ion-select-option value="Hub Central">Hub Central</ion-select-option>
+                  <ion-select-option value="Hub Norte">Hub Norte</ion-select-option>
+                </ion-select>
+                <ion-select class="okdt-filter" data-okdt-param="status" interface="popover"
+                            aria-label="Estado" placeholder="Todos los estados">
+                  <ion-select-option value="">Todos los estados</ion-select-option>
+                  <ion-select-option value="active">Activa</ion-select-option>
+                  <ion-select-option value="past_due">Pago atrasado</ion-select-option>
+                  <ion-select-option value="cancelled">Cancelada</ion-select-option>
+                  <ion-select-option value="unpaid">No pagada</ion-select-option>
+                </ion-select>
+                <ion-select class="okdt-filter" data-okdt-param="billing_period" interface="popover"
+                            aria-label="Periodo" placeholder="Todos los periodos">
+                  <ion-select-option value="">Todos los periodos</ion-select-option>
+                  <ion-select-option value="monthly">Mensual</ion-select-option>
+                  <ion-select-option value="yearly">Anual</ion-select-option>
+                </ion-select>
+              </div>
+            </ok-data-table>
+          </div>`,
+        footer: `
+          <footer id="section-tabbar">
+            <ion-segment value="subscriptions" aria-label="Navegación de facturación">
+              <ion-segment-button value="invoices">
+                <iconify-icon icon="lucide:file-text" width="20" height="20"></iconify-icon>
+                <ion-label>Facturas</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="subscriptions">
+                <iconify-icon icon="lucide:repeat" width="20" height="20"></iconify-icon>
+                <ion-label>Suscripciones</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="purchases">
+                <iconify-icon icon="lucide:shopping-bag" width="20" height="20"></iconify-icon>
+                <ion-label>Compras</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+          </footer>`,
         setup(doc) {
-          // ── ok-data-table: Suscripciones ──────────────────────────────
-          const dt = doc.getElementById('subs-dt');
-          dt.title = 'Suscripciones';
-          dt.rowKey = (r) => r.hub;
+          const table = doc.getElementById('subscriptions-dt');
+          if (!table) return;
 
-          dt.columns = [
-            {
-              key: 'hub',
-              header: 'Hub',
-              width: 'minmax(10rem,1.2fr)',
-              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:8px">
-                <ok-avatar name="${r.hub}" size="sm"></ok-avatar>
-                <strong>${r.hub}</strong>
-              </span>`,
-            },
-            { key: 'plan',    header: 'Plan',         width: 'minmax(7rem,1fr)' },
-            {
-              key: 'precio',
-              header: 'Precio / mes',
-              width: '9rem',
-              align: 'right',
-              render: (r) => h`<span style="font-weight:600;font-variant-numeric:tabular-nums">${r.precio}</span>`,
-            },
-            { key: 'ciclo',   header: 'Ciclo',        width: 'minmax(8rem,1fr)' },
-            { key: 'renueva', header: 'Renueva',       width: '9rem' },
-            {
-              key: 'status',
-              header: 'Estado',
-              width: '8rem',
-              render: (r) => {
-                const c = SUB_COLOR[r.status] ?? 'medium';
-                // Las clases .ion-color-* NO penetran el shadow → vars inline (como hubs-active.html).
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${SUB_LABEL[r.status] ?? r.status}</ion-badge>`;
-              },
-            },
+          table.rowKey = 'id';
+          table.columns = [
+            { key: 'module', header: 'Módulo', width: 'minmax(13rem,1.35fr)', sortable: false, render: moduleCell },
+            { key: 'period', header: 'Plan', width: '9rem', sortable: false },
+            { key: 'status', header: 'Estado', width: '10rem', sortable: false, render: statusCell },
+            { key: 'price', header: 'Precio', width: '9rem', align: 'right', sortable: false, format: (row) => money.format(row.price) },
+            { key: 'nextBilling', header: 'Próxima facturación', width: '12rem', sortable: true, format: (row) => date.format(new Date(`${row.nextBilling}T00:00:00`)) },
           ];
+          table.rows = SUBSCRIPTIONS;
+          table.total = SUBSCRIPTIONS.length;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar suscripciones…';
+          table.actions = [{ id: 'manage', label: 'Gestionar', icon: 'settings-outline' }];
+          table.views = true;
+          table.pageSize = 10;
+          table.pageSizes = [10, 25, 50];
+          table.labels = {
+            empty: 'No hay suscripciones activas',
+            columns: 'Columnas',
+            columnsVisible: 'Columnas visibles',
+            rowsPerPage: 'Filas por página',
+            perPageShort: '{n} / pág.',
+            showing: 'Mostrando {from}–{to} de',
+            recordSingular: 'suscripción',
+            recordPlural: 'suscripciones',
+            actions: 'Acciones',
+          };
 
-          dt.rowActions = [
-            { icon: 'settings-outline',       label: 'Gestionar',    handler: () => {} },
-            { icon: 'swap-horizontal-outline', label: 'Cambiar plan', handler: () => {} },
-            { icon: 'close-circle-outline',    label: 'Cancelar',     color: 'danger', handler: () => {} },
-          ];
+          const state = { query: '', sort: '', dir: 'asc' };
+          const valueOf = (name) => doc.querySelector(`[data-okdt-param="${name}"]`)?.value || '';
+          const refresh = () => {
+            const needle = state.query.trim().toLocaleLowerCase('es');
+            const hub = valueOf('hub');
+            const status = valueOf('status');
+            const period = valueOf('billing_period');
+            let rows = SUBSCRIPTIONS.filter((row) =>
+              (!needle || [row.module, row.hub].some((value) => value.toLocaleLowerCase('es').includes(needle))) &&
+              (!hub || row.hub === hub) && (!status || row.status === status) &&
+              (!period || row.periodValue === period));
+            if (state.sort) rows = [...rows].sort((a, b) => (a[state.sort] > b[state.sort] ? 1 : -1) * (state.dir === 'asc' ? 1 : -1));
+            table.rows = rows;
+            table.total = rows.length;
+            table.page = 0;
+          };
+          doc.querySelectorAll('[data-okdt-param]').forEach((control) => control.addEventListener('ionChange', refresh));
+          table.addEventListener('searchChange', (event) => { state.query = String(event.detail || ''); refresh(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; refresh(); });
+          table.addEventListener('rowAction', (event) => {
+            const toast = doc.createElement('ion-toast');
+            toast.message = `Gestionando ${event.detail.row.module}`;
+            toast.duration = 1400;
+            doc.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
+          });
 
-          dt.rows = SUBS;
-
-          // ── ok-data-table: Cambios programados ──────────────────────────────
-          const sched = doc.getElementById('sched-dt');
-          sched.title = 'Cambios programados';
-          sched.rowKey = (r) => r.hub + r.fecha;
-
-          sched.columns = [
-            {
-              key: 'fecha',
-              header: 'Fecha efectiva',
-              width: '9rem',
-              render: (r) => h`<strong>${r.fecha}</strong>`,
-            },
-            {
-              key: 'hub',
-              header: 'Hub',
-              width: 'minmax(10rem,1fr)',
-              render: (r) => h`<span style="display:inline-flex;align-items:center;gap:8px">
-                <ok-avatar name="${r.hub}" size="sm"></ok-avatar>
-                ${r.hub}
-              </span>`,
-            },
-            {
-              key: 'tipo',
-              header: 'Cambio',
-              width: '8rem',
-              render: (r) => h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${r.tipoCls}) 15%, transparent);--color:var(--ion-color-${r.tipoCls});--padding-top:5px;--padding-bottom:5px">${r.tipo}</ion-badge>`,
-            },
-            { key: 'planActual', header: 'Plan actual', width: 'minmax(9rem,1fr)' },
-            { key: 'planFuturo', header: 'Plan futuro', width: 'minmax(9rem,1fr)' },
-            {
-              key: 'delta',
-              header: 'Δ Mensual',
-              width: '8rem',
-              align: 'right',
-              render: (r) => h`<span style="font-weight:600;font-variant-numeric:tabular-nums;color:var(--ion-color-${r.deltaCls})">${r.delta}</span>`,
-            },
-          ];
-
-          sched.rowActions = [
-            { icon: 'create-outline', label: 'Editar',          handler: () => {} },
-            { icon: 'close-outline',  label: 'Cancelar cambio', color: 'danger', handler: () => {} },
-          ];
-
-          sched.rows = SCHED;
-
-          // Sub-tabs: feedback visual (sin navegación real en el showcase)
-          const tabs = doc.getElementById('billing-tabs');
-          if (tabs) {
-            tabs.addEventListener('ionChange', () => {
-              // sin-op: en el showcase los tabs son decorativos
-            });
-          }
+          doc.querySelector('ion-segment')?.addEventListener('ionChange', (event) => {
+            const targets = { invoices: 'billing-invoices', purchases: 'billing-purchases' };
+            if (targets[event.detail.value]) window.parent.location.hash = `#/p/${targets[event.detail.value]}`;
+          });
         },
       });
     </script>

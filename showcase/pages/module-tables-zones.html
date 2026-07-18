@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Zonas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .tables-zones-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      .tables-zones-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .tables-zone-create { display: flex; flex-direction: column; gap: 0.7rem; }
+      .tables-zone-create ion-button { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Datos canónicos de erp-tables-floor-plan.test.ts.
+      const ZONE_FIXTURE = [
+        { "id": "z1", "name": "Terraza", "color": "#0f0", "sort_order": 1, "is_active": 1 },
+        { "id": "z2", "name": "Salón", "color": "#00f", "sort_order": 2, "is_active": 1 }
+      ];
+      const TABLE_FIXTURE = [
+        { "id": "m1", "number": "12", "name": "", "capacity": 4, "shape": "square", "status": "available", "is_active": 1, "zone": "Terraza", "zone_id": "z1" }
+      ];
+
+      const STATUS_LABEL = {
+        available: 'Disponible', occupied: 'Ocupada', reserved: 'Reservada', blocked: 'Bloqueada',
+      };
+      let tables = TABLE_FIXTURE.map((row) => ({ ...row }));
+      const zones = ZONE_FIXTURE.map((row) => ({ ...row }));
+      const state = { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} };
+
+      function recordQuery(name, params = {}) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/tables/zones',
+        title: 'Zonas',
+        body: `
+          <div class="tables-zones-page">
+            <ok-data-table id="tables-zones-table" fill>
+              <form id="tables-zone-create" slot="create" class="tables-zone-create">
+                <ion-input id="tables-zone-table-number" fill="outline" label="Número" label-placement="floating" required></ion-input>
+                <ion-input id="tables-zone-table-capacity" fill="outline" label="Aforo" label-placement="floating" type="number" min="1" value="4"></ion-input>
+                <ion-button type="submit">Añadir mesa</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('tables-zones-table');
+          const form = doc.getElementById('tables-zone-create');
+          const numberInput = doc.getElementById('tables-zone-table-number');
+          const capacityInput = doc.getElementById('tables-zone-table-capacity');
+
+          table.columns = [
+            { key: 'number', header: 'Número', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text', format: (row) => row.name || '—' },
+            {
+              key: 'zone', header: 'Zona', sortable: true, filterable: true, filterType: 'select',
+              options: zones.map((zone) => ({ value: zone.name, label: zone.name })),
+              format: (row) => row.zone || '—',
+            },
+            { key: 'capacity', header: 'Aforo', align: 'right', sortable: true, filterable: true, filterType: 'text', format: (row) => `${Number(row.capacity) || 1} pax` },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+              format: (row) => STATUS_LABEL[row.status] || row.status,
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name || row.number || '—');
+          table.cardIcon = () => 'grid-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar mesa o zona…';
+          table.emptyMessage = 'Sin mesas.';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+
+          function queryPage() {
+            recordQuery('tables.tables.list', { ...state });
+            recordQuery('tables.zones.list', { sort: 'sort_order', dir: 'asc' });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = tables
+              .filter((row) => {
+                if (term && !`${row.number} ${row.name} ${row.zone}`.toLocaleLowerCase('es').includes(term)) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value == null || value === '') return true;
+                  if (key === 'name') return String(row.name || '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                  return String(row[key] ?? '') === String(value);
+                });
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+                return state.dir === 'desc' ? -result : result;
+              });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const number = String(numberInput.value || '').trim();
+            if (!number) return;
+            const payload = {
+              number,
+              name: '',
+              capacity: Math.max(1, Number(capacityInput.value) || 4),
+              zone_id: null,
+              shape: 'square',
+              position_x: 0,
+              position_y: 0,
+              width: 10,
+              height: 10,
+            };
+            recordCommand('tables.tables.create', payload);
+            tables = [...tables, {
+              id: `preview-table-${tables.length + 1}`,
+              ...payload,
+              status: 'available',
+              is_active: 1,
+              zone: null,
+            }];
+            numberInput.value = '';
+            capacityInput.value = '4';
+            table.close();
+            state.page = 0;
+            queryPage();
+          });
+
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

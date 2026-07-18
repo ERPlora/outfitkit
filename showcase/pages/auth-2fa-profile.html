@@ -1,404 +1,89 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="erplora-light">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Verificación en dos pasos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Autenticación en dos pasos - ERPlora Cloud</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <script src="./_ionic-config.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-    </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Grid de métodos 2FA — 3 columnas en escritorio, 1 en móvil. */
-      .meth-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-      }
-      @media (max-width: 900px) { .meth-grid { grid-template-columns: repeat(2, 1fr); } }
-      @media (max-width: 560px) { .meth-grid { grid-template-columns: 1fr; } }
-
-      /* Tarjeta de método */
-      .meth-card {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        height: 100%;
-      }
-      .meth-top {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-      }
-      .meth-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        background: color-mix(in srgb, var(--ion-color-medium) 12%, transparent);
-        color: var(--ion-color-medium);
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        font-size: 18px;
-      }
-      .meth-icon--primary {
-        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
-        color: var(--ion-color-primary);
-      }
-      .meth-title { font-weight: 600; font-size: 0.9rem; }
-      .meth-desc  { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: 3px; line-height: 1.5; }
-      .meth-foot  {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        margin-top: auto;
-        padding-top: 10px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-
-      /* Zona peligrosa — fila */
-      .danger-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-        padding: 16px;
-      }
-      .danger-body { flex: 1; min-width: 220px; }
-      .danger-title { font-weight: 700; font-size: 0.9rem; color: var(--ion-color-danger); }
-      .danger-sub   { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: 4px; line-height: 1.5; }
-
-      /* Estado 2FA — banner compacto */
-      .status-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-        padding: 14px 16px;
-      }
-      .status-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: color-mix(in srgb, var(--ion-color-success) 15%, transparent);
-        color: var(--ion-color-success);
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        font-size: 20px;
-      }
-      .status-body { flex: 1; min-width: 200px; }
-      .status-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
-      .status-sub   { margin-top: 3px; font-size: 0.82rem; color: var(--ion-color-medium); }
-    </style>
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
   </head>
   <body>
-    <!--
-      SOBRIA: solo ok-page-header + ion-segment (sub-secciones reales) + estado 2FA +
-      ok-data-table para dispositivos + métodos con ion-toggle + ok-inline-feedback + zona peligrosa.
-      SIN modales manuales: se usa ion-alert para confirmaciones.
-      SIN chrome extra: quitados "Ver historial" / "Probar 2FA" del banner de estado.
-    -->
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      // Datos de dispositivos autorizados
-      const DEVICES = [
-        { id: 'iphone-16-pro', name: 'iPhone 16 Pro · Safari',    location: 'Madrid, ES',    ip: '81.34.142.18',  when: 'hoy 09:42',    status: 'current' },
-        { id: 'macbook-pro',   name: 'MacBook Pro M4 · Arc',      location: 'Madrid, ES',    ip: '81.34.142.18',  when: 'ayer 18:21',   status: 'active' },
-        { id: 'mac-studio',    name: 'Mac Studio M2 · Firefox',   location: 'Barcelona, ES', ip: '95.121.87.4',   when: 'hace 3 días',  status: 'active' },
-        { id: 'samsung-s24',   name: 'Samsung Galaxy S24 · Chrome',location: 'Sevilla, ES',  ip: '213.98.21.155', when: 'hace 18 días', status: 'inactive' },
-      ];
-
-      const DEV_COLOR = { current: 'primary', active: 'success', inactive: 'warning' };
-      const DEV_LABEL = { current: 'Este dispositivo', active: 'Activo', inactive: 'Inactivo' };
-
-      definePage({
-        active: 'security',
-        bare: true,
+      defineSaasDashboardPage({
+        active: '/dashboard/settings/',
+        title: 'Autenticación en dos pasos',
         body: `
-          <ok-page-header
-            heading="Verificación en dos pasos"
-            description="Gestiona los métodos y dispositivos autorizados para acceder a ERPlora Cloud.">
-            <ion-button slot="actions" fill="outline" id="btn-regen">
-              <ion-icon slot="start" name="refresh-outline"></ion-icon>
-              Regenerar códigos
-            </ion-button>
-          </ok-page-header>
-
-          <!-- Sub-secciones de seguridad -->
-          <ion-segment id="seg-2fa" value="manage" style="margin-bottom:16px">
-            <ion-segment-button value="setup">
-              <ion-icon name="qr-code-outline"></ion-icon>
-              <ion-label>Configurar</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="manage">
-              <ion-icon name="shield-checkmark-outline"></ion-icon>
-              <ion-label>Gestionar</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="disable">
-              <ion-icon name="lock-open-outline"></ion-icon>
-              <ion-label>Desactivar</ion-label>
-            </ion-segment-button>
-          </ion-segment>
-
-          <!-- Estado 2FA -->
-          <ion-card class="pg-mb-4">
-            <div class="status-row">
-              <div class="status-icon">
-                <ion-icon name="shield-checkmark-outline"></ion-icon>
-              </div>
-              <div class="status-body">
-                <div class="status-title">
-                  2FA activa
-                  <ok-status-pill tone="success" dot label="Activa" size="sm"></ok-status-pill>
-                </div>
-                <div class="status-sub">
-                  Activada el <strong>12 marzo 2026</strong> · Última verificación: hoy a las 09:42 desde MacBook Pro M4
-                </div>
-              </div>
+          <div style="max-width:800px;margin:0 auto">
+            <div style="margin-bottom:1.25rem">
+              <ion-button type="button" fill="clear" size="small">
+                <iconify-icon slot="start" icon="lucide:arrow-left" width="16" height="16"></iconify-icon>
+                Volver a ajustes
+              </ion-button>
+              <h1 style="margin:.4rem 0 .35rem;font-size:1.75rem">Autenticación en dos pasos</h1>
+              <p style="margin:0;color:var(--ion-color-medium)">Gestiona el método de seguridad de tu inicio de sesión.</p>
             </div>
-          </ion-card>
 
-          <!-- Dispositivos autorizados -->
-          <section class="pg-mb-4">
-            <ok-data-table id="dev-dt" style="display:block"></ok-data-table>
-          </section>
-
-          <!-- Métodos disponibles -->
-          <section class="pg-mb-4">
-            <p style="font-weight:700;font-size:1rem;margin:0 0 4px">Métodos disponibles</p>
-            <p style="font-size:0.82rem;color:var(--ion-color-medium);margin:0 0 12px">Configura uno o varios métodos de verificación. Recomendamos al menos dos.</p>
-
-            <div class="meth-grid">
-
-              <!-- App autenticadora -->
-              <ion-card id="card-auth">
-                <ion-card-content>
-                  <div class="meth-card">
-                    <div class="meth-top">
-                      <div class="meth-icon meth-icon--primary">
-                        <ion-icon name="phone-portrait-outline"></ion-icon>
-                      </div>
-                      <div>
-                        <div class="meth-title">App autenticadora</div>
-                        <div class="meth-desc">Genera códigos de un solo uso (TOTP). Funciona sin conexión y es el método más seguro.</div>
-                      </div>
-                    </div>
-                    <div class="meth-foot">
-                      <ok-status-pill id="pill-auth" tone="success" dot label="Activo" size="sm"></ok-status-pill>
-                      <ion-toggle id="toggle-auth" checked></ion-toggle>
-                    </div>
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title style="display:flex;align-items:center;gap:.6rem">
+                  <iconify-icon icon="lucide:mail-check" width="22" height="22"
+                                style="color:var(--ion-color-success)"></iconify-icon>
+                  Verificación por email activada
+                </ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <div style="display:flex;align-items:flex-start;gap:.75rem">
+                  <iconify-icon icon="lucide:mail" width="24" height="24"
+                                style="color:var(--ion-color-primary);flex:none"></iconify-icon>
+                  <div>
+                    <strong>La verificación por email está activa</strong>
+                    <p style="margin:.25rem 0 0;color:var(--ion-color-medium);line-height:1.55">
+                      Se envía un código de 6 dígitos a tu email cuando inicias sesión desde un dispositivo nuevo.
+                    </p>
                   </div>
-                </ion-card-content>
-              </ion-card>
-
-              <!-- SMS -->
-              <ion-card id="card-sms">
-                <ion-card-content>
-                  <div class="meth-card">
-                    <div class="meth-top">
-                      <div class="meth-icon">
-                        <ion-icon name="chatbubble-outline"></ion-icon>
-                      </div>
-                      <div>
-                        <div class="meth-title">SMS</div>
-                        <div class="meth-desc">Recibe un código por mensaje de texto en tu número de teléfono verificado.</div>
-                      </div>
-                    </div>
-                    <div class="meth-foot">
-                      <ok-status-pill id="pill-sms" tone="neutral" dot label="No configurado" size="sm"></ok-status-pill>
-                      <ion-toggle id="toggle-sms"></ion-toggle>
-                    </div>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-              <!-- Correo electrónico -->
-              <ion-card id="card-email">
-                <ion-card-content>
-                  <div class="meth-card">
-                    <div class="meth-top">
-                      <div class="meth-icon">
-                        <ion-icon name="mail-outline"></ion-icon>
-                      </div>
-                      <div>
-                        <div class="meth-title">Correo electrónico</div>
-                        <div class="meth-desc">Recibe un código en ian@acme.com cada vez que inicies sesión en un dispositivo nuevo.</div>
-                      </div>
-                    </div>
-                    <div class="meth-foot">
-                      <ok-status-pill id="pill-email" tone="neutral" dot label="No configurado" size="sm"></ok-status-pill>
-                      <ion-toggle id="toggle-email"></ion-toggle>
-                    </div>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-            </div>
-          </section>
-
-          <!-- Códigos de respaldo -->
-          <section class="pg-mb-4">
-            <ok-inline-feedback tone="info" heading="Te quedan 6 de 8 códigos de respaldo">
-              Si te quedan menos de 3 códigos, ERPlora Cloud te recomendará regenerarlos automáticamente.
-              <div slot="actions">
-                <ion-button fill="clear" size="small" id="btn-ver-codigos">
-                  <ion-icon slot="start" name="eye-outline"></ion-icon>
-                  Ver códigos
-                </ion-button>
-                <ion-button fill="clear" size="small" id="btn-regen-inline">
-                  <ion-icon slot="start" name="refresh-outline"></ion-icon>
-                  Regenerar ahora
-                </ion-button>
-              </div>
-            </ok-inline-feedback>
-          </section>
-
-          <!-- Zona peligrosa -->
-          <section class="pg-mb-4">
-            <ion-card style="border:1px solid color-mix(in srgb, var(--ion-color-danger) 30%, var(--ion-border-color, rgba(127,127,127,.2)));">
-              <div class="danger-row">
-                <div class="danger-body">
-                  <div class="danger-title">Desactivar verificación en dos pasos</div>
-                  <div class="danger-sub">Tu cuenta dejará de pedir un segundo factor al iniciar sesión. No es recomendable salvo que vayas a reconfigurarlo.</div>
                 </div>
-                <ion-button color="danger" id="btn-disable-2fa">
-                  <ion-icon slot="start" name="lock-open-outline"></ion-icon>
-                  Desactivar 2FA
-                </ion-button>
-              </div>
+                <p style="color:var(--ion-color-medium);font-size:.875rem;line-height:1.55">
+                  Este es el método predeterminado para todas las cuentas. Para mayor seguridad,
+                  puedes usar una aplicación de autenticación.
+                </p>
+                <div style="display:flex;gap:.65rem;flex-wrap:wrap;margin-top:1.25rem">
+                  <ion-button type="button" color="primary">
+                    <iconify-icon slot="start" icon="lucide:shield-check" width="17" height="17"></iconify-icon>
+                    Mejorar con una aplicación de autenticación
+                  </ion-button>
+                  <form method="post" action="">
+                    <ion-button type="button" fill="outline" color="warning">
+                      Desactivar verificación por email
+                    </ion-button>
+                  </form>
+                </div>
+              </ion-card-content>
             </ion-card>
-          </section>
-        `,
-        setup(doc) {
-          // ── Data table: dispositivos autorizados ───────────────────────────
-          const dt = doc.getElementById('dev-dt');
-          dt.title     = 'Dispositivos autorizados';
-          dt.rowKey    = (r) => r.id;
-          dt.searchable = false;
 
-          dt.columns = [
-            {
-              key: 'name', header: 'Dispositivo', width: 'minmax(12rem,1.4fr)',
-              render: (r) => {
-                const c = DEV_COLOR[r.status];
-                return h`<span style="display:inline-flex;align-items:center;gap:.5rem">
-                  <ion-badge style="--background:color-mix(in srgb,var(--ion-color-${c}) 15%,transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px;font-size:.7rem">${DEV_LABEL[r.status]}</ion-badge>
-                  <span style="font-weight:600">${r.name}</span>
-                </span>`;
-              },
-            },
-            { key: 'location', header: 'Ubicación', width: '10rem' },
-            { key: 'ip',       header: 'IP',         width: '9rem',  render: (r) => h`<code style="font-size:.82rem">${r.ip}</code>` },
-            { key: 'when',     header: 'Último acceso', width: '9rem' },
-          ];
-
-          dt.actions = [
-            { id: 'revoke', icon: 'close-circle-outline', label: 'Revocar', color: 'danger' },
-          ];
-
-          dt.rows = DEVICES;
-
-          // Acción por fila: revocar dispositivo → ion-alert de confirmación
-          dt.addEventListener('rowAction', (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId !== 'revoke') return;
-            const alert = document.createElement('ion-alert');
-            alert.header  = 'Revocar dispositivo';
-            alert.message = `Se cerrará la sesión y se requerirá 2FA en el próximo acceso desde <strong>${row.name}</strong>.`;
-            alert.buttons = [
-              { text: 'Cancelar', role: 'cancel' },
-              { text: 'Revocar', role: 'destructive', cssClass: 'ion-color-danger' },
-            ];
-            document.body.appendChild(alert);
-            alert.present();
-            alert.addEventListener('didDismiss', () => alert.remove());
-          });
-
-          // Botón "Revocar todos" en el header del data-table → ion-alert
-          dt.addEventListener('primaryAction', () => {
-            const alert = document.createElement('ion-alert');
-            alert.header  = 'Revocar todos los dispositivos';
-            alert.message = 'Se cerrarán las sesiones de todos los dispositivos. Tendrás que verificar 2FA en el próximo acceso desde cada uno.';
-            alert.buttons = [
-              { text: 'Cancelar', role: 'cancel' },
-              { text: 'Revocar todos', role: 'destructive' },
-            ];
-            document.body.appendChild(alert);
-            alert.present();
-            alert.addEventListener('didDismiss', () => alert.remove());
-          });
-
-          // ── Toggles de métodos ─────────────────────────────────────────────
-          const syncPill = (pill, active, labelOn, labelOff) => {
-            if (!pill) return;
-            pill.setAttribute('tone', active ? 'success' : 'neutral');
-            pill.setAttribute('label', active ? labelOn : labelOff);
-          };
-
-          const toggleAuth  = doc.getElementById('toggle-auth');
-          const pillAuth    = doc.getElementById('pill-auth');
-          if (toggleAuth) toggleAuth.addEventListener('ionChange', (e) =>
-            syncPill(pillAuth, !!(e.detail && e.detail.checked), 'Activo', 'Inactivo'));
-
-          const toggleSms   = doc.getElementById('toggle-sms');
-          const pillSms     = doc.getElementById('pill-sms');
-          if (toggleSms) toggleSms.addEventListener('ionChange', (e) =>
-            syncPill(pillSms, !!(e.detail && e.detail.checked), 'Activo', 'No configurado'));
-
-          const toggleEmail = doc.getElementById('toggle-email');
-          const pillEmail   = doc.getElementById('pill-email');
-          if (toggleEmail) toggleEmail.addEventListener('ionChange', (e) =>
-            syncPill(pillEmail, !!(e.detail && e.detail.checked), 'Activo', 'No configurado'));
-
-          // ── Regenerar códigos → ion-alert ──────────────────────────────────
-          const openRegenAlert = () => {
-            const alert = document.createElement('ion-alert');
-            alert.header  = 'Regenerar códigos de respaldo';
-            alert.message = 'Los códigos actuales quedarán <strong>inválidos al instante</strong>. Descarga y guarda los nuevos en un lugar seguro.';
-            alert.buttons = [
-              { text: 'Cancelar', role: 'cancel' },
-              { text: 'Regenerar ahora', role: 'destructive' },
-            ];
-            document.body.appendChild(alert);
-            alert.present();
-            alert.addEventListener('didDismiss', () => alert.remove());
-          };
-
-          const btnRegen       = doc.getElementById('btn-regen');
-          const btnRegenInline = doc.getElementById('btn-regen-inline');
-          if (btnRegen)       btnRegen.addEventListener('click', openRegenAlert);
-          if (btnRegenInline) btnRegenInline.addEventListener('click', openRegenAlert);
-
-          // ── Desactivar 2FA → ion-alert ─────────────────────────────────────
-          const btnDisable = doc.getElementById('btn-disable-2fa');
-          if (btnDisable) {
-            btnDisable.addEventListener('click', () => {
-              const alert = document.createElement('ion-alert');
-              alert.header  = 'Desactivar 2FA';
-              alert.message = '¿Seguro que quieres desactivar la verificación en dos pasos? Tu cuenta quedará menos protegida.';
-              alert.buttons = [
-                { text: 'Cancelar', role: 'cancel' },
-                { text: 'Desactivar', role: 'destructive' },
-              ];
-              document.body.appendChild(alert);
-              alert.present();
-              alert.addEventListener('didDismiss', () => alert.remove());
-            });
-          }
-        },
+            <ion-card>
+              <ion-card-content>
+                <div style="display:flex;align-items:flex-start;gap:.8rem">
+                  <iconify-icon icon="lucide:info" width="22" height="22"
+                                style="color:var(--ion-color-primary);flex:none"></iconify-icon>
+                  <div>
+                    <h2 style="margin:0 0 .5rem;font-size:1rem">Métodos de seguridad</h2>
+                    <ion-list lines="none" style="padding:0">
+                      <ion-item><ion-label>Verificación por email: recibes un código por correo (predeterminado)</ion-label></ion-item>
+                      <ion-item><ion-label>Aplicación autenticadora: genera códigos sin conexión (recomendado)</ion-label></ion-item>
+                    </ion-list>
+                    <p style="margin:.6rem 0 0;color:var(--ion-color-medium);font-size:.875rem">
+                      Aplicaciones recomendadas: Google Authenticator, Authy, Microsoft Authenticator y 1Password.
+                    </p>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </div>`,
       });
     </script>
   </body>

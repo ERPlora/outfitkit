@@ -100,8 +100,6 @@ export { OkAvatar } from './components/ok-avatar/ok-avatar.js';
 export type { OkAvatarSize, OkAvatarShape, OkAvatarTone, OkAvatarStatus } from './components/ok-avatar/ok-avatar.js';
 export { OkStatusPill } from './components/ok-status-pill/ok-status-pill.js';
 export type { OkStatusPillTone, OkStatusPillSize } from './components/ok-status-pill/ok-status-pill.js';
-export { OkDrawer } from './components/ok-drawer/ok-drawer.js';
-export type { OkDrawerSide, OkDrawerLabels } from './components/ok-drawer/ok-drawer.js';
 export { OkPageHeader } from './components/ok-page-header/ok-page-header.js';
 
 // ── Marketing 2026 (bento · cards · scroll-reveal · prueba social) ───────────────────────────
@@ -124,8 +122,6 @@ export { OkHero } from './components/ok-hero/ok-hero.js';
 // ── ux-legacy port (Tier 1+2 huecos de Ionic) ─────────────────────────────────────────────────
 export { OkPagination } from './components/ok-pagination/ok-pagination.js';
 export type { PaginationVariant } from './components/ok-pagination/ok-pagination.js';
-export { OkSkeleton } from './components/ok-skeleton/ok-skeleton.js';
-export type { OkSkeletonVariant, OkSkeletonPreset } from './components/ok-skeleton/ok-skeleton.js';
 export { OkGauge } from './components/ok-gauge/ok-gauge.js';
 export type { OkGaugeThreshold, OkGaugeType } from './components/ok-gauge/ok-gauge.js';
 export { OkChart } from './components/ok-chart/ok-chart.js';
@@ -164,11 +160,6 @@ export type {
 } from './components/ok-theme-picker/ok-theme-picker.js';
 export { OkErrorPage } from './components/ok-error-page/ok-error-page.js';
 export type { OkErrorPageVariant, OkErrorPageMode, OkErrorCheckStatus, OkErrorShortcut, OkErrorCheck } from './components/ok-error-page/ok-error-page.js';
-export { OkDatePicker } from './components/ok-date-picker/ok-date-picker.js';
-export type { OkDatePickerMode, OkDateRange, OkDatePickerValue, OkDatePreset, OkDatePickerLabels } from './components/ok-date-picker/ok-date-picker.js';
-export { OkTimePicker } from './components/ok-time-picker/ok-time-picker.js';
-export { OkRangeDual } from './components/ok-range-dual/ok-range-dual.js';
-export type { OkRangeDualChangeDetail } from './components/ok-range-dual/ok-range-dual.js';
 export { OkFileItem } from './components/ok-file-item/ok-file-item.js';
 export type { OkFileItemState } from './components/ok-file-item/ok-file-item.js';
 export { OkRichText } from './components/ok-rich-text/ok-rich-text.js';

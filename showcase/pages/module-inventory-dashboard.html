@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Inventario</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .inventory-dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        min-height: 100%;
+      }
+
+      .inventory-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      .inventory-stock-section {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 22rem;
+      }
+
+      .inventory-section-title {
+        margin: 0 0 0.75rem;
+        font-size: 1rem;
+      }
+
+      .inventory-stock-section ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      @media (max-width: 900px) {
+        .inventory-kpis {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 520px) {
+        .inventory-kpis {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de modules/inventory/fixtures/inventory.products.stats.json.
+      const STATS_FIXTURE = {
+        "total_products": 12,
+        "active_products": 11,
+        "low_stock": 4,
+        "total_value": 318.4
+      };
+
+      // Copia auditable de modules/inventory/fixtures/inventory.products.low_stock.json.
+      const LOW_STOCK_FIXTURE = [
+        { "id": "p-3", "name": "Azúcar blanca 1kg", "sku": "AZU-1000", "stock": 8, "price": 1.05 },
+        { "id": "p-6", "name": "Croissant congelado (caja)", "sku": "CRO-0050", "stock": 6, "price": 9.8 },
+        { "id": "p-10", "name": "Sirope vainilla 750ml", "sku": "SIR-0750", "stock": 9, "price": 6.3 },
+        { "id": "p-8", "name": "Bolsa take-away (100u)", "sku": "BOL-0100", "stock": 0, "price": 4.2 }
+      ];
+
+      // La demo conserva los fixtures oficiales para reflejar la UI prevista. No oculta que el
+      // contrato SQL vigente y esos fixtures históricos todavía no están alineados.
+      const INVENTORY_CONTRACT_GAPS = Object.freeze({
+        statsFields: 'fixture/component use legacy names; SQL exposes canonical widget names',
+        lowStockRows: 'fixture contains price and p-8; SQL omits price and filters inactive products',
+      });
+      void INVENTORY_CONTRACT_GAPS;
+
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+
+      defineHubPage({
+        active: '/m/inventory/dashboard',
+        title: 'Inventario',
+        body: `
+          <main class="inventory-dashboard">
+            <section class="inventory-kpis" aria-label="Resumen de inventario">
+              <ok-kpi id="inventory-total-products" label="Productos" icon="cube-outline"></ok-kpi>
+              <ok-kpi id="inventory-active-products" label="Activos" icon="checkmark-circle-outline"></ok-kpi>
+              <ok-kpi id="inventory-low-stock" label="Stock bajo" icon="warning-outline"></ok-kpi>
+              <ok-kpi id="inventory-total-value" label="Valor inventario" icon="cash-outline"></ok-kpi>
+            </section>
+
+            <section class="inventory-stock-section" aria-labelledby="inventory-low-stock-title">
+              <h2 id="inventory-low-stock-title" class="inventory-section-title">Productos con stock bajo</h2>
+              <ok-data-table id="inventory-low-stock-table" fill></ok-data-table>
+            </section>
+          </main>
+        `,
+        setup(doc) {
+          doc.getElementById('inventory-total-products').value = String(STATS_FIXTURE.total_products);
+          doc.getElementById('inventory-active-products').value = String(STATS_FIXTURE.active_products);
+          doc.getElementById('inventory-low-stock').value = String(STATS_FIXTURE.low_stock);
+          doc.getElementById('inventory-low-stock').delta = 'Revisar existencias';
+          doc.getElementById('inventory-low-stock').trend = 'down';
+          doc.getElementById('inventory-total-value').value = money.format(STATS_FIXTURE.total_value);
+
+          const table = doc.getElementById('inventory-low-stock-table');
+          let page = 0;
+
+          table.columns = [
+            { key: 'name', header: 'Nombre' },
+            { key: 'sku', header: 'SKU' },
+            { key: 'stock', header: 'Stock', align: 'right' },
+            { key: 'price', header: 'Precio', align: 'right', format: (row) => money.format(Number(row.price) || 0) },
+          ];
+          table.serverSide = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'cube-outline';
+          table.pageSize = 5;
+          table.pageSizeOptions = [];
+          table.emptyMessage = 'Sin productos en stock bajo.';
+
+          function renderRows() {
+            table.rows = LOW_STOCK_FIXTURE.slice(page * 5, page * 5 + 5);
+            table.total = LOW_STOCK_FIXTURE.length;
+            table.page = page;
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            renderRows();
+          });
+
+          renderRows();
+        },
+      });
+    </script>
+  </body>
+</html>

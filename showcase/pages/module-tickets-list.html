@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Tickets</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .tickets-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .tickets-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .ticket-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .ticket-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .ticket-detail {
+        flex: 0 1 auto;
+        max-height: min(56vh, 36rem);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        overflow: auto;
+        background: var(--ion-card-background, #fffdf7);
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 12px;
+      }
+
+      .ticket-detail-head,
+      .ticket-actions,
+      .ticket-meta,
+      .ticket-comment-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: end;
+      }
+
+      .ticket-detail-head {
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .ticket-detail-head h3 {
+        flex: 1 1 18rem;
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .ticket-description {
+        margin: 0.35rem 0 0.8rem;
+        white-space: pre-wrap;
+      }
+
+      .ticket-meta {
+        align-items: center;
+        margin-bottom: 0.65rem;
+        font-size: 0.9rem;
+      }
+
+      .ticket-actions {
+        margin: 0.5rem 0 0.8rem;
+      }
+
+      .ticket-actions ion-input,
+      .ticket-actions ion-select {
+        flex: 1 1 12rem;
+        min-width: 10rem;
+      }
+
+      .ticket-comments-title {
+        margin: 1rem 0 0.4rem;
+        font-size: 0.95rem;
+      }
+
+      .ticket-comment {
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--ion-border-color, #e7e2d6);
+      }
+
+      .ticket-comment p {
+        margin: 0.2rem 0 0;
+        white-space: pre-wrap;
+      }
+
+      .ticket-comment small,
+      .ticket-muted {
+        color: var(--ion-color-medium, #6f6a5e);
+      }
+
+      .ticket-comment-form ion-textarea {
+        flex: 2 1 20rem;
+        min-width: 14rem;
+      }
+
+      .ticket-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .ticket-detail {
+          max-height: 62vh;
+          padding: 0.75rem;
+        }
+
+        .ticket-actions > ion-input,
+        .ticket-actions > ion-select,
+        .ticket-actions > ion-button,
+        .ticket-comment-form > ion-textarea,
+        .ticket-comment-form > ion-button {
+          width: 100%;
+          flex-basis: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-tickets-list.test.ts; las acciones de la demo trabajan sobre su copia local.
+      const TICKET_FIXTURE = [
+        {
+          "id": "t1",
+          "ticket_number": "TKT-0001",
+          "subject": "La impresora no imprime",
+          "description": "",
+          "customer_name": "Bar Pepe",
+          "customer_email": "",
+          "customer_phone": "",
+          "status": "open",
+          "priority": "high",
+          "category": "technical",
+          "assigned_to_ref": null,
+          "created_by_ref": null,
+          "sla_id": null,
+          "opened_at": "2026-07-13T09:00:00",
+          "first_response_at": null,
+          "resolved_at": null,
+          "closed_at": null,
+          "satisfaction_rating": null,
+          "created_at": "2026-07-13T09:00:00"
+        }
+      ];
+
+      const STATUS_OPTIONS = [
+        { value: 'open', label: 'Abierto' },
+        { value: 'in_progress', label: 'En progreso' },
+        { value: 'waiting_customer', label: 'Esperando cliente' },
+        { value: 'resolved', label: 'Resuelto' },
+        { value: 'closed', label: 'Cerrado' },
+        { value: 'cancelled', label: 'Cancelado' },
+      ];
+      const PRIORITY_OPTIONS = [
+        { value: 'low', label: 'Baja' },
+        { value: 'medium', label: 'Media' },
+        { value: 'high', label: 'Alta' },
+        { value: 'urgent', label: 'Urgente' },
+      ];
+      const CATEGORY_OPTIONS = [
+        { value: 'general', label: 'General' },
+        { value: 'billing', label: 'Facturación' },
+        { value: 'technical', label: 'Técnico' },
+        { value: 'feature_request', label: 'Mejora' },
+      ];
+      const TRANSITIONS = {
+        open: ['in_progress', 'waiting_customer', 'resolved', 'cancelled'],
+        in_progress: ['open', 'waiting_customer', 'resolved', 'cancelled'],
+        waiting_customer: ['open', 'in_progress', 'resolved', 'cancelled'],
+        resolved: ['closed', 'open'],
+        closed: ['open'],
+        cancelled: ['open'],
+      };
+      const RESOLVABLE = ['open', 'in_progress', 'waiting_customer'];
+
+      let tickets = TICKET_FIXTURE.map((ticket) => ({ ...ticket }));
+      const comments = new Map(TICKET_FIXTURE.map((ticket) => [ticket.id, []]));
+
+      defineHubPage({
+        active: '/m/tickets/list',
+        title: 'Tickets',
+        body: `
+          <div class="tickets-page">
+            <p id="tickets-feedback" class="ticket-feedback" role="alert" hidden></p>
+
+            <section id="ticket-detail" class="ticket-detail" aria-live="polite" hidden>
+              <header class="ticket-detail-head">
+                <h3 id="ticket-detail-title"></h3>
+                <ion-badge id="ticket-detail-status"></ion-badge>
+                <ion-badge id="ticket-detail-priority" color="medium"></ion-badge>
+                <ion-badge id="ticket-detail-category" color="light"></ion-badge>
+                <ion-button id="ticket-detail-close" size="small" fill="clear">Cerrar vista</ion-button>
+              </header>
+
+              <p id="ticket-detail-description" class="ticket-description" hidden></p>
+              <div class="ticket-meta">
+                <span><strong>Cliente:</strong> <span id="ticket-detail-customer"></span></span>
+                <span><strong>Asignado a:</strong> <span id="ticket-detail-assigned"></span></span>
+                <span><strong>Abierto:</strong> <span id="ticket-detail-opened"></span></span>
+                <span><strong>1ª respuesta:</strong> <span id="ticket-detail-response"></span></span>
+                <span><strong>Resuelto:</strong> <span id="ticket-detail-resolved"></span></span>
+                <span><strong>Cerrado:</strong> <span id="ticket-detail-closed"></span></span>
+              </div>
+
+              <div class="ticket-actions">
+                <ion-select id="ticket-status" fill="outline" label="Cambiar estado" label-placement="floating" placeholder="Elegir…"></ion-select>
+                <ion-input id="ticket-agent" fill="outline" label="Agente" label-placement="floating" placeholder="uuid del agente…"></ion-input>
+                <ion-button id="ticket-assign" size="small">Asignar</ion-button>
+              </div>
+
+              <div id="ticket-resolve-actions" class="ticket-actions" hidden>
+                <ion-input id="ticket-resolution-note" fill="outline" label="Nota de resolución" label-placement="floating" placeholder="Nota de resolución (opcional)…"></ion-input>
+                <ion-button id="ticket-resolve" size="small" color="success">Resolver</ion-button>
+              </div>
+
+              <div id="ticket-close-actions" class="ticket-actions" hidden>
+                <ion-select id="ticket-rating" fill="outline" label="Valoración" label-placement="floating" placeholder="(opcional)">
+                  <ion-select-option value="1">★</ion-select-option>
+                  <ion-select-option value="2">★★</ion-select-option>
+                  <ion-select-option value="3">★★★</ion-select-option>
+                  <ion-select-option value="4">★★★★</ion-select-option>
+                  <ion-select-option value="5">★★★★★</ion-select-option>
+                </ion-select>
+                <ion-button id="ticket-close-ticket" size="small" color="medium">Cerrar ticket</ion-button>
+              </div>
+
+              <div id="ticket-reopen-actions" class="ticket-actions" hidden>
+                <ion-input id="ticket-reopen-reason" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la reapertura…"></ion-input>
+                <ion-button id="ticket-reopen" size="small" color="warning">Reabrir</ion-button>
+              </div>
+
+              <h4 class="ticket-comments-title">Comentarios (<span id="ticket-comments-count">0</span>)</h4>
+              <div id="ticket-comments"></div>
+              <p id="ticket-comments-empty" class="ticket-muted">Sin comentarios.</p>
+              <form id="ticket-comment-form" class="ticket-comment-form">
+                <ion-textarea id="ticket-comment" auto-grow rows="1" fill="outline" label="Comentario" label-placement="floating" placeholder="Añadir respuesta…"></ion-textarea>
+                <ion-checkbox id="ticket-comment-internal" label-placement="end">Nota interna</ion-checkbox>
+                <ion-button type="submit" size="small">Comentar</ion-button>
+              </form>
+            </section>
+
+            <ok-data-table id="tickets-table" fill>
+              <form id="ticket-create-form" slot="create" class="ticket-create-form">
+                <ion-input id="ticket-subject" fill="outline" label="Asunto" label-placement="floating" required></ion-input>
+                <ion-input id="ticket-customer" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-select id="ticket-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                  ${PRIORITY_OPTIONS.map(({ value, label }) => `<ion-select-option value="${value}">${label}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-select id="ticket-category" fill="outline" label="Categoría" label-placement="floating" value="general">
+                  ${CATEGORY_OPTIONS.map(({ value, label }) => `<ion-select-option value="${value}">${label}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-button type="submit">Nuevo ticket</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('tickets-table');
+          const feedback = doc.getElementById('tickets-feedback');
+          const createForm = doc.getElementById('ticket-create-form');
+          const subjectInput = doc.getElementById('ticket-subject');
+          const customerInput = doc.getElementById('ticket-customer');
+          const priorityInput = doc.getElementById('ticket-priority');
+          const categoryInput = doc.getElementById('ticket-category');
+
+          const detail = doc.getElementById('ticket-detail');
+          const detailTitle = doc.getElementById('ticket-detail-title');
+          const detailStatus = doc.getElementById('ticket-detail-status');
+          const detailPriority = doc.getElementById('ticket-detail-priority');
+          const detailCategory = doc.getElementById('ticket-detail-category');
+          const detailDescription = doc.getElementById('ticket-detail-description');
+          const statusInput = doc.getElementById('ticket-status');
+          const agentInput = doc.getElementById('ticket-agent');
+          const resolutionInput = doc.getElementById('ticket-resolution-note');
+          const ratingInput = doc.getElementById('ticket-rating');
+          const reopenInput = doc.getElementById('ticket-reopen-reason');
+          const resolveActions = doc.getElementById('ticket-resolve-actions');
+          const closeActions = doc.getElementById('ticket-close-actions');
+          const reopenActions = doc.getElementById('ticket-reopen-actions');
+          const commentForm = doc.getElementById('ticket-comment-form');
+          const commentInput = doc.getElementById('ticket-comment');
+          const commentInternal = doc.getElementById('ticket-comment-internal');
+
+          const statusLabels = Object.fromEntries(STATUS_OPTIONS.map(({ value, label }) => [value, label]));
+          const priorityLabels = Object.fromEntries(PRIORITY_OPTIONS.map(({ value, label }) => [value, label]));
+          const categoryLabels = Object.fromEntries(CATEGORY_OPTIONS.map(({ value, label }) => [value, label]));
+
+          let currentTicketId = null;
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'created_at';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const now = () => new Date().toISOString().slice(0, 19);
+          const formatTime = (value) => value ? String(value).slice(0, 16).replace('T', ' ') : '—';
+          const currentTicket = () => tickets.find(({ id }) => id === currentTicketId) ?? null;
+
+          function showFeedback(message = '') {
+            feedback.textContent = message;
+            feedback.hidden = !message;
+          }
+
+          function emitTicketEvent(name, ticket, extra = {}) {
+            doc.dispatchEvent(new CustomEvent(name, {
+              detail: { ticket: { ...ticket }, ...extra },
+              bubbles: true,
+            }));
+          }
+
+          table.columns = [
+            { key: 'ticket_number', header: 'Nº', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'subject', header: 'Asunto', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'customer_name', header: 'Cliente', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'priority',
+              header: 'Prioridad',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: PRIORITY_OPTIONS,
+              format: (row) => priorityLabels[row.priority] ?? row.priority,
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: STATUS_OPTIONS,
+              format: (row) => statusLabels[row.status] ?? row.status,
+            },
+            {
+              key: 'category',
+              header: 'Categoría',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: CATEGORY_OPTIONS,
+              format: (row) => categoryLabels[row.category] ?? row.category,
+            },
+          ];
+          table.actions = [
+            { id: 'detail', label: 'Detalle', icon: 'open-outline', color: 'primary' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.subject || row.ticket_number || '—');
+          table.cardIcon = () => 'help-buoy-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nº, asunto o cliente…';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+          table.emptyMessage = 'Sin tickets.';
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = tickets.filter((ticket) => {
+              if (term && !`${ticket.ticket_number} ${ticket.subject} ${ticket.description} ${ticket.customer_name} ${ticket.customer_email} ${ticket.customer_phone}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (['status', 'priority', 'category'].includes(column) && ticket[column] !== value) return false;
+                if (['ticket_number', 'subject', 'customer_name'].includes(column)
+                  && !String(ticket[column] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const result = String(left[sort] ?? '').localeCompare(String(right[sort] ?? ''), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function renderComments(ticket) {
+            const rows = comments.get(ticket.id) ?? [];
+            const host = doc.getElementById('ticket-comments');
+            host.replaceChildren();
+            doc.getElementById('ticket-comments-count').textContent = String(rows.length);
+            doc.getElementById('ticket-comments-empty').hidden = rows.length > 0;
+
+            for (const comment of rows) {
+              const item = doc.createElement('article');
+              item.className = 'ticket-comment';
+              const meta = doc.createElement('small');
+              meta.textContent = `${comment.author_ref || 'sistema'} · ${formatTime(comment.created_at)}${comment.is_internal ? ' · interna' : ''}`;
+              const text = doc.createElement('p');
+              text.textContent = comment.comment_text;
+              item.append(meta, text);
+              host.append(item);
+            }
+          }
+
+          function renderDetail() {
+            const ticket = currentTicket();
+            detail.hidden = !ticket;
+            if (!ticket) return;
+
+            detailTitle.textContent = `${ticket.ticket_number} — ${ticket.subject}`;
+            detailStatus.textContent = statusLabels[ticket.status] ?? ticket.status;
+            detailPriority.textContent = priorityLabels[ticket.priority] ?? ticket.priority;
+            detailCategory.textContent = categoryLabels[ticket.category] ?? ticket.category;
+            detailDescription.textContent = ticket.description;
+            detailDescription.hidden = !ticket.description;
+            doc.getElementById('ticket-detail-customer').textContent = ticket.customer_name || '—';
+            doc.getElementById('ticket-detail-assigned').textContent = ticket.assigned_to_ref || '—';
+            doc.getElementById('ticket-detail-opened').textContent = formatTime(ticket.opened_at);
+            doc.getElementById('ticket-detail-response').textContent = formatTime(ticket.first_response_at);
+            doc.getElementById('ticket-detail-resolved').textContent = formatTime(ticket.resolved_at);
+            doc.getElementById('ticket-detail-closed').textContent = formatTime(ticket.closed_at);
+            agentInput.value = ticket.assigned_to_ref ?? '';
+
+            statusInput.innerHTML = (TRANSITIONS[ticket.status] ?? [])
+              .map((value) => `<ion-select-option value="${value}">${statusLabels[value]}</ion-select-option>`)
+              .join('');
+            statusInput.value = '';
+            statusInput.hidden = !(TRANSITIONS[ticket.status] ?? []).length;
+            resolveActions.hidden = !RESOLVABLE.includes(ticket.status);
+            closeActions.hidden = ticket.status !== 'resolved';
+            reopenActions.hidden = ticket.status !== 'closed';
+            renderComments(ticket);
+          }
+
+          function setStatus(ticket, status, eventName = 'tickets.ticket.status_changed') {
+            ticket.status = status;
+            if (status === 'resolved') ticket.resolved_at = now();
+            if (status === 'closed') ticket.closed_at = now();
+            if (status === 'open') {
+              ticket.resolved_at = null;
+              ticket.closed_at = null;
+            }
+            showFeedback();
+            emitTicketEvent(eventName, ticket, { status });
+            queryPage();
+            renderDetail();
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'detail') return;
+            currentTicketId = event.detail.row.id;
+            renderDetail();
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const subject = String(subjectInput.value ?? '').trim();
+            const customer = String(customerInput.value ?? '').trim();
+            if (!subject || !customer) {
+              showFeedback('Indica el asunto y el cliente.');
+              return;
+            }
+            const sequence = tickets.length + 1;
+            const ticket = {
+              id: `t${sequence}`,
+              ticket_number: `TKT-${String(sequence).padStart(4, '0')}`,
+              subject,
+              description: '',
+              customer_name: customer,
+              customer_email: '',
+              customer_phone: '',
+              status: 'open',
+              priority: String(priorityInput.value || 'medium'),
+              category: String(categoryInput.value || 'general'),
+              assigned_to_ref: null,
+              created_by_ref: null,
+              sla_id: null,
+              opened_at: now(),
+              first_response_at: null,
+              resolved_at: null,
+              closed_at: null,
+              satisfaction_rating: null,
+              created_at: now(),
+            };
+            tickets = [...tickets, ticket];
+            comments.set(ticket.id, []);
+            subjectInput.value = '';
+            customerInput.value = '';
+            priorityInput.value = 'medium';
+            categoryInput.value = 'general';
+            table.close();
+            showFeedback();
+            emitTicketEvent('tickets.ticket.created', ticket);
+            queryPage();
+          });
+
+          doc.getElementById('ticket-detail-close').addEventListener('click', () => {
+            currentTicketId = null;
+            renderDetail();
+          });
+          statusInput.addEventListener('ionChange', (event) => {
+            const ticket = currentTicket();
+            const next = String(event.detail.value ?? '');
+            if (ticket && (TRANSITIONS[ticket.status] ?? []).includes(next)) setStatus(ticket, next);
+          });
+          doc.getElementById('ticket-assign').addEventListener('click', () => {
+            const ticket = currentTicket();
+            const assigned = String(agentInput.value ?? '').trim();
+            if (!ticket || !assigned) {
+              showFeedback('Indica el agente.');
+              return;
+            }
+            ticket.assigned_to_ref = assigned;
+            showFeedback();
+            emitTicketEvent('tickets.ticket.assigned', ticket, { assigned_to_ref: assigned });
+            renderDetail();
+          });
+          doc.getElementById('ticket-resolve').addEventListener('click', () => {
+            const ticket = currentTicket();
+            if (!ticket || !RESOLVABLE.includes(ticket.status)) return;
+            const resolutionNote = String(resolutionInput.value ?? '').trim();
+            resolutionInput.value = '';
+            setStatus(ticket, 'resolved', 'tickets.ticket.resolved');
+            if (resolutionNote) {
+              comments.get(ticket.id).push({
+                author_ref: 'demo@erplora.com',
+                comment_text: resolutionNote,
+                is_internal: true,
+                created_at: now(),
+              });
+              renderComments(ticket);
+            }
+          });
+          doc.getElementById('ticket-close-ticket').addEventListener('click', () => {
+            const ticket = currentTicket();
+            if (!ticket || ticket.status !== 'resolved') return;
+            ticket.satisfaction_rating = ratingInput.value ? Number(ratingInput.value) : null;
+            ratingInput.value = null;
+            setStatus(ticket, 'closed', 'tickets.ticket.closed');
+          });
+          doc.getElementById('ticket-reopen').addEventListener('click', () => {
+            const ticket = currentTicket();
+            const reason = String(reopenInput.value ?? '').trim();
+            if (!ticket || ticket.status !== 'closed' || !reason) {
+              showFeedback('Indica el motivo de la reapertura.');
+              return;
+            }
+            reopenInput.value = '';
+            comments.get(ticket.id).push({
+              author_ref: 'demo@erplora.com',
+              comment_text: reason,
+              is_internal: true,
+              created_at: now(),
+            });
+            setStatus(ticket, 'open', 'tickets.ticket.reopened');
+          });
+          commentForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const ticket = currentTicket();
+            const text = String(commentInput.value ?? '').trim();
+            if (!ticket || !text) return;
+            const comment = {
+              author_ref: 'demo@erplora.com',
+              comment_text: text,
+              is_internal: Boolean(commentInternal.checked),
+              created_at: now(),
+            };
+            comments.get(ticket.id).push(comment);
+            commentInput.value = '';
+            commentInternal.checked = false;
+            emitTicketEvent('tickets.comment.added', ticket, { comment });
+            renderComments(ticket);
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

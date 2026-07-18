@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Impresoras</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .printing-settings-page {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.85fr);
+        gap: 1rem;
+        align-items: start;
+      }
+
+      .printing-settings-page ion-card { margin: 0; }
+      .printing-settings-form { display: flex; flex-direction: column; gap: 0.75rem; }
+      .printing-settings-form ion-button { align-self: flex-end; }
+      .printing-printer-id { color: var(--ion-color-medium); font-size: 0.78rem; }
+      .printing-printer-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      .printing-printer-actions ion-select { min-width: 8.5rem; }
+      .printing-printer-actions ion-button { margin-inline: 0; }
+
+      @media (max-width: 760px) {
+        .printing-settings-page { grid-template-columns: 1fr; }
+        .printing-settings-form ion-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable del fixture oficial printing.settings.get.json.
+      const SETTINGS_FIXTURE = [
+        {
+          "id": "settings-1",
+          "receipt_header": "Mi Negocio · NIF B12345678",
+          "receipt_footer": "¡Gracias por su compra!",
+          "paper_width": 80,
+          "auto_print_on_sale": 1,
+          "open_drawer_on_sale": 0,
+          "print_kitchen": 0
+        }
+      ];
+
+      // Forma real BridgePrinter; la dirección/modelo proceden del ejemplo E2E del Bridge.
+      const PRINTER_FIXTURE = [
+        {
+          id: 'network:192.168.1.50:9100',
+          name: 'Epson TM-T20III',
+          type: 'network',
+          status: 'online',
+          paper_width: 80,
+          mac: '02:42:C0:A8:01:32',
+          role: 'receipt',
+        },
+      ];
+
+      const commandLog = [];
+      const queryLog = [];
+      const peripheralLog = [];
+
+      function recordQuery(name, params = {}) {
+        queryLog.push({ name, params: { ...params } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      function recordPeripheral(name, payload = {}) {
+        peripheralLog.push({ name, payload: { ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-peripheral', { detail: { name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/printing/printing',
+        title: 'Impresoras',
+        body: `
+          <div class="printing-settings-page">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Ajustes del ticket</ion-card-title>
+                <ion-card-subtitle>Formato y comportamiento al cobrar</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <form id="printing-settings-form" class="printing-settings-form">
+                  <ion-input
+                    id="printing-receipt-header"
+                    fill="outline"
+                    label="Cabecera del recibo"
+                    label-placement="floating"
+                    placeholder="Mi negocio · NIF · dirección"
+                  ></ion-input>
+                  <ion-input
+                    id="printing-receipt-footer"
+                    fill="outline"
+                    label="Pie del recibo"
+                    label-placement="floating"
+                    placeholder="¡Gracias por su compra!"
+                  ></ion-input>
+                  <ion-list inset>
+                    <ion-item>
+                      <ion-select
+                        id="printing-paper-width"
+                        label="Ancho de papel"
+                        interface="popover"
+                        value="80"
+                      >
+                        <ion-select-option value="80">80 mm</ion-select-option>
+                        <ion-select-option value="58">58 mm</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    <ion-item>
+                      <ion-toggle id="printing-auto-print-on-sale" justify="space-between">
+                        Imprimir ticket al cobrar
+                      </ion-toggle>
+                    </ion-item>
+                    <ion-item>
+                      <ion-toggle id="printing-open-drawer-on-sale" justify="space-between">
+                        Abrir cajón al cobrar
+                      </ion-toggle>
+                    </ion-item>
+                    <ion-item>
+                      <ion-toggle id="printing-print-kitchen" justify="space-between">
+                        Enrutar comandas a cocina/barra
+                      </ion-toggle>
+                    </ion-item>
+                  </ion-list>
+                  <ion-button id="printing-save" type="submit">Guardar ajustes</ion-button>
+                </form>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Impresoras en la red</ion-card-title>
+                <ion-card-subtitle>
+                  <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+                  Bridge conectado · v0.1.2
+                </ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-button id="printing-rescan" size="small" fill="outline">
+                  <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                  Re-escanear
+                </ion-button>
+                <ion-list id="printing-printers" lines="full"></ion-list>
+              </ion-card-content>
+            </ion-card>
+          </div>
+          <ion-toast id="printing-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const settings = { ...SETTINGS_FIXTURE[0] };
+          const form = doc.getElementById('printing-settings-form');
+          const headerInput = doc.getElementById('printing-receipt-header');
+          const footerInput = doc.getElementById('printing-receipt-footer');
+          const widthSelect = doc.getElementById('printing-paper-width');
+          const autoPrintToggle = doc.getElementById('printing-auto-print-on-sale');
+          const drawerToggle = doc.getElementById('printing-open-drawer-on-sale');
+          const kitchenToggle = doc.getElementById('printing-print-kitchen');
+          const printersList = doc.getElementById('printing-printers');
+          const rescanButton = doc.getElementById('printing-rescan');
+          const toast = doc.getElementById('printing-toast');
+
+          headerInput.value = settings.receipt_header;
+          footerInput.value = settings.receipt_footer;
+          widthSelect.value = String(settings.paper_width);
+          autoPrintToggle.checked = settings.auto_print_on_sale === 1;
+          drawerToggle.checked = settings.open_drawer_on_sale === 1;
+          kitchenToggle.checked = settings.print_kitchen === 1;
+
+          function showToast(message, color = 'success') {
+            toast.message = message;
+            toast.color = color;
+            toast.isOpen = true;
+          }
+
+          function renderPrinters() {
+            printersList.innerHTML = PRINTER_FIXTURE.map((printer) => `
+              <ion-item>
+                <ion-icon slot="start" name="print-outline"></ion-icon>
+                <ion-label>
+                  <h2>${printer.name}</h2>
+                  <p>${printer.status} · ${printer.paper_width} mm</p>
+                  <p class="printing-printer-id">${printer.id} · ${printer.mac}</p>
+                </ion-label>
+                <div slot="end" class="printing-printer-actions">
+                  <ion-select class="printing-role" data-mac="${printer.mac}" aria-label="Rol" interface="popover" value="${printer.role}">
+                    <ion-select-option value="receipt">Recibo</ion-select-option>
+                    <ion-select-option value="kitchen">Cocina</ion-select-option>
+                    <ion-select-option value="bar">Barra</ion-select-option>
+                    <ion-select-option value="label">Etiqueta</ion-select-option>
+                  </ion-select>
+                  <ion-button class="printing-test" data-printer-id="${printer.id}" size="small" fill="outline">Probar</ion-button>
+                </div>
+              </ion-item>
+            `).join('');
+
+            printersList.querySelectorAll('.printing-role').forEach((select) => {
+              select.addEventListener('ionChange', (event) => {
+                const role = String(event.detail.value ?? '');
+                recordPeripheral('setDeviceRole', { mac: select.dataset.mac, role });
+                showToast(`Rol ${role} asignado.`);
+              });
+            });
+            printersList.querySelectorAll('.printing-test').forEach((button) => {
+              button.addEventListener('click', () => {
+                recordPeripheral('testPrint', { printer_id: button.dataset.printerId });
+                showToast('Página de prueba enviada.');
+              });
+            });
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const payload = {
+              receipt_header: String(headerInput.value ?? ''),
+              receipt_footer: String(footerInput.value ?? ''),
+              paper_width: Number(widthSelect.value) === 58 ? 58 : 80,
+              auto_print_on_sale: autoPrintToggle.checked ? 1 : 0,
+              open_drawer_on_sale: drawerToggle.checked ? 1 : 0,
+              print_kitchen: kitchenToggle.checked ? 1 : 0,
+            };
+            recordCommand('printing.settings.update', payload);
+            showToast('Ajustes guardados.');
+          });
+
+          rescanButton.addEventListener('click', () => {
+            recordPeripheral('discoverPrinters', {});
+            renderPrinters();
+            showToast('Red escaneada.');
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          recordQuery('printing.settings.get', {});
+          recordPeripheral('discoverPrinters', {});
+          renderPrinters();
+        },
+      });
+    </script>
+  </body>
+</html>

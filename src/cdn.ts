@@ -50,7 +50,6 @@ import './components/ok-spotlight-search/ok-spotlight-search.js';
 import './components/ok-color-picker/ok-color-picker.js';
 import './components/ok-avatar/ok-avatar.js';
 import './components/ok-status-pill/ok-status-pill.js';
-import './components/ok-drawer/ok-drawer.js';
 import './components/ok-page-header/ok-page-header.js';
 // Marketing 2026 (bento · cards · scroll-reveal · prueba social)
 import './components/ok-bento/ok-bento.js';
@@ -69,7 +68,6 @@ import './components/ok-footer/ok-footer.js';
 import './components/ok-hero/ok-hero.js';
 // ── ux-legacy port (Tier 1+2 huecos de Ionic) ─────────────────────────────────────────────────
 import './components/ok-pagination/ok-pagination.js';
-import './components/ok-skeleton/ok-skeleton.js';
 import './components/ok-gauge/ok-gauge.js';
 import './components/ok-chart/ok-chart.js';
 import './components/ok-donut/ok-donut.js';
@@ -87,9 +85,6 @@ import './components/ok-coachmark/ok-coachmark.js';
 import './components/ok-select-card/ok-select-card.js';
 import './components/ok-theme-picker/ok-theme-picker.js';
 import './components/ok-error-page/ok-error-page.js';
-import './components/ok-date-picker/ok-date-picker.js';
-import './components/ok-time-picker/ok-time-picker.js';
-import './components/ok-range-dual/ok-range-dual.js';
 import './components/ok-file-item/ok-file-item.js';
 import './components/ok-rich-text/ok-rich-text.js';
 import './components/ok-code/ok-code.js';

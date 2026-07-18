@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Docs · ERPlora Cloud</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
+  </head>
+  <body>
+    <script type="module">
+      import { defineDeveloperPage } from './_saas-developer.js';
+
+      defineDeveloperPage({
+        activeTab: 'apidocs',
+        title: 'API Docs',
+        body: `
+          <div class="developer-page developer-section-stack">
+            <iframe src="/api/docs/" title="API Docs" class="developer-api-frame"></iframe>
+          </div>`,
+      });
+    </script>
+  </body>
+</html>

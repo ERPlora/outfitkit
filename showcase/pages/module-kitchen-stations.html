@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Estaciones</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .kitchen-stations-page { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0.75rem; }
+      .kitchen-stations-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .kitchen-station-create { display: flex; flex-direction: column; gap: 0.7rem; }
+      .kitchen-station-create ion-button { align-self: flex-end; }
+      .kitchen-station-panel-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; align-items: end; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Estación y recuento canónicos de erp-kitchen-orders-stations.test.ts.
+      const STATION_FIXTURE = [
+        { "id": "st1", "name": "Plancha", "color": "#F97316", "icon": "flame", "printer_name": "COCINA-1", "is_active": 1, "pending_count": 3 }
+      ];
+
+      let stations = STATION_FIXTURE.map((row) => ({ ...row }));
+      let editingId = '';
+      const state = { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} };
+
+      function recordQuery(name, params = {}) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/kitchen/stations',
+        title: 'Estaciones',
+        body: `
+          <div class="kitchen-stations-page">
+            <ion-card id="kitchen-station-edit" hidden>
+              <ion-card-header><ion-card-title id="kitchen-station-edit-title">Editar estación</ion-card-title></ion-card-header>
+              <ion-card-content>
+                <form id="kitchen-station-edit-form" class="kitchen-station-panel-form">
+                  <ion-input id="kitchen-station-edit-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                  <ion-input id="kitchen-station-edit-color" fill="outline" label="Color" label-placement="floating" placeholder="#F97316"></ion-input>
+                  <ion-input id="kitchen-station-edit-printer" fill="outline" label="Impresora" label-placement="floating"></ion-input>
+                  <ion-toggle id="kitchen-station-edit-active">Activa</ion-toggle>
+                  <ion-button type="submit" size="small">Guardar</ion-button>
+                  <ion-button id="kitchen-station-edit-cancel" type="button" size="small" fill="outline">Cancelar</ion-button>
+                </form>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header><ion-card-title>Enrutado producto/categoría → estación</ion-card-title></ion-card-header>
+              <ion-card-content>
+                <form id="kitchen-routing-form" class="kitchen-station-panel-form">
+                  <ion-select id="kitchen-routing-station" fill="outline" label="Estación" label-placement="floating"></ion-select>
+                  <ion-input id="kitchen-routing-product" fill="outline" label="ID de producto" label-placement="floating" placeholder="Opcional"></ion-input>
+                  <ion-input id="kitchen-routing-category" fill="outline" label="ID de categoría" label-placement="floating" placeholder="Opcional"></ion-input>
+                  <ion-button type="submit" size="small">Guardar enrutado</ion-button>
+                </form>
+              </ion-card-content>
+            </ion-card>
+
+            <ok-data-table id="kitchen-stations-table" fill>
+              <form id="kitchen-station-create" slot="create" class="kitchen-station-create">
+                <ion-input id="kitchen-station-name" fill="outline" label="Nombre" label-placement="floating" placeholder="p. ej. Plancha" required></ion-input>
+                <ion-input id="kitchen-station-printer" fill="outline" label="Impresora" label-placement="floating" placeholder="Opcional"></ion-input>
+                <ion-button type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="kitchen-stations-toast" duration="1800" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('kitchen-stations-table');
+          const createForm = doc.getElementById('kitchen-station-create');
+          const createName = doc.getElementById('kitchen-station-name');
+          const createPrinter = doc.getElementById('kitchen-station-printer');
+          const editPanel = doc.getElementById('kitchen-station-edit');
+          const editTitle = doc.getElementById('kitchen-station-edit-title');
+          const editForm = doc.getElementById('kitchen-station-edit-form');
+          const editName = doc.getElementById('kitchen-station-edit-name');
+          const editColor = doc.getElementById('kitchen-station-edit-color');
+          const editPrinter = doc.getElementById('kitchen-station-edit-printer');
+          const editActive = doc.getElementById('kitchen-station-edit-active');
+          const editCancel = doc.getElementById('kitchen-station-edit-cancel');
+          const routingForm = doc.getElementById('kitchen-routing-form');
+          const routingStation = doc.getElementById('kitchen-routing-station');
+          const routingProduct = doc.getElementById('kitchen-routing-product');
+          const routingCategory = doc.getElementById('kitchen-routing-category');
+          const toast = doc.getElementById('kitchen-stations-toast');
+
+          table.columns = [
+            { key: 'name', header: 'Estación', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'printer_name', header: 'Impresora', sortable: true, filterable: true, filterType: 'text', format: (row) => row.printer_name || '—' },
+            { key: 'pending_count', header: 'En curso', align: 'right', format: (row) => String(row.pending_count || 0) },
+            {
+              key: 'is_active', header: 'Activa', sortable: true, filterable: true, filterType: 'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              format: (row) => Number(row.is_active) ? 'Sí' : 'No',
+            },
+          ];
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'route', label: 'Enrutar', icon: 'git-branch-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name || '—');
+          table.cardIcon = () => 'flame-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar estación…';
+          table.emptyMessage = 'Sin estaciones.';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+
+          function refreshRoutingOptions() {
+            const selected = String(routingStation.value || '');
+            routingStation.innerHTML = stations.map((station) => `<ion-select-option value="${station.id}">${station.name}</ion-select-option>`).join('');
+            routingStation.value = stations.some((station) => station.id === selected) ? selected : '';
+          }
+
+          function queryPage() {
+            recordQuery('kitchen.stations.list', { ...state });
+            recordQuery('kitchen.stations.pending_counts', {});
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = stations
+              .filter((row) => {
+                if (term && !`${row.name} ${row.printer_name}`.toLocaleLowerCase('es').includes(term)) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value == null || value === '') return true;
+                  if (key === 'is_active') return String(row[key]) === String(value);
+                  return String(row[key] || '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                });
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] || '').localeCompare(String(right[state.sort] || ''), 'es', { numeric: true });
+                return state.dir === 'desc' ? -result : result;
+              });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            refreshRoutingOptions();
+          }
+
+          function closeEdit() {
+            editingId = '';
+            editPanel.hidden = true;
+          }
+
+          function openEdit(station) {
+            editingId = station.id;
+            editTitle.textContent = `Editar estación · ${station.name}`;
+            editName.value = station.name;
+            editColor.value = station.color || '';
+            editPrinter.value = station.printer_name || '';
+            editActive.checked = Boolean(Number(station.is_active));
+            editPanel.hidden = false;
+          }
+
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(createName.value || '').trim();
+            if (!name) return;
+            const printerName = String(createPrinter.value || '').trim();
+            recordCommand('kitchen.stations.create', { name, printer_name: printerName });
+            stations = [...stations, {
+              id: `preview-station-${stations.length + 1}`,
+              name,
+              color: '#F97316',
+              icon: 'flame-outline',
+              printer_name: printerName,
+              is_active: 1,
+              pending_count: 0,
+            }];
+            createName.value = '';
+            createPrinter.value = '';
+            table.close();
+            queryPage();
+          });
+
+          editForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!editingId) return;
+            const payload = {
+              station_id: editingId,
+              name: String(editName.value || '').trim() || null,
+              color: String(editColor.value || '').trim() || null,
+              printer_name: String(editPrinter.value || '').trim(),
+              is_active: editActive.checked ? 1 : 0,
+            };
+            recordCommand('kitchen.stations.update', payload);
+            stations = stations.map((station) => station.id === editingId ? { ...station, ...payload, id: station.id } : station);
+            closeEdit();
+            queryPage();
+          });
+          editCancel.addEventListener('click', closeEdit);
+
+          routingForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const stationId = String(routingStation.value || '');
+            const productId = String(routingProduct.value || '').trim();
+            const categoryId = String(routingCategory.value || '').trim();
+            if (!stationId || (!productId && !categoryId)) return;
+            recordCommand('kitchen.stations.set_routing', { station_id: stationId, product_id: productId, category_id: categoryId });
+            routingProduct.value = '';
+            routingCategory.value = '';
+            toast.message = 'Enrutado guardado.';
+            toast.color = 'success';
+            toast.isOpen = true;
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const row = event.detail?.row;
+            if (!row) return;
+            if (event.detail.actionId === 'edit') return openEdit(row);
+            if (event.detail.actionId === 'route') {
+              routingStation.value = row.id;
+              return;
+            }
+            if (event.detail.actionId !== 'delete') return;
+            recordCommand('kitchen.stations.delete', { station_id: row.id });
+            stations = stations.filter((station) => station.id !== row.id);
+            if (editingId === row.id) closeEdit();
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

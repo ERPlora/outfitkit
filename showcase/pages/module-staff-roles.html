@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Roles</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .roles-page { display:flex; flex-direction:column; height:100%; min-height:0; }
+      .roles-page > ok-data-table { flex:1 1 auto; min-height:0; }
+      .role-form { display:flex; flex-direction:column; gap:.7rem; }
+      .role-form ion-button { align-self:flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fila canónica de erp-staff-roles.test.ts.
+      const ROLE_FIXTURE = [
+        {
+          "id": "r1",
+          "name": "Peluquero",
+          "description": "Corte y color",
+          "color": "#aa0000",
+          "member_count": 2
+        }
+      ];
+
+      const LABELS = {
+        search:'Buscar…', empty:'Sin roles.', filters:'Filtros', clear:'Limpiar', apply:'Aplicar',
+        moreActions:'Más acciones', rowsPerPage:'Filas por página', perPageShort:'{n} / pág.',
+        viewList:'Vista lista', viewCards:'Vista tarjetas', columnsVisible:'Columnas visibles',
+        columns:'Columnas', actions:'Acciones', close:'Cerrar', filterPlaceholder:'Filtrar…',
+        noValues:'Sin valores', showing:'Mostrando {from}–{to} de',
+        recordSingular:'rol', recordPlural:'roles',
+      };
+
+      let roles = ROLE_FIXTURE.map((role) => ({ ...role }));
+      const state = { page:0, pageSize:50, sort:'name', dir:'asc', search:'', filters:{} };
+
+      defineHubPage({
+        active: '/m/staff/roles',
+        title: 'Roles',
+        body: `
+          <div class="roles-page">
+            <ok-data-table id="roles-table" fill>
+              <form id="role-form" slot="create" class="role-form">
+                <ion-input id="role-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-input id="role-description" fill="outline" label="Descripción" label-placement="floating"></ion-input>
+                <ion-input id="role-color" fill="outline" label="Color" label-placement="floating" placeholder="#aa0000"></ion-input>
+                <ion-button type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="role-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('roles-table');
+          const form = doc.getElementById('role-form');
+          const nameInput = doc.getElementById('role-name');
+          const descriptionInput = doc.getElementById('role-description');
+          const colorInput = doc.getElementById('role-color');
+          const toast = doc.getElementById('role-toast');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'shield-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar roles…';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'name', header: 'Rol', sortable:true, filterable:true, filterType:'text' },
+            { key: 'description', header: 'Descripción', sortable:true, filterable:true, filterType:'text' },
+            {
+              key: 'member_count', header: 'Miembros', align:'right', sortable:true,
+              filterable:true, filterType: 'range',
+            },
+          ];
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = roles.filter((role) => {
+              if (search && !`${role.name} ${role.description}`.toLocaleLowerCase('es').includes(search)) return false;
+              for (const [key, value] of Object.entries(state.filters)) {
+                if (value == null || value === '') continue;
+                if (key === 'member_count') {
+                  if (!matchesRange(role.member_count, value)) return false;
+                } else if (!String(role[key]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) {
+                  return false;
+                }
+              }
+              return true;
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric:true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          function emitCommand(commandName, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:demo-command', {
+              detail:{ commandName, payload }, bubbles:true,
+            }));
+          }
+
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'name';
+            state.dir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? ''); state.page = 0; queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col ?? event.detail?.key;
+            if (!key) return;
+            state.filters[key] = event.detail?.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            if (!name) return;
+            const payload = {
+              name,
+              description:String(descriptionInput.value ?? '').trim(),
+              color:String(colorInput.value ?? '').trim(),
+              order:0,
+            };
+            roles = [...roles, { id:`role-demo-${Date.now()}`, ...payload, member_count:0 }];
+            emitCommand('staff.roles.create', payload);
+            nameInput.value = '';
+            descriptionInput.value = '';
+            colorInput.value = '';
+            table.close();
+            toast.message = 'Rol creado.';
+            toast.color = 'success';
+            toast.isOpen = true;
+            queryPage();
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

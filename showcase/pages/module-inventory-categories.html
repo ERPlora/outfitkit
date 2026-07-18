@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Inventario · Categorías</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .inventory-categories-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .inventory-categories-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .inventory-category-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .inventory-category-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .inventory-category-error {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 575px) {
+        .inventory-category-actions {
+          flex-direction: column-reverse;
+        }
+
+        .inventory-category-actions ion-button {
+          width: 100%;
+          margin-inline: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de modules/inventory/fixtures/inventory.categories.list.json.
+      const CATEGORY_FIXTURE = [
+        { "id": "c-1", "name": "Bebidas", "slug": "bebidas", "icon": "cafe", "color": "#8a5", "product_count": 14 },
+        { "id": "c-2", "name": "Lácteos", "slug": "lacteos", "icon": "nutrition", "color": "#5ad", "product_count": 6 },
+        { "id": "c-3", "name": "Panadería", "slug": "panaderia", "icon": "pizza", "color": "#d95", "product_count": 9 },
+        { "id": "c-4", "name": "Desechables", "slug": "desechables", "icon": "trash", "color": "#999", "product_count": 11 },
+        { "id": "c-5", "name": "Snacks", "slug": "snacks", "icon": "fast-food", "color": "#e87", "product_count": 7 },
+        { "id": "c-6", "name": "Limpieza", "slug": "limpieza", "icon": "sparkles", "color": "#6c9", "product_count": 4 }
+      ];
+
+      let categories = CATEGORY_FIXTURE.map((row) => ({
+        ...row,
+        tax_category_key: null,
+      }));
+
+      defineHubPage({
+        active: '/m/inventory/categories',
+        title: 'Categorías',
+        body: `
+          <div class="inventory-categories-page">
+            <p id="inventory-categories-error" class="inventory-category-error" hidden></p>
+            <ok-data-table id="inventory-categories-table" fill>
+              <form id="inventory-category-form" slot="create" class="inventory-category-form">
+                <ion-input id="category-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input id="category-slug"
+                  fill="outline"
+                  label="Slug (opcional)"
+                  label-placement="floating"
+                ></ion-input>
+                <ion-select id="category-tax"
+                  fill="outline"
+                  label="Tipo de IVA / Impuesto"
+                  label-placement="floating"
+                  value=""
+                >
+                  <ion-select-option value="">— (sin categoría)</ion-select-option>
+                </ion-select>
+                <div class="inventory-category-actions">
+                  <ion-button id="category-cancel" type="button" fill="clear">Cancelar</ion-button>
+                  <ion-button id="category-save" type="submit">Guardar</ion-button>
+                </div>
+              </form>
+            </ok-data-table>
+
+            <ion-alert id="inventory-category-delete"></ion-alert>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('inventory-categories-table');
+          const form = doc.getElementById('inventory-category-form');
+          const nameInput = doc.getElementById('category-name');
+          const slugInput = doc.getElementById('category-slug');
+          const taxSelect = doc.getElementById('category-tax');
+          const cancelButton = doc.getElementById('category-cancel');
+          const error = doc.getElementById('inventory-categories-error');
+          const deleteAlert = doc.getElementById('inventory-category-delete');
+
+          let page = 0;
+          let pageSize = 25;
+          let sort = 'name';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+          let editingId = null;
+          let deletingId = null;
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'slug', header: 'Slug', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'product_count', header: 'Productos', align: 'right', sortable: true, filterable: true, filterType: 'range' },
+          ];
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'pricetags-outline';
+          table.views = true;
+          table.columnPicker = true;
+          table.csv = true;
+          table.csvName = 'inventory-categories.csv';
+          table.addable = true;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar categoría…';
+          table.pageSize = 25;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.emptyMessage = 'Sin categorías.';
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          const makeSlug = (value) => String(value ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLocaleLowerCase('es')
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          const rangeMatch = (value, range) => {
+            if (!range || typeof range !== 'object') return true;
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            const number = Number(value);
+            return (from == null || number >= from) && (to == null || number <= to);
+          };
+
+          function renderRows() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = categories.filter((row) => {
+              if (term && !`${row.name} ${row.slug}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'product_count' && !rangeMatch(row.product_count, value)) return false;
+                if ((column === 'name' || column === 'slug')
+                  && !String(row[column]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = left[sort];
+              const b = right[sort];
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            const lastPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
+            page = Math.min(page, lastPage);
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.total = filtered.length;
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function resetForm() {
+            editingId = null;
+            nameInput.value = '';
+            slugInput.value = '';
+            taxSelect.value = '';
+            showError();
+          }
+
+          function openEditor(row) {
+            editingId = row.id;
+            nameInput.value = row.name;
+            slugInput.value = row.slug;
+            taxSelect.value = row.tax_category_key ?? '';
+            table.open('create');
+          }
+
+          function requestDelete(row) {
+            deletingId = row.id;
+            Object.assign(deleteAlert, {
+              header: 'Eliminar categoría',
+              message: row.product_count > 0
+                ? `“${row.name}” contiene ${row.product_count} productos. Comprueba sus vínculos antes de eliminarla.`
+                : `¿Quieres eliminar “${row.name}”?`,
+              buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Eliminar', role: 'destructive' },
+              ],
+            });
+            deleteAlert.present();
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const category = categories.find((candidate) => candidate.id === row.id);
+            if (!category) return;
+            if (actionId === 'edit') openEditor(category);
+            if (actionId === 'delete') requestDelete(category);
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            renderRows();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 25;
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            renderRows();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('csvImport', (event) => {
+            const imported = (event.detail.rows ?? [])
+              .filter((row) => String(row.name ?? '').trim())
+              .map((row, index) => ({
+                id: `csv-category-${categories.length + index + 1}`,
+                name: String(row.name).trim(),
+                slug: String(row.slug ?? '').trim() || makeSlug(row.name),
+                icon: String(row.icon ?? 'cube-outline'),
+                color: String(row.color ?? '#3880ff'),
+                product_count: 0,
+                tax_category_key: row.tax_category_key || null,
+              }));
+            categories = [...categories, ...imported];
+            page = 0;
+            renderRows();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            const slug = String(slugInput.value ?? '').trim() || makeSlug(name);
+            if (!name) {
+              showError('El nombre es obligatorio.');
+              return;
+            }
+
+            if (editingId) {
+              categories = categories.map((row) => row.id === editingId ? {
+                ...row,
+                name,
+                slug,
+                tax_category_key: taxSelect.value || null,
+              } : row);
+            } else {
+              categories = [...categories, {
+                id: `category-${categories.length + 1}`,
+                name,
+                slug,
+                icon: 'cube-outline',
+                color: '#3880ff',
+                product_count: 0,
+                tax_category_key: taxSelect.value || null,
+              }];
+            }
+
+            resetForm();
+            table.close();
+            renderRows();
+          });
+
+          cancelButton.addEventListener('click', () => {
+            resetForm();
+            table.close();
+          });
+          deleteAlert.addEventListener('didDismiss', (event) => {
+            if (event.detail.role === 'destructive' && deletingId) {
+              categories = categories.filter((row) => row.id !== deletingId);
+              renderRows();
+            }
+            deletingId = null;
+          });
+
+          resetForm();
+          renderRows();
+        },
+      });
+    </script>
+  </body>
+</html>
