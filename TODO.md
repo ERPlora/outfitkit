@@ -14,8 +14,8 @@
   `render` de celda, `columnPicker`, CSV import/export, page-size, vista lista/tarjetas.
 - **`module-toolkit`** (CLI estilo Ionic): `startproject` · `g module/view/command/query` · `dev`
   (preview con mock + CSP) · `build` · `validate` · `pack`/`sign` · `publish` (guía).
-- **`modules-workspace`**: 25 módulos POS; **inventory = módulo de referencia**
-  (Dashboard · Products · Categories · Settings).
+- **`modules-workspace`**: N módulos POS (ver `ls modules-workspace/modules`); **inventory = módulo
+  de referencia** (Dashboard · Products · Categories · Settings).
 - `pnpm -F @erplora/web verify` (Hub) en VERDE.
 
 ---
@@ -90,9 +90,9 @@ Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por d
 ## Pendiente / housekeeping
 
 - [ ] **Verificar Cloud** tras el re-vendor del OutfitKit (carga `vendor/outfitkit/outfitkit.js` nuevo).
-- [ ] **Commits**: nada commiteado todavía — `ERPlora/outfitkit`, los 25 repos de módulo (con `dist`
-      rebuildeado), el mirror `hub/packages/outfitkit`, el vendor de Cloud, `module-toolkit`,
-      `modules-workspace`.
+- [ ] **Commits**: nada commiteado todavía — `ERPlora/outfitkit`, los repos de módulo (ver `ls
+      modules-workspace/modules`; con `dist` rebuildeado), el mirror `hub/packages/outfitkit`, el
+      vendor de Cloud, `module-toolkit`, `modules-workspace`.
 - [ ] Borrar/archivar `hub/packages/module-cli` (deprecado → ver su `DEPRECATED.md`).
 - [x] `module-sdk`: `ListController.setPageSize()` añadido.
 
