@@ -64,31 +64,34 @@ export class OkCtaBand extends LitElement {
       border: 1px solid color-mix(in oklab, var(--color) 12%, transparent);
     }
     .eyebrow {
-      font-size: 0.74rem;
-      font-weight: 600;
+      font-size: var(--ok-type-eyebrow-size, 0.72rem);
+      font-weight: var(--ok-type-eyebrow-weight, 600);
+      line-height: var(--ok-type-eyebrow-leading, 1.2);
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--muted);
     }
     .title {
       margin: 0;
-      font-size: clamp(1.7rem, 1.1rem + 2.8vw, 3rem);
-      line-height: 1.08;
+      font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+      font-size: var(--ok-type-section-title-size, clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem));
+      line-height: var(--ok-type-section-title-leading, 1.06);
       letter-spacing: -0.03em;
-      font-weight: 680;
+      font-weight: var(--ok-type-section-title-weight, 650);
       max-width: 22ch;
     }
     ::slotted([slot='heading']) {
       margin: 0;
-      font-size: clamp(1.7rem, 1.1rem + 2.8vw, 3rem);
-      line-height: 1.08;
+      font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+      font-size: var(--ok-type-section-title-size, clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem));
+      line-height: var(--ok-type-section-title-leading, 1.06);
       letter-spacing: -0.03em;
-      font-weight: 680;
+      font-weight: var(--ok-type-section-title-weight, 650);
     }
     .sub {
       margin: 0;
-      font-size: clamp(1rem, 0.95rem + 0.3vw, 1.2rem);
-      line-height: 1.5;
+      font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+      line-height: var(--ok-type-intro-leading, 1.6);
       color: var(--muted);
       max-width: 50ch;
     }
