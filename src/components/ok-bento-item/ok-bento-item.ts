@@ -87,20 +87,26 @@ export class OkBentoItem extends LitElement {
       mask: var(--u) center / contain no-repeat;
     }
     .eyebrow {
-      font-size: 0.7rem;
-      font-weight: 600;
+      font-size: var(--ok-type-eyebrow-size, 0.72rem);
+      font-weight: var(--ok-type-eyebrow-weight, 600);
+      line-height: var(--ok-type-eyebrow-leading, 1.2);
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--muted);
     }
     .title {
       margin: 0;
-      font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.35rem);
-      font-weight: 620;
+      font-size: var(--ok-type-card-title-size, 1.15rem);
+      font-weight: var(--ok-type-card-title-weight, 620);
       letter-spacing: -0.015em;
-      line-height: 1.2;
+      line-height: var(--ok-type-card-title-leading, 1.25);
     }
-    ::slotted(p) { margin: 0; color: var(--muted); line-height: 1.55; }
+    ::slotted(p) {
+      margin: 0;
+      color: var(--muted);
+      font-size: var(--ok-type-card-body-size, 0.92rem);
+      line-height: var(--ok-type-card-body-leading, 1.55);
+    }
   `;
 
   /** Columnas que ocupa en la rejilla (def 2). */

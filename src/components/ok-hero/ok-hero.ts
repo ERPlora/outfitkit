@@ -85,9 +85,9 @@ export class OkHero extends LitElement {
       border-radius: 999px;
       color: var(--primary);
       background: color-mix(in oklab, var(--primary) 12%, transparent);
-      font-size: 0.72rem;
-      font-weight: 600;
-      line-height: 1.2;
+      font-size: var(--ok-type-eyebrow-size, 0.72rem);
+      font-weight: var(--ok-type-eyebrow-weight, 600);
+      line-height: var(--ok-type-eyebrow-leading, 1.2);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -110,14 +110,14 @@ export class OkHero extends LitElement {
       max-width: 52rem;
       margin: 0;
       font-family: var(--font-display);
-      font-size: clamp(2.35rem, 1.75rem + 2.6vw, 4rem);
-      font-weight: 650;
-      line-height: 1.04;
+      font-size: var(--ok-type-page-title-size, clamp(2.35rem, 1.75rem + 2.6vw, 4rem));
+      font-weight: var(--ok-type-page-title-weight, 650);
+      line-height: var(--ok-type-page-title-leading, 1.04);
       letter-spacing: -0.045em;
       text-wrap: balance;
     }
     :host([compact]) .title {
-      font-size: clamp(2rem, 1.55rem + 2vw, 3.25rem);
+      font-size: var(--ok-type-page-title-compact-size, clamp(2rem, 1.55rem + 2vw, 3.25rem));
     }
     .title ::slotted([slot='title']) {
       margin: 0 !important;
@@ -134,8 +134,8 @@ export class OkHero extends LitElement {
       max-width: 46rem;
       margin: 1.5rem 0 0;
       color: var(--color-muted);
-      font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-      line-height: 1.6;
+      font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+      line-height: var(--ok-type-intro-leading, 1.6);
       text-wrap: pretty;
     }
     .subtitle ::slotted([slot='subtitle']) {
