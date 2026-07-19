@@ -53,10 +53,11 @@
   min-width: 0;
 }
 
-/* Grid de cards/KPIs sin clases de breakpoint: se adapta solo al ancho útil. */
+/* Grid de cards/KPIs sin clases de breakpoint: se adapta solo al ancho útil.
+   auto-fit colapsa tracks vacíos para que 2–3 tarjetas sigan llenando el eje. */
 .ok-grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--ok-card-min, 260px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--ok-card-min, 16rem), 100%), 1fr));
   gap: var(--ok-grid-gap);
 }
 
@@ -118,6 +119,17 @@
 
 .ok-section--divider {
   border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 8%, transparent);
+}
+
+/* Superficie alterna para crear ritmo entre secciones de página. Funciona
+   tanto sobre .ok-section como sobre un wrapper full-bleed con .ok-container
+   en su interior. */
+.ok-section--soft {
+  background: color-mix(
+    in oklab,
+    var(--ok-text, var(--ion-text-color, #18181b)) 2.5%,
+    var(--ok-surface, var(--ion-background-color, #fff))
+  );
 }
 
 .ok-section-head {
@@ -187,6 +199,10 @@
  *      propio sustituye al flex de ion-row; ::before sí renderiza en hosts
  *      con shadow DOM)
  *
+ * En tablas editoriales, envolver con .ok-table-surface para obtener una
+ * superficie común sin añadir bordes de página. .ok-table-group identifica
+ * filas de sección que no deben convertirse en superficies independientes.
+ *
  * Tokens: --ok-table-cols (columnas del markup no-<table>; por defecto
  * partes iguales) · --ok-table-label-w (ancho de la etiqueta en móvil, 45%).
  * Celdas sin data-title (p.ej. acciones) ocupan el ancho completo en móvil.
@@ -201,6 +217,24 @@
 
 table.ok-table-stack {
   border-collapse: collapse;
+}
+
+/* Marco editorial reutilizable. Usa una línea óptica muy suave en escritorio
+ * y desaparece en móvil, donde las filas ya construyen su propia superficie. */
+.ok-table-surface {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--ok-surface, var(--ion-card-background, #fff));
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+}
+
+.ok-table-surface > .ok-table-stack {
+  margin: 0;
+}
+
+.ok-table-surface > .ok-table-stack :is(tbody tr:last-child td, .ok-trow:last-child .ok-tcell) {
+  border-bottom: 0;
 }
 
 /* Markup no-<table>: cabecera y filas como grid de columnas iguales */
@@ -230,6 +264,13 @@ table.ok-table-stack {
 }
 
 @media (max-width: 767px) {
+  .ok-table-surface {
+    overflow: visible;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   /* La tabla nativa deja de comportarse como tabla */
   table.ok-table-stack,
   table.ok-table-stack :is(thead, tbody, tfoot, tr, th, td),
@@ -248,12 +289,24 @@ table.ok-table-stack {
     border: 0;
   }
 
-  /* Fila = card */
+  /* Fila = superficie ligera. Sin borde: la separación procede del fondo,
+     la sombra mínima y los divisores internos, evitando superficies anidadas. */
   .ok-table-stack :is(tbody tr, .ok-trow) {
-    border: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
-    border-radius: 8px;
+    border: 0;
+    border-radius: 12px;
     margin-bottom: 0.75rem;
     overflow: hidden;
+    background: var(--ok-surface, var(--ion-card-background, #fff));
+    box-shadow: 0 1px 3px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 9%, transparent);
+  }
+
+  /* Una fila de grupo es un rótulo editorial, no otra card de datos. */
+  .ok-table-stack :is(tbody tr.ok-table-group, .ok-trow.ok-table-group) {
+    margin: 1.25rem 0 0.35rem;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
   }
 
   /* Celda = par etiqueta/valor (display/width explícitos: pisan el :host
