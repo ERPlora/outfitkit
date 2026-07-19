@@ -53,7 +53,9 @@ function adoptPanelSheet(): void {
       --height: 100%;
       --border-radius: 0;
       --background: var(--ok-surface, var(--ion-card-background, #ffffff));
-      --box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+      /* Sin sombra lateral (decisión 2026-07-19, paneles laterales de SaaS y Hub): "none"
+         explícito para no caer al default de ion-modal; el backdrop separa. */
+      --box-shadow: none;
       /* El host del modal es un flex que centra el wrapper: lo anclamos a la derecha. */
       justify-content: flex-end;
       align-items: stretch;
