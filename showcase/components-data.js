@@ -1104,7 +1104,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     id: 'ok-layout',
     name: 'layout.css (container · grid)',
     category: 'web',
-    desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fill, sin breakpoints). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
+    desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fit, sin breakpoints ni tracks vacíos). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
     importPath: "@erplora/outfitkit/layout.css",
     example: `<div class="ok-container">
   <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center;margin-bottom:1rem">
@@ -1137,7 +1137,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       { kind: 'prop', name: '.ok-container · .ok-container-fluid', type: 'class', detail: 'Ancho máximo centrado (--ok-container-max) · fluido a ancho completo' },
       { kind: 'prop', name: '.ok-grid · .ok-col', type: 'class', detail: 'Rejilla de 12 col (gap --ok-grid-gap) · celda (span 12 por defecto, min-width:0)' },
       { kind: 'prop', name: '.ok-md-N · .ok-lg-N · .ok-xl-N', type: 'class', detail: 'Span responsive (N = 3·4·6·8·9·12; breakpoints 768/992/1200)' },
-      { kind: 'prop', name: '.ok-grid-cards', type: 'class', detail: 'Grid auto-fill minmax(--ok-card-min, 1fr) — sin clases de breakpoint' },
+      { kind: 'prop', name: '.ok-grid-cards', type: 'class', detail: 'Grid auto-fit minmax(--ok-card-min, 1fr) — sin clases de breakpoint ni tracks vacíos' },
     ],
   },
   {
@@ -1173,7 +1173,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
   </div>
 
   <div>
-    <p style="margin:0 0 .5rem;font-weight:600">3 · .ok-grid-cards — auto-fill, sin clases de breakpoint</p>
+    <p style="margin:0 0 .5rem;font-weight:600">3 · .ok-grid-cards — auto-fit, sin clases de breakpoint</p>
     <div class="ok-grid-cards" style="--ok-card-min:180px">
       <ion-card style="margin:0"><ion-card-content>Café solo<br><strong>€1,40</strong></ion-card-content></ion-card>
       <ion-card style="margin:0"><ion-card-content>Cortado<br><strong>€1,50</strong></ion-card-content></ion-card>
@@ -1208,7 +1208,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
   <div class="ok-col ok-md-4"><ion-card>…resumen…</ion-card></div>
 </div>
 
-<!-- 3 · Grid de cards sin breakpoints (auto-fill; ajusta el mínimo con --ok-card-min) -->
+<!-- 3 · Grid de cards sin breakpoints (auto-fit; ajusta el mínimo con --ok-card-min) -->
 <div class="ok-grid-cards" style="--ok-card-min:220px">
   <ion-card>…</ion-card>
   <ion-card>…</ion-card>
@@ -1221,16 +1221,16 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       { kind: 'prop', name: 'Spans', type: 'receta', detail: 'Móvil siempre 12 (apilado); .ok-md-N desde 768, .ok-lg-N desde 992, .ok-xl-N desde 1200 — combinables (ok-md-6 ok-xl-3 = 2 col tablet, 4 col desktop)' },
       { kind: 'prop', name: 'Cards/KPIs', type: 'receta', detail: '.ok-grid-cards cuando todas las celdas son iguales: cero clases de breakpoint, el nº de columnas sale solo de --ok-card-min' },
       { kind: 'prop', name: 'Web pública', type: 'receta', detail: '.ok-container para centrar secciones a --ok-container-max; .ok-section ya trae su propio centrado (no anidar ambos)' },
-      { kind: 'prop', name: '--ok-grid-gap · --ok-card-min', type: 'CSS var', detail: 'Gap del grid (clamp fluido por defecto) · ancho mínimo de celda en .ok-grid-cards (260px por defecto)' },
+      { kind: 'prop', name: '--ok-grid-gap · --ok-card-min', type: 'CSS var', detail: 'Gap del grid (clamp fluido por defecto) · ancho mínimo de celda en .ok-grid-cards (16rem por defecto)' },
     ],
   },
   {
     id: 'ok-table-stack',
     name: '.ok-table-stack (layout.css)',
     category: 'datos',
-    desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una card apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). Funciona con <table> nativa, con divs (.ok-thead/.ok-trow/.ok-tcell) y con ion-grid/ion-row/ion-col.',
+    desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una superficie apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). .ok-table-surface aporta el marco editorial reutilizable sin duplicarlo en móvil.',
     importPath: "@erplora/outfitkit/layout.css",
-    example: `<table class="ok-table-stack">
+    example: `<div class="ok-table-surface"><table class="ok-table-stack">
   <thead>
     <tr><th>Producto</th><th>SKU</th><th>Precio</th><th>Stock</th></tr>
   </thead>
@@ -1248,11 +1248,11 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       <td data-title="Stock">38</td>
     </tr>
   </tbody>
-</table>`,
+</table></div>`,
     code: `<link rel="stylesheet" href=".../layout.css">
 
-<!-- 1 · Tabla nativa -->
-<table class="ok-table-stack">
+<!-- 1 · Tabla nativa con superficie editorial -->
+<div class="ok-table-surface"><table class="ok-table-stack">
   <thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead>
   <tbody>
     <tr>
@@ -1260,8 +1260,9 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       <td data-title="Precio">9,90 €</td>
       <td><ion-button size="small">Editar</ion-button></td> <!-- sin data-title: ancho completo en móvil -->
     </tr>
+    <tr class="ok-table-group"><td colspan="3">Inventario</td></tr>
   </tbody>
-</table>
+</table></div>
 
 <!-- 2 · Divs (o cualquier elemento) -->
 <div class="ok-table-stack">
@@ -1278,7 +1279,9 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
 <!-- Tokens: --ok-table-cols (columnas del markup no-<table>; p.ej. 2fr 1fr auto),
      --ok-table-label-w (ancho de la etiqueta en móvil, 45%) -->`,
     api: [
-      { kind: 'prop', name: '.ok-table-stack', type: 'class', detail: 'Contenedor (en <table>, en un div o en ion-grid). Bajo 768px (md de Ionic) las filas se apilan como cards' },
+      { kind: 'prop', name: '.ok-table-stack', type: 'class', detail: 'Contenedor (en <table>, en un div o en ion-grid). Bajo 768px (md de Ionic) las filas se apilan como superficies' },
+      { kind: 'prop', name: '.ok-table-surface', type: 'class', detail: 'Marco editorial opcional: superficie y línea óptica sutil en escritorio; desaparece en móvil para evitar superficies anidadas' },
+      { kind: 'prop', name: '.ok-table-group', type: 'class', detail: 'Fila de sección o categoría; en móvil se conserva como rótulo y no se convierte en card' },
       { kind: 'prop', name: '.ok-thead · .ok-trow · .ok-tcell', type: 'class', detail: 'Cabecera/fila/celda para markup no-<table> (divs o ion-row/ion-col); en <table> nativa no hacen falta' },
       { kind: 'prop', name: '[data-title]', type: 'attr', detail: 'Etiqueta de columna que la celda pinta delante en móvil (::before); sin él la celda ocupa el ancho completo (acciones)' },
       { kind: 'prop', name: '--ok-table-cols · --ok-table-label-w', type: 'CSS var', detail: 'Columnas del grid no-<table> (por defecto partes iguales) · ancho de etiqueta en móvil (45%)' },
@@ -1340,7 +1343,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     id: 'ok-section',
     name: '.ok-section (layout.css)',
     category: 'marketing',
-    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado) y --divider (separador superior). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
+    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado), --divider (separador superior) y --soft (superficie alterna). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
     importPath: "@erplora/outfitkit/layout.css",
     example: `<section class="ok-section ok-section--center ok-section--divider" style="padding-block:2rem">
   <header class="ok-section-head">
@@ -1364,7 +1367,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
 </section>`,
     api: [
       { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo vertical (--ok-section-pad-y) y ancho máximo (--ok-container-max)' },
-      { kind: 'prop', name: '.ok-section--center · .ok-section--divider', type: 'class', detail: 'Encabezado centrado · separador superior de 1px' },
+      { kind: 'prop', name: '.ok-section--center · .ok-section--divider · .ok-section--soft', type: 'class', detail: 'Encabezado centrado · separador superior de 1px · superficie alterna para el ritmo de página' },
       { kind: 'prop', name: '.ok-section-head · .ok-eyebrow · .ok-section-title · .ok-section-sub', type: 'class', detail: 'Encabezado · píldora · título display · subtítulo' },
     ],
   },
