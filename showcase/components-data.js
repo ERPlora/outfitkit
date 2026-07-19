@@ -1407,9 +1407,9 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     id: 'ok-section',
     name: '.ok-section (layout.css)',
     category: 'marketing',
-    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado), --divider (separador superior) y --soft (superficie alterna). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
+    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Incluye una escala responsive de ritmo vertical: compacta, estándar y destacada. El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
     importPath: "@erplora/outfitkit/layout.css",
-    example: `<section class="ok-section ok-section--center ok-section--divider" style="padding-block:2rem">
+    example: `<section class="ok-section ok-section--compact ok-section--center ok-section--divider">
   <header class="ok-section-head">
     <span class="ok-eyebrow">Plataforma</span>
     <h2 class="ok-section-title">Todo en uno</h2>
@@ -1430,7 +1430,9 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
   …contenido…
 </section>`,
     api: [
-      { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo vertical (--ok-section-pad-y) y ancho máximo (--ok-container-max)' },
+      { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo estándar responsive y ancho máximo (--ok-container-max)' },
+      { kind: 'prop', name: '.ok-section-content', type: 'class', detail: 'Aplica el mismo ritmo vertical dentro de un .ok-container explícito' },
+      { kind: 'prop', name: '.ok-section--compact · .ok-section--featured', type: 'class', detail: 'Densidad compacta para contenido repetitivo · respiración destacada para CTA o bloques clave' },
       { kind: 'prop', name: '.ok-section--center · .ok-section--divider · .ok-section--soft', type: 'class', detail: 'Encabezado centrado · separador superior de 1px · superficie alterna para el ritmo de página' },
       { kind: 'prop', name: '.ok-section-head · .ok-eyebrow · .ok-section-title · .ok-section-sub', type: 'class', detail: 'Encabezado · píldora · título display · subtítulo' },
     ],
