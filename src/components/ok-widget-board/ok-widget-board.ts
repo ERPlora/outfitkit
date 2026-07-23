@@ -200,7 +200,11 @@ export class OkWidgetBoard extends LitElement {
     closeBtn.addEventListener('click', () => modal.dismiss?.());
     endBtns.appendChild(closeBtn); tb.appendChild(endBtns); header.appendChild(tb); modal.appendChild(header);
 
-    const content = make('ion-content');
+    // El ion-content del modal lleva la clase okwb-content para que el CSS de abajo fuerce el
+    // scroll: cuando el sheet se construye por JS (append a body), el content no activa su scroll
+    // nativo y el .inner-scroll queda con overflow-y:hidden aunque el contenido desborde, así que
+    // un catálogo largo queda cortado sin forma de bajar (bug: no se veían todos los widgets).
+    const content = make('ion-content', { attrs: { class: 'okwb-content' } });
 
     // Presets.
     if (this.presets.length) {
@@ -239,7 +243,12 @@ export class OkWidgetBoard extends LitElement {
       `.okwb-header::after{display:none}` +
       `.okwb-toolbar{--border-width:0;--border-color:transparent;box-shadow:none}` +
       `.okwb-sub{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ion-color-medium);padding:12px 16px 4px}` +
-      `.okwb-presets{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px}` });
+      `.okwb-presets{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px}` +
+      // BUG: cuando el sheet modal se construye por JS (append a body), el ion-content interno no
+      // activa su scroll nativo: el .inner-scroll de Ionic queda con overflow-y:hidden aunque el
+      // contenido desborde. Lo forzamos a 'auto' para que la lista de widgets (activos/disponibles)
+      // scrollee y se puedan ver todos. Sin esto, un catálogo largo queda cortado sin forma de bajar.
+      `.okwb-content::part(scroll){overflow-y:auto}` });
     modal.appendChild(style);
     modal.appendChild(content);
     document.body.appendChild(modal);
