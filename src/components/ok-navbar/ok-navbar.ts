@@ -49,7 +49,7 @@ function adoptPanelSheet(): void {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
     ion-modal.ok-navbar-modal {
-      --width: var(--ok-navbar-panel-width, min(320px, 86vw));
+      --width: var(--ok-navbar-panel-width, min(20rem, 86vw));
       --height: 100%;
       --border-radius: 0;
       --background: var(--ok-surface, var(--ion-card-background, #ffffff));
@@ -66,17 +66,26 @@ function adoptPanelSheet(): void {
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      padding: 0.5rem var(--ok-spacing, var(--ion-padding, 16px)) var(--ok-spacing, var(--ion-padding, 16px));
+      padding: 0.5rem var(--ok-spacing, var(--ion-padding, 1rem)) max(var(--ok-spacing, var(--ion-padding, 1rem)), env(safe-area-inset-bottom));
       background: var(--ok-surface, var(--ion-card-background, #ffffff));
       color: var(--ok-text, var(--ion-text-color, #1c1b17));
       font-family: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
     }
-    .ok-navbar-modal .ok-navbar-panel-head { display: flex; justify-content: flex-end; }
+    .ok-navbar-modal .ok-navbar-panel-head {
+      display: flex;
+      justify-content: flex-end;
+      min-height: 2.75rem;
+    }
     .ok-navbar-modal .ok-navbar-close {
       background: none;
       border: 0;
       cursor: pointer;
-      padding: 0.5rem;
+      width: 2.75rem;
+      height: 2.75rem;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: var(--ok-radius-md, var(--ion-border-radius, 0.5rem));
       color: inherit;
     }
     .ok-navbar-modal .ok-navbar-close span { display: block; width: 22px; height: 2px; position: relative; }
@@ -95,11 +104,13 @@ function adoptPanelSheet(): void {
     .ok-navbar-modal .ok-navbar-close span::after { transform: rotate(-45deg); }
     .ok-navbar-modal .ok-navbar-links { display: flex; flex-direction: column; }
     .ok-navbar-modal .ok-navbar-links a {
-      display: block;
-      padding: 0.85rem 0;
+      min-height: 3.25rem;
+      display: flex;
+      align-items: center;
+      padding-inline: 0.25rem;
       color: inherit;
       text-decoration: none;
-      font-size: 0.95rem;
+      font-size: 1rem;
       border-top: 1px solid var(--ok-border-soft, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.07));
     }
     .ok-navbar-modal .ok-navbar-links a:first-child { border-top: 0; }
@@ -109,11 +120,15 @@ function adoptPanelSheet(): void {
       flex-direction: column;
       align-items: stretch;
       gap: 0.6rem;
-      margin-top: 1.25rem;
+      margin-top: auto;
       padding-top: 1.25rem;
       border-top: 1px solid var(--ok-border, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.12));
     }
-    .ok-navbar-modal .ok-navbar-actions ion-button { width: 100%; }
+    .ok-navbar-modal .ok-navbar-actions ion-button {
+      width: 100%;
+      min-height: 2.75rem;
+      margin: 0;
+    }
   `);
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
 }
@@ -171,11 +186,15 @@ export class OkNavbar extends LitElement {
     }
 
     .burger {
-      display: block;
+      width: 2.75rem;
+      height: 2.75rem;
+      display: grid;
+      place-items: center;
       background: none;
       border: 0;
       cursor: pointer;
-      padding: 0.5rem;
+      padding: 0;
+      border-radius: var(--ok-radius-md, var(--ion-border-radius, 0.5rem));
       color: var(--color);
       /* Micro-interacción: feedback sutil al presionar el burger. */
       transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
@@ -191,6 +210,9 @@ export class OkNavbar extends LitElement {
     .burger span::before, .burger span::after { content: ''; position: absolute; left: 0; width: 22px; height: 2px; background: currentColor; border-radius: 2px; }
     .burger span::before { top: -7px; }
     .burger span::after { top: 7px; }
+    @media (max-width: 800px) {
+      .bar { padding-block: 0.25rem; }
+    }
   `;
 
   /** Fija la navbar arriba al hacer scroll. */

@@ -203,6 +203,143 @@
   color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
 }
 
+/* ===== Editorial content and documentation surfaces =====
+ *
+ * Reusable public/documentation primitives: constrained readable width,
+ * Ionic search/accordion theming and rich-text content generated from Markdown.
+ */
+ion-searchbar.ok-search {
+  --background: var(--ok-surface, var(--ion-card-background, #fff));
+  --border-radius: 0.875rem;
+  --box-shadow: 0 10px 28px -22px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 45%, transparent);
+  --color: var(--ok-text, var(--ion-text-color, #18181b));
+  --icon-color: var(--ok-primary, var(--ion-color-primary, #1496d6));
+  --placeholder-color: var(--ok-text, var(--ion-text-color, #18181b));
+  --placeholder-opacity: 0.55;
+  padding-inline: 0;
+  margin-block-end: 1rem;
+}
+
+ion-accordion.ok-accordion {
+  --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+}
+
+ion-item.ok-accordion-header {
+  --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+  --color: var(--ok-text, var(--ion-text-color, #18181b));
+  --padding-start: 1.125rem;
+  --inner-padding-end: 1rem;
+  font-weight: 600;
+}
+
+ion-item.ok-accordion-header iconify-icon {
+  color: var(--ok-primary, var(--ion-color-primary, #1496d6));
+  margin-inline-end: 0.75rem;
+}
+
+.ok-accordion-body {
+  padding: 0.25rem 1.25rem 1.5rem;
+  background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+}
+
+.ok-prose {
+  color: var(--ok-text, var(--ion-text-color, #18181b));
+  line-height: 1.7;
+}
+
+.ok-prose h2 {
+  margin: 1.5rem 0 0.75rem;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, sans-serif));
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ok-prose h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, sans-serif));
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.ok-prose p {
+  margin: 0.5rem 0;
+}
+
+.ok-prose :is(ul, ol) {
+  margin: 0.5rem 0;
+  padding-inline-start: 1.5rem;
+}
+
+.ok-prose ul {
+  list-style: disc;
+}
+
+.ok-prose ol {
+  list-style: decimal;
+}
+
+.ok-prose li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.ok-prose table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ok-prose :is(th, td) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
+  text-align: start;
+}
+
+.ok-prose th {
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 5%, transparent);
+  font-weight: 600;
+}
+
+.ok-prose code {
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+  font-size: 0.875em;
+}
+
+.ok-prose pre {
+  overflow-x: auto;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+}
+
+.ok-prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.ok-prose blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-inline-start: 3px solid var(--ok-primary, var(--ion-color-primary, #1496d6));
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: color-mix(in oklab, var(--ok-primary, var(--ion-color-primary, #1496d6)) 5%, transparent);
+}
+
+.ok-prose strong {
+  font-weight: 600;
+}
+
+.ok-prose hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
+}
+
+
 /* ===== Tabla apilable (.ok-table-stack) — patrón «no more tables» =====
  *
  * Solo CSS, sin web component (para CRUDs ricos usa <ok-data-table>; esto es
