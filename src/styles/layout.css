@@ -175,8 +175,9 @@
   align-self: flex-start;
   padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: var(--ok-type-eyebrow-size, 0.72rem);
+  font-weight: var(--ok-type-eyebrow-weight, 600);
+  line-height: var(--ok-type-eyebrow-leading, 1.2);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ok-primary, var(--ion-color-primary, #1496d6));
@@ -190,16 +191,17 @@
 
 .ok-section-title {
   margin: 0;
-  font-size: clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem);
-  line-height: 1.06;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+  font-size: var(--ok-type-section-title-size, clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem));
+  line-height: var(--ok-type-section-title-leading, 1.06);
   letter-spacing: -0.025em;
-  font-weight: 650;
+  font-weight: var(--ok-type-section-title-weight, 650);
 }
 
 .ok-section-sub {
   margin: 0;
-  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
-  line-height: 1.55;
+  font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+  line-height: var(--ok-type-intro-leading, 1.6);
   color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
 }
 
@@ -338,8 +340,45 @@ ion-item.ok-accordion-header iconify-icon {
   border: 0;
   border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
 }
+/* Tipografía editorial reutilizable fuera de los componentes. El display se
+ * reserva para el hero principal; page-title para cabeceras interiores e
+ * intro/body para el texto que las acompaña. */
+.ok-display-title,
+.ok-page-title {
+  margin: 0;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+  letter-spacing: -0.045em;
+}
 
+.ok-display-title {
+  font-size: var(--ok-type-display-size, clamp(3rem, 2.25rem + 3vw, 4.5rem));
+  font-weight: var(--ok-type-display-weight, 650);
+  line-height: var(--ok-type-display-leading, 1);
+}
 
+.ok-page-title {
+  font-size: var(--ok-type-page-title-size, clamp(2.35rem, 1.75rem + 2.6vw, 4rem));
+  font-weight: var(--ok-type-page-title-weight, 650);
+  line-height: var(--ok-type-page-title-leading, 1.04);
+  text-wrap: balance;
+}
+
+.ok-intro,
+.ok-body {
+  margin: 0;
+  color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
+  text-wrap: pretty;
+}
+
+.ok-intro {
+  font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+  line-height: var(--ok-type-intro-leading, 1.6);
+}
+
+.ok-body {
+  font-size: var(--ok-type-body-size, 1rem);
+  line-height: var(--ok-type-body-leading, 1.6);
+}
 /* ===== Tabla apilable (.ok-table-stack) — patrón «no more tables» =====
  *
  * Solo CSS, sin web component (para CRUDs ricos usa <ok-data-table>; esto es
