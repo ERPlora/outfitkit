@@ -1,6 +1,6 @@
 {
   "name": "@erplora/outfitkit",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "OutfitKit — librería de Web Components (Lit) que CONSTRUYE lo que Ionic no tiene (tree, data-table rica, inline-feedback, kpi/stat, stepper/wizard, calendar, kanban…) sobre primitivos de Ionic. Ionic es la base; OutfitKit cubre los huecos. npm + CDN, imports individuales, CSP-safe. Tema vía tokens --ok-* (fallback a --ion-*).",
   "type": "module",
   "license": "MIT",
