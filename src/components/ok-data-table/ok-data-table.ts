@@ -100,8 +100,9 @@ export interface DataTablePrimaryAction {
 /** Clave estable de fila: nombre de campo o función que la devuelve. */
 export type DataTableRowKey = string | ((row: Record<string, unknown>) => string);
 
-/** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n. Default en INGLÉS.
- *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al default inglés.
+/** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n.
+ *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al idioma del documento
+ *  (`<html lang="es">` → español; cualquier otro idioma → inglés).
  *  El contenido data-driven (columns/rows/options) NO va aquí — ya es externo. */
 export interface OkDataTableLabels {
   /** Placeholder del buscador. */
@@ -210,6 +211,43 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   showing: 'Showing {from}–{to} of',
   recordSingular: 'record',
   recordPlural: 'records',
+};
+
+const ES_LABELS: OkDataTableLabels = {
+  search: 'Buscar…',
+  empty: 'Sin resultados',
+  filters: 'Filtros',
+  clear: 'Limpiar',
+  apply: 'Aplicar',
+  selected: '{n} seleccionados',
+  importCsv: 'Importar CSV',
+  exportCsv: 'Exportar CSV',
+  add: 'Añadir',
+  moreActions: 'Más acciones',
+  rowsPerPage: 'Filas por página',
+  perPageShort: '{n} / pág.',
+  viewList: 'Vista lista',
+  viewCards: 'Vista tarjetas',
+  columnsVisible: 'Columnas visibles',
+  columns: 'Columnas',
+  actions: 'Acciones',
+  close: 'Cerrar',
+  newRecord: 'Nuevo',
+  form: 'Formulario',
+  filterPlaceholder: 'Filtrar…',
+  from: 'Desde',
+  to: 'Hasta',
+  fromOf: '{label} desde',
+  toOf: '{label} hasta',
+  gte: '≥',
+  lte: '≤',
+  noValues: 'Sin valores',
+  selectAll: 'Seleccionar todo',
+  selectRow: 'Seleccionar fila',
+  select: 'Seleccionar',
+  showing: 'Mostrando {from}–{to} de',
+  recordSingular: 'registro',
+  recordPlural: 'registros',
 };
 
 export class OkDataTable extends LitElement {
@@ -417,6 +455,13 @@ export class OkDataTable extends LitElement {
     .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
 
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+    /* Las acciones de fila son icon-only y de tamaño small en escritorio. En tablet/móvil se
+     * amplía el host completo (no solo el icono) para que el área táctil alcance 44×44 px. */
+    @media (pointer: coarse), (max-width: 834px) {
+      .actions ion-button { min-width: 44px; min-height: 44px; margin: 0; }
+      .toolbtn { width: 44px; height: 44px; }
+      .pager .nav ion-button { min-width: 44px; min-height: 44px; margin: 0; }
+    }
     /* Spinner de acción en curso (loading): contenido dentro del ion-button small (Ionic lo fija
      * a 28px en el :host, por eso width/height y no font-size). Cubre tabla y tarjetas: los
      * botones de fila siempre van dentro de .actions. */
@@ -560,9 +605,27 @@ export class OkDataTable extends LitElement {
   @state() private menuOpen = false;
   private menuEv?: Event;
 
-  // ── i18n: textos efectivos (default inglés ← overrides de `.labels`) ──────────────────────
+  private readonly onLocaleChanged = (): void => this.requestUpdate();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
+    }
+  }
+
+  disconnectedCallback(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+    }
+    super.disconnectedCallback();
+  }
+
+  // ── i18n: idioma del documento ← overrides explícitos de `.labels` ─────────────────────────
   private get t(): OkDataTableLabels {
-    return { ...DEFAULT_LABELS, ...this.labels };
+    const lang =
+      typeof document === 'undefined' ? 'en' : document.documentElement.lang.toLowerCase();
+    return { ...(lang.startsWith('es') ? ES_LABELS : DEFAULT_LABELS), ...this.labels };
   }
   /** Placeholder efectivo del buscador (prop explícita → label i18n → default inglés). */
   private get effSearchPlaceholder(): string {
@@ -1110,6 +1173,8 @@ export class OkDataTable extends LitElement {
               color=${a.color ?? 'medium'}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
+              aria-label=${a.label}
+              title=${a.label}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
               ${loading
