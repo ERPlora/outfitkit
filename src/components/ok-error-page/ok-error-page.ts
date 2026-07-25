@@ -53,7 +53,7 @@ export class OkErrorPage extends LitElement {
       --surface: var(--ok-surface, var(--ion-card-background, #ffffff));
       --surface-2: var(--ok-surface-2, #f1f2f4);
       --ink: var(--ok-text-color, var(--ion-text-color, #1f2933));
-      --ink-2: var(--ok-color-medium-shade, #5b5f66);
+      --ink-2: var(--ok-muted, var(--ok-color-medium-shade, var(--ion-color-medium, #5b5f66)));
       --ink-3: var(--ok-color-medium, var(--ion-color-medium, #92949c));
       --line: var(--ok-border-color, var(--ion-border-color, #e3e5e8));
       --line-2: var(--ok-border-color-shade, #c9ccd1);
