@@ -1681,6 +1681,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
       { kind: 'prop', name: 'eyebrow · heading · subheading', type: 'string', detail: 'Eyebrow · título (slot="heading" para markup rico) · subtítulo' },
       { kind: 'prop', name: 'variant', type: 'solid|soft|glass', detail: 'Estilo de fondo (def solid, degradado de marca)' },
       { kind: 'slot', name: 'heading · actions', type: '—', detail: 'Título rico · CTAs (ion-button)' },
+      { kind: 'prop', name: '--ok-cta-action-outline-*', type: 'CSS var', detail: 'Overrides opcionales de color, borde y estados del ion-button outline; en solid derivan automáticamente de --ok-primary-contrast' },
     ],
   },
 

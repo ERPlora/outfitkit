@@ -11,17 +11,37 @@ import { define } from '../../base/define.js';
 //     <ion-button slot="actions" href="/signup">Crear mi hub</ion-button>
 //     <ion-button slot="actions" fill="outline" href="/demo">Ver demo</ion-button>
 //   </ok-cta-band>
+//
+// En la variante sólida, los ion-button outline reciben automáticamente el
+// contraste del primario. No hace falta repetir --color/--border-color inline.
 export class OkCtaBand extends LitElement {
   static styles = css`
     :host {
       display: block;
       width: 100%;
-      --primary: var(--ion-color-primary, #1496d6);
-      --primary-contrast: var(--ion-color-primary-contrast, #ffffff);
+      --primary: var(--ok-primary, var(--ion-color-primary, #1496d6));
+      --primary-contrast: var(--ok-primary-contrast, var(--ion-color-primary-contrast, #ffffff));
       --color: var(--ok-text, var(--ion-text-color, #18181b));
       --muted: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
       --surface: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
       --radius: var(--ok-radius-lg, 28px);
+      --action-outline-color: var(--ok-cta-action-outline-color, var(--primary-contrast));
+      --action-outline-border-color: var(
+        --ok-cta-action-outline-border-color,
+        color-mix(in oklab, var(--action-outline-color) 62%, transparent)
+      );
+      --action-outline-background-hover: var(
+        --ok-cta-action-outline-background-hover,
+        color-mix(in oklab, var(--action-outline-color) 12%, transparent)
+      );
+      --action-outline-background-focused: var(
+        --ok-cta-action-outline-background-focused,
+        color-mix(in oklab, var(--action-outline-color) 16%, transparent)
+      );
+      --action-outline-background-activated: var(
+        --ok-cta-action-outline-background-activated,
+        color-mix(in oklab, var(--action-outline-color) 20%, transparent)
+      );
       font-family: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
     }
     .band {
@@ -101,6 +121,18 @@ export class OkCtaBand extends LitElement {
       gap: 0.75rem;
       justify-content: center;
       margin-top: 0.6rem;
+    }
+    :host(:not([variant])) ::slotted(ion-button[fill='outline']),
+    :host([variant='solid']) ::slotted(ion-button[fill='outline']) {
+      --color: var(--action-outline-color);
+      --color-hover: var(--action-outline-color);
+      --color-focused: var(--action-outline-color);
+      --color-activated: var(--action-outline-color);
+      --border-color: var(--action-outline-border-color);
+      --background-hover: var(--action-outline-background-hover);
+      --background-focused: var(--action-outline-background-focused);
+      --background-activated: var(--action-outline-background-activated);
+      --ripple-color: var(--action-outline-color);
     }
   `;
 
