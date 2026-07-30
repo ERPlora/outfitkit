@@ -54,11 +54,11 @@ Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por d
 - [x] prop `icon` → botón icon-only.
 - [ ] (opcional) propagar `aria-label`/`title` al `ion-button` interno (a11y).
 
-### 1.4 API del `ok-data-table` — reconciliar nombres (decisión del humano)
+### 1.4 API del `ok-data-table` — reconciliar nombres
 - [ ] Al consolidar se **descartó** la versión paralela del canónico que usaba
       `column-selector` / `views: DataTableView[]` / `exportable`+`importable` / `pageSizes`.
       La versión actual usa `columnPicker` / `views` (boolean) / `csv`+`csvName` / `pageSizeOptions`.
-      **Decidir los nombres definitivos** de la API pública (es columna del humano) y unificar.
+      **Decidir los nombres definitivos** de la API pública (documentar la decisión) y unificar.
 - [ ] `DataTableView` quedó como `'table' | 'cards'`.
 
 ### 1.5 Showcase / docs / publicación
