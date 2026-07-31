@@ -439,7 +439,7 @@ npm run build        # vite (dist/*.js, outfitkit.js, theme.example.css) + tsc (
 npm run typecheck    # comprobación de tipos sin emitir
 npm run verify:csp   # rechaza eval / new Function en dist (CSP estricta)
 npm run dev          # vite build --watch (showcase en local)
-npm run release      # release-it: corta una versión (ver docs/RELEASING.md)
+npm run release      # release-it a mano (NO hace falta: la CI publica al mergear, ver docs/RELEASING.md)
 ```
 
 Publicación a npm: [`docs/RELEASING.md`](docs/RELEASING.md) (Trusted Publishing / OIDC).
