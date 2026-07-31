@@ -596,6 +596,14 @@ export class OkDataTable extends LitElement {
   // funciona igual en vista lista y tarjetas. Inspirado en el Filters Tool Panel de AG Grid.
   @state() private panel: 'none' | 'filters' | 'create' = 'none';
   @state() private viewMode: 'table' | 'cards' = 'table';
+  // #274 — breakpoint móvil: por debajo, si las tarjetas están disponibles se fuerza la vista de
+  // tarjetas (la tabla con scroll lateral es hostil en móvil). El usuario puede volver a tabla con
+  // el toggle; al cruzar de vuelta el breakpoint se restaura. null = aún no se ha evaluado.
+  @state() private isMobile = false;
+  private mq?: MediaQueryList;
+  // Breakpoint (móvil) en px. Coincide con el punto donde la rejilla de tarjetas es más usable que
+  // una tabla con scroll horizontal. 640px = límite habitual móvil↔tablet.
+  private static readonly MOBILE_BREAKPOINT = 640;
   // Columnas ocultas por el usuario (column chooser). Vacío = todas visibles.
   @state() private hiddenKeys = new Set<string>();
   // Selección interna (cuando el padre no controla `selectedKeys`).
@@ -612,11 +620,37 @@ export class OkDataTable extends LitElement {
     if (typeof window !== 'undefined') {
       window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
     }
+    // #274 — escucha el breakpoint móvil para forzar tarjetas en pantallas estrechas.
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this.mq = window.matchMedia(`(max-width: ${OkDataTable.MOBILE_BREAKPOINT}px)`);
+      this.isMobile = this.mq.matches;
+      // Arranque en móvil: si las tarjetas están disponibles, empieza en tarjetas (la tabla con
+      // scroll lateral es hostil en pantallas pequeñas). El usuario puede volver a tabla con el toggle.
+      if (this.isMobile && this.cardViewEnabled) this.viewMode = 'cards';
+      // `change` es el estándar moderno; el listener `addEventListener` cubre Safari < 14.
+      const handler = (e: MediaQueryListEvent | Event) => {
+        const matches = 'matches' in e ? e.matches : this.mq?.matches ?? false;
+        if (this.isMobile === matches) return;
+        this.isMobile = matches;
+        // Al cruzar a móvil (y tarjetas disponibles) → tarjetas; al volver a escritorio → tabla,
+        // salvo que el usuario la hubiera cambiado a mano (lo respetamos no tocando viewMode si ya
+        // coincide con lo que tocaría).
+        if (matches && this.cardViewEnabled) this.viewMode = 'cards';
+        else if (!matches && this.viewMode === 'cards') this.viewMode = 'table';
+      };
+      this.mq.addEventListener('change', handler);
+      (this as unknown as { _mqHandler: typeof handler })._mqHandler = handler;
+    }
   }
 
   disconnectedCallback(): void {
     if (typeof window !== 'undefined') {
       window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+    }
+    if (this.mq) {
+      const handler = (this as unknown as { _mqHandler?: (e: MediaQueryListEvent | Event) => void })._mqHandler;
+      if (handler) this.mq.removeEventListener('change', handler);
+      this.mq = undefined;
     }
     super.disconnectedCallback();
   }
