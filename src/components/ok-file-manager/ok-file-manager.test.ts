@@ -3,7 +3,7 @@
 // política que le pasa el host.
 //
 // Por qué la política vive aquí y no en el consumidor: en ERPlora cada módulo decide qué se puede
-// hacer con los ficheros de SU carpeta (ADR-0166) — los XML de VeriFactu son evidencia fiscal y no
+// hacer con los ficheros de SU carpeta (ADR-0172) — los XML de VeriFactu son evidencia fiscal y no
 // se borran. El componente no la decide ni la aplica de verdad (eso es del servidor, que revalida
 // siempre): solo evita pintar un botón que va a dar 403.
 import { describe, expect, it, beforeEach, vi } from 'vitest';

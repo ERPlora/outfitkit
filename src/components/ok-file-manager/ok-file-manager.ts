@@ -74,7 +74,7 @@ export type OkFmView = 'grid' | 'list';
 /** Textos i18n del componente (defaults en español). */
 /**
  * Qué se puede hacer en la carpeta actual. La decide el HOST (en ERPlora, el módulo dueño de la
- * carpeta — ADR-0166) y el componente solo la obedece al pintar: **no es una barrera de
+ * carpeta — ADR-0172) y el componente solo la obedece al pintar: **no es una barrera de
  * seguridad**, el servidor revalida siempre. Ver y descargar no están aquí porque son siempre
  * posibles: "solo lectura" no significa "no puedes mirar".
  *
