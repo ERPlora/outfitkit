@@ -214,6 +214,37 @@ export class OkInvoice extends LitElement {
     .qr-note { font-size: 8px; max-width: 36mm; text-align: center; color: var(--muted); word-break: break-word; }
     .legal { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 9px; color: var(--muted); white-space: pre-line; text-align: center; }
     .empty { padding: 12mm; text-align: center; color: #999; font-style: italic; }
+
+    /* ── Papel ──────────────────────────────────────────────────────────────────────────────
+       Una factura es un documento fiscal: acaba impresa, y en pantalla y en papel no se
+       comporta igual. Lo que hay aquí resuelve lo que rompe al imprimir.
+
+       NOTA: aquí NO va \`@page\` (tamaño y márgenes del folio). Es una at-rule de DOCUMENTO y
+       dentro de un shadow root se IGNORA en silencio; la pone quien monta el documento —en el
+       Hub, \`lib/print.ts\` al escribir el iframe aislado. */
+    @media print {
+      .sheet {
+        /* En papel el ancho lo manda \`@page\`; forzar 210mm aquí provoca una segunda página
+           en blanco cuando el navegador ya ha restado los márgenes. */
+        width: auto;
+        max-width: none;
+        padding: 0;
+      }
+      /* Fondos y sombras: en pantalla ayudan a leer, en papel gastan tóner y salen sucios en
+         láser monocroma. Se sustituye el relleno del bloque de receptor por un filete. */
+      .bill-to {
+        background: transparent;
+        border: 1px solid var(--rule);
+      }
+      /* Que las cabeceras de la tabla se repitan en cada folio: una factura larga sin esto deja
+         las columnas sin rotular a partir de la página 2. */
+      table.lines thead { display: table-header-group; }
+      table.lines tbody tr { break-inside: avoid; page-break-inside: avoid; }
+      /* Los bloques que se leen como una unidad no se parten a la mitad. */
+      .summary, .foot, .legal, .bill-to { break-inside: avoid; page-break-inside: avoid; }
+      /* El total y el QR son lo que se comprueba de un vistazo: no deben quedar huérfanos. */
+      .summary { break-before: avoid; page-break-before: avoid; }
+    }
   `;
 
   /** JSON de la factura a renderizar. */
