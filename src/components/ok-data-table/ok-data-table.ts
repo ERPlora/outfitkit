@@ -624,9 +624,8 @@ export class OkDataTable extends LitElement {
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       this.mq = window.matchMedia(`(max-width: ${OkDataTable.MOBILE_BREAKPOINT}px)`);
       this.isMobile = this.mq.matches;
-      // Arranque en móvil: si las tarjetas están disponibles, empieza en tarjetas (la tabla con
-      // scroll lateral es hostil en pantallas pequeñas). El usuario puede volver a tabla con el toggle.
-      if (this.isMobile && this.cardViewEnabled) this.viewMode = 'cards';
+      // El arranque inicial del viewMode se hace en `firstUpdated` (las props como `.views`
+      // aún no están aplicadas aquí, así que `cardViewEnabled` devolvería false prematuramente).
       // `change` es el estándar moderno; el listener `addEventListener` cubre Safari < 14.
       const handler = (e: MediaQueryListEvent | Event) => {
         const matches = 'matches' in e ? e.matches : this.mq?.matches ?? false;
@@ -1051,8 +1050,16 @@ export class OkDataTable extends LitElement {
   // forma robusta de arrancar en tarjetas sin depender de fijar `viewMode` por referencia (que
   // falla si la tabla monta detrás de un `v-if`/loading y el ref aún es null).
   firstUpdated(): void {
-    if (this.defaultView === 'cards' && this.cardViewEnabled) this.viewMode = 'cards';
-    else if (this.defaultView === 'table') this.viewMode = 'table';
+    // #274 — arranque en móvil: si las tarjetas están disponibles y el viewport es estrecho,
+    // empieza en tarjetas (la tabla con scroll lateral es hostil en móvil). Aquí `cardViewEnabled`
+    // ya es fiable (las props de Lit, incluida `.views`, ya están aplicadas).
+    if (this.isMobile && this.cardViewEnabled) {
+      this.viewMode = 'cards';
+    } else if (this.defaultView === 'cards' && this.cardViewEnabled) {
+      this.viewMode = 'cards';
+    } else if (this.defaultView === 'table') {
+      this.viewMode = 'table';
+    }
   }
 
   private setViewMode(mode: 'table' | 'cards'): void {
