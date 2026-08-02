@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Reservas · Lista de espera</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .reservations-waitlist-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .reservations-waitlist-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .waitlist-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .waitlist-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .waitlist-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      /*
+       * Fuentes actuales:
+       * - modules/reservations/ui/components/erp-reservations-waitlist
+       * - modules/reservations/module.json (query, filtros, acciones y eventos)
+       * - modules/reservations/schemas/waitlist_{create,update,delete}.json
+       * La fila es la entrada canónica de erp-reservations-waitlist.test.ts.
+       */
+      const WAITLIST_FIXTURE = [
+        {
+          "id": "w1",
+          "guest_name": "Luis",
+          "guest_phone": "600",
+          "date": "2026-07-13",
+          "preferred_time": "21:00:00",
+          "party_size": 2,
+          "is_contacted": 0,
+          "is_converted": 0
+        }
+      ];
+
+      const CONTACT_OPTIONS = [
+        { value: '1', label: 'Sí' },
+        { value: '0', label: 'No' },
+      ];
+      let entries = WAITLIST_FIXTURE.map((row) => ({ ...row }));
+      let nextEntry = 2;
+
+      defineHubPage({
+        active: '/m/reservations/waitlist',
+        title: 'Lista de espera',
+        body: `
+          <div class="reservations-waitlist-page">
+            <p id="waitlist-feedback" class="waitlist-feedback" role="alert" hidden></p>
+            <ok-data-table id="reservations-waitlist-table" fill>
+              <form id="waitlist-create-form" slot="create" class="waitlist-create-form">
+                <ion-input id="waitlist-name" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-input id="waitlist-phone" fill="outline" label="Teléfono" label-placement="floating" type="tel" required></ion-input>
+                <ion-input id="waitlist-date" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
+                <ion-input id="waitlist-time" fill="outline" label="Hora" label-placement="floating" type="time" required></ion-input>
+                <ion-input id="waitlist-party" fill="outline" label="Pax" label-placement="floating" type="number" min="1" max="100" value="2" required></ion-input>
+                <ion-button id="waitlist-save" type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('reservations-waitlist-table');
+          const form = doc.getElementById('waitlist-create-form');
+          const nameInput = doc.getElementById('waitlist-name');
+          const phoneInput = doc.getElementById('waitlist-phone');
+          const dateInput = doc.getElementById('waitlist-date');
+          const timeInput = doc.getElementById('waitlist-time');
+          const partyInput = doc.getElementById('waitlist-party');
+          const feedback = doc.getElementById('waitlist-feedback');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'id';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+
+          const showFeedback = (message = '') => {
+            feedback.textContent = message;
+            feedback.hidden = !message;
+          };
+
+          const emitWaitlistEvent = (name, detail) => {
+            window.dispatchEvent(new CustomEvent(name, { detail }));
+          };
+
+          table.columns = [
+            { key: 'date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
+            {
+              key: 'preferred_time',
+              header: 'Hora pref.',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+              format: (row) => String(row.preferred_time ?? '').slice(0, 5),
+            },
+            { key: 'guest_name', header: 'Cliente', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'guest_phone', header: 'Teléfono', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'party_size', header: 'Pax', align: 'right', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'is_contacted',
+              header: 'Contactado',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: CONTACT_OPTIONS,
+              format: (row) => row.is_contacted ? 'Sí' : 'No',
+            },
+          ];
+          table.actions = [
+            { id: 'contact', label: 'Contactado', icon: 'call-outline', color: 'primary' },
+            { id: 'convert', label: 'Convertir', icon: 'checkmark-done-outline', color: 'success' },
+            { id: 'remove', label: 'Quitar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.guest_name ?? '—');
+          table.cardIcon = () => 'hourglass-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar cliente, teléfono o fecha…';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.emptyMessage = 'Lista de espera vacía.';
+
+          function dateRangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const date = String(value ?? '').slice(0, 10);
+            return (!range.from || date >= String(range.from).slice(0, 10))
+              && (!range.to || date <= String(range.to).slice(0, 10));
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = entries.filter((entry) => {
+              // La consulta real oculta las entradas ya convertidas por defecto.
+              if (entry.is_converted) return false;
+              const searchable = `${entry.guest_name} ${entry.guest_phone}`.toLocaleLowerCase('es');
+              if (term && !searchable.includes(term)) return false;
+
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'date' && !dateRangeMatch(entry.date, value)) return false;
+                if (column === 'party_size' && Number(entry.party_size) !== Number(value)) return false;
+                if (column === 'is_contacted' && Number(entry.is_contacted) !== Number(value)) return false;
+                if (!['date', 'party_size', 'is_contacted'].includes(column)
+                  && !String(entry[column] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const numeric = ['party_size', 'is_contacted'];
+              const a = numeric.includes(sort) ? Number(left[sort]) : String(left[sort] ?? '');
+              const b = numeric.includes(sort) ? Number(right[sort]) : String(right[sort] ?? '');
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const index = entries.findIndex((entry) => entry.id === row.id);
+            if (index < 0) return;
+
+            showFeedback();
+            if (actionId === 'remove') {
+              const [removed] = entries.splice(index, 1);
+              emitWaitlistEvent('reservations.waitlist.deleted', { entry_id: removed.id });
+            } else if (actionId === 'contact') {
+              entries[index] = { ...entries[index], is_contacted: 1 };
+              emitWaitlistEvent('reservations.waitlist.updated', {
+                entry_id: entries[index].id,
+                is_contacted: true,
+              });
+            } else if (actionId === 'convert') {
+              entries[index] = { ...entries[index], is_converted: 1 };
+              emitWaitlistEvent('reservations.waitlist.updated', {
+                entry_id: entries[index].id,
+                is_converted: true,
+              });
+            }
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const guestName = String(nameInput.value ?? '').trim();
+            const guestPhone = String(phoneInput.value ?? '').trim();
+            const date = String(dateInput.value ?? '');
+            const time = String(timeInput.value ?? '');
+            const partySize = Number(partyInput.value) || 2;
+
+            if (!guestName || !guestPhone || !date || !time) {
+              showFeedback('Completa cliente, teléfono, fecha y hora.');
+              return;
+            }
+
+            const entry = {
+              id: `waitlist-demo-${nextEntry++}`,
+              guest_name: guestName,
+              guest_phone: guestPhone,
+              date,
+              preferred_time: time.length === 5 ? `${time}:00` : time,
+              party_size: partySize,
+              is_contacted: 0,
+              is_converted: 0,
+            };
+            entries = [...entries, entry];
+            emitWaitlistEvent('reservations.waitlist.created', entry);
+            showFeedback();
+            form.reset();
+            nameInput.value = '';
+            phoneInput.value = '';
+            dateInput.value = '';
+            timeInput.value = '';
+            partyInput.value = '2';
+            page = 0;
+            table.close();
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

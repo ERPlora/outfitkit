@@ -1,8 +1,17 @@
 # Roadmap / Backlog — OutfitKit + sistema de módulos ERPlora
 
-> Lista única de todo lo pendiente, priorizada. **Primero acabar OutfitKit** (`@erplora/outfitkit`)
-> para tener el set `ok-*` completo; luego migrar los consumidores a usar **solo `ok-*`**.
-> Última actualización: 2026-06-08.
+> 🔴 **ARCHIVADO / HISTÓRICO — premisa revertida.** Este documento describe una estrategia de
+> **wrappers `ok-*` 1:1 sobre Ionic** (`ok-button`, `ok-icon`, `ok-input`, `ok-select`,
+> `ok-searchbar`, `ok-modal`, `ok-alert`, `ok-list`/`ok-item`, `ok-tabbar`, `ok-app-shell`…) que se
+> **decidió retirar** (ver [`CLAUDE.md`](CLAUDE.md) y [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
+> §"Limpieza — retirar YA"): OutfitKit **NO** envuelve los primitivos de Ionic — se usa `ion-*`
+> directo para botón/icono/input/select/searchbar/modal/list/tabs/layout — y ya está ejecutado
+> (ninguno de esos `ok-*` existe en `src/components/`; `ok-data-table` usa `ion-button`/`ion-icon`
+> nativos por dentro). El roadmap **vivo** es [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md).
+> Se conserva este fichero solo como referencia histórica de lo ya hecho (sección "Hecho" al final);
+> no lo uses para priorizar trabajo nuevo.
+>
+> Última actualización: 2026-06-08 (sin tocar desde entonces — de ahí la deriva).
 
 ## Estado actual (de dónde partimos)
 
@@ -14,8 +23,8 @@
   `render` de celda, `columnPicker`, CSV import/export, page-size, vista lista/tarjetas.
 - **`module-toolkit`** (CLI estilo Ionic): `startproject` · `g module/view/command/query` · `dev`
   (preview con mock + CSP) · `build` · `validate` · `pack`/`sign` · `publish` (guía).
-- **`modules-workspace`**: 25 módulos POS; **inventory = módulo de referencia**
-  (Dashboard · Products · Categories · Settings).
+- **`modules-workspace`**: N módulos POS (ver `ls modules-workspace/modules`); **inventory = módulo
+  de referencia** (Dashboard · Products · Categories · Settings).
 - `pnpm -F @erplora/web verify` (Hub) en VERDE.
 
 ---
@@ -45,11 +54,11 @@ Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por d
 - [x] prop `icon` → botón icon-only.
 - [ ] (opcional) propagar `aria-label`/`title` al `ion-button` interno (a11y).
 
-### 1.4 API del `ok-data-table` — reconciliar nombres (decisión del humano)
+### 1.4 API del `ok-data-table` — reconciliar nombres
 - [ ] Al consolidar se **descartó** la versión paralela del canónico que usaba
       `column-selector` / `views: DataTableView[]` / `exportable`+`importable` / `pageSizes`.
       La versión actual usa `columnPicker` / `views` (boolean) / `csv`+`csvName` / `pageSizeOptions`.
-      **Decidir los nombres definitivos** de la API pública (es columna del humano) y unificar.
+      **Decidir los nombres definitivos** de la API pública (documentar la decisión) y unificar.
 - [ ] `DataTableView` quedó como `'table' | 'cards'`.
 
 ### 1.5 Showcase / docs / publicación
@@ -90,9 +99,9 @@ Objetivo: cobertura **completa `ok-*`** y que el data-table no use `ion-*` por d
 ## Pendiente / housekeeping
 
 - [ ] **Verificar Cloud** tras el re-vendor del OutfitKit (carga `vendor/outfitkit/outfitkit.js` nuevo).
-- [ ] **Commits**: nada commiteado todavía — `ERPlora/outfitkit`, los 25 repos de módulo (con `dist`
-      rebuildeado), el mirror `hub/packages/outfitkit`, el vendor de Cloud, `module-toolkit`,
-      `modules-workspace`.
+- [ ] **Commits**: nada commiteado todavía — `ERPlora/outfitkit`, los repos de módulo (ver `ls
+      modules-workspace/modules`; con `dist` rebuildeado), el mirror `hub/packages/outfitkit`, el
+      vendor de Cloud, `module-toolkit`, `modules-workspace`.
 - [ ] Borrar/archivar `hub/packages/module-cli` (deprecado → ver su `DEPRECATED.md`).
 - [x] `module-sdk`: `ListController.setPageSize()` añadido.
 

@@ -72,6 +72,23 @@ export interface OkFmQuota {
 export type OkFmView = 'grid' | 'list';
 
 /** Textos i18n del componente (defaults en español). */
+/**
+ * Qué se puede hacer en la carpeta actual. La decide el HOST (en ERPlora, el módulo dueño de la
+ * carpeta — ADR-0172) y el componente solo la obedece al pintar: **no es una barrera de
+ * seguridad**, el servidor revalida siempre. Ver y descargar no están aquí porque son siempre
+ * posibles: "solo lectura" no significa "no puedes mirar".
+ *
+ * Ausente ⇒ todo disponible (los consumidores que no la pasan no cambian de comportamiento).
+ */
+export interface OkFmPolicy {
+  /** Subir ficheros y crear subcarpetas. */
+  upload: boolean;
+  /** Renombrar ficheros y la propia carpeta. */
+  rename: boolean;
+  /** Borrar ficheros y la propia carpeta. */
+  delete: boolean;
+}
+
 export interface OkFmLabels {
   /** Botón primario de subida. */
   upload: string;
@@ -93,6 +110,12 @@ export interface OkFmLabels {
   open: string;
   /** Botón de nueva carpeta. */
   newFolder: string;
+  /** Acción de renombrar (ficheros y carpetas). */
+  rename: string;
+  /** Renombrar la carpeta en la que se está. */
+  renameFolder: string;
+  /** Borrar la carpeta en la que se está (con su contenido). */
+  deleteFolder: string;
   /** Caption del medidor cuando no hay cuota dura. */
   noLimit: string;
 }
@@ -108,6 +131,9 @@ const DEFAULT_LABELS: OkFmLabels = {
   delete: 'Eliminar',
   open: 'Abrir',
   newFolder: 'Nueva carpeta',
+  rename: 'Renombrar',
+  renameFolder: 'Renombrar carpeta',
+  deleteFolder: 'Eliminar carpeta',
   noLimit: 'Sin límite',
 };
 
@@ -615,6 +641,11 @@ export class OkFileManager extends LitElement {
     .action.danger:hover {
       color: var(--danger);
     }
+    /* Borrar la carpeta actual: se tiñe al pasar por encima, igual que el borrado de un fichero. */
+    .tbtn.danger:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
     .action svg {
       width: 15px;
       height: 15px;
@@ -732,6 +763,13 @@ export class OkFileManager extends LitElement {
   @property({ type: Boolean }) searchable = true;
   /** Muestra el botón primario de subida y habilita drag&drop. */
   @property({ type: Boolean }) uploadable = true;
+
+  /** Acciones permitidas en la carpeta actual (ver `OkFmPolicy`). Ausente ⇒ todo permitido. */
+  @property({ attribute: false }) policy?: OkFmPolicy;
+
+  private can(action: keyof OkFmPolicy): boolean {
+    return this.policy ? this.policy[action] : true;
+  }
   /** Muestra esqueletos de carga en lugar del contenido. */
   @property({ type: Boolean }) loading = false;
   /** Textos i18n (merge sobre los defaults en español). */
@@ -781,7 +819,25 @@ export class OkFileManager extends LitElement {
   }
 
   private deleteFile(id: string): void {
-    this.emit('ok-delete', { id });
+    this.emit('ok-delete', { id, kind: 'file' });
+  }
+
+  /** Renombrar un fichero. Se manda el nombre actual para que el host lo proponga en su diálogo. */
+  private renameFile(file: OkFmFile): void {
+    this.emit('ok-rename', { id: file.id, name: file.name, kind: 'file' });
+  }
+
+  /** Etiqueta de la carpeta actual (para proponerla como nombre al renombrar). */
+  private get currentFolderLabel(): string {
+    return this.path[this.path.length - 1]?.label ?? this.selected.split('/').pop() ?? '';
+  }
+
+  private renameCurrentFolder(): void {
+    this.emit('ok-rename', { id: this.selected, name: this.currentFolderLabel, kind: 'folder' });
+  }
+
+  private deleteCurrentFolder(): void {
+    this.emit('ok-delete', { id: this.selected, kind: 'folder' });
   }
 
   private createFolder(): void {
@@ -1016,24 +1072,54 @@ export class OkFileManager extends LitElement {
         </button>
       </div>
 
-      <button
-        type="button"
-        class="tbtn icon"
-        aria-label=${this.t.newFolder}
-        title=${this.t.newFolder}
-        @click=${() => this.createFolder()}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <path d="M12 11v6M9 14h6" />
-        </svg>
-      </button>
+      ${this.selected && this.can('rename')
+        ? html`<button
+            type="button"
+            class="tbtn icon"
+            data-act="rename-folder"
+            aria-label=${this.t.renameFolder}
+            title=${this.t.renameFolder}
+            @click=${() => this.renameCurrentFolder()}
+          >
+            ${this.iconRename}
+          </button>`
+        : ''}
 
-      ${this.uploadable
+      ${this.selected && this.can('delete')
+        ? html`<button
+            type="button"
+            class="tbtn icon danger"
+            data-act="delete-folder"
+            aria-label=${this.t.deleteFolder}
+            title=${this.t.deleteFolder}
+            @click=${() => this.deleteCurrentFolder()}
+          >
+            ${this.iconDelete}
+          </button>`
+        : ''}
+
+      ${this.can('upload')
+        ? html`<button
+            type="button"
+            class="tbtn icon"
+            data-act="new-folder"
+            aria-label=${this.t.newFolder}
+            title=${this.t.newFolder}
+            @click=${() => this.createFolder()}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path d="M12 11v6M9 14h6" />
+            </svg>
+          </button>`
+        : ''}
+
+      ${this.uploadable && this.can('upload')
         ? html`<button
             type="button"
             class="tbtn primary icon"
+            data-act="upload"
             aria-label=${this.t.upload}
             title=${this.t.upload}
             @click=${() => this.openPicker()}
@@ -1062,6 +1148,12 @@ export class OkFileManager extends LitElement {
       <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
     </svg>`;
   }
+  private get iconRename() {
+    return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>`;
+  }
   private get iconDelete() {
     return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round">
@@ -1069,11 +1161,13 @@ export class OkFileManager extends LitElement {
     </svg>`;
   }
 
-  // Acciones de un archivo (abrir/descargar/eliminar), reutilizadas en grid y lista.
+  // Acciones de un archivo, reutilizadas en grid y lista. Abrir y descargar SIEMPRE se ofrecen;
+  // renombrar y borrar solo si la política de la carpeta los concede.
   private fileActions(file: OkFmFile): unknown {
     return html`<button
         type="button"
         class="action"
+        data-act="open"
         aria-label=${this.t.open}
         title=${this.t.open}
         @click=${(e: Event) => {
@@ -1086,6 +1180,7 @@ export class OkFileManager extends LitElement {
       <button
         type="button"
         class="action"
+        data-act="download"
         aria-label=${this.t.download}
         title=${this.t.download}
         @click=${(e: Event) => {
@@ -1095,18 +1190,36 @@ export class OkFileManager extends LitElement {
       >
         ${this.iconDownload}
       </button>
-      <button
-        type="button"
-        class="action danger"
-        aria-label=${this.t.delete}
-        title=${this.t.delete}
-        @click=${(e: Event) => {
-          e.stopPropagation();
-          this.deleteFile(file.id);
-        }}
-      >
-        ${this.iconDelete}
-      </button>`;
+      ${this.can('rename')
+        ? html`<button
+            type="button"
+            class="action"
+            data-act="rename-file"
+            aria-label=${this.t.rename}
+            title=${this.t.rename}
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this.renameFile(file);
+            }}
+          >
+            ${this.iconRename}
+          </button>`
+        : ''}
+      ${this.can('delete')
+        ? html`<button
+            type="button"
+            class="action danger"
+            data-act="delete-file"
+            aria-label=${this.t.delete}
+            title=${this.t.delete}
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this.deleteFile(file.id);
+            }}
+          >
+            ${this.iconDelete}
+          </button>`
+        : ''}`;
   }
 
   // ---- Render del contenido (grid/lista/vacío/loading) ----

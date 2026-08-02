@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Personal</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .staff-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .staff-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .staff-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .staff-form h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .staff-form ion-button {
+        align-self: flex-end;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Miembro y roles canónicos de erp-staff-members.test.ts.
+      const STAFF_FIXTURE = [
+        {
+          "id": "m1",
+          "first_name": "Ana",
+          "last_name": "Ruiz",
+          "full_name": "Ana Ruiz",
+          "email": "ana@salon.es",
+          "phone": "600",
+          "role_id": "r1",
+          "role_name": "Peluquero",
+          "status": "active",
+          "is_bookable": 1,
+          "hourly_rate": "12.00"
+        }
+      ];
+
+      const ROLE_FIXTURE = [
+        {
+          "id": "r1",
+          "name": "Peluquero"
+        },
+        {
+          "id": "r2",
+          "name": "Recepción"
+        }
+      ];
+
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin personal.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'persona', recordPlural: 'personas',
+      };
+
+      let members = STAFF_FIXTURE.map((member) => ({ ...member }));
+      let editingId = '';
+      const state = {
+        page: 0,
+        pageSize: 50,
+        sort: 'id',
+        dir: 'asc',
+        search: '',
+        filters: {},
+      };
+
+      function badge(text, color = 'medium') {
+        const el = document.createElement('ion-badge');
+        el.textContent = text;
+        el.color = color;
+        return el;
+      }
+
+      defineHubPage({
+        active: '/m/staff/staff',
+        title: 'Personal',
+        body: `
+          <div class="staff-page">
+            <ok-data-table id="staff-table" fill>
+              <form id="staff-form" slot="create" class="staff-form">
+                <h3 id="staff-form-title" hidden></h3>
+                <ion-input id="staff-first-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-input id="staff-last-name" fill="outline" label="Apellidos" label-placement="floating"></ion-input>
+                <ion-input id="staff-email" type="email" fill="outline" label="Email" label-placement="floating"></ion-input>
+                <ion-select id="staff-role" fill="outline" label="Rol" label-placement="floating">
+                  <ion-select-option value="r1">Peluquero</ion-select-option>
+                  <ion-select-option value="r2">Recepción</ion-select-option>
+                </ion-select>
+                <ion-button type="submit" size="small">Guardar</ion-button>
+                <ion-button id="staff-edit-cancel" type="button" size="small" fill="outline" hidden>Cancelar edición</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="staff-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('staff-table');
+          const form = doc.getElementById('staff-form');
+          const formTitle = doc.getElementById('staff-form-title');
+          const firstNameInput = doc.getElementById('staff-first-name');
+          const lastNameInput = doc.getElementById('staff-last-name');
+          const emailInput = doc.getElementById('staff-email');
+          const roleInput = doc.getElementById('staff-role');
+          const editCancel = doc.getElementById('staff-edit-cancel');
+          const toast = doc.getElementById('staff-toast');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.full_name ?? '—');
+          table.cardIcon = () => 'person-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar personal…';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'full_name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'role_name', header: 'Rol', sortable: true, filterable: true,
+              filterType: 'select',
+              options: [
+                { value: 'Peluquero', label: 'Peluquero' },
+                { value: 'Recepción', label: 'Recepción' },
+              ],
+              format: (row) => row.role_name || '—',
+            },
+            { key: 'email', header: 'Email', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'phone', header: 'Teléfono', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true,
+              filterType: 'select',
+              options: [{ value: 'active', label: 'Activo' }, { value: 'inactive', label: 'Inactivo' }],
+              render: (row) => badge(row.status === 'active' ? 'Activo' : 'Inactivo', row.status === 'active' ? 'success' : 'medium'),
+            },
+            {
+              key: 'hourly_rate', header: 'Tarifa/hora', align: 'right', sortable: true,
+              filterable: true, filterType: 'range',
+              format: (row) => Number(row.hourly_rate).toFixed(2),
+            },
+          ];
+          table.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = members.filter((member) => {
+              if (search && !`${member.full_name} ${member.email} ${member.phone}`.toLocaleLowerCase('es').includes(search)) return false;
+              for (const [key, value] of Object.entries(state.filters)) {
+                if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+                if (key === 'hourly_rate') {
+                  if (!matchesRange(member[key], value)) return false;
+                } else if (Array.isArray(value)) {
+                  if (!value.map(String).includes(String(member[key]))) return false;
+                } else if (String(member[key]).toLocaleLowerCase('es') !== String(value).toLocaleLowerCase('es')) {
+                  return false;
+                }
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = left[state.sort] ?? '';
+              const b = right[state.sort] ?? '';
+              const result = String(a).localeCompare(String(b), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          function emitCommand(commandName, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:demo-command', {
+              detail: { commandName, payload },
+              bubbles: true,
+            }));
+          }
+
+          function resetForm() {
+            editingId = '';
+            firstNameInput.value = '';
+            lastNameInput.value = '';
+            emailInput.value = '';
+            roleInput.value = '';
+            formTitle.hidden = true;
+            editCancel.hidden = true;
+          }
+
+          function startEdit(member) {
+            editingId = member.id;
+            firstNameInput.value = member.first_name;
+            lastNameInput.value = member.last_name;
+            emailInput.value = member.email ?? '';
+            roleInput.value = member.role_id ?? '';
+            formTitle.textContent = `Editar ${member.full_name}`;
+            formTitle.hidden = false;
+            editCancel.hidden = false;
+            table.open('create');
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail?.actionId === 'edit' && event.detail?.row) startEdit(event.detail.row);
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'id';
+            state.dir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col ?? event.detail?.key;
+            if (!key) return;
+            state.filters[key] = event.detail?.value;
+            state.page = 0;
+            queryPage();
+          });
+
+          editCancel.addEventListener('click', resetForm);
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const firstName = String(firstNameInput.value ?? '').trim();
+            const lastName = String(lastNameInput.value ?? '').trim();
+            if (!firstName || !lastName) return;
+            const roleId = String(roleInput.value ?? '');
+            const roleName = ROLE_FIXTURE.find((role) => role.id === roleId)?.name ?? null;
+            const base = {
+              first_name: firstName,
+              last_name: lastName,
+              email: String(emailInput.value ?? '').trim(),
+              role_id: roleId || null,
+            };
+
+            if (editingId) {
+              const current = members.find((member) => member.id === editingId);
+              const updated = {
+                ...current,
+                ...base,
+                full_name: `${firstName} ${lastName}`,
+                role_name: roleName,
+              };
+              members = members.map((member) => member.id === editingId ? updated : member);
+              emitCommand('staff.members.update', { staff_id: editingId, ...base });
+              toast.message = 'Miembro actualizado.';
+            } else {
+              const created = {
+                id: `staff-demo-${Date.now()}`,
+                ...base,
+                full_name: `${firstName} ${lastName}`,
+                phone: '',
+                role_name: roleName,
+                status: 'active',
+                is_bookable: 1,
+                hourly_rate: '0.00',
+              };
+              members = [...members, created];
+              emitCommand('staff.members.create', { ...base, is_bookable: 1, status: 'active' });
+              toast.message = 'Miembro creado.';
+            }
+            toast.color = 'success';
+            toast.isOpen = true;
+            resetForm();
+            table.close();
+            queryPage();
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

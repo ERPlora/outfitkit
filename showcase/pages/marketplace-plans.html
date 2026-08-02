@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planes de hub · ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <style>
+      .plans-stack { display:grid; gap:1rem; }
+      .plans-intro { margin:0; }
+      .plans-intro h1 { margin:.25rem 0; font-size:1.4rem; }
+      .plans-eyebrow { color:var(--ion-color-medium); font-size:.75rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+      .plans-hub-select { max-width:28rem; margin-top:1rem; }
+      .plans-current { display:flex; align-items:center; gap:.75rem; margin-top:1rem; }
+      .plans-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+      .plan-card { margin:0; }
+      .plan-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+      .plan-price { margin:.35rem 0; color:var(--ion-color-primary); font-size:1.55rem; font-weight:700; }
+      .plan-price small { color:var(--ion-color-medium); font-size:.8rem; font-weight:400; }
+      @media (max-width:680px) { .plans-grid { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const hubs = [
+        { id:'main-hub', name:'Main Hub — Test Org', plan:'Starter' },
+        { id:'second-hub', name:'Second Hub — Test Org', plan:'Starter' },
+      ];
+
+      defineSaasDashboardPage({
+        active: '/dashboard/marketplace/plans/',
+        title: 'Planes de hub',
+        body: `
+          <div class="plans-stack">
+            <ion-card class="plans-intro">
+              <ion-card-content>
+                <div class="plans-eyebrow">Planes de hub</div>
+                <h1>Elige el plan de tu hub</h1>
+                <p>Los planes se facturan por hub. Los cambios se aplican de inmediato con facturación prorrateada.</p>
+                <form id="form-plan-hub-select" class="plans-hub-select">
+                  <ion-select id="plans-hub" fill="outline" label="Hub" label-placement="floating" interface="popover" value="main-hub">
+                    <ion-select-option value="main-hub">Main Hub — Test Org</ion-select-option>
+                    <ion-select-option value="second-hub">Second Hub — Test Org</ion-select-option>
+                  </ion-select>
+                </form>
+                <div class="plans-current"><ion-badge color="primary">Plan actual: Starter</ion-badge></div>
+              </ion-card-content>
+            </ion-card>
+            <div class="plans-grid">
+              <ion-card class="plan-card">
+                <ion-card-content>
+                  <div class="plan-head"><strong>Starter</strong></div>
+                  <div class="plan-price">29,99 €<small>/mes</small></div>
+                  <p>Plan de entrada para poner en marcha un hub.</p>
+                  <ion-badge color="primary">Plan actual</ion-badge>
+                </ion-card-content>
+              </ion-card>
+              <ion-card class="plan-card">
+                <ion-card-content>
+                  <div class="plan-head"><strong>Pro</strong><ion-badge color="medium">Mejora</ion-badge></div>
+                  <div class="plan-price">109,99 €<small>/mes</small></div>
+                  <p>Más capacidad para equipos y operaciones avanzadas.</p>
+                  <form class="plan-change-form" data-plan="Pro">
+                    <ion-button type="submit" expand="block" fill="outline"><iconify-icon slot="start" icon="lucide:arrow-up-down" width="16" height="16"></iconify-icon>Cambiar a este plan</ion-button>
+                  </form>
+                </ion-card-content>
+              </ion-card>
+            </div>
+          </div>
+          <ion-alert id="plan-change-confirm"></ion-alert>
+          <ion-toast id="plan-change-toast" duration="1800" position="bottom"></ion-toast>`,
+        footer: `
+          <footer id="section-tabbar">
+            <ion-segment value="plans" aria-label="Navegación del marketplace">
+              <ion-segment-button value="modules"><iconify-icon icon="lucide:puzzle" width="20" height="20"></iconify-icon><ion-label>Módulos</ion-label></ion-segment-button>
+              <ion-segment-button value="plans"><iconify-icon icon="lucide:server" width="20" height="20"></iconify-icon><ion-label>Planes de hub</ion-label></ion-segment-button>
+            </ion-segment>
+          </footer>`,
+        setup(doc) {
+          const hubSelect = doc.getElementById('plans-hub');
+          const confirm = doc.getElementById('plan-change-confirm');
+          const toast = doc.getElementById('plan-change-toast');
+          let selectedHub = hubs[0];
+
+          hubSelect.addEventListener('ionChange', (event) => {
+            selectedHub = hubs.find((hub) => hub.id === event.detail?.value) ?? hubs[0];
+          });
+          doc.querySelectorAll('.plan-change-form').forEach((form) => form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const plan = form.dataset.plan;
+            confirm.header = 'Confirmar cambio de plan';
+            confirm.message = `¿Cambiar ${selectedHub.name} al plan ${plan}? La facturación se prorratea de inmediato.`;
+            confirm.buttons = [
+              { text:'Cancelar', role:'cancel' },
+              { text:'Cambiar', role:'confirm', handler:() => {
+                toast.message = `${selectedHub.name} cambiará al plan ${plan}.`;
+                toast.color = 'success';
+                toast.isOpen = true;
+              } },
+            ];
+            confirm.isOpen = true;
+          }));
+          confirm.addEventListener('didDismiss', () => { confirm.isOpen = false; });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+        },
+      });
+    </script>
+  </body>
+</html>

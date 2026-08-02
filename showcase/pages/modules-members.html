@@ -3,226 +3,89 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Colaboradores del módulo</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Miembros del módulo · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      // Rol → color Ionic (las clases .ion-color-* NO penetran el shadow → vars inline).
-      const ROL_COLOR = { Owner: 'primary', 'Co-author': 'tertiary', Editor: 'warning', Viewer: 'medium' };
-      const rolBadge = (rol) => {
-        const c = ROL_COLOR[rol] ?? 'medium';
-        return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${rol}</ion-badge>`;
-      };
-
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'modules',
+        title: 'Miembros de Inventario Avanzado',
         body: `
-          <ok-page-header
-            heading="Colaboradores: POS Caja Registradora Pro"
-            description="4 colaboradores activos · 2 invitaciones pendientes">
-            <ion-button slot="actions">
-              <ion-icon slot="start" name="person-add-outline"></ion-icon>
-              Invitar colaborador
-            </ion-button>
-          </ok-page-header>
-
-          <ok-inline-feedback
-            class="pg-mb-4"
-            tone="info"
-            heading="Reparto de ingresos">
-            Los colaboradores reciben un porcentaje de ingresos según su rol. Configura las divisiones
-            en <strong>Pago &gt; Reparto</strong>. Stripe Connect distribuye los payouts automáticamente cada 15 días.
-          </ok-inline-feedback>
-
-          <!-- Colaboradores activos -->
-          <ok-data-table id="members-dt" class="pg-mb-4" style="display:block"></ok-data-table>
-
-          <!-- Invitaciones pendientes -->
-          <ok-data-table id="inv-dt" class="pg-mb-4" style="display:block"></ok-data-table>
-
-          <!-- Actividad reciente -->
-          <ion-card style="margin:0">
-            <ion-card-header>
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <ion-card-title>Actividad de colaboradores</ion-card-title>
-                <ion-button fill="clear" size="small">
-                  Ver registro completo
-                  <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
-                </ion-button>
+          <div class="developer-page developer-section-stack">
+            <section class="developer-kpis" aria-label="Resumen de miembros">
+              <div class="developer-kpi">
+                <div class="developer-kpi-label"><iconify-icon icon="lucide:users" width="12" height="12"></iconify-icon>Total de miembros</div>
+                <div class="developer-kpi-value">3</div>
+                <div class="developer-kpi-sub">Incluye al creador</div>
               </div>
-            </ion-card-header>
-            <ion-card-content>
-              <ok-timeline id="collab-timeline"></ok-timeline>
-            </ion-card-content>
-          </ion-card>
-        `,
-        setup(doc) {
-          // ── ok-data-table: colaboradores activos ──
-          const membersDt = doc.getElementById('members-dt');
-          if (membersDt) {
-            membersDt.title = 'Colaboradores activos';
-            membersDt.rowKey = (r) => r.email;
-            membersDt.columns = [
-              { key: 'name', header: 'Colaborador', width: 'minmax(12rem,1.5fr)', render: (r) =>
-                  h`<span style="display:inline-flex;align-items:center;gap:.6rem">
-                      <ok-avatar name=${r.name} size="sm"></ok-avatar>
-                      <span>
-                        <span style="font-weight:600">${r.name}</span>
-                        <span style="display:block;font-size:.8rem;color:var(--ion-color-medium)">${r.email}</span>
-                      </span>
-                    </span>`
-              },
-              { key: 'rol', header: 'Rol', width: '9rem', render: (r) => rolBadge(r.rol) },
-              { key: 'reparto', header: 'Reparto', width: '6rem', align: 'right', render: (r) =>
-                  h`<span style="font-weight:600;font-variant-numeric:tabular-nums">${r.reparto}</span>`
-              },
-              { key: 'desde', header: 'Desde', width: '9rem' },
-              { key: 'ultimaAct', header: 'Última actividad', width: '10rem' },
-            ];
-            membersDt.rows = [
-              { name: 'Ioan Beilic',     email: 'ioan@erplora.dev',            rol: 'Owner',     reparto: '60%', desde: '22 ene 2026', ultimaAct: 'hoy 14:32' },
-              { name: 'Lucía Domínguez', email: 'lucia.dominguez@erplora.dev', rol: 'Co-author', reparto: '25%', desde: '10 mar 2026', ultimaAct: 'ayer 18:42' },
-              { name: 'Marcos Estévez',  email: 'marcos.estevez@erplora.dev',  rol: 'Editor',    reparto: '10%', desde: '05 abr 2026', ultimaAct: 'hace 3 d' },
-              { name: 'Raquel Cano',     email: 'raquel.cano@erplora.dev',     rol: 'Viewer',    reparto: '5%',  desde: '18 abr 2026', ultimaAct: 'hace 7 d' },
-            ];
-            membersDt.actions = [
-              { id: 'cambiar-rol', label: 'Cambiar rol', icon: 'swap-horizontal-outline' },
-              { id: 'editar-pct',  label: 'Editar %',    icon: 'pencil-outline' },
-              { id: 'eliminar',    label: 'Eliminar',     icon: 'trash-outline', color: 'danger',
-                show: (r) => r.rol !== 'Owner' },
-            ];
-            membersDt.addEventListener('rowAction', (e) => {
-              const { actionId, row } = e.detail || {};
-              const t = document.createElement('ion-toast');
-              t.message = `${actionId} → ${row?.name ?? ''}`;
-              t.duration = 1200; t.position = 'bottom';
-              document.body.appendChild(t); t.present();
-              t.addEventListener('didDismiss', () => t.remove());
-            });
-          }
+            </section>
 
-          // ── ok-data-table: invitaciones pendientes ──
-          const invDt = doc.getElementById('inv-dt');
-          if (invDt) {
-            invDt.title = 'Invitaciones pendientes';
-            invDt.rowKey = (r) => r.email;
-            invDt.columns = [
-              { key: 'email', header: 'Email', width: 'minmax(14rem,1.5fr)', render: (r) => {
-                  const s = document.createElement('strong');
-                  s.textContent = r.email;
-                  return s;
-                }
-              },
-              { key: 'rol', header: 'Rol propuesto', width: '10rem', render: (r) => {
-                  const c = ROL_COLOR[r.rol] ?? 'medium';
-                  return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.rol}</ion-badge>`;
-                }
-              },
-              { key: 'reparto', header: 'Reparto', width: '6rem', align: 'right' },
-              { key: 'enviado', header: 'Enviado', width: '9rem' },
-              { key: 'expira', header: 'Expira', width: '8rem', render: (r) => {
-                  const span = document.createElement('span');
-                  span.textContent = r.expira;
-                  span.style.color = r.expiraUrgente ? 'var(--ion-color-warning)' : 'var(--ion-color-medium)';
-                  span.style.fontWeight = r.expiraUrgente ? '600' : '';
-                  return span;
-                }
-              },
-            ];
-            invDt.rows = [
-              { email: 'diego.morales@nordenbikes.es',     rol: 'Editor', reparto: '5%', enviado: '02 may 2026', expira: 'en 4 días', expiraUrgente: true },
-              { email: 'laura.fernandez@designstudio.com', rol: 'Viewer', reparto: '0%', enviado: '05 may 2026', expira: 'en 7 días', expiraUrgente: false },
-            ];
-            invDt.actions = [
-              { id: 'reenviar', label: 'Reenviar', icon: 'send-outline' },
-              { id: 'cancelar', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
-            ];
-            invDt.addEventListener('rowAction', (e) => {
-              const { actionId, row } = e.detail || {};
-              const t = document.createElement('ion-toast');
-              t.message = `${actionId} → ${row?.email ?? ''}`;
-              t.duration = 1200; t.position = 'bottom';
-              document.body.appendChild(t); t.present();
-              t.addEventListener('didDismiss', () => t.remove());
-            });
-          }
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title"><iconify-icon icon="lucide:shield-check" width="17" height="17" style="color:var(--ion-color-primary)"></iconify-icon> Creador</h2>
+                <ion-list lines="none">
+                  <ion-item>
+                    <ion-avatar slot="start"><span style="display:grid;width:100%;height:100%;place-items:center;background:rgba(var(--ion-color-primary-rgb),.14);color:var(--ion-color-primary);font-weight:700">D</span></ion-avatar>
+                    <ion-label><strong>Demo Partner</strong><p>demo@erplora.com</p></ion-label>
+                    <ion-badge slot="end" color="success">Creador</ion-badge>
+                  </ion-item>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
 
-          // ── ok-timeline: actividad de colaboradores ──
-          const tl = doc.getElementById('collab-timeline');
-          if (tl) {
-            tl.items = [
-              {
-                id: 'join-raquel',
-                title: 'Raquel Cano aceptó la invitación como Viewer',
-                description: 'Reparto asignado: 5% · invitada por @ioanb',
-                time: 'hace 7 d · 18 abr 2026',
-                icon: 'person-add-outline',
-                color: 'var(--ion-color-success)',
-                status: 'done',
-              },
-              {
-                id: 'payout-april',
-                title: 'Payout abril · €1 260 distribuido a 4 colaboradores',
-                description: 'Stripe Connect · transferencia ID po_3OqL··· · sin incidencias',
-                time: '15 abr 2026',
-                icon: 'cash-outline',
-                color: 'var(--ion-color-primary)',
-                status: 'done',
-              },
-              {
-                id: 'commit-marcos',
-                title: 'Marcos Estévez contribuyó · v3.1.4 · fix cajón monedas',
-                description: 'Pull request #84 · 3 archivos cambiados · revisado y mergeado',
-                time: '05 abr 2026',
-                icon: 'code-slash-outline',
-                color: 'var(--ion-color-tertiary)',
-                status: 'done',
-              },
-              {
-                id: 'join-marcos',
-                title: 'Marcos Estévez aceptó la invitación como Editor',
-                description: 'Reparto asignado: 10% · invitado por @luciad',
-                time: '05 abr 2026',
-                icon: 'person-add-outline',
-                color: 'var(--ion-color-success)',
-                status: 'done',
-              },
-              {
-                id: 'commit-lucia',
-                title: 'Lucía Domínguez contribuyó · v3.1.0 · turnos múltiples',
-                description: 'PR #61 · 18 archivos cambiados · feature mayor',
-                time: '10 mar 2026',
-                icon: 'code-slash-outline',
-                color: 'var(--ion-color-tertiary)',
-                status: 'done',
-              },
-              {
-                id: 'payout-march',
-                title: 'Payout marzo · €980 distribuido a 2 colaboradores',
-                description: 'Stripe Connect · transferencia ID po_3NnK··· · sin incidencias',
-                time: '15 mar 2026',
-                icon: 'cash-outline',
-                color: 'var(--ion-color-primary)',
-                status: 'done',
-              },
-            ];
-          }
-        },
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title"><iconify-icon icon="lucide:users" width="17" height="17"></iconify-icon> Miembros del equipo</h2>
+                <p class="developer-card-subtitle">Colaboradores que pueden trabajar en este módulo.</p>
+                <ion-list id="members-list" lines="full">
+                  <ion-item>
+                    <ion-avatar slot="start"><span style="display:grid;width:100%;height:100%;place-items:center;background:rgba(var(--ion-text-color-rgb),.08);font-weight:700">A</span></ion-avatar>
+                    <ion-label><strong>Ana Torres</strong><p>ana@ejemplo.com</p><small>Invitada por demo@erplora.com · hace 2 meses</small></ion-label>
+                    <ion-select slot="end" aria-label="Rol de Ana" interface="popover" value="maintainer">
+                      <ion-select-option value="maintainer">Mantenedor</ion-select-option>
+                      <ion-select-option value="developer">Desarrollador</ion-select-option>
+                      <ion-select-option value="viewer">Lector</ion-select-option>
+                    </ion-select>
+                    <ion-button slot="end" fill="clear" color="danger" aria-label="Eliminar a Ana"><iconify-icon slot="icon-only" icon="lucide:trash-2" width="14" height="14"></iconify-icon></ion-button>
+                  </ion-item>
+                  <ion-item>
+                    <ion-avatar slot="start"><span style="display:grid;width:100%;height:100%;place-items:center;background:rgba(var(--ion-text-color-rgb),.08);font-weight:700">M</span></ion-avatar>
+                    <ion-label><strong>Marcos León</strong><p>marcos@ejemplo.com</p><small>Invitado por Ana · hace 3 semanas</small></ion-label>
+                    <ion-select slot="end" aria-label="Rol de Marcos" interface="popover" value="developer">
+                      <ion-select-option value="maintainer">Mantenedor</ion-select-option>
+                      <ion-select-option value="developer">Desarrollador</ion-select-option>
+                      <ion-select-option value="viewer">Lector</ion-select-option>
+                    </ion-select>
+                    <ion-button slot="end" fill="clear" color="danger" aria-label="Eliminar a Marcos"><iconify-icon slot="icon-only" icon="lucide:trash-2" width="14" height="14"></iconify-icon></ion-button>
+                  </ion-item>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title">Permisos por rol</h2>
+                <ion-list lines="full">
+                  <ion-item><iconify-icon slot="start" icon="lucide:shield" width="17" height="17" style="color:var(--ion-color-primary)"></iconify-icon><ion-label><strong>Propietario</strong><p>Control total: editar, publicar, gestionar miembros y eliminar.</p></ion-label></ion-item>
+                  <ion-item><iconify-icon slot="start" icon="lucide:wrench" width="17" height="17"></iconify-icon><ion-label><strong>Mantenedor</strong><p>Puede editar, publicar y gestionar miembros.</p></ion-label></ion-item>
+                  <ion-item><iconify-icon slot="start" icon="lucide:code" width="17" height="17" style="color:var(--ion-color-success)"></iconify-icon><ion-label><strong>Desarrollador</strong><p>Puede editar el código y subir nuevas versiones.</p></ion-label></ion-item>
+                  <ion-item><iconify-icon slot="start" icon="lucide:eye" width="17" height="17"></iconify-icon><ion-label><strong>Lector</strong><p>Solo puede consultar estadísticas y detalles.</p></ion-label></ion-item>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
+          </div>`,
       });
     </script>
   </body>

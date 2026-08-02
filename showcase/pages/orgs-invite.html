@@ -3,315 +3,48 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Invitar miembros</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <title>Invitar miembro - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-    </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-      .ui-label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
-      .ui-label--req::after { content: " *"; color: var(--ion-color-danger); }
-      .ui-hint { display: block; margin-top: 6px; font-size: .78rem; color: var(--ion-color-medium); }
-
-      .ui-fields { display: flex; flex-direction: column; gap: 20px; }
-
-      .ui-card-title { font-size: 1rem; font-weight: 700; }
-      .ui-card-sub { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
-
-      /* Footer de acciones dentro del formulario */
-      .ui-foot {
-        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        margin-top: 20px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        padding-top: 16px;
-      }
-      .ui-foot__note { flex: 1 1 auto; font-size: .78rem; color: var(--ion-color-medium); }
-      @media (max-width: 600px) {
-        .ui-foot ion-button { width: 100%; }
-      }
-
-      /* Toggle 2FA */
-      .ui-perm-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 12px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .ui-perm-row__text { flex: 1 1 auto; }
-      .ui-perm-row__label { font-weight: 600; font-size: .9rem; }
-      .ui-perm-row__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
-
-      /* Tarjetas de roles */
-      .ui-role-card {
-        display: flex; gap: 12px; align-items: flex-start;
-        padding: 12px;
-        border-radius: 8px;
-        background: var(--ion-color-step-50, rgba(127,127,127,.05));
-      }
-      .ui-role-card + .ui-role-card { margin-top: 8px; }
-      .ui-role-card__text { font-size: .8rem; color: var(--ion-color-medium); }
+      .form-card { max-width:42rem; }
+      .hint { margin:.75rem 0 0;color:var(--ion-color-medium);font-size:.8rem; }
+      .actions { display:flex;align-items:center;gap:.5rem;margin-top:1.25rem; }
     </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      // Estado → color Ionic (las clases .ion-color-* NO penetran el shadow del data-table;
-      // se colorea con CSS vars inline, igual que hubs-active.html y billing-invoices.html).
-      const ESTADO_COLOR = {
-        'Aceptada':  'success',
-        'Pendiente': 'warning',
-        'Rechazada': 'danger',
-        'Expirada':  'medium',
-      };
-
-      const ROL_COLOR = {
-        'Owner':  'primary',
-        'Admin':  'tertiary',
-        'Editor': 'medium',
-        'Viewer': 'medium',
-      };
-
-      definePage({
-        active: 'orgs',
-        search: 'Buscar miembros…',
+      defineSaasDashboardPage({
+        active: '/dashboard/organizations/',
+        title: 'Invitar miembro',
         body: `
-          <ok-page-header
-            heading="Invitar a Acme Industries"
-            description="12 miembros actuales · 3 invitaciones pendientes">
-            <ion-button slot="actions" fill="outline" size="small">
-              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
-              Volver a la organización
-            </ion-button>
-            <ion-button slot="actions" fill="outline" size="small">
-              <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-              Importar CSV
-            </ion-button>
-          </ok-page-header>
-
-          <!-- Columnas: formulario (2fr) + sidebar de roles (1fr) -->
-          <div class="pg-cols">
-
-            <!-- IZQUIERDA · formulario de invitación -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title class="ui-card-title">Nueva invitación</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-fields">
-
-                  <!-- Emails -->
-                  <div>
-                    <label class="ui-label ui-label--req">Direcciones de correo</label>
-                    <ok-tag-input id="emails-input" placeholder="Escribe un email y pulsa Enter…"></ok-tag-input>
-                    <small class="ui-hint">Pega varios separados por comas. Soportamos hasta 200 invitaciones por lote.</small>
-                  </div>
-
-                  <!-- Rol -->
-                  <div>
-                    <label class="ui-label">Rol</label>
-                    <ion-select
-                      id="rol-select"
-                      fill="outline"
-                      value="editor"
-                      label="Rol"
-                      label-placement="stacked"
-                      aria-label="Rol">
-                      <ion-select-option value="owner">Owner — control total, facturación incluida</ion-select-option>
-                      <ion-select-option value="admin">Admin — administra equipo, hubs y permisos</ion-select-option>
-                      <ion-select-option value="editor">Editor — crea y edita datos del negocio</ion-select-option>
-                      <ion-select-option value="viewer">Viewer — solo lectura</ion-select-option>
-                    </ion-select>
-                  </div>
-
-                  <!-- Mensaje opcional -->
-                  <div>
-                    <label class="ui-label">Mensaje opcional</label>
-                    <ion-textarea
-                      fill="outline"
-                      rows="4"
-                      placeholder="Hola! Te invito a unirte a Acme Industries en ERPlora para que coordinemos la producción de mayo…"></ion-textarea>
-                    <small class="ui-hint">Se incluirá en el correo de invitación junto a un enlace de aceptación.</small>
-                  </div>
-
-                  <!-- Forzar 2FA -->
-                  <div class="ui-perm-row">
-                    <div class="ui-perm-row__text">
-                      <div class="ui-perm-row__label">Forzar 2FA al unirse</div>
-                      <div class="ui-perm-row__desc">Se exige verificación en dos pasos antes del primer acceso</div>
-                    </div>
-                    <ion-toggle id="toggle-2fa" checked></ion-toggle>
-                  </div>
-
-                </div>
-
-                <!-- Footer -->
-                <div class="ui-foot">
-                  <span class="ui-foot__note">Las invitaciones expiran en 7 días</span>
-                  <ion-button fill="outline">Cancelar</ion-button>
-                  <ion-button>
-                    <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
-                    Enviar invitación
+          <ion-card class="form-card">
+            <ion-card-content>
+              <form id="invite-organization-member-form">
+                <ion-input id="organization-member-email" label="Correo electrónico"
+                           label-placement="floating" fill="outline" type="email"
+                           placeholder="usuario@ejemplo.com" required autofocus></ion-input>
+                <input type="hidden" name="role" value="member" />
+                <p class="hint">El usuario se añadirá como miembro. Los roles y permisos se gestionan dentro de cada Hub.</p>
+                <div class="actions">
+                  <ion-button type="button" fill="clear">Cancelar</ion-button>
+                  <ion-button type="submit">
+                    <iconify-icon slot="start" icon="lucide:user-plus" width="16" height="16"></iconify-icon>
+                    Invitar miembro
                   </ion-button>
                 </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- DERECHA · sidebar con roles disponibles -->
-            <div class="pg-stack">
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title class="ui-card-title">Roles disponibles</ion-card-title>
-                  <div class="ui-card-sub">Permisos por defecto</div>
-                </ion-card-header>
-                <ion-card-content>
-
-                  <div class="ui-role-card">
-                    <ion-badge color="primary">Owner</ion-badge>
-                    <div class="ui-role-card__text">Control total, gestiona facturación y miembros. Solo 1 owner activo por organización.</div>
-                  </div>
-
-                  <div class="ui-role-card">
-                    <ion-badge color="tertiary">Admin</ion-badge>
-                    <div class="ui-role-card__text">Configura hubs, invita miembros, accede a todos los módulos. No facturación.</div>
-                  </div>
-
-                  <div class="ui-role-card">
-                    <ion-badge color="medium">Editor</ion-badge>
-                    <div class="ui-role-card__text">Crea y edita datos operativos: productos, pedidos, partes de trabajo.</div>
-                  </div>
-
-                  <div class="ui-role-card">
-                    <ion-badge color="medium">Viewer</ion-badge>
-                    <div class="ui-role-card__text">Solo lectura, ideal para auditores externos o partners.</div>
-                  </div>
-
-                </ion-card-content>
-              </ion-card>
-            </div>
-
-          </div>
-
-          <!-- Invitaciones pendientes -->
-          <ok-data-table id="invites-dt" style="display:block;margin-top:24px"></ok-data-table>
+              </form>
+            </ion-card-content>
+          </ion-card>
         `,
         setup(doc) {
-          // ok-tag-input: emails iniciales.
-          const emailsInput = doc.getElementById('emails-input');
-          if (emailsInput) {
-            emailsInput.value = ['ana@ejemplo.com', 'bruno@ejemplo.com'];
-            emailsInput.suggestions = [
-              'carla@ejemplo.com',
-              'david@empresa.es',
-              'eva@partner.com',
-            ];
-          }
-
-          // ok-data-table: invitaciones pendientes.
-          const dt = doc.getElementById('invites-dt');
-          if (!dt) return;
-
-          dt.title = 'Invitaciones pendientes';
-          dt.rowKey = (r) => r.email;
-
-          dt.columns = [
-            {
-              key: 'email',
-              header: 'Email',
-              width: 'minmax(14rem,1.5fr)',
-              render: (r) => h`
-                <span style="display:inline-flex;align-items:center;gap:10px">
-                  <ok-avatar name="${r.initials}" size="sm"></ok-avatar>
-                  <span style="display:flex;flex-direction:column">
-                    <span style="font-weight:600;font-size:.9rem">${r.email}</span>
-                    <span style="color:var(--ion-color-medium);font-size:.78rem">${r.invitadoPor}</span>
-                  </span>
-                </span>`,
-            },
-            {
-              key: 'rol',
-              header: 'Rol',
-              width: '8rem',
-              render: (r) => {
-                const c = ROL_COLOR[r.rol] ?? 'medium';
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.rol}</ion-badge>`;
-              },
-            },
-            {
-              key: 'fecha',
-              header: 'Invitado el',
-              width: '9rem',
-            },
-            {
-              key: 'estado',
-              header: 'Estado',
-              width: '9rem',
-              render: (r) => {
-                const c = ESTADO_COLOR[r.estado] ?? 'medium';
-                return h`<ion-badge style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);--color:var(--ion-color-${c});--padding-top:5px;--padding-bottom:5px">${r.estado}</ion-badge>`;
-              },
-            },
-          ];
-
-          dt.actions = [
-            { id: 'profile',  icon: 'person-outline',       label: 'Ver perfil',       show: (r) => r.estado === 'Aceptada' },
-            { id: 'resend',   icon: 'refresh-outline',      label: 'Reenviar',          show: (r) => r.estado === 'Pendiente' || r.estado === 'Expirada' },
-            { id: 'cancel',   icon: 'close-circle-outline', label: 'Cancelar',          show: (r) => r.estado === 'Pendiente' },
-            { id: 'reinvite', icon: 'paper-plane-outline',  label: 'Volver a invitar',  show: (r) => r.estado === 'Rechazada' },
-          ];
-
-          dt.rows = [
-            {
-              email: 'carla.ruiz@partner.es',
-              initials: 'CR',
-              invitadoPor: 'Invitada por Ioan Beilic',
-              rol: 'Admin',
-              fecha: '02 may 2026',
-              estado: 'Aceptada',
-            },
-            {
-              email: 'david.guerrero@externo.com',
-              initials: 'DG',
-              invitadoPor: 'Invitado por Anna Calvet',
-              rol: 'Editor',
-              fecha: '04 may 2026',
-              estado: 'Pendiente',
-            },
-            {
-              email: 'marta.sanchez@auditoria.es',
-              initials: 'MS',
-              invitadoPor: 'Invitada por María Rovira',
-              rol: 'Viewer',
-              fecha: '05 may 2026',
-              estado: 'Pendiente',
-            },
-            {
-              email: 'raul.vidal@gmail.com',
-              initials: 'RV',
-              invitadoPor: 'Invitado por Ioan Beilic',
-              rol: 'Editor',
-              fecha: '28 abr 2026',
-              estado: 'Rechazada',
-            },
-            {
-              email: 'elisabeth.puig@asesoria.cat',
-              initials: 'EP',
-              invitadoPor: 'Invitada por Anna Calvet',
-              rol: 'Viewer',
-              fecha: '12 abr 2026',
-              estado: 'Expirada',
-            },
-          ];
+          doc.getElementById('invite-organization-member-form')?.addEventListener('submit', (event) => {
+            event.preventDefault();
+          });
         },
       });
     </script>

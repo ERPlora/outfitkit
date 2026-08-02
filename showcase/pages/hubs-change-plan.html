@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cambiar plan - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <style>
+      .stack { display:grid;gap:1rem; }
+      .current-row,.plans-head,.plan-head,.confirm-actions { display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap; }
+      .eyebrow { margin:0;color:var(--ion-color-medium);font-size:.7rem;text-transform:uppercase; }
+      .current-row h2,.plans-head h2,.plan-head h3 { margin:.3rem 0;font-size:1rem; }
+      .resource-row { display:flex;gap:1rem;flex-wrap:wrap;color:var(--ion-color-medium);font-size:.85rem; }
+      .plans-head ion-segment { width:auto;min-width:14rem; }
+      .plan-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem; }
+      .plan-card { cursor:pointer;border:2px solid transparent; }
+      .plan-card.selected { border-color:var(--ion-color-primary); }
+      .price { margin:.75rem 0;font-size:1.5rem;font-weight:700; }
+      .price small { color:var(--ion-color-medium);font-size:.8rem;font-weight:400; }
+      .features { display:grid;gap:.4rem;margin:0;padding:0;list-style:none;font-size:.85rem; }
+      .features li { display:flex;align-items:flex-start;gap:.4rem; }
+      .confirm-card[hidden] { display:none; }
+      @media (max-width:760px) { .plan-grid { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const PLANS = {
+        standard: { name: 'Standard', monthly: 49, annual: 490, cpu: 2, memory: 2048, tag: 'Actual', features: ['Backups automáticos', 'Certificado SSL', 'Soporte estándar'] },
+        pro: { name: 'Pro', monthly: 89, annual: 890, cpu: 4, memory: 4096, tag: 'Upgrade', features: ['Más recursos', 'Backups automáticos', 'Soporte prioritario'] },
+        enterprise: { name: 'Enterprise', monthly: 149, annual: 1490, cpu: 8, memory: 8192, tag: 'Upgrade', features: ['Recursos ampliados', 'Backups automáticos', 'Soporte prioritario'] },
+      };
+      const footer = `
+        <footer id="section-tabbar"><ion-segment value="active" aria-label="Navegación de Hubs">
+          <ion-segment-button value="active"><iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon><ion-label>Activo</ion-label></ion-segment-button>
+          <ion-segment-button value="inactive"><iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon><ion-label>Inactivo</ion-label></ion-segment-button>
+          <ion-segment-button value="create"><iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon><ion-label>Crear</ion-label></ion-segment-button>
+          <ion-segment-button value="domain"><iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon><ion-label>Dominio</ion-label></ion-segment-button>
+        </ion-segment></footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Cambiar plan · Terminal principal',
+        body: `
+          <div class="stack">
+            <ion-card>
+              <ion-card-content>
+                <p class="eyebrow">Plan actual</p>
+                <div class="current-row">
+                  <div><h2>Standard</h2><p style="margin:.2rem 0;color:var(--ion-color-medium)">Plan para operaciones diarias.</p></div>
+                  <div style="text-align:right"><div class="price">49,00 € <small>/ mes</small></div><ion-badge color="success">Activo</ion-badge></div>
+                </div>
+                <div class="resource-row"><span><iconify-icon icon="lucide:cpu" width="14" height="14"></iconify-icon> 2 CPU</span><span><iconify-icon icon="lucide:hard-drive" width="14" height="14"></iconify-icon> 2048 MB RAM</span></div>
+              </ion-card-content>
+            </ion-card>
+            <div class="plans-head"><h2>Planes disponibles</h2><ion-segment id="plan-billing" value="month"><ion-segment-button value="month"><ion-label>Mensual</ion-label></ion-segment-button><ion-segment-button value="year"><ion-label>Anual · -17 %</ion-label></ion-segment-button></ion-segment></div>
+            <div class="plan-grid" id="plan-grid"></div>
+            <ion-card class="confirm-card" id="plan-confirm" hidden>
+              <ion-card-content>
+                <h2 style="margin:0;font-size:1rem">Confirmar cambio de plan</h2>
+                <p>Los upgrades se cobran inmediatamente de forma prorrateada. Los downgrades aplican un crédito a la siguiente factura.</p>
+                <div class="confirm-actions"><ion-button fill="clear">Cancelar</ion-button><ion-button id="change-plan-button"><iconify-icon slot="start" icon="lucide:repeat" width="14" height="14"></iconify-icon>Cambiar plan</ion-button></div>
+              </ion-card-content>
+            </ion-card>
+          </div>
+        `,
+        footer,
+        setup(doc) {
+          const grid = doc.getElementById('plan-grid');
+          const billing = doc.getElementById('plan-billing');
+          const confirm = doc.getElementById('plan-confirm');
+          let selected = '';
+          const render = () => {
+            const yearly = billing?.value === 'year';
+            grid.innerHTML = Object.entries(PLANS).map(([slug, plan]) => `
+              <ion-card class="plan-card ${selected === slug ? 'selected' : ''}" data-plan="${slug}" ${slug === 'standard' ? 'aria-disabled="true"' : ''}>
+                <ion-card-content>
+                  <div class="plan-head"><h3>${plan.name}</h3><ion-badge color="${slug === 'standard' ? 'medium' : 'success'}">${plan.tag}</ion-badge></div>
+                  <div class="price">${(yearly ? plan.annual / 12 : plan.monthly).toFixed(2).replace('.', ',')} € <small>/ mes</small></div>
+                  <div class="resource-row"><span>${plan.cpu} CPU</span><span>${plan.memory} MB</span></div>
+                  <ul class="features">${plan.features.map((feature) => `<li><iconify-icon icon="lucide:check" width="14" height="14"></iconify-icon>${feature}</li>`).join('')}</ul>
+                </ion-card-content>
+              </ion-card>`).join('');
+          };
+          grid?.addEventListener('click', (event) => {
+            const card = event.target.closest?.('[data-plan]');
+            if (!card || card.dataset.plan === 'standard') return;
+            selected = card.dataset.plan;
+            confirm.hidden = false;
+            render();
+          });
+          billing?.addEventListener('ionChange', render);
+          render();
+        },
+      });
+    </script>
+  </body>
+</html>

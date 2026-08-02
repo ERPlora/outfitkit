@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Tarifas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .pricing-page {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 0.5rem;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .pricing-page > ok-data-table {
+        flex: 1 1 0;
+        min-height: 12rem;
+      }
+
+      .pricing-section-title {
+        margin: 0.5rem 0 0;
+        color: var(--ion-color-medium, #5c594f);
+        font-size: 1rem;
+      }
+
+      .pricing-list-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .pricing-list-form ion-button {
+        align-self: flex-end;
+      }
+
+      .pricing-feedback {
+        margin: 0;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .pricing-page {
+          height: auto;
+          min-height: 100%;
+          overflow: auto;
+        }
+
+        .pricing-page > ok-data-table {
+          flex: 0 0 auto;
+          min-height: 25rem;
+        }
+
+        .pricing-list-form ion-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Filas canónicas de erp-pricing-lists.test.ts: una única fuente auditable para la demo.
+      const PRICE_LISTS_FIXTURE = [
+        {
+          "id": "l1",
+          "code": "BASE",
+          "name": "Tarifa base",
+          "currency": "EUR",
+          "is_default": 1,
+          "segment": "retail"
+        }
+      ];
+
+      const PRICING_RULES_FIXTURE = [
+        {
+          "id": "r1",
+          "code": "BLACK",
+          "name": "Black Friday",
+          "rule_type": "percent",
+          "value": "10",
+          "priority": 1
+        }
+      ];
+
+      const SEGMENTS = ['customer', 'business', 'wholesale', 'retail'];
+      const SEGMENT_LABELS = {
+        customer: 'Particular',
+        business: 'Empresa',
+        wholesale: 'Mayorista',
+        retail: 'Minorista',
+      };
+      const RULE_TYPES = ['percent', 'fixed', 'buy_x_get_y', 'tiered'];
+      const RULE_TYPE_LABELS = {
+        percent: 'Porcentaje',
+        fixed: 'Importe fijo',
+        buy_x_get_y: 'Compra X, llévate Y',
+        tiered: 'Por tramos',
+      };
+
+      const priceLists = PRICE_LISTS_FIXTURE.map((row) => ({ ...row }));
+      const pricingRules = PRICING_RULES_FIXTURE.map((row) => ({ ...row }));
+      const commandLog = [];
+      const queryLog = [];
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+      }
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params: { ...params, filters: { ...params.filters } } });
+      }
+
+      function matchesFilter(value, expected) {
+        if (expected == null || expected === '') return true;
+        if (typeof expected === 'object') {
+          const numericValue = Number(value);
+          const minimum = expected.min === '' || expected.min == null ? null : Number(expected.min);
+          const maximum = expected.max === '' || expected.max == null ? null : Number(expected.max);
+          return (!Number.isFinite(minimum) || numericValue >= minimum)
+            && (!Number.isFinite(maximum) || numericValue <= maximum);
+        }
+        return String(value ?? '').toLocaleLowerCase('es')
+          .includes(String(expected).toLocaleLowerCase('es'));
+      }
+
+      function createServerTableController(table, sourceRows, queryName) {
+        const state = {
+          page: 0,
+          pageSize: 50,
+          sort: 'name',
+          dir: 'asc',
+          search: '',
+          filters: {},
+        };
+
+        function queryPage() {
+          recordQuery(queryName, state);
+          const term = state.search.trim().toLocaleLowerCase('es');
+          let filtered = sourceRows.filter((row) => {
+            if (term && ![row.code, row.name]
+              .some((value) => String(value ?? '').toLocaleLowerCase('es').includes(term))) return false;
+            return Object.entries(state.filters).every(([key, value]) => matchesFilter(row[key], value));
+          });
+
+          filtered.sort((left, right) => {
+            const a = left[state.sort] ?? '';
+            const b = right[state.sort] ?? '';
+            const result = typeof a === 'number' && typeof b === 'number'
+              ? a - b
+              : String(a).localeCompare(String(b), 'es');
+            return state.dir === 'desc' ? -result : result;
+          });
+
+          table.total = filtered.length;
+          const start = state.page * state.pageSize;
+          table.rows = filtered.slice(start, start + state.pageSize).map((row) => ({ ...row }));
+          table.page = state.page;
+          table.pageSize = state.pageSize;
+          table.sort = state.sort;
+          table.sortDir = state.dir;
+        }
+
+        table.addEventListener('pageChange', (event) => {
+          state.page = Number(event.detail) || 0;
+          queryPage();
+        });
+        table.addEventListener('pageSizeChange', (event) => {
+          state.pageSize = Number(event.detail) || 50;
+          state.page = 0;
+          queryPage();
+        });
+        table.addEventListener('sortChange', (event) => {
+          state.sort = event.detail.sort;
+          state.dir = event.detail.dir;
+          state.page = 0;
+          queryPage();
+        });
+        table.addEventListener('searchChange', (event) => {
+          state.search = String(event.detail ?? '');
+          state.page = 0;
+          queryPage();
+        });
+        table.addEventListener('filterChange', (event) => {
+          state.filters = { ...state.filters, [event.detail.col]: event.detail.value };
+          state.page = 0;
+          queryPage();
+        });
+
+        queryPage();
+        return { queryPage };
+      }
+
+      defineHubPage({
+        active: '/m/pricing/lists',
+        title: 'Tarifas',
+        body: `
+          <div class="pricing-page">
+            <p id="pricing-feedback" class="pricing-feedback" hidden></p>
+            <ok-data-table id="pricing-lists-table" fill>
+              <form id="pricing-list-create-form" slot="create" class="pricing-list-form">
+                <ion-input
+                  id="pricing-list-code"
+                  fill="outline"
+                  label="Código"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="pricing-list-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="pricing-list-currency"
+                  fill="outline"
+                  label="Divisa"
+                  label-placement="floating"
+                  value="EUR"
+                  required
+                ></ion-input>
+                <ion-button id="pricing-list-submit" type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+
+            <h3 class="pricing-section-title">Reglas de descuento</h3>
+            <ok-data-table id="pricing-rules-table" fill></ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const listsTable = doc.getElementById('pricing-lists-table');
+          const rulesTable = doc.getElementById('pricing-rules-table');
+          const createForm = doc.getElementById('pricing-list-create-form');
+          const codeInput = doc.getElementById('pricing-list-code');
+          const nameInput = doc.getElementById('pricing-list-name');
+          const currencyInput = doc.getElementById('pricing-list-currency');
+          const feedback = doc.getElementById('pricing-feedback');
+
+          const listColumns = [
+            {
+              key: 'code',
+              header: 'Código',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+              format: (row) => `${row.code}${row.is_default ? '  (default)' : ''}`,
+            },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'currency', header: 'Divisa', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'segment',
+              header: 'Segmento',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: SEGMENTS.map((value) => ({ value, label: SEGMENT_LABELS[value] })),
+              format: (row) => row.segment ? SEGMENT_LABELS[row.segment] : '—',
+            },
+          ];
+
+          const ruleColumns = [
+            { key: 'code', header: 'Código', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'rule_type',
+              header: 'Tipo',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: RULE_TYPES.map((value) => ({ value, label: RULE_TYPE_LABELS[value] })),
+              format: (row) => RULE_TYPE_LABELS[row.rule_type] ?? row.rule_type,
+            },
+            {
+              key: 'value',
+              header: 'Valor',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+            },
+            {
+              key: 'priority',
+              header: 'Prioridad',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'text',
+            },
+          ];
+
+          listsTable.serverSide = true;
+          listsTable.fill = true;
+          listsTable.addable = true;
+          listsTable.columns = listColumns;
+          listsTable.views = true;
+          listsTable.cardTitle = (row) => String(row.name ?? '—');
+          listsTable.cardIcon = () => 'pricetags-outline';
+          listsTable.pageSize = 50;
+          listsTable.sort = 'name';
+          listsTable.sortDir = 'asc';
+          listsTable.searchable = true;
+          listsTable.searchPlaceholder = 'Buscar código o nombre…';
+          listsTable.emptyMessage = 'Sin listas de precios.';
+
+          rulesTable.serverSide = true;
+          rulesTable.fill = true;
+          rulesTable.addable = false;
+          rulesTable.columns = ruleColumns;
+          rulesTable.views = true;
+          rulesTable.cardTitle = (row) => String(row.name || row.code || '—');
+          rulesTable.cardIcon = () => 'options-outline';
+          rulesTable.pageSize = 50;
+          rulesTable.sort = 'name';
+          rulesTable.sortDir = 'asc';
+          rulesTable.searchable = true;
+          rulesTable.searchPlaceholder = 'Buscar código o nombre…';
+          rulesTable.emptyMessage = 'Sin reglas de descuento.';
+
+          const listsController = createServerTableController(listsTable, priceLists, 'pricing.price_lists.list');
+          createServerTableController(rulesTable, pricingRules, 'pricing.rules.list');
+
+          function showFeedback(message = '') {
+            feedback.textContent = message;
+            feedback.hidden = !message;
+          }
+
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const code = String(codeInput.value ?? '').trim();
+            const name = String(nameInput.value ?? '').trim();
+            const currency = String(currencyInput.value || 'EUR').trim().toUpperCase();
+            if (!code || !name) {
+              showFeedback('Código y nombre son obligatorios.');
+              return;
+            }
+
+            const payload = {
+              code,
+              name,
+              currency,
+              segment: null,
+              is_default: false,
+              valid_from: null,
+              valid_until: null,
+            };
+            recordCommand('pricing.price_lists.create', payload);
+            priceLists.push({
+              id: `l${priceLists.length + 1}`,
+              code,
+              name,
+              currency,
+              is_default: 0,
+              segment: null,
+            });
+            codeInput.value = '';
+            nameInput.value = '';
+            currencyInput.value = 'EUR';
+            showFeedback();
+            listsTable.close();
+            listsController.queryPage();
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

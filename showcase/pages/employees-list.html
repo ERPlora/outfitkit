@@ -5,379 +5,366 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ERPlora Hub · Empleados</title>
 
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
 
     <style>
-      /* Modal de detalle del empleado */
-      .emp-modal-head {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 16px;
-      }
-      .emp-modal-name {
-        font-weight: 600;
-        font-size: 15px;
-      }
-      .emp-modal-email {
-        font-size: .85rem;
-        color: var(--ion-color-medium);
-        margin-top: 2px;
-      }
-      .emp-modal-badge {
-        margin-top: 6px;
-      }
-      .emp-dl {
-        display: grid;
-        grid-template-columns: minmax(90px, 120px) 1fr;
-        gap: 8px 14px;
-        font-size: 13px;
-        margin: 0;
-      }
-      .emp-dl dt {
-        color: var(--ion-color-medium);
-      }
-      .emp-dl dd {
-        margin: 0;
-        font-variant-numeric: tabular-nums;
-      }
-      .emp-dl .emp-mono {
-        font-family: var(--ion-font-family-mono, monospace);
-        letter-spacing: .08em;
+      [hidden] { display: none !important; }
+
+      .employees-fill,
+      .employees-panel {
+        height: 100%;
+        min-height: 420px;
       }
 
-      /* Footer del modal */
-      .emp-modal-foot {
+      .employees-panel {
+        box-sizing: border-box;
+      }
+
+      .users-placeholder {
+        display: grid;
+        place-items: center;
+        padding: 48px 16px;
+        text-align: center;
+        opacity: 0.6;
+      }
+
+      ok-data-table[fill] {
+        height: 100%;
+      }
+
+      .api-key-create-content {
+        display: grid;
+        gap: 20px;
+      }
+
+      .api-key-modal-actions {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        padding-top: 12px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        margin-top: 16px;
       }
     </style>
   </head>
   <body>
-    <!--
-      SOBRIO como el Hub real (hub/apps/web/src/views/EmployeesPage.vue).
-      SIN chrome inventado: sin barras de filtros externas, sin KPIs, sin selectores de rango.
-      Cabecera + ion-segment de sub-secciones (Staff / Usuarios / Roles) + ok-data-table limpio.
-      Toda la chrome (búsqueda, selector de columnas, vistas, CSV) vive DENTRO de la tabla.
-    -->
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineHubPage } from './_hub.js';
 
-      // ── Datos de empleados ──────────────────────────────────────────────────────
+      // Datos actuales de EmployeesPage.vue. No se añaden registros propios del showcase.
       const EMPLOYEES = [
-        { id: 'joan',   name: 'Joan Castell',   email: 'joan@larambla.es',   role: 'Admin',         roleTone: 'primary',  createdAt: '2025-01-12', active: true  },
-        { id: 'maria',  name: 'María Ruiz',     email: 'maria@larambla.es',  role: 'Encargado',     roleTone: 'tertiary', createdAt: '2025-02-03', active: true  },
-        { id: 'aitana', name: 'Aitana López',   email: 'aitana@larambla.es', role: 'Cajero',        roleTone: 'medium',   createdAt: '2025-02-20', active: true  },
-        { id: 'pol',    name: 'Pol Garcia',     email: 'pol@larambla.es',    role: 'Cocinero',      roleTone: 'medium',   createdAt: '2025-03-15', active: true  },
-        { id: 'sara',   name: 'Sara Martínez',  email: 'sara@larambla.es',   role: 'Almacén',       roleTone: 'medium',   createdAt: '2025-04-09', active: false },
-        { id: 'lucas',  name: 'Lucas Ferrer',   email: 'lucas@larambla.es',  role: 'Camarero',      roleTone: 'medium',   createdAt: '2025-05-01', active: true  },
+        { id: '1', name: 'Demo Admin', email: 'demo@erplora.com', role: 'Administrador', status: 'Activo', createdAt: '2025-01-12' },
+        { id: '2', name: 'María López', email: 'maria@erplora.com', role: 'Encargado', status: 'Activo', createdAt: '2025-02-03' },
+        { id: '3', name: 'Juan Pérez', email: 'juan@erplora.com', role: 'Cajero', status: 'Activo', createdAt: '2025-02-20' },
+        { id: '4', name: 'Ana Ruiz', email: 'ana@erplora.com', role: 'Almacén', status: 'Inactivo', createdAt: '2025-03-15' },
+        { id: '5', name: 'Luis Gómez', email: 'luis@erplora.com', role: 'Camarero', status: 'Activo', createdAt: '2025-04-09' },
+        { id: '6', name: 'Sara Díaz', email: null, role: 'Cocina', status: 'Activo', createdAt: '2025-05-01' },
       ];
 
-      // ── Datos de roles ──────────────────────────────────────────────────────────
-      const ROLES = [
-        { id: 'admin',   name: 'Administrador', scope: 'Sistema',      members: 1, permissions: 48, createdAt: '2025-01-12' },
-        { id: 'manager', name: 'Encargado',     scope: 'Sistema',      members: 2, permissions: 31, createdAt: '2025-01-12' },
-        { id: 'cashier', name: 'Cajero',        scope: 'Personalizado', members: 4, permissions: 9, createdAt: '2025-03-04' },
-        { id: 'stock',   name: 'Almacén',       scope: 'Personalizado', members: 1, permissions: 12, createdAt: '2025-04-21' },
-        { id: 'waiter',  name: 'Camarero',      scope: 'Personalizado', members: 6, permissions: 7,  createdAt: '2025-05-18' },
-        { id: 'kitchen', name: 'Cocina',        scope: 'Personalizado', members: 3, permissions: 5,  createdAt: '2025-02-09' },
+      const BASE_ROLES = [
+        { id: 'admin', name: 'Administrador', scope: 'Sistema', members: 1, permissions: 48, createdAt: '2025-01-12' },
+        { id: 'manager', name: 'Encargado', scope: 'Sistema', members: 2, permissions: 31, createdAt: '2025-01-12' },
+        { id: 'cashier', name: 'Cajero', scope: 'Personalizado', members: 4, permissions: 9, createdAt: '2025-03-04' },
+        { id: 'stock', name: 'Almacén', scope: 'Personalizado', members: 1, permissions: 12, createdAt: '2025-04-21' },
+        { id: 'waiter', name: 'Camarero', scope: 'Personalizado', members: 6, permissions: 7, createdAt: '2025-05-18' },
+        { id: 'kitchen', name: 'Cocina', scope: 'Personalizado', members: 3, permissions: 5, createdAt: '2025-02-09' },
+        { id: 'host', name: 'Recepción', scope: 'Personalizado', members: 2, permissions: 6, createdAt: '2025-03-22' },
+        { id: 'accountant', name: 'Contabilidad', scope: 'Sistema', members: 1, permissions: 22, createdAt: '2025-01-30' },
+        { id: 'buyer', name: 'Compras', scope: 'Personalizado', members: 2, permissions: 14, createdAt: '2025-04-02' },
+        { id: 'marketing', name: 'Marketing', scope: 'Personalizado', members: 1, permissions: 8, createdAt: '2025-05-05' },
+        { id: 'support', name: 'Soporte', scope: 'Personalizado', members: 3, permissions: 11, createdAt: '2025-02-18' },
+        { id: 'auditor', name: 'Auditor', scope: 'Sistema', members: 1, permissions: 19, createdAt: '2025-01-22' },
       ];
 
-      // ── Helpers de render ───────────────────────────────────────────────────────
-      const roleBadge = (r) => h`<ion-badge
-        style="--background:color-mix(in srgb, var(--ion-color-${r.roleTone}) 15%, transparent);
-               --color:var(--ion-color-${r.roleTone});
-               --padding-top:4px;--padding-bottom:4px"
-      >${r.role}</ion-badge>`;
+      const ROLES = Array.from({ length: 58 }, (_, index) => {
+        const base = BASE_ROLES[index % BASE_ROLES.length];
+        return index < BASE_ROLES.length
+          ? { ...base }
+          : {
+              ...base,
+              id: `${base.id}-${index}`,
+              name: `${base.name} ${Math.floor(index / BASE_ROLES.length) + 1}`,
+            };
+      });
 
-      const scopeBadge = (scope) => {
-        const c = scope === 'Sistema' ? 'primary' : 'medium';
-        return h`<ion-badge
-          style="--background:color-mix(in srgb, var(--ion-color-${c}) 15%, transparent);
-                 --color:var(--ion-color-${c});
-                 --padding-top:4px;--padding-bottom:4px"
-        >${scope}</ion-badge>`;
+      const DT_LABELS_ES = {
+        search: 'Buscar…',
+        empty: 'Sin resultados',
+        filters: 'Filtros',
+        clear: 'Limpiar',
+        apply: 'Aplicar',
+        selected: '{n} seleccionados',
+        importCsv: 'Importar CSV',
+        exportCsv: 'Exportar CSV',
+        add: 'Añadir',
+        moreActions: 'Más acciones',
+        rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.',
+        viewList: 'Vista lista',
+        viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles',
+        columns: 'Columnas',
+        actions: 'Acciones',
+        close: 'Cerrar',
+        newRecord: 'Nuevo',
+        form: 'Formulario',
+        filterPlaceholder: 'Filtrar…',
+        from: 'Desde',
+        to: 'Hasta',
+        fromOf: '{label} desde',
+        toOf: '{label} hasta',
+        gte: '≥',
+        lte: '≤',
+        noValues: 'Sin valores',
+        selectAll: 'Seleccionar todo',
+        selectRow: 'Seleccionar fila',
+        select: 'Seleccionar',
+        showing: 'Mostrando {from}–{to} de',
+        recordSingular: 'registro',
+        recordPlural: 'registros',
       };
 
       const fmtDate = (iso) =>
-        new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        new Date(iso).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
 
-      definePage({
-        bare: true,
+      function nameCell(row) {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:flex;align-items:center;gap:.6rem';
+
+        const avatar = document.createElement('span');
+        avatar.textContent = String(row.name ?? '?').charAt(0).toUpperCase();
+        avatar.style.cssText =
+          'display:grid;place-items:center;width:2rem;height:2rem;border-radius:999px;' +
+          'font-size:12px;font-weight:700;background:color-mix(in srgb,var(--ion-color-primary) 15%,transparent);' +
+          'color:var(--ion-color-primary)';
+
+        const name = document.createElement('span');
+        name.textContent = String(row.name ?? '');
+        name.style.fontWeight = '500';
+        wrap.append(avatar, name);
+        return wrap;
+      }
+
+      function badgeCell(text, tone) {
+        const badge = document.createElement('span');
+        badge.textContent = text;
+        badge.style.cssText =
+          'display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;' +
+          `background:rgba(var(--ion-color-${tone}-rgb),.14);` +
+          `color:var(--ion-color-${tone}-shade,var(--ion-color-${tone}))`;
+        return badge;
+      }
+
+      function configureTable(table, { columns, rows, searchKeys, searchPlaceholder, csvName, primaryAction }) {
+        table.columns = columns;
+        table.rows = rows;
+        table.searchKeys = searchKeys;
+        table.searchPlaceholder = searchPlaceholder;
+        table.actions = [
+          { id: 'edit', label: 'Editar', icon: 'pencil' },
+          { id: 'delete', label: 'Borrar', icon: 'trash', color: 'danger' },
+        ];
+        table.primaryAction = primaryAction;
+        table.pageSize = 10;
+        table.views = true;
+        table.csv = true;
+        table.csvName = csvName;
+        table.columnPicker = true;
+        table.labels = DT_LABELS_ES;
+      }
+
+      defineHubPage({
+        active: 'employees',
+        title: 'Empleados',
         body: `
-          <ok-page-header
-            heading="Empleados"
-            description="6 empleados · 5 activos">
-            <ion-button slot="actions" fill="outline" size="small">
-              <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-              Importar CSV
-            </ion-button>
-            <ion-button slot="actions" size="small">
-              <ion-icon slot="start" name="person-add-outline"></ion-icon>
-              Añadir empleado
-            </ion-button>
-          </ok-page-header>
+          <div class="employees-fill">
+            <ok-data-table id="staff-table" class="employees-panel" fill></ok-data-table>
 
-          <ion-segment id="emp-tabs" value="staff" style="margin-bottom:16px">
-            <ion-segment-button value="staff">
-              <ion-icon name="people-outline"></ion-icon>
-              <ion-label>Staff</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="users">
-              <ion-icon name="person-circle-outline"></ion-icon>
-              <ion-label>Usuarios</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="roles">
-              <ion-icon name="shield-checkmark-outline"></ion-icon>
-              <ion-label>Roles</ion-label>
-            </ion-segment-button>
-          </ion-segment>
+            <div id="users-panel" class="employees-panel users-placeholder" hidden>
+              El acceso de usuarios (PIN, cuentas) se gestionará aquí.
+            </div>
 
-          <!-- Staff: tabla principal de empleados -->
-          <ok-data-table id="emp-dt" style="display:block"></ok-data-table>
+            <ok-data-table id="roles-table" class="employees-panel" fill hidden></ok-data-table>
 
-          <!-- Usuarios: placeholder (gestión de acceso vía PIN) -->
-          <div id="emp-users-panel" style="display:none;padding:48px 16px;text-align:center;color:var(--ion-color-medium)">
-            El acceso de usuarios (PIN, cuentas) se gestionará aquí.
+            <div id="api-keys-panel" class="employees-panel" hidden>
+              <ok-data-table id="api-keys-table" fill></ok-data-table>
+            </div>
           </div>
 
-          <!-- Roles: tabla de roles y permisos -->
-          <ok-data-table id="roles-dt" style="display:none"></ok-data-table>
-
-          <!-- Modal de detalle del empleado -->
-          <ion-modal id="emp-modal" backdrop-dismiss="true">
-            <ion-header>
+          <ion-modal id="api-key-create-modal">
+            <ion-header class="ion-no-border">
               <ion-toolbar>
-                <ion-title id="emp-modal-title">Empleado</ion-title>
+                <ion-title>Nueva API key</ion-title>
                 <ion-buttons slot="end">
-                  <ion-button id="emp-modal-close">
+                  <ion-button class="api-key-modal-close" aria-label="Cancelar">
                     <ion-icon slot="icon-only" name="close-outline"></ion-icon>
                   </ion-button>
                 </ion-buttons>
               </ion-toolbar>
             </ion-header>
             <ion-content class="ion-padding">
-              <div class="emp-modal-head">
-                <ok-avatar id="emp-modal-avatar" name="" size="lg" tone="primary"></ok-avatar>
-                <div>
-                  <div class="emp-modal-name" id="emp-modal-name"></div>
-                  <div class="emp-modal-email" id="emp-modal-email"></div>
-                  <div class="emp-modal-badge" id="emp-modal-role-badge"></div>
-                </div>
-              </div>
-              <dl class="emp-dl">
-                <dt>PIN</dt>        <dd class="emp-mono" id="emp-modal-pin">••••</dd>
-                <dt>Estado</dt>     <dd id="emp-modal-status"></dd>
-                <dt>Alta</dt>       <dd id="emp-modal-created"></dd>
-              </dl>
-              <div class="emp-modal-foot">
-                <ion-button fill="outline" id="emp-modal-cancel">Cerrar</ion-button>
-                <ion-button>
-                  <ion-icon slot="start" name="create-outline"></ion-icon>
-                  Editar empleado
-                </ion-button>
+              <div class="api-key-create-content">
+                <ion-list lines="none">
+                  <ion-item>
+                    <ion-input label="Nombre" label-placement="floating" placeholder="p. ej. Gestoría — facturas"></ion-input>
+                  </ion-item>
+                </ion-list>
+                <ok-empty-state
+                  icon="cube-outline"
+                  heading="Ningún módulo expone API todavía"
+                  message="Solo los módulos con operaciones de API pública pueden incluirse en una key. Ninguno de los instalados la expone aún."
+                ></ok-empty-state>
               </div>
             </ion-content>
+            <ion-footer class="ion-no-border">
+              <ion-toolbar>
+                <div class="api-key-modal-actions">
+                  <ion-button class="api-key-modal-close" fill="outline">Cancelar</ion-button>
+                  <ion-button disabled>Crear key</ion-button>
+                </div>
+              </ion-toolbar>
+            </ion-footer>
           </ion-modal>
         `,
+        footer: `
+          <ion-footer class="ion-no-border employees-footer">
+            <ion-toolbar>
+              <ion-segment id="employees-tabs" value="staff">
+                <ion-segment-button value="staff">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>Staff</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="users">
+                  <ion-icon name="person-circle-outline"></ion-icon>
+                  <ion-label>Usuarios</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="roles">
+                  <ion-icon name="shield-checkmark-outline"></ion-icon>
+                  <ion-label>Roles</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="apikeys">
+                  <ion-icon name="keypad-outline"></ion-icon>
+                  <ion-label>API keys</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+            </ion-toolbar>
+          </ion-footer>
+        `,
         setup(doc) {
-          const empDt    = doc.getElementById('emp-dt');
-          const rolesDt  = doc.getElementById('roles-dt');
-          const modal    = doc.getElementById('emp-modal');
-          const tabs     = doc.getElementById('emp-tabs');
-          const usersPanel = doc.getElementById('emp-users-panel');
+          const staffTable = doc.getElementById('staff-table');
+          const rolesTable = doc.getElementById('roles-table');
+          const apiKeysTable = doc.getElementById('api-keys-table');
+          const apiKeysModal = doc.getElementById('api-key-create-modal');
 
-          // ── ok-data-table: Staff ─────────────────────────────────────────────
-          empDt.rowKey      = (r) => r.id;
-          empDt.views       = ['table', 'cards'];
-          empDt.viewMode    = 'table';
-          empDt.searchable  = true;
-          empDt.searchKeys  = ['name', 'email', 'role'];
-          empDt.csv         = true;
-          empDt.csvName     = 'empleados';
-          empDt.columnPicker = true;
-          empDt.primaryAction = { label: 'Nuevo empleado', icon: 'add' };
-          empDt.labels = { search: 'Buscar empleado…' };
+          configureTable(staffTable, {
+            columns: [
+              { key: 'name', header: 'Empleado', render: nameCell },
+              { key: 'email', header: 'Email', format: (row) => String(row.email ?? '—') },
+              { key: 'role', header: 'Rol', filterable: true, filterType: 'select' },
+              {
+                key: 'status',
+                header: 'Estado',
+                filterable: true,
+                filterType: 'select',
+                render: (row) => badgeCell(String(row.status), row.status === 'Activo' ? 'success' : 'medium'),
+              },
+              {
+                key: 'createdAt',
+                header: 'Alta',
+                filterable: true,
+                filterType: 'daterange',
+                format: (row) => fmtDate(String(row.createdAt)),
+              },
+            ],
+            rows: EMPLOYEES,
+            searchKeys: ['name', 'email', 'role'],
+            searchPlaceholder: 'Buscar empleado…',
+            csvName: 'empleados',
+            primaryAction: { label: 'Nuevo empleado', icon: 'add' },
+          });
 
-          empDt.columns = [
-            {
-              key: 'name',
-              header: 'Empleado',
-              width: 'minmax(160px,1.5fr)',
-              render: (r) => h`
-                <span style="display:inline-flex;align-items:center;gap:.55rem">
-                  <ok-avatar name=${r.name} size="sm" tone="primary"></ok-avatar>
-                  <span style="font-weight:600">${r.name}</span>
-                </span>`,
-            },
-            { key: 'email',     header: 'Email',     width: 'minmax(140px,1.2fr)' },
-            {
-              key: 'role',
-              header: 'Rol',
-              width: '9rem',
-              render: (r) => roleBadge(r),
-            },
-            {
-              key: 'active',
-              header: 'Estado',
-              width: '8rem',
-              render: (r) => r.active
-                ? h`<ok-status-pill tone="success" dot label="Activo"></ok-status-pill>`
-                : h`<ok-status-pill tone="neutral" dot label="Inactivo"></ok-status-pill>`,
-            },
-            {
-              key: 'createdAt',
-              header: 'Alta',
-              width: '9rem',
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${fmtDate(r.createdAt)}</span>`,
-            },
+          configureTable(rolesTable, {
+            columns: [
+              { key: 'name', header: 'Rol' },
+              {
+                key: 'scope',
+                header: 'Ámbito',
+                filterable: true,
+                filterType: 'select',
+                render: (row) => badgeCell(String(row.scope), row.scope === 'Sistema' ? 'primary' : 'medium'),
+              },
+              { key: 'members', header: 'Miembros', align: 'center' },
+              { key: 'permissions', header: 'Permisos', align: 'center' },
+              {
+                key: 'createdAt',
+                header: 'Creado',
+                filterable: true,
+                filterType: 'daterange',
+                format: (row) => fmtDate(String(row.createdAt)),
+              },
+            ],
+            rows: ROLES,
+            searchKeys: ['name', 'scope'],
+            searchPlaceholder: 'Buscar rol…',
+            csvName: 'roles',
+            primaryAction: { label: 'Nuevo rol', icon: 'add' },
+          });
+
+          apiKeysTable.columns = [
+            { key: 'name', header: 'Nombre' },
+            { key: 'prefix', header: 'Token' },
+            { key: 'scopeText', header: 'Permisos' },
+            { key: 'status', header: 'Estado' },
+            { key: 'createdText', header: 'Creada' },
+            { key: 'lastUsedText', header: 'Último uso' },
+            { key: '_actions', header: 'Acciones', align: 'right' },
           ];
+          apiKeysTable.rows = [];
+          apiKeysTable.searchKeys = ['name', 'prefix'];
+          apiKeysTable.searchPlaceholder = 'Buscar API key…';
+          apiKeysTable.emptyMessage =
+            'Aún no hay API keys. Crea una para que un sistema externo pueda leer o escribir datos del Hub.';
+          apiKeysTable.primaryAction = { label: 'Nueva API key', icon: 'add' };
+          apiKeysTable.pageSize = 10;
+          apiKeysTable.columnPicker = true;
+          apiKeysTable.labels = DT_LABELS_ES;
 
-          empDt.actions = [
-            { id: 'edit', icon: 'create-outline',      label: 'Editar',        color: 'primary' },
-            { id: 'menu', icon: 'ellipsis-horizontal', label: 'Más acciones' },
-          ];
-
-          // Vista tarjetas
-          empDt.cardIcon  = () => 'person-outline';
-          empDt.cardTitle = (r) => h`<span style="font-weight:600">${r.name}</span>`;
-          empDt.renderCard = (r) => h`
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0">
-              <ok-avatar name=${r.name} size="lg" tone="primary"></ok-avatar>
-              <div style="font-size:.78rem;color:var(--ion-color-medium)">${r.email}</div>
-              ${roleBadge(r)}
-              ${r.active
-                ? h`<ok-status-pill tone="success" dot label="Activo"></ok-status-pill>`
-                : h`<ok-status-pill tone="neutral" dot label="Inactivo"></ok-status-pill>`}
-            </div>`;
-
-          empDt.rows = EMPLOYEES.map((e) => ({
-            ...e,
-            _rowStyle: e.active ? '' : 'opacity:.6',
-          }));
-
-          // ── ok-data-table: Roles ─────────────────────────────────────────────
-          rolesDt.rowKey      = (r) => r.id;
-          rolesDt.searchable  = true;
-          rolesDt.searchKeys  = ['name', 'scope'];
-          rolesDt.csv         = true;
-          rolesDt.csvName     = 'roles';
-          rolesDt.columnPicker = true;
-          rolesDt.primaryAction = { label: 'Nuevo rol', icon: 'add' };
-          rolesDt.labels = { search: 'Buscar rol…' };
-
-          rolesDt.columns = [
-            { key: 'name',        header: 'Rol',       width: 'minmax(140px,1.5fr)' },
-            {
-              key: 'scope',
-              header: 'Ámbito',
-              width: '10rem',
-              render: (r) => scopeBadge(r.scope),
-            },
-            { key: 'members',     header: 'Miembros',  width: '7rem',  align: 'center' },
-            { key: 'permissions', header: 'Permisos',  width: '7rem',  align: 'center' },
-            {
-              key: 'createdAt',
-              header: 'Creado',
-              width: '9rem',
-              render: (r) => h`<span style="font-variant-numeric:tabular-nums">${fmtDate(r.createdAt)}</span>`,
-            },
-          ];
-
-          rolesDt.actions = [
-            { id: 'edit',   icon: 'create-outline', label: 'Editar',  color: 'primary' },
-            { id: 'delete', icon: 'trash-outline',  label: 'Borrar',  color: 'danger'  },
-          ];
-
-          rolesDt.rows = ROLES;
-
-          // ── Modal de detalle del empleado ─────────────────────────────────────
-          const openModal = (empId) => {
-            const e = EMPLOYEES.find((x) => x.id === empId);
-            if (!e || !modal) return;
-
-            const av      = doc.getElementById('emp-modal-avatar');
-            const name    = doc.getElementById('emp-modal-name');
-            const mail    = doc.getElementById('emp-modal-email');
-            const roleBdg = doc.getElementById('emp-modal-role-badge');
-            const sta     = doc.getElementById('emp-modal-status');
-            const created = doc.getElementById('emp-modal-created');
-
-            if (av)      av.setAttribute('name', e.name);
-            if (name)    name.textContent = e.name;
-            if (mail)    mail.textContent = e.email;
-            if (roleBdg) {
-              roleBdg.innerHTML = `<ion-badge
-                style="--background:color-mix(in srgb, var(--ion-color-${e.roleTone}) 15%, transparent);
-                       --color:var(--ion-color-${e.roleTone});
-                       --padding-top:4px;--padding-bottom:4px">${e.role}</ion-badge>`;
-            }
-            if (sta) {
-              const pill = doc.createElement('ok-status-pill');
-              pill.setAttribute('tone',  e.active ? 'success' : 'neutral');
-              pill.setAttribute('dot',   '');
-              pill.setAttribute('label', e.active ? 'Activo' : 'Inactivo');
-              sta.innerHTML = '';
-              sta.appendChild(pill);
-            }
-            if (created) created.textContent = fmtDate(e.createdAt);
-
-            modal.present();
+          const panels = {
+            staff: staffTable,
+            users: doc.getElementById('users-panel'),
+            roles: rolesTable,
+            apikeys: doc.getElementById('api-keys-panel'),
           };
 
-          // Acciones por fila: editar → modal; menú ⋮ → action sheet
-          empDt.addEventListener('rowAction', (ev) => {
-            const { actionId, row } = ev.detail || {};
-            if (actionId === 'edit') {
-              openModal(row.id);
-              return;
-            }
-            if (actionId === 'menu') {
-              const s = doc.createElement('ion-action-sheet');
-              s.header  = row.name;
-              s.buttons = [
-                { text: 'Editar',          icon: 'create-outline'  },
-                { text: 'Restablecer PIN', icon: 'key-outline'     },
-                { text: 'Desactivar',      icon: 'eye-off-outline' },
-                { text: 'Eliminar', role: 'destructive', icon: 'trash-outline' },
-                { text: 'Cancelar', role: 'cancel' },
-              ];
-              doc.body.appendChild(s);
-              s.present();
-              s.addEventListener('didDismiss', () => s.remove());
+          doc.getElementById('employees-tabs')?.addEventListener('ionChange', (event) => {
+            const selected = event.detail?.value ?? 'staff';
+            for (const [name, panel] of Object.entries(panels)) {
+              panel.hidden = name !== selected;
             }
           });
 
-          // Cerrar modal
-          const closeModal = () => modal && modal.dismiss();
-          const btnClose   = doc.getElementById('emp-modal-close');
-          const btnCancel  = doc.getElementById('emp-modal-cancel');
-          if (btnClose)  btnClose.addEventListener('click',  closeModal);
-          if (btnCancel) btnCancel.addEventListener('click', closeModal);
-
-          // ── Cambio de sub-sección ─────────────────────────────────────────────
-          if (tabs) {
-            tabs.addEventListener('ionChange', (ev) => {
-              const tab = (ev.detail && ev.detail.value) || 'staff';
-              empDt.style.display       = tab === 'staff'  ? 'block' : 'none';
-              usersPanel.style.display  = tab === 'users'  ? 'block' : 'none';
-              rolesDt.style.display     = tab === 'roles'  ? 'block' : 'none';
-            });
+          staffTable.addEventListener('primaryAction', () => console.info('/employees/new'));
+          rolesTable.addEventListener('primaryAction', () => console.info('roles.new'));
+          apiKeysTable.addEventListener('primaryAction', () => apiKeysModal?.present());
+          for (const button of doc.querySelectorAll('.api-key-modal-close')) {
+            button.addEventListener('click', () => apiKeysModal?.dismiss());
           }
+
+          const handleRowAction = (event) => {
+            const { actionId, row } = event.detail ?? {};
+            if (actionId === 'edit' && row?.id) console.info(`/employees/${row.id}`);
+            else console.info(actionId, row?.id);
+          };
+          staffTable.addEventListener('rowAction', handleRowAction);
+          rolesTable.addEventListener('rowAction', handleRowAction);
         },
       });
     </script>

@@ -3,537 +3,136 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Subir nuevo módulo</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Subir módulo · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Geometría puntual de esta vista (sin colores de marca). */
-
-      /* Tarjetas de selección de origen (radio-cards). */
-      .ui-source-cards { display: flex; flex-direction: column; gap: 10px; }
-
-      .ui-source-card {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 14px 16px;
-        border: 2px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 12px;
-        cursor: pointer;
-        transition: border-color .15s ease, background .15s ease;
-        user-select: none;
-      }
-      .ui-source-card:hover { background: rgba(var(--ion-text-color-rgb,0,0,0),.03); }
-      .ui-source-card.selected {
-        border-color: var(--ion-color-primary);
-        background: rgba(var(--ion-color-primary-rgb,56,128,255),.06);
-      }
-      .ui-source-card input[type="radio"] { display: none; }
-
-      .ui-source-icon {
-        flex: 0 0 auto;
-        width: 40px; height: 40px;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem;
-      }
-      .ui-source-icon--upload { background: rgba(var(--ion-color-primary-rgb,56,128,255),.12); color: var(--ion-color-primary); }
-      .ui-source-icon--github { background: rgba(var(--ion-text-color-rgb,0,0,0),.08); color: var(--ion-text-color); }
-      .ui-source-icon--marketplace { background: rgba(var(--ion-color-success-rgb,45,211,111),.12); color: var(--ion-color-success); }
-
-      .ui-source-body { flex: 1 1 auto; min-width: 0; }
-      .ui-source-title { font-weight: 600; font-size: .95rem; display: flex; align-items: center; gap: 8px; }
-      .ui-source-desc { font-size: .82rem; color: var(--ion-color-medium); margin-top: 3px; line-height: 1.45; }
-
-      /* Formulario GitHub. */
-      .ui-form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      @media (max-width: 520px) {
-        .ui-form-row { grid-template-columns: 1fr; }
-      }
-
-      .ui-form-label {
-        display: block;
-        font-size: .82rem;
-        font-weight: 600;
-        color: var(--ion-color-medium);
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-      }
-
-      .ui-field { display: flex; flex-direction: column; }
-
-      /* Fila de toggle con texto. */
-      .ui-toggle-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 11px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-      .ui-toggle-row:first-of-type { border-top: 0; }
-      .ui-toggle-text { flex: 1 1 auto; min-width: 0; }
-      .ui-toggle-label { font-weight: 600; font-size: .9rem; }
-      .ui-toggle-hint { font-size: .78rem; color: var(--ion-color-medium); margin-top: 2px; }
-
-      /* Panel colapsable (ZIP / marketplace). */
-      .ui-panel-hidden { display: none; }
-
-      /* Metadatos del commit. */
-      .ui-commit-meta {
-        margin-top: 10px;
-        font-size: 12px;
-        color: var(--ion-color-medium);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-      }
-      .ui-commit-meta strong { color: var(--ion-text-color); }
-      .ui-commit-meta code {
-        color: var(--ion-color-primary);
-        font-family: monospace;
-      }
-
-      /* Vista previa del marketplace card. */
-      .ui-preview-card {
-        border: 1px dashed var(--ion-border-color, rgba(127,127,127,.3));
-        border-radius: 12px;
-        padding: 16px;
-        background: rgba(var(--ion-text-color-rgb,0,0,0),.02);
-      }
-      .ui-preview-head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 10px;
-      }
-      .ui-preview-mod-icon {
-        flex: 0 0 auto;
-      }
-      .ui-preview-title { font-weight: 700; font-size: 1rem; }
-      .ui-preview-meta { font-size: .75rem; color: var(--ion-color-medium); margin-top: 2px; }
-      .ui-preview-desc { font-size: .82rem; color: var(--ion-color-medium); line-height: 1.55; }
-
-      .ui-preview-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-
-      .ui-preview-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 14px;
-        padding-top: 14px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .ui-price-overline { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ion-color-medium); }
-      .ui-price-value { font-size: 1.2rem; font-weight: 700; }
-      .ui-price-period { font-size: .72rem; font-weight: 400; color: var(--ion-color-medium); }
-
-      .ui-preview-note { font-size: .72rem; color: var(--ion-color-medium); text-align: center; margin-top: 10px; }
-
-      /* Barra de acciones fija del wizard. */
-      .ui-wizard-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 20px;
-        padding-top: 16px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .ui-wizard-bar-step { font-size: .8rem; color: var(--ion-color-medium); margin-right: auto; }
-
-      /* Búsqueda marketplace. */
-      .ui-mp-hint { margin-top: 12px; font-size: .82rem; color: var(--ion-color-medium); }
-
-      /* Dropzone override max-width. */
-      ok-dropzone { max-width: 100%; }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'modules',
+        title: 'Subir nuevo módulo',
         body: `
-          <ok-page-header
-            heading="Subir nuevo módulo"
-            description="Publica un módulo en el marketplace de ERPlora · disponible para 1 240 hubs">
-            <ion-button slot="actions" fill="outline" color="medium">Cancelar</ion-button>
-          </ok-page-header>
-
-          <!-- STEPPER ───────────────────────────────────────────────────── -->
-          <ok-stepper id="upload-stepper" current="0" style="margin-bottom:24px"></ok-stepper>
-
-          <!-- GRID PRINCIPAL: 2fr / 1fr ─────────────────────────────────── -->
-          <div class="pg-cols">
-
-            <!-- COLUMNA IZQUIERDA: paso activo -->
-            <div class="pg-stack">
-
-              <!-- TARJETA: Origen del módulo ──────────────────────────── -->
+          <form class="developer-page developer-section-stack">
+            <div class="developer-grid">
               <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Origen del módulo</ion-card-title>
-                  <ion-card-subtitle>Elige cómo quieres importar tu módulo</ion-card-subtitle>
-                </ion-card-header>
                 <ion-card-content>
-                  <div class="ui-source-cards" id="source-cards">
-
-                    <!-- ZIP -->
-                    <label class="ui-source-card" id="card-zip" data-source="zip">
-                      <input type="radio" name="upload-src" value="zip" />
-                      <span class="ui-source-icon ui-source-icon--upload">
-                        <ion-icon name="cloud-upload-outline"></ion-icon>
-                      </span>
-                      <div class="ui-source-body">
-                        <div class="ui-source-title">Subir ZIP</div>
-                        <div class="ui-source-desc">Sube un archivo ZIP que contenga el manifest.yml, el código fuente y los assets. Tamaño máximo 50 MB.</div>
-                      </div>
-                    </label>
-
-                    <!-- GitHub (seleccionado por defecto) -->
-                    <label class="ui-source-card selected" id="card-github" data-source="github">
-                      <input type="radio" name="upload-src" value="github" checked />
-                      <span class="ui-source-icon ui-source-icon--github">
-                        <ion-icon name="logo-github"></ion-icon>
-                      </span>
-                      <div class="ui-source-body">
-                        <div class="ui-source-title">
-                          Conectar GitHub
-                          <ion-badge color="primary">Recomendado</ion-badge>
-                        </div>
-                        <div class="ui-source-desc">Sincroniza desde un repositorio. Cada push a la rama configurada genera una versión automática.</div>
-                      </div>
-                    </label>
-
-                    <!-- Marketplace -->
-                    <label class="ui-source-card" id="card-mp" data-source="mp">
-                      <input type="radio" name="upload-src" value="mp" />
-                      <span class="ui-source-icon ui-source-icon--marketplace">
-                        <ion-icon name="cube-outline"></ion-icon>
-                      </span>
-                      <div class="ui-source-body">
-                        <div class="ui-source-title">Importar desde marketplace existente</div>
-                        <div class="ui-source-desc">Clona un módulo público del marketplace como punto de partida. Puedes modificarlo y publicarlo bajo tu marca.</div>
-                      </div>
-                    </label>
-
+                  <h2 class="developer-card-title">Información básica</h2>
+                  <p class="developer-card-subtitle">Nombre, descripción y autor.</p>
+                  <div class="developer-fields">
+                    <ion-input label="Nombre del módulo *" label-placement="stacked" fill="outline" placeholder="Ej.: Gestor de inventario avanzado" required></ion-input>
+                    <ion-textarea label="Descripción *" label-placement="stacked" fill="outline" rows="4" placeholder="Describe las funciones y ventajas del módulo…" required></ion-textarea>
+                    <ion-input label="Nombre del autor" label-placement="stacked" fill="outline" value="demo@erplora.com" placeholder="Tu nombre o empresa"></ion-input>
+                    <p class="developer-field-help">Se mostrará públicamente en la página del módulo.</p>
+                    <ion-input label="Versión" label-placement="stacked" fill="outline" value="1.0.0" placeholder="1.0.0"></ion-input>
                   </div>
                 </ion-card-content>
               </ion-card>
-
-              <!-- PANEL: GitHub ────────────────────────────────────────── -->
-              <ion-card id="panel-github">
-                <ion-card-header>
-                  <div style="display:flex;align-items:center;justify-content:space-between">
-                    <div>
-                      <ion-card-title>Conectar repositorio GitHub</ion-card-title>
-                      <ion-card-subtitle>Acceso instalado · ERPlora-app · 3 repos sincronizados</ion-card-subtitle>
-                    </div>
-                    <ion-button fill="clear" size="small">Ya conectado: 3 repos</ion-button>
-                  </div>
-                </ion-card-header>
-                <ion-card-content>
-
-                  <!-- Fila 1: organización + repositorio -->
-                  <div class="ui-form-row">
-                    <div class="ui-field">
-                      <label class="ui-form-label">Organización / usuario</label>
-                      <ion-select
-                        fill="outline"
-                        value="ioanb"
-                        interface="popover"
-                        aria-label="Organización / usuario">
-                        <ion-select-option value="ioanb">ioanb</ion-select-option>
-                        <ion-select-option value="erplora-developer">erplora-developer</ion-select-option>
-                        <ion-select-option value="nordenbikes">nordenbikes</ion-select-option>
-                      </ion-select>
-                    </div>
-                    <div class="ui-field">
-                      <label class="ui-form-label">Repositorio</label>
-                      <ion-select
-                        fill="outline"
-                        value="pos-caja-pro"
-                        interface="popover"
-                        aria-label="Repositorio">
-                        <ion-select-option value="pos-caja-pro">pos-caja-pro</ion-select-option>
-                        <ion-select-option value="contabilidad-plus">contabilidad-plus</ion-select-option>
-                        <ion-select-option value="sepa-recon">sepa-recon</ion-select-option>
-                        <ion-select-option value="inventario-multi">inventario-multi</ion-select-option>
-                      </ion-select>
-                    </div>
-                  </div>
-
-                  <!-- Fila 2: rama + ruta manifest -->
-                  <div class="ui-form-row" style="margin-top:12px">
-                    <div class="ui-field">
-                      <label class="ui-form-label">Rama</label>
-                      <ion-select
-                        fill="outline"
-                        value="main"
-                        interface="popover"
-                        aria-label="Rama">
-                        <ion-select-option value="main">main</ion-select-option>
-                        <ion-select-option value="release">release</ion-select-option>
-                        <ion-select-option value="v3.x">v3.x</ion-select-option>
-                      </ion-select>
-                    </div>
-                    <div class="ui-field">
-                      <label class="ui-form-label">Ruta del manifest</label>
-                      <ion-input fill="outline" value="/erplora.yml" aria-label="Ruta del manifest"></ion-input>
-                    </div>
-                  </div>
-
-                  <!-- Toggles de configuración -->
-                  <div style="margin-top:16px">
-                    <div class="ui-toggle-row">
-                      <div class="ui-toggle-text">
-                        <div class="ui-toggle-label">Auto-sync on push</div>
-                        <div class="ui-toggle-hint">Genera una nueva versión cuando llegue un push a <code>main</code>.</div>
-                      </div>
-                      <ion-toggle checked></ion-toggle>
-                    </div>
-                    <div class="ui-toggle-row">
-                      <div class="ui-toggle-text">
-                        <div class="ui-toggle-label">Crear release como pre-release</div>
-                        <div class="ui-toggle-hint">Visible solo para hubs con beta-channel activado.</div>
-                      </div>
-                      <ion-toggle></ion-toggle>
-                    </div>
-                    <div class="ui-toggle-row">
-                      <div class="ui-toggle-text">
-                        <div class="ui-toggle-label">Verificar firma GPG</div>
-                        <div class="ui-toggle-hint">Solo permite tags firmados.</div>
-                      </div>
-                      <ion-toggle checked></ion-toggle>
-                    </div>
-                  </div>
-
-                  <!-- Feedback: manifest detectado -->
-                  <ok-inline-feedback
-                    tone="success"
-                    heading="Manifest detectado"
-                    style="margin-top:14px">
-                    erplora.yml válido · v3.2.1 · POS · 14 archivos · 2.1 MB
-                  </ok-inline-feedback>
-
-                  <!-- Metadatos del commit -->
-                  <div class="ui-commit-meta">
-                    <span>Última sincronización: <strong>hace 4 min</strong></span>
-                    <span>Commit: <code>a8b2f1c</code></span>
-                    <span>Autor: <strong>@ioanb</strong></span>
-                  </div>
-
-                </ion-card-content>
-              </ion-card>
-
-              <!-- PANEL: ZIP ───────────────────────────────────────────── -->
-              <ion-card id="panel-zip" class="ui-panel-hidden">
-                <ion-card-header>
-                  <ion-card-title>Subir archivo ZIP</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <ok-dropzone
-                    accept=".zip"
-                    hint="ZIP · máx 50 MB · debe contener erplora.yml"
-                    style="max-width:100%">
-                  </ok-dropzone>
-                </ion-card-content>
-              </ion-card>
-
-              <!-- PANEL: Marketplace ───────────────────────────────────── -->
-              <ion-card id="panel-mp" class="ui-panel-hidden">
-                <ion-card-header>
-                  <ion-card-title>Importar desde marketplace</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <ion-searchbar
-                    placeholder="Buscar módulos públicos…"
-                    animated
-                    debounce="300">
-                  </ion-searchbar>
-                  <p class="ui-mp-hint">Selecciona un módulo de la lista para clonarlo bajo tu cuenta.</p>
-                </ion-card-content>
-              </ion-card>
-
-            </div><!-- /columna izquierda -->
-
-            <!-- COLUMNA DERECHA: vista previa ──────────────────────────── -->
-            <div class="pg-stack">
 
               <ion-card>
-                <ion-card-header>
-                  <div style="display:flex;align-items:center;justify-content:space-between">
-                    <div>
-                      <ion-card-title>Vista previa</ion-card-title>
-                      <ion-card-subtitle>Cómo se verá en el marketplace</ion-card-subtitle>
-                    </div>
-                    <ion-badge color="medium">Borrador</ion-badge>
-                  </div>
-                </ion-card-header>
                 <ion-card-content>
-
-                  <div class="ui-preview-card">
-                    <div class="ui-preview-head">
-                      <ok-avatar class="ui-preview-mod-icon" name="POS Caja" shape="rounded" tone="auto" style="--ok-avatar-size:48px;--ok-radius:14px"></ok-avatar>
-                      <div>
-                        <div class="ui-preview-title">POS Caja Registradora Pro</div>
-                        <div class="ui-preview-meta">@ioanb · POS · v3.2.1</div>
-                      </div>
-                    </div>
-                    <p class="ui-preview-desc">
-                      TPV completo con caja registradora, gestión de turnos, integración con cajón de monedas, impresora térmica ESC/POS y facturación electrónica TicketBAI / Verifactu.
-                    </p>
-                    <div class="ui-preview-tags">
-                      <ion-chip style="--height:22px;margin:0;font-size:.72rem">tpv</ion-chip>
-                      <ion-chip style="--height:22px;margin:0;font-size:.72rem">caja</ion-chip>
-                      <ion-chip style="--height:22px;margin:0;font-size:.72rem">verifactu</ion-chip>
-                      <ion-chip style="--height:22px;margin:0;font-size:.72rem">ticketbai</ion-chip>
-                    </div>
-                    <div class="ui-preview-footer">
-                      <div>
-                        <div class="ui-price-overline">Precio</div>
-                        <div class="ui-price-value">€29 <span class="ui-price-period">/mes</span></div>
-                      </div>
-                      <ion-button size="small">Instalar</ion-button>
+                  <h2 class="developer-card-title">Precios</h2>
+                  <p class="developer-card-subtitle">Gratis, pago único o suscripción mensual.</p>
+                  <div class="developer-fields">
+                    <ion-select id="module-type-select" label="Tipo de módulo *" label-placement="stacked" fill="outline" interface="popover" placeholder="Selecciona un tipo">
+                      <ion-select-option value="free">Gratis</ion-select-option>
+                      <ion-select-option value="one_time">Pago único</ion-select-option>
+                      <ion-select-option value="subscription">Suscripción mensual</ion-select-option>
+                    </ion-select>
+                    <div id="price-field" hidden>
+                      <ion-input type="number" inputmode="decimal" min="0" step="0.01" label="Precio (EUR) *" label-placement="stacked" fill="outline" placeholder="9,99"></ion-input>
+                      <p class="developer-field-help">ERPlora aplica una comisión del 15%. Recibes el 85% del precio de venta.</p>
                     </div>
                   </div>
-
-                  <p class="ui-preview-note">
-                    La vista previa se actualizará automáticamente cuando completes los pasos 2 y 3.
-                  </p>
-
                 </ion-card-content>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--ion-border-color,rgba(127,127,127,.15))">
-                  <span style="font-size:.75rem;color:var(--ion-color-medium)">Borrador autoguardado · 14:32</span>
-                  <ion-button fill="clear" size="small">Guardar borrador</ion-button>
+              </ion-card>
+            </div>
+
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title">Archivos</h2>
+                <p class="developer-card-subtitle">ZIP del módulo e imagen de icono opcional.</p>
+                <div class="developer-grid">
+                  <div>
+                    <span class="developer-field-label">Icono del módulo</span>
+                    <ok-dropzone id="module-icon" accept="image/*" hint="PNG o JPG · recomendado 512 × 512 px"></ok-dropzone>
+                  </div>
+                  <div>
+                    <span class="developer-field-label">Archivo ZIP del módulo *</span>
+                    <ok-dropzone id="module-zip" accept=".zip" max-size="52428800" hint="ZIP · máximo 50 MB"></ok-dropzone>
+                  </div>
                 </div>
-              </ion-card>
+              </ion-card-content>
+            </ion-card>
 
-            </div><!-- /columna derecha -->
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title">Tipos de negocio</h2>
+                <p class="developer-card-subtitle">Selecciona los negocios para los que está diseñado el módulo.</p>
+                <div class="developer-chip-row">
+                  <ion-chip color="primary"><iconify-icon icon="lucide:utensils" width="15" height="15"></iconify-icon><ion-label>Restaurantes</ion-label></ion-chip>
+                  <ion-chip><iconify-icon icon="lucide:shopping-bag" width="15" height="15"></iconify-icon><ion-label>Comercio</ion-label></ion-chip>
+                  <ion-chip><iconify-icon icon="lucide:scissors" width="15" height="15"></iconify-icon><ion-label>Peluquerías</ion-label></ion-chip>
+                  <ion-chip><iconify-icon icon="lucide:wrench" width="15" height="15"></iconify-icon><ion-label>Servicios</ion-label></ion-chip>
+                </div>
+              </ion-card-content>
+            </ion-card>
 
-          </div><!-- /pg-cols -->
+            <ion-card>
+              <ion-card-content>
+                <ion-accordion-group>
+                  <ion-accordion value="functional-blocks">
+                    <ion-item slot="header" lines="none">
+                      <iconify-icon slot="start" icon="lucide:layers" width="17" height="17"></iconify-icon>
+                      <ion-label><strong>Bloques funcionales</strong><p>Compatibilidad opcional del módulo</p></ion-label>
+                    </ion-item>
+                    <div slot="content" class="ion-padding">
+                      <div class="developer-chip-row">
+                        <ion-chip><ion-label>Ventas</ion-label></ion-chip>
+                        <ion-chip><ion-label>Inventario</ion-label></ion-chip>
+                        <ion-chip><ion-label>Facturación</ion-label></ion-chip>
+                        <ion-chip><ion-label>Reservas</ion-label></ion-chip>
+                      </div>
+                    </div>
+                  </ion-accordion>
+                </ion-accordion-group>
+              </ion-card-content>
+            </ion-card>
 
-          <!-- BARRA DE ACCIONES DEL WIZARD ─────────────────────────────── -->
-          <div class="ui-wizard-bar">
-            <span class="ui-wizard-bar-step">Paso 1 de 5 · Origen</span>
-            <ion-button fill="outline" color="medium" disabled>Atrás</ion-button>
-            <ion-button id="btn-next">
-              Siguiente
-              <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
-            </ion-button>
-          </div>
-        `,
+            <ok-inline-feedback tone="info" heading="Proceso de revisión">
+              <p>El equipo revisará el módulo antes de publicarlo en el marketplace. Suele tardar 2–3 días laborables y recibirás el resultado por correo.</p>
+            </ok-inline-feedback>
 
+            <div class="developer-actions">
+              <ion-button type="submit"><iconify-icon slot="start" icon="lucide:cloud-upload" width="15" height="15"></iconify-icon>Enviar módulo</ion-button>
+              <ion-button type="button" fill="outline">Cancelar</ion-button>
+            </div>
+          </form>`,
         setup(doc) {
-          // ── Stepper ────────────────────────────────────────────────────
-          const stepper = doc.getElementById('upload-stepper');
-          if (stepper) {
-            stepper.steps = [
-              { label: 'Origen',      description: 'ZIP · GitHub · marketplace' },
-              { label: 'Información', description: 'Nombre, slug, categoría' },
-              { label: 'Detalles',    description: 'Descripción, screenshots' },
-              { label: 'Precio',      description: 'Plan & comisión Stripe' },
-              { label: 'Revisión',    description: 'Confirmar y publicar' },
-            ];
-            stepper.labels = { stepCount: 'Paso {n} de {total}' };
-            stepper.current = 0;
-          }
+          const labels = {
+            title: 'Arrastra el archivo aquí o {browse}',
+            browse: 'selecciónalo',
+            errorType: '“{name}” no es un tipo de archivo aceptado.',
+            errorSize: '“{name}” supera el tamaño máximo ({size}).',
+            removeLabel: 'Quitar {name}',
+          };
+          doc.querySelectorAll('ok-dropzone').forEach((dropzone) => { dropzone.labels = labels; });
 
-          // ── Selección de origen ────────────────────────────────────────
-          const sourceCards = doc.querySelectorAll('#source-cards .ui-source-card');
-          const panelGithub = doc.getElementById('panel-github');
-          const panelZip    = doc.getElementById('panel-zip');
-          const panelMp     = doc.getElementById('panel-mp');
-          const wizardBar   = doc.querySelector('.ui-wizard-bar .ui-wizard-bar-step');
-
-          const PANELS = { github: panelGithub, zip: panelZip, mp: panelMp };
-          const STEP_LABELS = { github: 'GitHub', zip: 'Subir ZIP', mp: 'Marketplace' };
-
-          let currentSource = 'github';
-
-          function showPanel(source) {
-            currentSource = source;
-            // Mostrar/ocultar paneles.
-            Object.entries(PANELS).forEach(([key, el]) => {
-              if (!el) return;
-              if (key === source) {
-                el.classList.remove('ui-panel-hidden');
-              } else {
-                el.classList.add('ui-panel-hidden');
-              }
-            });
-            // Actualizar texto del paso.
-            if (wizardBar) wizardBar.textContent = 'Paso 1 de 5 · ' + (STEP_LABELS[source] || 'Origen');
-          }
-
-          sourceCards.forEach((card) => {
-            card.addEventListener('click', () => {
-              const source = card.getAttribute('data-source');
-              if (!source) return;
-
-              // Actualizar estado visual de las tarjetas.
-              sourceCards.forEach((c) => c.classList.remove('selected'));
-              card.classList.add('selected');
-
-              // Actualizar el radio input.
-              const radio = card.querySelector('input[type="radio"]');
-              if (radio) radio.checked = true;
-
-              showPanel(source);
-            });
+          const type = doc.getElementById('module-type-select');
+          const price = doc.getElementById('price-field');
+          type?.addEventListener('ionChange', (event) => {
+            price.hidden = !['one_time', 'subscription'].includes(event.detail.value);
           });
-
-          // Estado inicial: GitHub visible.
-          showPanel('github');
-
-          // ── Dropzone: etiquetas en español ─────────────────────────────
-          const dropzone = doc.querySelector('ok-dropzone');
-          if (dropzone) {
-            dropzone.labels = {
-              title: 'Arrastra el archivo aquí o {browse}',
-              browse: 'selecciónalo',
-              errorType: '"{name}" no es un tipo de archivo aceptado.',
-              errorSize: '"{name}" supera el tamaño máximo ({size}).',
-              removeLabel: 'Quitar {name}',
-            };
-          }
-
-          // ── Stepper: permitir navegación por clic (solo demo visual) ───
-          if (stepper) {
-            stepper.addEventListener('ok-step-select', (e) => {
-              stepper.current = e.detail.index;
-            });
-          }
-
-          // ── Botón Siguiente: avanza el stepper (demo) ──────────────────
-          const btnNext = doc.getElementById('btn-next');
-          if (btnNext) {
-            btnNext.addEventListener('click', () => {
-              if (!stepper) return;
-              const next = Math.min((stepper.current || 0) + 1, 4);
-              stepper.current = next;
-              if (wizardBar) {
-                const stepNames = ['Origen', 'Información', 'Detalles', 'Precio', 'Revisión'];
-                wizardBar.textContent = 'Paso ' + (next + 1) + ' de 5 · ' + stepNames[next];
-              }
-            });
-          }
         },
       });
     </script>

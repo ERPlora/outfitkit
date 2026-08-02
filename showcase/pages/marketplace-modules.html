@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marketplace · ERPlora Cloud</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>ok-data-table[fill] { height:100%; }</style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      // Fixtures de marketplace/tests/conftest.py: solo módulos publicados de pago.
+      const PAID_MODULES = [
+        { id:'premium-mod', slug:'premium-mod', name:'Premium Mod', price:'Desde 29,00 €/mes', status:'Activo en 1 de 2 hubs' },
+        { id:'whatsapp_inbox', slug:'whatsapp-inbox', name:'WhatsApp Inbox', price:'Desde 19,00 €/mes', status:'No suscrito' },
+      ];
+
+      function moduleCell(row) {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:flex;align-items:center;gap:.65rem';
+        const avatar = document.createElement('ion-avatar');
+        avatar.style.cssText = 'display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--ion-color-primary) 14%,transparent);color:var(--ion-color-primary);font-size:11px;font-weight:700';
+        const initials = document.createElement('span');
+        initials.textContent = row.name.split(' ').map((part) => part[0]).join('').slice(0, 2);
+        avatar.append(initials);
+        const copy = document.createElement('span');
+        copy.style.cssText = 'display:grid';
+        const name = document.createElement('strong');
+        name.textContent = row.name;
+        const id = document.createElement('small');
+        id.textContent = row.id;
+        id.style.color = 'var(--ion-color-medium)';
+        copy.append(name, id);
+        wrap.append(avatar, copy);
+        return wrap;
+      }
+
+      defineSaasDashboardPage({
+        active: '/dashboard/marketplace/',
+        title: 'Marketplace',
+        body: `<div class="dash-fill"><ok-data-table id="marketplace-modules-dt" server-side fill></ok-data-table></div>`,
+        footer: `
+          <footer id="section-tabbar">
+            <ion-segment value="modules" aria-label="Navegación del marketplace">
+              <ion-segment-button value="modules"><iconify-icon icon="lucide:puzzle" width="20" height="20"></iconify-icon><ion-label>Módulos</ion-label></ion-segment-button>
+              <ion-segment-button value="plans"><iconify-icon icon="lucide:server" width="20" height="20"></iconify-icon><ion-label>Planes de hub</ion-label></ion-segment-button>
+            </ion-segment>
+          </footer>`,
+        setup(doc) {
+          const table = doc.getElementById('marketplace-modules-dt');
+          const state = { search:'', page:0, pageSize:20 };
+          table.serverSide = true;
+          table.fill = true;
+          table.columns = [
+            { key:'name', header: 'Módulo', render:moduleCell },
+            { key:'price', header: 'Precio', align:'right' },
+            { key:'status', header: 'Estado' },
+          ];
+          table.actions = [{ id: 'view-plans', label: 'Ver planes', icon: 'cart-outline' }];
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar módulos…';
+          table.views = true;
+          table.cardTitle = (row) => row.name;
+          table.cardIcon = () => 'extension-puzzle-outline';
+          table.pageSize = 20;
+          table.labels = { empty:'No hay módulos de pago disponibles', showing:'Mostrando {from}–{to} de', recordSingular:'módulo', recordPlural:'módulos' };
+
+          function refresh() {
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const rows = PAID_MODULES.filter((row) => !term || [row.name, row.id].some((value) => value.toLocaleLowerCase('es').includes(term)));
+            const start = state.page * state.pageSize;
+            table.rows = rows.slice(start, start + state.pageSize);
+            table.total = rows.length;
+            table.page = state.page;
+          }
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail ?? ''); state.page = 0; refresh(); });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; refresh(); });
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail?.actionId !== 'view-plans') return;
+            const toast = doc.createElement('ion-toast');
+            toast.message = `Abriendo planes de ${event.detail.row.name}…`;
+            toast.duration = 1400;
+            doc.body.appendChild(toast);
+            toast.present();
+            toast.addEventListener('didDismiss', () => toast.remove());
+          });
+          refresh();
+        },
+      });
+    </script>
+  </body>
+</html>

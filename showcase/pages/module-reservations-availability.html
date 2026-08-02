@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Disponibilidad</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .availability-page h3 { margin: 1.1rem 0 0.5rem; font-size: 1rem; }
+      .availability-page h3:first-child { margin-top: 0; }
+      .availability-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .availability-form ion-button { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const SLOT_FIXTURE = [
+        {
+          "id": "t1",
+          "day_of_week": 0,
+          "start_time": "13:00:00",
+          "end_time": "16:00:00",
+          "max_reservations": 10,
+          "is_active": 1
+        }
+      ];
+      const BLOCKED_FIXTURE = [
+        {
+          "id": "b1",
+          "date": "2026-12-25",
+          "reason": "Navidad",
+          "is_full_day": 1
+        }
+      ];
+      const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin resultados.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'registro', recordPlural: 'registros',
+      };
+
+      defineHubPage({
+        active: '/m/reservations/availability',
+        title: 'Disponibilidad',
+        body: `
+          <div class="availability-page">
+            <h3>Franjas horarias</h3>
+            <ok-data-table id="reservations-slots">
+              <form id="reservations-slot-form" slot="create" class="availability-form">
+                <ion-select id="slot-day" value="0" fill="outline" label="Día" label-placement="floating">
+                  ${DAYS.map((day, index) => `<ion-select-option value="${index}">${day}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-input id="slot-start" type="time" fill="outline" label="Inicio" label-placement="floating"></ion-input>
+                <ion-input id="slot-end" type="time" fill="outline" label="Fin" label-placement="floating"></ion-input>
+                <ion-input id="slot-max" type="number" value="10" min="1" fill="outline" label="Máximo de reservas" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small">Añadir franja</ion-button>
+              </form>
+            </ok-data-table>
+
+            <h3>Fechas bloqueadas</h3>
+            <ok-data-table id="reservations-blocked">
+              <form id="reservations-blocked-form" slot="create" class="availability-form">
+                <ion-input id="blocked-date" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+                <ion-input id="blocked-reason" fill="outline" label="Motivo" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small">Bloquear fecha</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="availability-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          let slots = SLOT_FIXTURE.map((row) => ({ ...row }));
+          let blockedDates = BLOCKED_FIXTURE.map((row) => ({ ...row }));
+          const slotsTable = doc.getElementById('reservations-slots');
+          const blockedTable = doc.getElementById('reservations-blocked');
+          const toast = doc.getElementById('availability-toast');
+          const slotState = { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} };
+          const blockedState = { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} };
+          const removeAction = [{ id: 'remove', label: 'Eliminar', icon: 'trash-outline', color: 'danger' }];
+
+          slotsTable.serverSide = true;
+          slotsTable.addable = true;
+          slotsTable.views = true;
+          slotsTable.cardTitle = (row) => `${row.start_time ?? ''}–${row.end_time ?? ''}`;
+          slotsTable.cardIcon = () => 'time-outline';
+          slotsTable.searchable = true;
+          slotsTable.pageSize = 50;
+          slotsTable.sort = 'id';
+          slotsTable.sortDir = 'asc';
+          slotsTable.labels = LABELS;
+          slotsTable.actions = removeAction;
+          slotsTable.columns = [
+            {
+              key: 'day_of_week', header: 'Día', sortable: true, filterable: true, filterType: 'select',
+              options: DAYS.map((day, index) => ({ value: String(index), label: day })),
+              format: (row) => DAYS[row.day_of_week] ?? '?',
+            },
+            { key: 'start_time', header: 'Inicio', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'end_time', header: 'Fin', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'max_reservations', header: 'Máximo', align: 'right', sortable: true, filterable: true, filterType: 'range' },
+          ];
+
+          blockedTable.serverSide = true;
+          blockedTable.addable = true;
+          blockedTable.views = true;
+          blockedTable.cardTitle = (row) => String(row.date ?? '—');
+          blockedTable.cardIcon = () => 'calendar-clear-outline';
+          blockedTable.searchable = true;
+          blockedTable.pageSize = 50;
+          blockedTable.sort = 'id';
+          blockedTable.sortDir = 'asc';
+          blockedTable.labels = LABELS;
+          blockedTable.actions = removeAction;
+          blockedTable.columns = [
+            { key: 'date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
+            { key: 'reason', header: 'Motivo', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'is_full_day', header: 'Día completo', sortable: true, filterable: true, filterType: 'select',
+              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
+              format: (row) => row.is_full_day ? 'Sí' : 'No',
+            },
+          ];
+
+          function queryPage(table, state, rows, searchFields) {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = rows.filter((row) => {
+              if (search && !searchFields.map((key) => row[key] ?? '').join(' ').toLocaleLowerCase('es').includes(search)) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
+                if (Array.isArray(value)) return value.map(String).includes(String(row[key]));
+                if (typeof value === 'object') {
+                  const comparable = String(row[key] ?? '');
+                  const from = value.from ?? value.min;
+                  const to = value.to ?? value.max;
+                  return (!from || comparable >= String(from)) && (!to || comparable <= String(to));
+                }
+                return String(row[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+              });
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          const refreshSlots = () => queryPage(slotsTable, slotState, slots, ['start_time', 'end_time']);
+          const refreshBlocked = () => queryPage(blockedTable, blockedState, blockedDates, ['date', 'reason']);
+          function recordCommand(command, payload, message) {
+            console.info('[showcase command]', command, payload);
+            toast.message = message;
+            toast.present();
+          }
+
+          doc.getElementById('reservations-slot-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const start = doc.getElementById('slot-start').value;
+            const end = doc.getElementById('slot-end').value;
+            if (!start || !end) return;
+            const row = {
+              id: `slot-${Date.now()}`,
+              day_of_week: Number(doc.getElementById('slot-day').value || 0),
+              start_time: start.length === 5 ? `${start}:00` : start,
+              end_time: end.length === 5 ? `${end}:00` : end,
+              max_reservations: Number(doc.getElementById('slot-max').value || 10),
+              is_active: 1,
+            };
+            slots = [row, ...slots];
+            recordCommand('reservations.timeslots.create', row, 'Franja añadida');
+            slotsTable.close();
+            refreshSlots();
+          });
+
+          doc.getElementById('reservations-blocked-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const date = doc.getElementById('blocked-date').value;
+            if (!date) return;
+            const row = {
+              id: `blocked-${Date.now()}`,
+              date,
+              reason: doc.getElementById('blocked-reason').value || '',
+              is_full_day: 1,
+            };
+            blockedDates = [row, ...blockedDates];
+            recordCommand('reservations.blocked_dates.create', row, 'Fecha bloqueada');
+            blockedTable.close();
+            refreshBlocked();
+          });
+
+          slotsTable.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'remove') return;
+            slots = slots.filter((row) => row.id !== event.detail.row.id);
+            recordCommand('reservations.timeslots.delete', { time_slot_id: event.detail.row.id }, 'Franja eliminada');
+            refreshSlots();
+          });
+          slotsTable.addEventListener('pageChange', (event) => { slotState.page = event.detail; refreshSlots(); });
+          slotsTable.addEventListener('pageSizeChange', (event) => { slotState.pageSize = event.detail; slotState.page = 0; refreshSlots(); });
+          slotsTable.addEventListener('sortChange', (event) => { slotState.sort = event.detail.sort; slotState.dir = event.detail.dir; refreshSlots(); });
+          slotsTable.addEventListener('searchChange', (event) => { slotState.search = event.detail; slotState.page = 0; refreshSlots(); });
+          slotsTable.addEventListener('filterChange', (event) => { slotState.filters[event.detail.col] = event.detail.value; slotState.page = 0; refreshSlots(); });
+
+          blockedTable.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'remove') return;
+            blockedDates = blockedDates.filter((row) => row.id !== event.detail.row.id);
+            recordCommand('reservations.blocked_dates.delete', { blocked_date_id: event.detail.row.id }, 'Fecha desbloqueada');
+            refreshBlocked();
+          });
+          blockedTable.addEventListener('pageChange', (event) => { blockedState.page = event.detail; refreshBlocked(); });
+          blockedTable.addEventListener('pageSizeChange', (event) => { blockedState.pageSize = event.detail; blockedState.page = 0; refreshBlocked(); });
+          blockedTable.addEventListener('sortChange', (event) => { blockedState.sort = event.detail.sort; blockedState.dir = event.detail.dir; refreshBlocked(); });
+          blockedTable.addEventListener('searchChange', (event) => { blockedState.search = event.detail; blockedState.page = 0; refreshBlocked(); });
+          blockedTable.addEventListener('filterChange', (event) => { blockedState.filters[event.detail.col] = event.detail.value; blockedState.page = 0; refreshBlocked(); });
+
+          refreshSlots();
+          refreshBlocked();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Documentación de la API</title>
+    <script type="importmap">{ "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }</script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>.api-docs{height:100%;display:flex;flex-direction:column;gap:12px}.api-loading{display:flex;align-items:center;gap:10px;padding:20px 0}.swagger-host{flex:1;min-height:22rem;overflow:auto}.endpoint{display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:10px}</style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+      defineHubPage({
+        active: '/api-docs', title: 'Documentación de la API',
+        body: `<div class="api-docs"><ok-inline-feedback tone="info" heading="API pública" icon="information-circle-outline">Consulta los endpoints y prueba llamadas con una clave API del Hub.</ok-inline-feedback><div class="api-loading" id="api-loading"><ion-spinner name="dots"></ion-spinner><span>Cargando especificación…</span></div><div id="swagger-host" class="swagger-host" hidden><ion-card class="ion-no-margin"><ion-card-header><ion-card-title>ERPlora Hub API</ion-card-title><ion-card-subtitle>OpenAPI 3.1</ion-card-subtitle></ion-card-header><ion-card-content><ion-list><ion-item><ion-badge slot="start" color="success">GET</ion-badge><ion-label><h2>/api/v1/sales</h2><p>Lista las ventas</p></ion-label><ion-button slot="end" fill="outline" size="small">Probar</ion-button></ion-item><ion-item lines="none"><ion-badge slot="start" color="primary">POST</ion-badge><ion-label><h2>/api/v1/customers</h2><p>Crea un cliente</p></ion-label><ion-button slot="end" fill="outline" size="small">Probar</ion-button></ion-item></ion-list></ion-card-content></ion-card></div></div>`,
+        setup(doc) { window.setTimeout(() => { doc.getElementById('api-loading').hidden = true; doc.getElementById('swagger-host').hidden = false; }, 450); },
+      });
+    </script>
+  </body>
+</html>

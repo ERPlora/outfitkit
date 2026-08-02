@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Ajustes de reservas online</title>
+
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+
+    <style>
+      .online-booking-settings { max-width:72rem; margin:0 auto; }
+      .online-booking-settings h2 { margin:0 0 1rem; font-size:1.15rem; }
+      .settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:.75rem; }
+      .settings-switches { display:grid; grid-template-columns:repeat(auto-fit,minmax(14rem,1fr)); gap:.25rem; margin:1rem 0; }
+      .settings-messages { display:grid; gap:.75rem; margin-top:1rem; }
+      .settings-actions { display:flex; justify-content:flex-end; margin-top:1rem; }
+      @media (max-width:520px) { .settings-actions ion-button { width:100%; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const settings = {
+        is_enabled: false,
+        page_title: 'Book an Appointment',
+        welcome_message: '',
+        primary_color: '#6366f1',
+        logo_url: '',
+        require_phone: true,
+        require_email: true,
+        allow_staff_selection: true,
+        allow_notes: true,
+        min_advance_hours: 2,
+        max_advance_days: 30,
+        slot_duration_minutes: 30,
+        buffer_minutes: 0,
+        confirmation_message: '',
+        cancellation_policy: '',
+      };
+      const commandLog = [];
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload:{ ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/online_booking/settings',
+        title: 'Ajustes',
+        body: `
+          <form id="online-booking-settings-form" class="online-booking-settings">
+            <h2>Configuración de la página de reservas</h2>
+            <ion-card>
+              <ion-card-content>
+                <ion-toggle id="settings-enabled" label-placement="end">Página pública activada</ion-toggle>
+                <div class="settings-grid ion-margin-top">
+                  <ion-input id="settings-page-title" fill="outline" label="Título de la página" label-placement="floating"></ion-input>
+                  <ion-input id="settings-primary-color" fill="outline" label="Color primario" label-placement="floating"></ion-input>
+                  <ion-input id="settings-logo-url" fill="outline" type="url" label="URL del logo" label-placement="floating"></ion-input>
+                  <ion-input id="settings-min-advance" fill="outline" type="number" min="0" max="168" label="Antelación mínima (horas)" label-placement="floating"></ion-input>
+                  <ion-input id="settings-max-advance" fill="outline" type="number" min="1" max="365" label="Antelación máxima (días)" label-placement="floating"></ion-input>
+                  <ion-input id="settings-slot-duration" fill="outline" type="number" min="5" max="480" label="Duración de slot (min)" label-placement="floating"></ion-input>
+                  <ion-input id="settings-buffer" fill="outline" type="number" min="0" max="120" label="Buffer entre reservas (min)" label-placement="floating"></ion-input>
+                </div>
+                <div class="settings-switches">
+                  <ion-toggle id="settings-require-phone" label-placement="end">Teléfono obligatorio</ion-toggle>
+                  <ion-toggle id="settings-require-email" label-placement="end">Email obligatorio</ion-toggle>
+                  <ion-toggle id="settings-allow-staff" label-placement="end">Permitir elegir personal</ion-toggle>
+                  <ion-toggle id="settings-allow-notes" label-placement="end">Permitir notas</ion-toggle>
+                </div>
+                <div class="settings-messages">
+                  <ion-textarea id="settings-welcome" fill="outline" auto-grow label="Mensaje de bienvenida" label-placement="floating"></ion-textarea>
+                  <ion-textarea id="settings-confirmation" fill="outline" auto-grow label="Mensaje de confirmación" label-placement="floating"></ion-textarea>
+                  <ion-textarea id="settings-cancellation" fill="outline" auto-grow label="Política de cancelación" label-placement="floating"></ion-textarea>
+                </div>
+                <div class="settings-actions">
+                  <ion-button id="online-booking-settings-save" type="submit">Guardar</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </form>
+          <ion-toast id="online-booking-settings-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const form = doc.getElementById('online-booking-settings-form');
+          const saveButton = doc.getElementById('online-booking-settings-save');
+          const toast = doc.getElementById('online-booking-settings-toast');
+          const controls = {
+            is_enabled:doc.getElementById('settings-enabled'),
+            page_title:doc.getElementById('settings-page-title'),
+            primary_color:doc.getElementById('settings-primary-color'),
+            logo_url:doc.getElementById('settings-logo-url'),
+            min_advance_hours:doc.getElementById('settings-min-advance'),
+            max_advance_days:doc.getElementById('settings-max-advance'),
+            slot_duration_minutes:doc.getElementById('settings-slot-duration'),
+            buffer_minutes:doc.getElementById('settings-buffer'),
+            require_phone:doc.getElementById('settings-require-phone'),
+            require_email:doc.getElementById('settings-require-email'),
+            allow_staff_selection:doc.getElementById('settings-allow-staff'),
+            allow_notes:doc.getElementById('settings-allow-notes'),
+            welcome_message:doc.getElementById('settings-welcome'),
+            confirmation_message:doc.getElementById('settings-confirmation'),
+            cancellation_policy:doc.getElementById('settings-cancellation'),
+          };
+
+          for (const [key, control] of Object.entries(controls)) {
+            if (typeof settings[key] === 'boolean') control.checked = settings[key];
+            else control.value = settings[key];
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveButton.disabled = true;
+            const payload = {
+              is_enabled:Boolean(controls.is_enabled.checked),
+              page_title:String(controls.page_title.value ?? ''),
+              welcome_message:String(controls.welcome_message.value ?? ''),
+              primary_color:String(controls.primary_color.value ?? ''),
+              logo_url:String(controls.logo_url.value ?? ''),
+              require_phone:Boolean(controls.require_phone.checked),
+              require_email:Boolean(controls.require_email.checked),
+              allow_staff_selection:Boolean(controls.allow_staff_selection.checked),
+              allow_notes:Boolean(controls.allow_notes.checked),
+              min_advance_hours:Number(controls.min_advance_hours.value) || 0,
+              max_advance_days:Number(controls.max_advance_days.value) || 1,
+              slot_duration_minutes:Number(controls.slot_duration_minutes.value) || 30,
+              buffer_minutes:Number(controls.buffer_minutes.value) || 0,
+              confirmation_message:String(controls.confirmation_message.value ?? ''),
+              cancellation_policy:String(controls.cancellation_policy.value ?? ''),
+            };
+            Object.assign(settings, payload);
+            recordCommand('online_booking.settings.upsert', payload);
+            toast.message = 'Configuración guardada.';
+            toast.color = 'success';
+            toast.isOpen = true;
+            saveButton.disabled = false;
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+        },
+      });
+    </script>
+  </body>
+</html>

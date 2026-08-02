@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Archivos del Hub - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-file-manager.js"></script>
+    <style>
+      .stack { display:grid;gap:1rem; }
+      .info-row { display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap; }
+      .info-copy { display:flex;align-items:center;gap:.75rem; }
+      .info-copy p { margin:.15rem 0; }
+      .path { color:var(--ion-color-medium);font-family:monospace;font-size:.8rem; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const FILES = [
+        { id: 'invoice-1', name: 'factura-2025-001.pdf', ext: 'pdf', sizeLabel: '218 KB', modified: '12 ene 2025 10:14' },
+        { id: 'export-1', name: 'clientes.csv', ext: 'csv', sizeLabel: '84 KB', modified: '11 ene 2025 18:42' },
+      ];
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Archivos · Terminal principal',
+        body: `
+          <div class="stack">
+            <ok-file-manager id="hub-files-manager" searchable></ok-file-manager>
+            <ion-card>
+              <ion-card-content class="info-row">
+                <div class="info-copy">
+                  <iconify-icon icon="lucide:folder" width="20" height="20"></iconify-icon>
+                  <div><strong>Ruta de almacenamiento</strong><p class="path">hubs/9a0d58ee-5d13-47f7-a68a-395e4f38ae18/</p></div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+            <ion-card>
+              <ion-card-content class="info-row">
+                <div class="info-copy">
+                  <iconify-icon icon="lucide:database" width="20" height="20"></iconify-icon>
+                  <div><strong>Base de datos</strong><p style="color:var(--ion-color-medium);font-size:.85rem">Crea un backup de la base SQLite en S3 para descargarlo.</p></div>
+                </div>
+                <ion-button id="backup-button" fill="outline" size="small"><iconify-icon slot="start" icon="lucide:cloud-upload" width="14" height="14"></iconify-icon>Crear backup en S3</ion-button>
+              </ion-card-content>
+            </ion-card>
+            <ion-toast id="files-toast" duration="1800" position="bottom"></ion-toast>
+          </div>
+        `,
+        setup(doc) {
+          const manager = doc.getElementById('hub-files-manager');
+          const toast = doc.getElementById('files-toast');
+          manager.title = 'Archivos';
+          manager.folders = [
+            { id: 'root', label: 'Raíz', icon: 'folder-outline', count: 2 },
+            { id: 'database', label: 'database', icon: 'server-outline', count: 1 },
+            { id: 'documents', label: 'documents', icon: 'document-outline', count: 2 },
+          ];
+          manager.files = FILES;
+          manager.path = [{ id: 'root', label: 'Raíz' }];
+          manager.selected = 'root';
+          manager.uploadable = false;
+          manager.quota = undefined;
+          manager.labels = {
+            upload: 'Subir archivo',
+            import: 'Importar',
+            search: 'Buscar archivos…',
+            folders: 'Carpetas',
+            space: 'Espacio',
+            empty: 'Sin archivos',
+            download: 'Descargar',
+            delete: 'Eliminar',
+            open: 'Abrir',
+            newFolder: 'Nueva carpeta',
+          };
+          manager.addEventListener('ok-search', (event) => {
+            const query = String(event.detail?.query || '').toLowerCase();
+            manager.files = query ? FILES.filter((file) => file.name.toLowerCase().includes(query)) : FILES;
+          });
+          doc.getElementById('backup-button')?.addEventListener('click', () => {
+            toast.message = 'Backup iniciado';
+            toast.isOpen = true;
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

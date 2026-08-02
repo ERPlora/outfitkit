@@ -72,6 +72,33 @@
   --ok-spacing: 1rem;
   --ok-container-max: 1140px;
   --ok-font: var(--ion-font-family);
+  --ok-font-display: var(--font-display, var(--ok-font));
+
+  /* ── Escala tipográfica semántica ──
+   * Los componentes consumen estos niveles en lugar de inventar tamaños
+   * propios. Los clamp mantienen la jerarquía entre móvil y escritorio. */
+  --ok-type-display-size: clamp(3rem, 2.25rem + 3vw, 4.5rem);
+  --ok-type-display-weight: 650;
+  --ok-type-display-leading: 1;
+  --ok-type-page-title-size: clamp(2.35rem, 1.75rem + 2.6vw, 4rem);
+  --ok-type-page-title-compact-size: clamp(2rem, 1.55rem + 2vw, 3.25rem);
+  --ok-type-page-title-weight: 650;
+  --ok-type-page-title-leading: 1.04;
+  --ok-type-section-title-size: clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem);
+  --ok-type-section-title-weight: 650;
+  --ok-type-section-title-leading: 1.06;
+  --ok-type-card-title-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
+  --ok-type-card-title-weight: 620;
+  --ok-type-card-title-leading: 1.25;
+  --ok-type-intro-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --ok-type-intro-leading: 1.6;
+  --ok-type-body-size: 1rem;
+  --ok-type-body-leading: 1.6;
+  --ok-type-card-body-size: 0.92rem;
+  --ok-type-card-body-leading: 1.55;
+  --ok-type-eyebrow-size: 0.72rem;
+  --ok-type-eyebrow-weight: 600;
+  --ok-type-eyebrow-leading: 1.2;
 }
 
 /* ── OSCURO (dark zinc, coherente con el light) ── */

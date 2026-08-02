@@ -85,23 +85,24 @@ export class OkFeatureCard extends LitElement {
       mask: var(--u) center / contain no-repeat;
     }
     .eyebrow {
-      font-size: 0.7rem;
-      font-weight: 600;
+      font-size: var(--ok-type-eyebrow-size, 0.72rem);
+      font-weight: var(--ok-type-eyebrow-weight, 600);
+      line-height: var(--ok-type-eyebrow-leading, 1.2);
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--muted);
     }
     .title {
       margin: 0;
-      font-size: 1.15rem;
-      font-weight: 620;
+      font-size: var(--ok-type-card-title-size, 1.15rem);
+      font-weight: var(--ok-type-card-title-weight, 620);
       letter-spacing: -0.015em;
-      line-height: 1.25;
+      line-height: var(--ok-type-card-title-leading, 1.25);
     }
     .desc {
       color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.55;
+      font-size: var(--ok-type-card-body-size, 0.92rem);
+      line-height: var(--ok-type-card-body-leading, 1.55);
     }
     ::slotted(*) { margin: 0; }
   `;

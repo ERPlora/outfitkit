@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Comandas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .kitchen-active-page { display: flex; flex-direction: column; gap: 0.75rem; min-height: 100%; }
+      .kitchen-order-form { display: grid; grid-template-columns: minmax(11rem, 0.7fr) minmax(14rem, 1fr) auto; gap: 0.75rem; align-items: end; }
+      @media (max-width: 720px) { .kitchen-order-form { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // No existe seed operativo de comandas; el preview usa las columnas reales de orders_list.sql.
+      const ORDER_FIXTURE = [
+        { "id": "order-1042", "order_number": "20260718-1042", "label": "Mesa 4", "order_type": "dine_in", "priority": "rush", "status": "preparing", "total": "42.50", "notes": "Sin cebolla", "created_at": "2026-07-18T20:12:00Z" },
+        { "id": "order-1041", "order_number": "20260718-1041", "label": "Recogida Ana", "order_type": "takeaway", "priority": "normal", "status": "ready", "total": "18.90", "notes": "", "created_at": "2026-07-18T20:06:00Z" },
+        { "id": "order-1040", "order_number": "20260718-1040", "label": "Barra", "order_type": "dine_in", "priority": "normal", "status": "pending", "total": "12.00", "notes": "", "created_at": "2026-07-18T19:58:00Z" }
+      ];
+
+      const TYPE_LABELS = { dine_in: 'En sala', takeaway: 'Para llevar', delivery: 'A domicilio' };
+      const PRIORITY_LABELS = { normal: 'Normal', rush: 'Urgente', vip: 'VIP' };
+      const STATUS_LABELS = { pending: 'Pendiente', preparing: 'En preparación', ready: 'Lista', served: 'Servida', cancelled: 'Cancelada' };
+      let orders = ORDER_FIXTURE.map((row) => ({ ...row }));
+      const state = { page: 0, pageSize: 50, sort: 'created_at', dir: 'desc', search: '', filters: {} };
+
+      function recordQuery(name, params = {}) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      function badge(text, color) {
+        const element = document.createElement('ion-badge');
+        element.textContent = text;
+        element.color = color;
+        return element;
+      }
+
+      defineHubPage({
+        active: '/m/kitchen/active',
+        title: 'Comandas',
+        body: `
+          <div class="kitchen-active-page">
+            <form id="kitchen-order-form" class="kitchen-order-form">
+              <ion-select id="kitchen-order-type" fill="outline" label="Tipo" label-placement="floating" value="dine_in">
+                <ion-select-option value="dine_in">En sala</ion-select-option>
+                <ion-select-option value="takeaway">Para llevar</ion-select-option>
+                <ion-select-option value="delivery">A domicilio</ion-select-option>
+              </ion-select>
+              <ion-input id="kitchen-order-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+              <ion-button type="submit" size="small">
+                <ion-icon slot="start" name="add-outline"></ion-icon>
+                Nueva comanda
+              </ion-button>
+            </form>
+            <ok-data-table id="kitchen-active-table"></ok-data-table>
+          </div>
+          <ion-toast id="kitchen-active-toast" duration="1800" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('kitchen-active-table');
+          const form = doc.getElementById('kitchen-order-form');
+          const typeInput = doc.getElementById('kitchen-order-type');
+          const notesInput = doc.getElementById('kitchen-order-notes');
+          const toast = doc.getElementById('kitchen-active-toast');
+
+          table.columns = [
+            { key: 'order_number', header: 'Comanda', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'label', header: 'Destino', width: '140px', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'order_type', header: 'Tipo', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'dine_in', label: 'En sala' },
+                { value: 'takeaway', label: 'Para llevar' },
+                { value: 'delivery', label: 'A domicilio' },
+              ],
+              format: (row) => TYPE_LABELS[row.order_type] || row.order_type,
+            },
+            {
+              key: 'priority', header: 'Prioridad', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'normal', label: 'Normal' },
+                { value: 'rush', label: 'Urgente' },
+                { value: 'vip', label: 'VIP' },
+              ],
+              render: (row) => badge(PRIORITY_LABELS[row.priority] || row.priority, row.priority === 'rush' ? 'danger' : row.priority === 'vip' ? 'warning' : 'medium'),
+            },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'pending', label: 'Pendiente' },
+                { value: 'preparing', label: 'En preparación' },
+                { value: 'ready', label: 'Lista' },
+                { value: 'served', label: 'Servida' },
+                { value: 'cancelled', label: 'Cancelada' },
+              ],
+              render: (row) => badge(STATUS_LABELS[row.status] || row.status, row.status === 'ready' ? 'success' : row.status === 'cancelled' ? 'danger' : row.status === 'preparing' ? 'warning' : 'medium'),
+            },
+            { key: 'total', header: 'Total', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => Number(row.total).toFixed(2) },
+          ];
+          table.actions = [
+            { id: 'fire', label: 'Lanzar', icon: 'flame-outline' },
+            { id: 'mark_ready', label: 'Lista', icon: 'checkmark-done-outline' },
+            { id: 'mark_served', label: 'Servida', icon: 'restaurant-outline' },
+            { id: 'recall', label: 'Recuperar', icon: 'arrow-undo-outline' },
+            { id: 'cancel', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.order_number || '—');
+          table.cardIcon = () => 'restaurant-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar comanda o estado…';
+          table.emptyMessage = 'Sin comandas.';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const number = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || number >= Number(min)) && (max == null || max === '' || number <= Number(max));
+          }
+
+          function queryPage() {
+            recordQuery('kitchen.orders.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = orders
+              .filter((row) => {
+                if (term && !`${row.order_number} ${row.label} ${row.order_type} ${row.priority} ${row.status}`.toLocaleLowerCase('es').includes(term)) return false;
+                return Object.entries(state.filters).every(([key, value]) => {
+                  if (value == null || value === '') return true;
+                  if (key === 'total') return matchesRange(row.total, value);
+                  if (['order_type', 'priority', 'status'].includes(key)) return String(row[key]) === String(value);
+                  return String(row[key] || '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                });
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] || '').localeCompare(String(right[state.sort] || ''), 'es', { numeric: true });
+                return state.dir === 'desc' ? -result : result;
+              });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const orderType = String(typeInput.value || 'dine_in');
+            const notes = String(notesInput.value || '').trim();
+            const payload = { order_type: orderType, priority: 'normal', notes, items: [] };
+            recordCommand('kitchen.orders.create', payload);
+            const sequence = 1043 + orders.length;
+            orders = [{
+              id: `preview-order-${sequence}`,
+              order_number: `20260718-${sequence}`,
+              label: 'Sin destino',
+              order_type: orderType,
+              priority: 'normal',
+              status: 'pending',
+              total: '0.00',
+              notes,
+              created_at: new Date().toISOString(),
+            }, ...orders];
+            notesInput.value = '';
+            state.page = 0;
+            queryPage();
+            toast.message = 'Comanda creada.';
+            toast.color = 'success';
+            toast.isOpen = true;
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const row = event.detail?.row;
+            const actionName = event.detail?.actionId;
+            if (!row || !['fire', 'mark_ready', 'mark_served', 'cancel', 'recall'].includes(actionName)) return;
+            recordCommand('kitchen.orders.set_status', { order_id: row.id, action_name: actionName });
+            const nextStatus = { fire: 'preparing', mark_ready: 'ready', mark_served: 'served', cancel: 'cancelled', recall: 'preparing' }[actionName];
+            orders = orders.map((order) => order.id === row.id ? { ...order, status: nextStatus } : order);
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

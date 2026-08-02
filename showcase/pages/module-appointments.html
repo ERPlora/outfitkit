@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Citas</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .appointments-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      .appointments-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .appointment-scope { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 0.75rem; }
+      .appointment-scope ion-input, .appointment-scope ion-select { flex: 1 1 12rem; }
+      .appointment-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .appointment-form ion-button { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const APPOINTMENT_FIXTURE = [
+        {
+          "id": "a1",
+          "appointment_number": "A-001",
+          "customer_name": "Ana",
+          "customer_phone": "600",
+          "service_name": "Corte",
+          "staff_name": "Eva",
+          "start_datetime": "2026-07-13T10:00:00.000Z",
+          "end_datetime": "2026-07-13T10:30:00.000Z",
+          "duration_minutes": 30,
+          "status": "pending"
+        }
+      ];
+      const STATUS_LABELS = {
+        pending: 'Pendiente', confirmed: 'Confirmada', in_progress: 'En curso',
+        completed: 'Completada', cancelled: 'Cancelada', no_show: 'No presentado',
+      };
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin citas.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'cita', recordPlural: 'citas',
+      };
+
+      defineHubPage({
+        active: '/m/appointments/appointments',
+        title: 'Citas',
+        body: `
+          <div class="appointments-page">
+            <div class="appointment-scope">
+              <ion-input id="appointment-day" value="2026-07-13" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+              <ion-select id="appointment-status" value="" fill="outline" label="Estado" label-placement="floating">
+                <ion-select-option value="">Todos los estados</ion-select-option>
+                <ion-select-option value="pending">Pendiente</ion-select-option>
+                <ion-select-option value="confirmed">Confirmada</ion-select-option>
+                <ion-select-option value="in_progress">En curso</ion-select-option>
+                <ion-select-option value="completed">Completada</ion-select-option>
+                <ion-select-option value="cancelled">Cancelada</ion-select-option>
+                <ion-select-option value="no_show">No presentado</ion-select-option>
+              </ion-select>
+            </div>
+            <ok-data-table id="appointments-table" fill>
+              <form id="appointment-form" slot="create" class="appointment-form">
+                <ion-input id="appointment-customer" fill="outline" label="Cliente" label-placement="floating"></ion-input>
+                <ion-input id="appointment-phone" type="tel" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
+                <ion-input id="appointment-service" fill="outline" label="Servicio" label-placement="floating"></ion-input>
+                <ion-input id="appointment-start" type="datetime-local" fill="outline" label="Inicio" label-placement="floating"></ion-input>
+                <ion-input id="appointment-duration" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-button type="submit" size="small">Añadir cita</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="appointments-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          let appointments = APPOINTMENT_FIXTURE.map((appointment) => ({ ...appointment }));
+          const table = doc.getElementById('appointments-table');
+          const dayInput = doc.getElementById('appointment-day');
+          const statusInput = doc.getElementById('appointment-status');
+          const toast = doc.getElementById('appointments-toast');
+
+          table.fill = true;
+          table.addable = true;
+          table.searchable = true;
+          table.searchKeys = ['appointment_number', 'customer_name', 'service_name', 'staff_name'];
+          table.searchPlaceholder = 'Buscar citas…';
+          table.labels = LABELS;
+          table.columns = [
+            {
+              key: 'start_datetime', header: 'Hora',
+              format: (row) => new Date(row.start_datetime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+            },
+            { key: 'appointment_number', header: 'Número' },
+            { key: 'customer_name', header: 'Cliente' },
+            { key: 'service_name', header: 'Servicio' },
+            { key: 'staff_name', header: 'Profesional', format: (row) => row.staff_name || '—' },
+            { key: 'status', header: 'Estado', format: (row) => STATUS_LABELS[row.status] ?? row.status },
+          ];
+          table.actions = [
+            { id: 'confirm', label: 'Confirmar', icon: 'checkmark-circle-outline', color: 'success' },
+            { id: 'start', label: 'Iniciar', icon: 'play-circle-outline', color: 'primary' },
+            { id: 'complete', label: 'Completar', icon: 'checkmark-done-outline', color: 'success' },
+            { id: 'cancel', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+
+          function refresh() {
+            const day = dayInput.value;
+            const status = statusInput.value;
+            table.rows = appointments.filter((appointment) => {
+              const appointmentDay = appointment.start_datetime.slice(0, 10);
+              return (!day || appointmentDay === day) && (!status || appointment.status === status);
+            });
+          }
+
+          function recordCommand(command, payload, message) {
+            console.info('[showcase command]', command, payload);
+            toast.message = message;
+            toast.present();
+          }
+
+          dayInput.addEventListener('ionInput', refresh);
+          statusInput.addEventListener('ionChange', refresh);
+          doc.getElementById('appointment-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const customer = doc.getElementById('appointment-customer').value?.trim();
+            const start = doc.getElementById('appointment-start').value;
+            if (!customer || !start) return;
+            const duration = Number(doc.getElementById('appointment-duration').value || 60);
+            const startDate = new Date(start);
+            const row = {
+              id: `appointment-${Date.now()}`,
+              appointment_number: `A-${String(appointments.length + 1).padStart(3, '0')}`,
+              customer_name: customer,
+              customer_phone: doc.getElementById('appointment-phone').value || '',
+              service_name: doc.getElementById('appointment-service').value || '',
+              staff_name: '',
+              start_datetime: startDate.toISOString(),
+              end_datetime: new Date(startDate.getTime() + duration * 60000).toISOString(),
+              duration_minutes: duration,
+              status: 'pending',
+            };
+            appointments = [row, ...appointments];
+            recordCommand('appointments.appointments.create', {
+              customer_name: row.customer_name,
+              customer_phone: row.customer_phone,
+              service_name: row.service_name,
+              start_datetime: row.start_datetime,
+              duration_minutes: row.duration_minutes,
+            }, 'Cita añadida');
+            table.close();
+            dayInput.value = row.start_datetime.slice(0, 10);
+            refresh();
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const command = `appointments.appointments.${actionId}`;
+            if (actionId === 'delete') {
+              appointments = appointments.filter((appointment) => appointment.id !== row.id);
+              recordCommand('appointments.appointments.delete', { appointment_id: row.id }, 'Cita eliminada');
+            } else {
+              const nextStatus = actionId === 'confirm' ? 'confirmed'
+                : actionId === 'start' ? 'in_progress'
+                  : actionId === 'complete' ? 'completed' : 'cancelled';
+              appointments = appointments.map((appointment) => appointment.id === row.id
+                ? { ...appointment, status: nextStatus }
+                : appointment);
+              const payload = actionId === 'cancel'
+                ? { appointment_id: row.id, reason: '' }
+                : { appointment_id: row.id };
+              if (actionId === 'confirm') recordCommand('appointments.appointments.confirm', payload, 'Cita confirmada');
+              if (actionId === 'start') recordCommand('appointments.appointments.start', payload, 'Cita iniciada');
+              if (actionId === 'complete') recordCommand('appointments.appointments.complete', payload, 'Cita completada');
+              if (actionId === 'cancel') recordCommand('appointments.appointments.cancel', payload, 'Cita cancelada');
+            }
+            console.debug('[showcase route action]', command);
+            refresh();
+          });
+          refresh();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Facturas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .invoice-page,
+      .invoice-list-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .invoice-list-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .invoice-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      .invoice-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 12px;
+        background: var(--ion-card-background, var(--ion-background-color, #fff));
+      }
+
+      .invoice-card h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+
+      .invoice-form,
+      .invoice-form-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .invoice-line {
+        display: grid;
+        grid-template-columns: minmax(12rem, 1fr) repeat(3, minmax(5.25rem, 0.32fr)) auto;
+        gap: 0.5rem;
+        align-items: end;
+        padding-top: 0.7rem;
+        margin-top: 0.7rem;
+        border-top: 1px solid var(--ion-border-color, #e7e2d6);
+      }
+
+      .invoice-actions,
+      .invoice-detail-head,
+      .invoice-totals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .invoice-actions {
+        margin-top: 0.75rem;
+      }
+
+      .invoice-detail-page {
+        height: 100%;
+        overflow: auto;
+      }
+
+      .invoice-detail-head {
+        margin-bottom: 0.75rem;
+      }
+
+      .invoice-detail-head h2 {
+        flex: 1;
+        min-width: 12rem;
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .invoice-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        gap: 0.35rem 0.75rem;
+        margin: 0;
+      }
+
+      .invoice-meta dt {
+        margin: 0;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--ion-color-medium, #777);
+      }
+
+      .invoice-meta dd {
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+
+      .invoice-lines-scroll {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .invoice-lines {
+        width: 100%;
+        min-width: 690px;
+        margin-top: 0.8rem;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+
+      .invoice-lines th,
+      .invoice-lines td {
+        padding: 0.45rem 0.5rem;
+        border-bottom: 1px solid var(--ion-border-color, #e7e2d6);
+        text-align: left;
+      }
+
+      .invoice-lines th:nth-child(n + 3),
+      .invoice-lines td:nth-child(n + 3) {
+        text-align: right;
+      }
+
+      .invoice-totals {
+        justify-content: flex-end;
+        margin-top: 0.75rem;
+        font-weight: 700;
+      }
+
+      .invoice-totals span {
+        white-space: nowrap;
+      }
+
+      .invoice-print-only {
+        display: none;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 720px) {
+        .invoice-line {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .invoice-line .invoice-line-description {
+          grid-column: 1 / -1;
+        }
+
+        .invoice-detail-head h2 {
+          flex-basis: 100%;
+        }
+      }
+
+      @media (max-width: 460px) {
+        .invoice-line {
+          grid-template-columns: 1fr;
+        }
+
+        .invoice-line .invoice-line-description {
+          grid-column: auto;
+        }
+
+        .invoice-actions ion-button,
+        .invoice-detail-head ion-button {
+          flex: 1 1 auto;
+        }
+      }
+
+      @media print {
+        .invoice-screen-only,
+        ion-menu,
+        .app-topbar {
+          display: none !important;
+        }
+
+        .invoice-print-only {
+          display: block !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { html } from 'lit';
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-invoice-list.test.ts: la demo parte del contrato que prueba el módulo.
+      const INVOICE_FIXTURE = [
+        {
+          "id": "i1",
+          "invoice_type": "F1",
+          "series": "FACT",
+          "number": "FACT-0001",
+          "issue_date": "2026-07-13",
+          "customer_name": "ACME",
+          "customer_tax_id": "B12345678",
+          "base_amount": 10000,
+          "tax_amount": 2100,
+          "total_amount": 12100,
+          "status": "issued",
+          "source_type": "manual"
+        }
+      ];
+
+      const SERIES = [
+        { id: 'sr1', code: 'FACT', name: 'Facturas', invoice_type: 'F1', is_active: 1 },
+        { id: 'sr2', code: 'TICKET', name: 'Tickets', invoice_type: 'F2', is_active: 1 },
+      ];
+
+      const TYPE_LABELS = {
+        F1: 'Factura', F2: 'Ticket', F3: 'Factura',
+        R1: 'Rectificativa', R2: 'Rectificativa', R3: 'Rectificativa',
+        R4: 'Rectificativa', R5: 'Rectificativa',
+      };
+      const STATUS_LABELS = {
+        draft: 'Borrador', issued: 'Emitida', paid: 'Pagada', cancelled: 'Cancelada',
+      };
+      const STATUS_COLORS = {
+        draft: 'medium', issued: 'primary', paid: 'success', cancelled: 'danger',
+      };
+      const TYPE_CODES = ['F1', 'F2', 'F3', 'R1', 'R2', 'R3', 'R4', 'R5'];
+      const STATUS_CODES = ['draft', 'issued', 'paid', 'cancelled'];
+
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const formatMoney = (value) => money.format(Number(value) || 0);
+      const typeLabel = (value) => TYPE_LABELS[value] ?? value;
+      const statusLabel = (value) => STATUS_LABELS[value] ?? value;
+
+      let invoices = INVOICE_FIXTURE.map((row) => ({ ...row }));
+      const details = new Map([
+        ['i1', {
+          ...INVOICE_FIXTURE[0],
+          issuer_nif: 'B00000000',
+          issuer_name: 'ERPlora Demo',
+          customer_address: '',
+          description: '',
+          tax_breakdown: JSON.stringify({ '21.00': { base: 10000, tax: 2100 } }),
+          currency: 'EUR',
+          source_id: null,
+          rectifies_invoice_id: null,
+          paid_at: null,
+          notes: '',
+        }],
+      ]);
+      const detailLines = new Map([
+        ['i1', [{
+          id: 'line-i1-1', line_number: 1, description: 'Servicio', quantity: 1,
+          unit_price: 10000, tax_rate: 21, base_amount: 10000, tax_amount: 2100,
+          total_amount: 12100, product_id: null,
+        }]],
+      ]);
+      const commandLog = [];
+
+      function emitInvoiceEvent(name, detail) {
+        window.dispatchEvent(new CustomEvent(name, { detail }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload });
+      }
+
+      defineHubPage({
+        active: '/m/invoice/invoice',
+        title: 'Facturas',
+        body: `
+          <div class="invoice-page">
+            <section id="invoice-rectify-card" class="invoice-card invoice-screen-only" hidden>
+              <h3 id="invoice-rectify-title">Rectificar factura</h3>
+              <p>Se emitirá una rectificativa R1 (serie RECT) con los importes negados y la factura original quedará cancelada. Esta operación no se puede deshacer.</p>
+              <ion-textarea id="invoice-rectify-reason" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la rectificación" auto-grow></ion-textarea>
+              <div class="invoice-actions">
+                <ion-button id="invoice-rectify-confirm" size="small" color="danger">Emitir rectificativa</ion-button>
+                <ion-button id="invoice-rectify-cancel" size="small" fill="outline" color="medium">Cancelar</ion-button>
+              </div>
+            </section>
+
+            <div id="invoice-list-page" class="invoice-list-page invoice-screen-only">
+              <p id="invoice-feedback" class="invoice-feedback" hidden></p>
+              <ok-data-table id="invoice-table" fill>
+                <form id="invoice-create-form" slot="create" class="invoice-form">
+                  <div class="invoice-form-fields">
+                    <ion-select id="invoice-series" fill="outline" label="Serie" label-placement="floating" interface="popover" value="FACT">
+                      <ion-select-option value="FACT">FACT — Facturas</ion-select-option>
+                      <ion-select-option value="TICKET">TICKET — Tickets</ion-select-option>
+                    </ion-select>
+                    <ion-input id="invoice-customer" fill="outline" label="Cliente" label-placement="floating"></ion-input>
+                    <ion-input id="invoice-customer-tax-id" fill="outline" label="NIF cliente" label-placement="floating" placeholder="NIF"></ion-input>
+                    <ion-input id="invoice-address" fill="outline" label="Dirección" label-placement="floating"></ion-input>
+                    <ion-input id="invoice-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                  </div>
+                  <div id="invoice-create-lines"></div>
+                  <div class="invoice-actions">
+                    <ion-button id="invoice-add-line" size="small" fill="outline" type="button">+ Línea</ion-button>
+                    <ion-button size="small" type="submit">Emitir factura</ion-button>
+                    <ion-button id="invoice-create-cancel" size="small" fill="clear" color="medium" type="button">Cancelar</ion-button>
+                  </div>
+                </form>
+              </ok-data-table>
+            </div>
+
+            <div id="invoice-detail-page" class="invoice-detail-page invoice-screen-only" hidden>
+              <header class="invoice-detail-head">
+                <h2 id="invoice-detail-title"></h2>
+                <ion-badge id="invoice-detail-status"></ion-badge>
+                <ion-button id="invoice-detail-print" size="small">
+                  <ion-icon slot="start" name="print-outline"></ion-icon>
+                  Imprimir / PDF
+                </ion-button>
+                <ion-button id="invoice-detail-back" size="small" fill="outline" color="medium">← Volver</ion-button>
+              </header>
+
+              <p id="invoice-detail-feedback" class="invoice-feedback" hidden></p>
+              <section class="invoice-card">
+                <dl class="invoice-meta">
+                  <div><dt>Tipo</dt><dd id="invoice-detail-type"></dd></div>
+                  <div><dt>Serie</dt><dd id="invoice-detail-series"></dd></div>
+                  <div><dt>Fecha de emisión</dt><dd id="invoice-detail-date"></dd></div>
+                  <div><dt>Cliente</dt><dd id="invoice-detail-customer"></dd></div>
+                  <div><dt>NIF cliente</dt><dd id="invoice-detail-tax-id"></dd></div>
+                  <div><dt>Dirección</dt><dd id="invoice-detail-address"></dd></div>
+                  <div><dt>Emisor</dt><dd id="invoice-detail-issuer"></dd></div>
+                  <div><dt>Origen</dt><dd id="invoice-detail-source"></dd></div>
+                  <div id="invoice-detail-paid-wrap" hidden><dt>Pagada el</dt><dd id="invoice-detail-paid"></dd></div>
+                  <div id="invoice-detail-notes-wrap" hidden><dt>Notas</dt><dd id="invoice-detail-notes"></dd></div>
+                </dl>
+                <div class="invoice-lines-scroll">
+                  <table class="invoice-lines">
+                    <thead>
+                      <tr><th>#</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th>IVA %</th><th>Base</th><th>Impuesto</th><th>Total</th></tr>
+                    </thead>
+                    <tbody id="invoice-detail-lines"></tbody>
+                  </table>
+                </div>
+                <div class="invoice-totals">
+                  <span id="invoice-detail-base"></span>
+                  <span id="invoice-detail-tax"></span>
+                  <span id="invoice-detail-total"></span>
+                </div>
+                <div class="invoice-actions">
+                  <ion-button id="invoice-detail-paid-action" size="small" color="success">Marcar pagada</ion-button>
+                  <ion-button id="invoice-detail-rectify-action" size="small" fill="outline" color="danger">Devolución</ion-button>
+                </div>
+              </section>
+            </div>
+
+            <div class="invoice-print-only">
+              <ok-invoice id="invoice-print-document"></ok-invoice>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('invoice-table');
+          const listPage = doc.getElementById('invoice-list-page');
+          const detailPage = doc.getElementById('invoice-detail-page');
+          const feedback = doc.getElementById('invoice-feedback');
+          const detailFeedback = doc.getElementById('invoice-detail-feedback');
+          const createForm = doc.getElementById('invoice-create-form');
+          const createLines = doc.getElementById('invoice-create-lines');
+          const rectifyCard = doc.getElementById('invoice-rectify-card');
+          const rectifyReason = doc.getElementById('invoice-rectify-reason');
+          const printDocument = doc.getElementById('invoice-print-document');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'id';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+          let currentInvoice = null;
+          let rectifyTarget = null;
+          let invoiceSequence = 2;
+
+          const columns = [
+            { key: 'number', header: 'Número', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'invoice_type', header: 'Tipo', sortable: true, filterable: true, filterType: 'select',
+              options: TYPE_CODES.map((value) => ({ value, label: typeLabel(value) })),
+              format: (row) => typeLabel(row.invoice_type),
+            },
+            { key: 'issue_date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
+            {
+              key: 'customer_name', header: 'Cliente', sortable: true, filterable: true,
+              filterType: 'text', format: (row) => row.customer_name || '—',
+            },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: STATUS_CODES.map((value) => ({ value, label: statusLabel(value) })),
+              render: (row) => html`<ion-badge color=${STATUS_COLORS[row.status] ?? 'medium'}>${statusLabel(row.status)}</ion-badge>`,
+            },
+            {
+              key: 'total_amount', header: 'Total', align: 'right', sortable: true,
+              filterable: true, filterType: 'range', format: (row) => formatMoney(row.total_amount),
+            },
+          ];
+
+          const actions = [
+            { id: 'view', label: 'Ver', icon: 'eye-outline' },
+            { id: 'paid', label: 'Marcar pagada', icon: 'checkmark-circle-outline', color: 'success' },
+            { id: 'rectify', label: 'Devolución', icon: 'arrow-undo-outline', color: 'danger' },
+          ];
+
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.number ?? '—');
+          table.cardIcon = () => 'document-text-outline';
+          table.addable = true;
+          table.columns = columns;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar número, cliente o estado…';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.actions = actions;
+          table.emptyMessage = 'Aún no hay facturas.';
+
+          function showFeedback(message, detail = false) {
+            const target = detail ? detailFeedback : feedback;
+            target.textContent = message;
+            target.hidden = !message;
+          }
+
+          function filterMatches(row, key, value) {
+            if (value == null || value === '') return true;
+            if (key === 'issue_date' && typeof value === 'object') {
+              const from = value.from ?? value.min ?? '';
+              const to = value.to ?? value.max ?? '';
+              return (!from || row.issue_date >= from) && (!to || row.issue_date <= to);
+            }
+            if (key === 'total_amount' && typeof value === 'object') {
+              const min = Number(value.min ?? Number.NEGATIVE_INFINITY);
+              const max = Number(value.max ?? Number.POSITIVE_INFINITY);
+              return Number(row.total_amount) >= min && Number(row.total_amount) <= max;
+            }
+            return String(row[key] ?? '').toLocaleLowerCase().includes(String(value).toLocaleLowerCase());
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase();
+            let filtered = invoices.filter((row) => {
+              const haystack = `${row.number} ${row.customer_name} ${row.customer_tax_id} ${row.status}`.toLocaleLowerCase();
+              return (!term || haystack.includes(term))
+                && Object.entries(filters).every(([key, value]) => filterMatches(row, key, value));
+            });
+
+            filtered = [...filtered].sort((left, right) => {
+              const a = left[sort] ?? '';
+              const b = right[sort] ?? '';
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+            table.rows = filtered.slice(start, start + pageSize);
+          }
+
+          function rowById(id) {
+            return invoices.find((row) => row.id === id) ?? null;
+          }
+
+          function makeLine(index = 0) {
+            const line = doc.createElement('div');
+            line.className = 'invoice-line';
+            line.dataset.line = String(index);
+            line.innerHTML = `
+              <ion-input class="invoice-line-description" fill="outline" label="Descripción" label-placement="floating"></ion-input>
+              <ion-input class="invoice-line-quantity" fill="outline" label="Cant." label-placement="floating" type="number" value="1"></ion-input>
+              <ion-input class="invoice-line-price" fill="outline" label="Precio" label-placement="floating" type="number"></ion-input>
+              <ion-input class="invoice-line-tax" fill="outline" label="IVA %" label-placement="floating" type="number" value="21"></ion-input>
+              <ion-button class="invoice-line-remove" size="small" fill="clear" color="danger" type="button" aria-label="Quitar línea">✕</ion-button>`;
+            line.querySelector('.invoice-line-remove').addEventListener('click', () => {
+              if (createLines.children.length > 1) line.remove();
+            });
+            return line;
+          }
+
+          function resetCreateForm() {
+            createForm.reset();
+            doc.getElementById('invoice-series').value = 'FACT';
+            createLines.replaceChildren(makeLine(0));
+          }
+
+          function detailFor(row) {
+            return details.get(row.id) ?? {
+              ...row,
+              issuer_nif: 'B00000000', issuer_name: 'ERPlora Demo', customer_address: '',
+              description: '', tax_breakdown: '', currency: 'EUR', source_id: null,
+              rectifies_invoice_id: null, paid_at: null, notes: '',
+            };
+          }
+
+          function invoiceDocument(detail, lines) {
+            return {
+              issuer: { name: detail.issuer_name || '—', tax_id: detail.issuer_nif || undefined },
+              customer: {
+                name: detail.customer_name || '—', tax_id: detail.customer_tax_id || undefined,
+                address: detail.customer_address || undefined,
+              },
+              number: detail.number,
+              issue_date: detail.issue_date,
+              lines: lines.map((line) => ({
+                description: line.description, qty: line.quantity, unit_price: line.unit_price,
+                tax_rate: line.tax_rate, total: line.total_amount,
+              })),
+              subtotal: detail.base_amount,
+              taxes: [{ label: 'IVA', base: detail.base_amount, amount: detail.tax_amount }],
+              tax_total: detail.tax_amount,
+              total: detail.total_amount,
+              currency: detail.currency || 'EUR',
+              footer: detail.notes || undefined,
+            };
+          }
+
+          function openDetail(row) {
+            const detail = detailFor(row);
+            const lines = detailLines.get(row.id) ?? [];
+            currentInvoice = row;
+            listPage.hidden = true;
+            detailPage.hidden = false;
+            showFeedback('', true);
+
+            doc.getElementById('invoice-detail-title').textContent = `Factura ${detail.number}`;
+            const badge = doc.getElementById('invoice-detail-status');
+            badge.textContent = statusLabel(detail.status);
+            badge.color = STATUS_COLORS[detail.status] ?? 'medium';
+            doc.getElementById('invoice-detail-type').textContent = `${typeLabel(detail.invoice_type)} (${detail.invoice_type})`;
+            doc.getElementById('invoice-detail-series').textContent = detail.series;
+            doc.getElementById('invoice-detail-date').textContent = detail.issue_date;
+            doc.getElementById('invoice-detail-customer').textContent = detail.customer_name || '—';
+            doc.getElementById('invoice-detail-tax-id').textContent = detail.customer_tax_id || '—';
+            doc.getElementById('invoice-detail-address').textContent = detail.customer_address || '—';
+            doc.getElementById('invoice-detail-issuer').textContent = `${detail.issuer_name || '—'}${detail.issuer_nif ? ` (${detail.issuer_nif})` : ''}`;
+            doc.getElementById('invoice-detail-source').textContent = `${detail.source_type}${detail.source_id ? ` · ${detail.source_id}` : ''}`;
+
+            const paidWrap = doc.getElementById('invoice-detail-paid-wrap');
+            paidWrap.hidden = !detail.paid_at;
+            doc.getElementById('invoice-detail-paid').textContent = detail.paid_at || '';
+            const notesWrap = doc.getElementById('invoice-detail-notes-wrap');
+            notesWrap.hidden = !detail.notes;
+            doc.getElementById('invoice-detail-notes').textContent = detail.notes || '';
+
+            const tbody = doc.getElementById('invoice-detail-lines');
+            tbody.replaceChildren();
+            for (const line of lines) {
+              const tr = doc.createElement('tr');
+              for (const value of [
+                line.line_number, line.description, line.quantity, formatMoney(line.unit_price),
+                `${Number(line.tax_rate).toFixed(2)}%`, formatMoney(line.base_amount),
+                formatMoney(line.tax_amount), formatMoney(line.total_amount),
+              ]) {
+                const td = doc.createElement('td');
+                td.textContent = String(value);
+                tr.appendChild(td);
+              }
+              tbody.appendChild(tr);
+            }
+            doc.getElementById('invoice-detail-base').textContent = `Base: ${formatMoney(detail.base_amount)}`;
+            doc.getElementById('invoice-detail-tax').textContent = `Impuestos: ${formatMoney(detail.tax_amount)}`;
+            doc.getElementById('invoice-detail-total').textContent = `Total: ${formatMoney(detail.total_amount)}`;
+            doc.getElementById('invoice-detail-paid-action').hidden = detail.status !== 'issued';
+            doc.getElementById('invoice-detail-rectify-action').hidden = detail.invoice_type.startsWith('R') || detail.status === 'cancelled';
+            printDocument.invoice = invoiceDocument(detail, lines);
+          }
+
+          function closeDetail() {
+            currentInvoice = null;
+            detailPage.hidden = true;
+            listPage.hidden = false;
+            rectifyCard.hidden = true;
+            rectifyTarget = null;
+          }
+
+          function markPaid(row) {
+            if (row.status !== 'issued') {
+              showFeedback('Solo se puede marcar como pagada una factura emitida.', !detailPage.hidden);
+              return;
+            }
+            recordCommand('invoice.mark_paid', { invoice_id: row.id });
+            row.status = 'paid';
+            const detail = detailFor(row);
+            detail.status = 'paid';
+            detail.paid_at = new Date().toISOString().slice(0, 10);
+            details.set(row.id, detail);
+            queryPage();
+            if (!detailPage.hidden) openDetail(row);
+          }
+
+          function startRectify(row) {
+            if (row.invoice_type.startsWith('R') || row.status === 'cancelled') {
+              showFeedback('Esta factura no se puede rectificar.', !detailPage.hidden);
+              return;
+            }
+            rectifyTarget = row;
+            rectifyReason.value = '';
+            doc.getElementById('invoice-rectify-title').textContent = `Rectificar ${row.number}`;
+            rectifyCard.hidden = false;
+            rectifyCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const current = rowById(row.id);
+            if (!current) return;
+            if (actionId === 'view') openDetail(current);
+            if (actionId === 'paid') markPaid(current);
+            if (actionId === 'rectify') startRectify(current);
+          });
+          table.addEventListener('pageChange', (event) => { page = event.detail; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { pageSize = event.detail; page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => { search = event.detail; page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          doc.getElementById('invoice-add-line').addEventListener('click', () => {
+            createLines.appendChild(makeLine(createLines.children.length));
+          });
+          doc.getElementById('invoice-create-cancel').addEventListener('click', () => {
+            resetCreateForm();
+            table.close();
+          });
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const draftLines = [...createLines.querySelectorAll('.invoice-line')].map((line) => {
+              const description = line.querySelector('.invoice-line-description').value?.trim() ?? '';
+              const quantity = Number(line.querySelector('.invoice-line-quantity').value) || 0;
+              const unitPrice = Number(line.querySelector('.invoice-line-price').value) || 0;
+              const taxRate = Number(line.querySelector('.invoice-line-tax').value) || 0;
+              const base = Number((quantity * unitPrice).toFixed(2));
+              const tax = Number((base * taxRate / 100).toFixed(2));
+              return { description, quantity, unit_price: unitPrice, tax_rate: taxRate, base_amount: base, tax_amount: tax, total_amount: base + tax };
+            }).filter((line) => line.description && line.quantity > 0 && line.unit_price >= 0);
+            if (!draftLines.length) {
+              showFeedback('Añade al menos una línea válida.');
+              return;
+            }
+
+            const seriesCode = doc.getElementById('invoice-series').value || 'FACT';
+            const series = SERIES.find((item) => item.code === seriesCode) ?? SERIES[0];
+            const id = `i${invoiceSequence}`;
+            const issueDate = new Date().toISOString().slice(0, 10);
+            const baseAmount = draftLines.reduce((sum, line) => sum + line.base_amount, 0);
+            const taxAmount = draftLines.reduce((sum, line) => sum + line.tax_amount, 0);
+            const row = {
+              id,
+              invoice_type: series.invoice_type,
+              series: series.code,
+              number: `${series.code}-${String(invoiceSequence).padStart(4, '0')}`,
+              issue_date: issueDate,
+              customer_name: doc.getElementById('invoice-customer').value?.trim() ?? '',
+              customer_tax_id: doc.getElementById('invoice-customer-tax-id').value?.trim() ?? '',
+              base_amount: baseAmount,
+              tax_amount: taxAmount,
+              total_amount: baseAmount + taxAmount,
+              status: 'issued',
+              source_type: 'manual',
+            };
+            const payload = {
+              series_code: series.code,
+              invoice_type: series.invoice_type,
+              customer_name: row.customer_name,
+              customer_tax_id: row.customer_tax_id,
+              customer_address: doc.getElementById('invoice-address').value?.trim() ?? '',
+              notes: doc.getElementById('invoice-notes').value?.trim() ?? '',
+              source_type: 'manual',
+              items: draftLines.map((line) => ({
+                description: line.description, quantity: line.quantity, unit_price: line.unit_price,
+                tax_rate: line.tax_rate, product_id: null,
+              })),
+            };
+
+            recordCommand('invoice.create', payload);
+            invoices = [...invoices, row];
+            details.set(id, {
+              ...row,
+              issuer_nif: 'B00000000', issuer_name: 'ERPlora Demo',
+              customer_address: payload.customer_address, description: '', tax_breakdown: '',
+              currency: 'EUR', source_id: null, rectifies_invoice_id: null, paid_at: null,
+              notes: payload.notes,
+            });
+            detailLines.set(id, draftLines.map((line, index) => ({
+              ...line, id: `${id}-line-${index + 1}`, line_number: index + 1, product_id: null,
+            })));
+            invoiceSequence += 1;
+            emitInvoiceEvent('invoice.created', { invoice_id: id, invoice_type: row.invoice_type, total: row.total_amount, sender: 'invoice' });
+            showFeedback('');
+            resetCreateForm();
+            table.close();
+            queryPage();
+          });
+
+          doc.getElementById('invoice-rectify-cancel').addEventListener('click', () => {
+            rectifyTarget = null;
+            rectifyCard.hidden = true;
+          });
+          doc.getElementById('invoice-rectify-confirm').addEventListener('click', () => {
+            const reason = rectifyReason.value?.trim() ?? '';
+            if (!rectifyTarget || !reason) return;
+
+            const original = rectifyTarget;
+            recordCommand('invoice.rectify', {
+              original_id: original.id,
+              reason,
+              year: new Date().getFullYear(),
+              issue_date: new Date().toISOString().slice(0, 10),
+            });
+            original.status = 'cancelled';
+            const originalDetail = detailFor(original);
+            originalDetail.status = 'cancelled';
+            details.set(original.id, originalDetail);
+
+            const id = `i${invoiceSequence}`;
+            const rectified = {
+              ...original,
+              id,
+              invoice_type: 'R1',
+              series: 'RECT',
+              number: `RECT-${String(invoiceSequence).padStart(4, '0')}`,
+              base_amount: -Math.abs(original.base_amount),
+              tax_amount: -Math.abs(original.tax_amount),
+              total_amount: -Math.abs(original.total_amount),
+              status: 'issued',
+              source_type: 'rectification',
+            };
+            invoices = [...invoices, rectified];
+            details.set(id, {
+              ...originalDetail,
+              ...rectified,
+              description: reason,
+              rectifies_invoice_id: original.id,
+              paid_at: null,
+            });
+            detailLines.set(id, (detailLines.get(original.id) ?? []).map((line) => ({
+              ...line,
+              id: `${id}-${line.id}`,
+              base_amount: -Math.abs(line.base_amount),
+              tax_amount: -Math.abs(line.tax_amount),
+              total_amount: -Math.abs(line.total_amount),
+            })));
+            invoiceSequence += 1;
+            emitInvoiceEvent('invoice.rectified', { invoice_id: id, original_id: original.id });
+            rectifyTarget = null;
+            rectifyCard.hidden = true;
+            queryPage();
+            if (!detailPage.hidden) openDetail(original);
+          });
+
+          doc.getElementById('invoice-detail-back').addEventListener('click', closeDetail);
+          doc.getElementById('invoice-detail-paid-action').addEventListener('click', () => {
+            if (currentInvoice) markPaid(currentInvoice);
+          });
+          doc.getElementById('invoice-detail-rectify-action').addEventListener('click', () => {
+            if (currentInvoice) startRectify(currentInvoice);
+          });
+          doc.getElementById('invoice-detail-print').addEventListener('click', () => window.print());
+
+          resetCreateForm();
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

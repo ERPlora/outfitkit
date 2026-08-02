@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Plantillas de WhatsApp</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .whatsapp-templates-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .whatsapp-templates-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .whatsapp-template-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .whatsapp-template-form ion-button {
+        align-self: flex-end;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-whatsapp-inbox-templates.test.ts.
+      const TEMPLATE_FIXTURE = [
+        {
+          "id": "t1",
+          "name": "recordatorio_cita",
+          "language": "es",
+          "category": "UTILITY",
+          "meta_status": "approved",
+          "is_active": 1
+        }
+      ];
+
+      let templates = TEMPLATE_FIXTURE.map((row) => ({
+        ...row,
+        header: '',
+        body: 'Hola {{1}}, te esperamos el {{2}}.',
+        footer: '',
+        meta_template_id: 'meta-recordatorio-cita',
+        variables: '["nombre", "fecha"]',
+        created_at: '2026-07-15T09:00:00',
+        updated_at: '2026-07-16T11:30:00',
+      }));
+
+      defineHubPage({
+        active: '/m/whatsapp_inbox/templates',
+        title: 'Plantillas de WhatsApp',
+        body: `
+          <div class="whatsapp-templates-page">
+            <ok-data-table id="whatsapp-templates-table" fill>
+              <form id="whatsapp-template-form" slot="create" class="whatsapp-template-form">
+                <ion-input
+                  id="whatsapp-template-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="whatsapp-template-language"
+                  fill="outline"
+                  label="Idioma"
+                  label-placement="floating"
+                  placeholder="Idioma (es)"
+                  value="es"
+                ></ion-input>
+                <ion-select
+                  id="whatsapp-template-category"
+                  fill="outline"
+                  label="Categoría"
+                  label-placement="floating"
+                  value="UTILITY"
+                >
+                  <ion-select-option value="UTILITY">Utility</ion-select-option>
+                  <ion-select-option value="MARKETING">Marketing</ion-select-option>
+                  <ion-select-option value="AUTHENTICATION">Authentication</ion-select-option>
+                </ion-select>
+                <ion-textarea
+                  id="whatsapp-template-body"
+                  fill="outline"
+                  label="Cuerpo"
+                  label-placement="floating"
+                  placeholder="Cuerpo del mensaje"
+                  auto-grow
+                ></ion-textarea>
+                <ion-button id="whatsapp-template-save" type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('whatsapp-templates-table');
+          const form = doc.getElementById('whatsapp-template-form');
+          const nameInput = doc.getElementById('whatsapp-template-name');
+          const languageInput = doc.getElementById('whatsapp-template-language');
+          const categoryInput = doc.getElementById('whatsapp-template-category');
+          const bodyInput = doc.getElementById('whatsapp-template-body');
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'created_at';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const CATEGORY_LABELS = {
+            UTILITY: 'Utility', MARKETING: 'Marketing', AUTHENTICATION: 'Authentication',
+          };
+          const META_STATUS_LABELS = {
+            pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada',
+          };
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'language', header: 'Idioma', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'category', header: 'Categoría', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'UTILITY', label: 'Utility' },
+                { value: 'MARKETING', label: 'Marketing' },
+                { value: 'AUTHENTICATION', label: 'Authentication' },
+              ],
+              format: (row) => CATEGORY_LABELS[row.category] ?? row.category,
+            },
+            {
+              key: 'meta_status', header: 'Estado Meta', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'pending', label: 'Pendiente' },
+                { value: 'approved', label: 'Aprobada' },
+                { value: 'rejected', label: 'Rechazada' },
+              ],
+              format: (row) => META_STATUS_LABELS[row.meta_status] ?? row.meta_status,
+            },
+            {
+              key: 'is_active', header: 'Activa', align: 'right', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: '1', label: 'Sí' },
+                { value: '0', label: 'No' },
+              ],
+              format: (row) => Number(row.is_active) ? 'Sí' : 'No',
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'document-text-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nombre o categoría…';
+          table.emptyMessage = 'Sin plantillas.';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+
+          function emitCommand(name, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = templates
+              .filter((row) => {
+                if (term && !row.name.toLocaleLowerCase('es').includes(term)) return false;
+                for (const [key, value] of Object.entries(filters)) {
+                  if (value == null || value === '') continue;
+                  if ((key === 'category' || key === 'meta_status') && row[key] !== value) return false;
+                  if (key === 'is_active' && String(row.is_active) !== String(value)) return false;
+                  if ((key === 'name' || key === 'language') && !String(row[key]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                }
+                return true;
+              })
+              .sort((left, right) => {
+                const a = left[sort];
+                const b = right[sort];
+                const result = typeof a === 'number' && typeof b === 'number'
+                  ? a - b
+                  : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+                return sortDir === 'desc' ? -result : result;
+              });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail?.sort || 'created_at';
+            sortDir = event.detail?.dir === 'asc' ? 'asc' : 'desc';
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const column = event.detail?.col;
+            if (!column) return;
+            filters = { ...filters, [column]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            if (!name) return;
+            const language = String(languageInput.value ?? '').trim() || 'es';
+            const category = String(categoryInput.value ?? 'UTILITY');
+            const body = String(bodyInput.value ?? '');
+            emitCommand('whatsapp_inbox.templates.create', {
+              name, language, category, header: '', body, footer: '', variables: '[]',
+            });
+            templates = [
+              {
+                id: `template-preview-${templates.length + 1}`,
+                name, language, category, body,
+                header: '', footer: '', variables: '[]', meta_template_id: '',
+                meta_status: 'pending', is_active: 1,
+                created_at: new Date().toISOString(), updated_at: null,
+              },
+              ...templates,
+            ];
+            form.reset();
+            languageInput.value = 'es';
+            categoryInput.value = 'UTILITY';
+            table.close();
+            page = 0;
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

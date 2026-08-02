@@ -3,409 +3,69 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Invitar usuarios a hubs</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <title>Invitar usuario - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-    </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-inline-feedback.js"></script>
     <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-      .ui-form-title { margin: 0 0 4px; font-size: 1.15rem; font-weight: 700; }
-      .ui-form-sub { margin: 0 0 18px; color: var(--ion-color-medium); font-size: .9rem; }
-
-      .ui-fields { display: flex; flex-direction: column; gap: 20px; }
-
-      .ui-label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
-      .ui-label--req::after { content: " *"; color: var(--ion-color-danger); }
-      .ui-hint { display: block; margin-top: 6px; font-size: .78rem; color: var(--ion-color-medium); }
-
-      /* Hubs: chips seleccionables. */
-      .ui-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-      .ui-chips ion-chip { margin: 0; }
-      .ui-chip-count { margin-left: 6px; }
-
-      /* Rol: radio-cards (mismo patrón que hubs-create). */
-      .ui-radio-cards { display: flex; flex-direction: column; gap: 10px; }
-      .ui-radio-card { margin: 0; }
-      .ui-radio-card ion-radio { width: 100%; }
-      .ui-radio-card__title { font-weight: 600; }
-      .ui-radio-card__desc { color: var(--ion-color-medium); font-size: .82rem; margin-top: 2px; }
-
-      /* Caducidad: segment a lo ancho. */
-      .ui-expiry { width: 100%; }
-
-      /* Permisos avanzados: filas con toggle. */
-      .ui-perm-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 12px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .ui-perm-row:first-of-type { border-top: 0; }
-      .ui-perm-row__text { flex: 1 1 auto; }
-      .ui-perm-row__label { font-weight: 600; font-size: .9rem; }
-      .ui-perm-row__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
-
-      /* Tarjetas sidebar. */
-      .ui-card-title { font-size: 1rem; font-weight: 700; }
-      .ui-card-sub { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
-
-      /* Mock del email. */
-      .ui-mail {
-        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 10px;
-        padding: 18px;
-        background: var(--ion-color-step-50, rgba(127,127,127,.05));
-      }
-      .ui-mail__eyebrow {
-        font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
-        color: var(--ion-color-medium); margin-bottom: 6px;
-      }
-      .ui-mail__subject { font-weight: 600; font-size: .95rem; margin: 0 0 14px; }
-      .ui-mail__from { font-size: .8rem; color: var(--ion-color-medium); margin: 0 0 14px; }
-      .ui-mail hr { border: 0; border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2)); margin: 14px 0; }
-      .ui-mail__hello { font-size: 1.3rem; font-weight: 700; margin: 0 0 10px; }
-      .ui-mail p { font-size: .9rem; line-height: 1.55; margin: 10px 0; }
-      .ui-mail__cta {
-        display: inline-block; margin-top: 16px;
-        background: var(--ion-color-primary); color: var(--ion-color-primary-contrast);
-        padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: .9rem;
-      }
-      .ui-mail__foot { font-size: .72rem; color: var(--ion-color-medium); margin: 0; }
-
-      /* Resumen. */
-      .ui-summary { display: flex; flex-direction: column; gap: 12px; font-size: .9rem; }
-      .ui-summary__row { display: flex; justify-content: space-between; align-items: center; }
-      .ui-summary__label { color: var(--ion-color-medium); }
-      .ui-summary__val { font-weight: 600; font-variant-numeric: tabular-nums; }
-
-      /* Footer de acciones. */
-      .ui-foot {
-        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        margin-top: 8px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        padding-top: 16px;
-      }
-      .ui-foot ion-button:last-child { margin-left: auto; min-width: 220px; }
-      @media (max-width: 600px) {
-        .ui-foot ion-button { width: 100%; }
-        .ui-foot ion-button:last-child { margin-left: 0; }
-      }
+      .form-card { max-width:42rem;margin-inline:auto; }
+      .stack { display:grid;gap:1rem; }
+      .hint { margin:-.5rem 0 0;color:var(--ion-color-medium);font-size:.8rem; }
+      .actions { display:flex;justify-content:flex-end;gap:.5rem;flex-wrap:wrap; }
     </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      definePage({
-        bare: true,
+      defineSaasDashboardPage({
+        active: '/dashboard/users/',
+        title: 'Invitar usuario',
         body: `
-          <ok-page-header
-            heading="Invitar usuarios a hubs"
-            description="Envía invitaciones a una o varias personas para que accedan a uno o varios hubs.">
-          </ok-page-header>
-
-          <ok-inline-feedback
-            class="pg-mb-4"
-            tone="info"
-            heading="Las invitaciones se envían inmediatamente">
-            Cada persona recibe un enlace seguro. Deben aceptar antes de la fecha de caducidad o el enlace deja de funcionar.
-          </ok-inline-feedback>
-
-          <div class="pg-cols">
-
-            <!-- IZQUIERDA · formulario -->
-            <ion-card>
-              <ion-card-content>
-                <h2 class="ui-form-title">Detalles de la invitación</h2>
-                <p class="ui-form-sub">Configura quién, dónde y con qué permisos.</p>
-
-                <div class="ui-fields">
-
-                  <!-- Emails -->
-                  <div>
-                    <label class="ui-label ui-label--req">Emails a invitar</label>
-                    <ok-tag-input id="emails" placeholder="añadir email…"></ok-tag-input>
-                    <small class="ui-hint">Escribe o pega varios emails separados por coma.</small>
-                  </div>
-
-                  <!-- Hubs (chips seleccionables) -->
-                  <div>
-                    <label class="ui-label ui-label--req">Hubs</label>
-                    <div class="ui-chips" id="hub-chips">
-                      <ion-chip class="ui-hub-chip" outline="false" color="primary" data-hub="acme-prod">
-                        <ion-icon name="checkmark-circle"></ion-icon>
-                        <ion-label>acme-prod</ion-label>
-                        <ion-badge class="ui-chip-count">12</ion-badge>
-                      </ion-chip>
-                      <ion-chip class="ui-hub-chip" outline="false" color="primary" data-hub="bodegas-casadejus">
-                        <ion-icon name="checkmark-circle"></ion-icon>
-                        <ion-label>bodegas-casadejus</ion-label>
-                        <ion-badge class="ui-chip-count">8</ion-badge>
-                      </ion-chip>
-                      <ion-chip class="ui-hub-chip" outline="true" data-hub="vinos-roca-staging">
-                        <ion-icon name="ellipse-outline"></ion-icon>
-                        <ion-label>vinos-roca-staging</ion-label>
-                        <ion-badge class="ui-chip-count">3</ion-badge>
-                      </ion-chip>
-                      <ion-chip class="ui-hub-chip" outline="true" data-hub="ferreteria-puig">
-                        <ion-icon name="ellipse-outline"></ion-icon>
-                        <ion-label>ferreteria-puig</ion-label>
-                        <ion-badge class="ui-chip-count">5</ion-badge>
-                      </ion-chip>
-                    </div>
-                    <small class="ui-hint" id="hub-hint">Seleccionados: 2 hubs</small>
-                  </div>
-
-                  <!-- Rol (radio-cards) -->
-                  <div>
-                    <label class="ui-label ui-label--req">Rol por hub</label>
-                    <ion-radio-group value="editor" class="ui-radio-cards">
-                      <ion-card class="ui-radio-card">
-                        <ion-card-content>
-                          <ion-radio value="admin" label-placement="end" justify="start">
-                            <span class="ui-radio-card__title">Admin</span>
-                            <span class="ui-radio-card__desc">Acceso total: usuarios, facturación y configuración del hub.</span>
-                          </ion-radio>
-                        </ion-card-content>
-                      </ion-card>
-                      <ion-card class="ui-radio-card">
-                        <ion-card-content>
-                          <ion-radio value="editor" label-placement="end" justify="start">
-                            <span class="ui-radio-card__title">Editor</span>
-                            <span class="ui-radio-card__desc">Crear y editar contenido y operaciones; sin facturación ni borrado.</span>
-                          </ion-radio>
-                        </ion-card-content>
-                      </ion-card>
-                      <ion-card class="ui-radio-card">
-                        <ion-card-content>
-                          <ion-radio value="viewer" label-placement="end" justify="start">
-                            <span class="ui-radio-card__title">Viewer</span>
-                            <span class="ui-radio-card__desc">Solo lectura · informes y dashboards.</span>
-                          </ion-radio>
-                        </ion-card-content>
-                      </ion-card>
-                      <ion-card class="ui-radio-card">
-                        <ion-card-content>
-                          <ion-radio value="pos" label-placement="end" justify="start">
-                            <span class="ui-radio-card__title">Solo POS</span>
-                            <span class="ui-radio-card__desc">Acceso únicamente al terminal de punto de venta.</span>
-                          </ion-radio>
-                        </ion-card-content>
-                      </ion-card>
-                    </ion-radio-group>
-                  </div>
-
-                  <!-- Mensaje -->
-                  <div>
-                    <label class="ui-label">Mensaje opcional</label>
-                    <ion-textarea
-                      fill="outline"
-                      rows="3"
-                      maxlength="500"
-                      placeholder="Hola, te invito a colaborar en el hub de Acme. Tu rol será Editor…"></ion-textarea>
-                  </div>
-
-                  <!-- Caducidad -->
-                  <div>
-                    <label class="ui-label">Caducidad de la invitación</label>
-                    <ion-segment value="7d" class="ui-expiry">
-                      <ion-segment-button value="24h"><ion-label>24 h</ion-label></ion-segment-button>
-                      <ion-segment-button value="7d"><ion-label>7 días</ion-label></ion-segment-button>
-                      <ion-segment-button value="30d"><ion-label>30 días</ion-label></ion-segment-button>
-                      <ion-segment-button value="none"><ion-label>Sin caducidad</ion-label></ion-segment-button>
-                    </ion-segment>
-                  </div>
-
-                  <!-- Permisos avanzados -->
-                  <div>
-                    <label class="ui-label">Permisos avanzados</label>
-                    <div class="ui-perm-row">
-                      <div class="ui-perm-row__text">
-                        <div class="ui-perm-row__label">Puede invitar a otros usuarios</div>
-                        <div class="ui-perm-row__desc">Permite reenviar invitaciones desde su cuenta.</div>
-                      </div>
-                      <ion-toggle></ion-toggle>
-                    </div>
-                    <div class="ui-perm-row">
-                      <div class="ui-perm-row__text">
-                        <div class="ui-perm-row__label">Ve facturación e informes financieros</div>
-                        <div class="ui-perm-row__desc">Acceso a facturas, pagos y reportes mensuales.</div>
-                      </div>
-                      <ion-toggle></ion-toggle>
-                    </div>
-                    <div class="ui-perm-row">
-                      <div class="ui-perm-row__text">
-                        <div class="ui-perm-row__label">Ve listado de usuarios del hub</div>
-                        <div class="ui-perm-row__desc">Ver miembros y sus roles, sin permitir cambios.</div>
-                      </div>
-                      <ion-toggle checked></ion-toggle>
-                    </div>
-                  </div>
-
-                </div>
-
-                <!-- Footer de acciones -->
-                <div class="ui-foot">
-                  <ion-button fill="outline">Cancelar</ion-button>
-                  <ion-button>
-                    <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
+          <ion-card class="form-card">
+            <ion-card-content>
+              <form id="invite-user-form" class="stack">
+                <ion-input id="invite-email" label="Correo electrónico" label-placement="floating"
+                           fill="outline" type="email" placeholder="usuario@ejemplo.com" required></ion-input>
+                <ion-select id="invite-organization" label="Organización *" label-placement="floating"
+                            fill="outline" interface="popover" value="demo">
+                  <ion-select-option value="demo">ERPlora Demo</ion-select-option>
+                  <ion-select-option value="central">Central Barcelona</ion-select-option>
+                </ion-select>
+                <ion-select id="invite-hub" label="Hub (opcional)" label-placement="floating"
+                            fill="outline" interface="popover" value="">
+                  <ion-select-option value="">Todos los hubs (nivel de organización)</ion-select-option>
+                  <ion-select-option value="principal">Terminal principal</ion-select-option>
+                  <ion-select-option value="tienda">Tienda Centro</ion-select-option>
+                </ion-select>
+                <p class="hint">Déjalo vacío para dar acceso a todos los hubs de la organización.</p>
+                <ion-select id="invite-role" label="Rol" label-placement="floating"
+                            fill="outline" interface="popover" value="member">
+                  <ion-select-option value="member">Miembro · Acceso a hubs asignados</ion-select-option>
+                  <ion-select-option value="admin">Administrador · Gestionar organización</ion-select-option>
+                  <ion-select-option value="owner">Propietario · Control total</ion-select-option>
+                </ion-select>
+                <ok-inline-feedback tone="info">
+                  Este usuario tendrá acceso a todos los hubs de la organización según su rol.
+                </ok-inline-feedback>
+                <div class="actions">
+                  <ion-button type="button" fill="outline">
+                    <iconify-icon slot="start" icon="lucide:arrow-left" width="14" height="14"></iconify-icon>
+                    Cancelar
+                  </ion-button>
+                  <ion-button type="submit">
+                    <iconify-icon slot="start" icon="lucide:send" width="14" height="14"></iconify-icon>
                     Enviar invitación
                   </ion-button>
                 </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- DERECHA · sidebar -->
-            <div class="pg-stack">
-
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title class="ui-card-title">Vista previa del email</ion-card-title>
-                  <div class="ui-card-sub">Esto recibirá cada invitado.</div>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="ui-mail">
-                    <div class="ui-mail__eyebrow">Asunto</div>
-                    <p class="ui-mail__subject">Te invitamos a unirte a ERPlora Cloud</p>
-                    <p class="ui-mail__from">De: Ioan Beilic · Acme Industries · ioan@acme.com</p>
-                    <hr />
-                    <p class="ui-mail__hello">Hola 👋</p>
-                    <p>Te he invitado a colaborar en 2 hubs como <strong>Editor</strong>.</p>
-                    <p>Pulsa el botón para activar tu acceso. La invitación caduca en <strong>7 días</strong>.</p>
-                    <span class="ui-mail__cta">Aceptar invitación →</span>
-                    <hr />
-                    <p class="ui-mail__foot">¿No esperabas esta invitación? Puedes ignorar este email — no se creará ninguna cuenta.</p>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title class="ui-card-title">Resumen</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="ui-summary">
-                    <div class="ui-summary__row">
-                      <span class="ui-summary__label">Invitaciones</span>
-                      <span class="ui-summary__val" id="sum-invites">6</span>
-                    </div>
-                    <div class="ui-summary__row">
-                      <span class="ui-summary__label">Hubs</span>
-                      <span class="ui-summary__val" id="sum-hubs">2</span>
-                    </div>
-                    <div class="ui-summary__row">
-                      <span class="ui-summary__label">Rol</span>
-                      <span class="ui-summary__val" id="sum-role">Editor</span>
-                    </div>
-                    <div class="ui-summary__row">
-                      <span class="ui-summary__label">Caducidad</span>
-                      <span class="ui-summary__val" id="sum-expiry">7 días</span>
-                    </div>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-            </div>
-
-          </div>
+              </form>
+            </ion-card-content>
+          </ion-card>
         `,
         setup(doc) {
-          // Estado simple del formulario para derivar el resumen.
-          const state = {
-            emails: ['ana.martin@bodegas-casadejus.com', 'sergi.puig@acme.com', 'nuria.roca@mariola.es'],
-            hubs: ['acme-prod', 'bodegas-casadejus'],
-            role: 'editor',
-            expiry: '7d',
-          };
-          const ROLE_LABEL = { admin: 'Admin', editor: 'Editor', viewer: 'Viewer', pos: 'Solo POS' };
-          const EXPIRY_LABEL = { '24h': '24 horas', '7d': '7 días', '30d': '30 días', none: 'Sin caducidad' };
-
-          // ok-tag-input: emails iniciales + sugerencias.
-          const tags = doc.getElementById('emails');
-          if (tags) {
-            tags.value = state.emails.slice();
-            tags.suggestions = [
-              'marc.vidal@acme.com',
-              'laia.ferrer@bodegas-casadejus.com',
-              'pau.serra@vinos-roca.com',
-              'eva.puig@ferreteria-puig.com',
-            ];
-          }
-
-          const sumInvites = doc.getElementById('sum-invites');
-          const sumHubs = doc.getElementById('sum-hubs');
-          const sumRole = doc.getElementById('sum-role');
-          const sumExpiry = doc.getElementById('sum-expiry');
-          const hubHint = doc.getElementById('hub-hint');
-
-          const recompute = () => {
-            const nEmails = state.emails.length;
-            const nHubs = state.hubs.length;
-            if (sumInvites) sumInvites.textContent = String(nEmails * nHubs);
-            if (sumHubs) sumHubs.textContent = String(nHubs);
-            if (sumRole) sumRole.textContent = ROLE_LABEL[state.role] || state.role;
-            if (sumExpiry) sumExpiry.textContent = EXPIRY_LABEL[state.expiry] || state.expiry;
-            if (hubHint) hubHint.textContent = 'Seleccionados: ' + nHubs + (nHubs === 1 ? ' hub' : ' hubs');
-          };
-
-          // Emails → recalcular al cambiar.
-          if (tags) {
-            tags.addEventListener('ok-change', (e) => {
-              const next = (e.detail && e.detail.tags) || tags.value || [];
-              state.emails = Array.isArray(next) ? next.slice() : [];
-              recompute();
-            });
-          }
-
-          // Hubs (chips): alternar selección.
-          doc.querySelectorAll('#hub-chips .ui-hub-chip').forEach((chip) => {
-            chip.addEventListener('click', () => {
-              const id = chip.getAttribute('data-hub');
-              const icon = chip.querySelector('ion-icon');
-              const on = state.hubs.includes(id);
-              if (on) {
-                state.hubs = state.hubs.filter((h) => h !== id);
-                chip.setAttribute('outline', 'true');
-                chip.removeAttribute('color');
-                if (icon) icon.setAttribute('name', 'ellipse-outline');
-              } else {
-                state.hubs = [...state.hubs, id];
-                chip.setAttribute('outline', 'false');
-                chip.setAttribute('color', 'primary');
-                if (icon) icon.setAttribute('name', 'checkmark-circle');
-              }
-              recompute();
-            });
-          });
-
-          // Rol (radio-group).
-          const roleGroup = doc.querySelector('ion-radio-group');
-          if (roleGroup) {
-            roleGroup.addEventListener('ionChange', (e) => {
-              state.role = (e.detail && e.detail.value) || state.role;
-              recompute();
-            });
-          }
-
-          // Caducidad (segment).
-          const expiry = doc.querySelector('.ui-expiry');
-          if (expiry) {
-            expiry.addEventListener('ionChange', (e) => {
-              state.expiry = (e.detail && e.detail.value) || state.expiry;
-              recompute();
-            });
-          }
-
-          recompute();
+          doc.getElementById('invite-user-form')?.addEventListener('submit', (event) => event.preventDefault());
         },
       });
     </script>

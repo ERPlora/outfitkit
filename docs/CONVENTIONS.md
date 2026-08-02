@@ -1,8 +1,11 @@
-# OutfitKit — convención de wrappers `ok-*`
+# OutfitKit — convenciones de componente `ok-*`
 
-OutfitKit es un **wrapper completo sobre Ionic**: el código de aplicación/módulo usa **solo `ok-*`**
-y nunca toca `ion-*` directamente. Cada componente esconde el `ion-*` equivalente y expone una API
-propia, estable y framework-agnóstica (sirve igual en Django, Lit, Vue…).
+OutfitKit **construye lo que Ionic no tiene**, por dentro sobre primitivos `ion-*` nativos que
+registra el host (ver README.md). **No** es un wrapper 1:1 de Ionic: el código de aplicación/módulo
+usa `ion-*` **directo** para botones, inputs, listas, modales, toolbars, layout/tabs — OutfitKit no
+los envuelve. Esto sustituye el enfoque anterior de "wrapper completo" (`ok-button`/`ok-input`/…),
+que se retiró por redundante. Las reglas de abajo aplican a los componentes `ok-*` reales (huecos y
+chrome web/marketing), incluidos los que por dentro usan uno o varios `ion-*` con eventos.
 
 ## Reglas
 
@@ -29,37 +32,45 @@ propia, estable y framework-agnóstica (sirve igual en Django, Lit, Vue…).
    El `ion-*` interno hereda el tema `--ion-*` del host, así que claro/oscuro funcionan solos.
 7. **CSP estricta**: sin `eval`/`new Function`. Verifica con `pnpm verify:csp`.
 
-## Esqueleto de un wrapper
+## Esqueleto de un componente (hueco que Ionic no cubre)
+
+Ejemplo real simplificado (`ok-qty-stepper`): usa `ion-button`/`ion-icon` nativos por dentro y
+expone su propio evento `ok-*`.
 
 ```ts
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
-import { relay } from '../../base/relay.js';
 
-export class OkInput extends LitElement {
-  static styles = css`:host { display: block; }`;
-  @property() value = '';
-  @property() placeholder?: string;
-  @property({ type: Boolean }) disabled = false;
+export class OkQtyStepper extends LitElement {
+  static styles = css`:host { display: inline-flex; }`;
+  @property({ type: Number }) value = 0;
+  @property({ type: Number }) min = 0;
+  @property({ type: Number }) max?: number;
+
+  #set(next: number) {
+    const clamped = Math.max(this.min, this.max != null ? Math.min(this.max, next) : next);
+    this.value = clamped;
+    this.dispatchEvent(new CustomEvent('ok-change', { detail: { value: clamped }, bubbles: true, composed: true }));
+  }
 
   render() {
-    return html`<ion-input
-      .value=${this.value}
-      placeholder=${this.placeholder ?? ''}
-      ?disabled=${this.disabled}
-      @ionInput=${(e: Event) => relay(this, e, 'ok-input')}
-      @ionChange=${(e: Event) => relay(this, e, 'ok-change')}
-    ></ion-input>`;
+    return html`<ion-button @click=${() => this.#set(this.value - 1)}>−</ion-button>
+      <span>${this.value}</span>
+      <ion-button @click=${() => this.#set(this.value + 1)}>+</ion-button>`;
   }
 }
-define('ok-input', OkInput);
+define('ok-qty-stepper', OkQtyStepper);
 ```
+
+Cuando el `ion-*` interno emite sus propios eventos (`ionInput`/`ionChange`…) y quieres
+normalizarlos, usa `relay(this, e, 'ok-…')` (`src/base/relay.ts`) en vez de reenviarlos a mano.
 
 ## Componentes que leen hijos tipados → API de datos
 
-`ok-select` (`options`), `ok-segment` (`items`). El consumidor pasa un array `{ value, label }`
-en lugar de componer `ion-select-option`/`ion-segment-button`.
+`ok-phone` (prop `countries`, renderiza `ion-select-option` por dentro). El consumidor pasa un
+array `{ iso, name, dial }` en lugar de componer los `ion-select-option`/`ion-segment-button`
+él mismo.
 
 ## Estado: store reactivo (IndexedDB)
 

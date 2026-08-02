@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Servicios</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .services-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      .services-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .services-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .services-form ion-button { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const SERVICE_FIXTURE = [
+        {
+          "id": "s1",
+          "name": "Corte",
+          "price": "12.00",
+          "pricing_type": "fixed",
+          "duration_minutes": 30,
+          "is_bookable": 1,
+          "category_id": "c1",
+          "category": "Peluquería",
+          "tax_category_key": "service.generic"
+        }
+      ];
+      const CATEGORY_FIXTURE = [
+        { "id": "c1", "name": "Peluquería", "slug": "peluqueria", "service_count": 2 },
+        { "id": "c2", "name": "Estética", "slug": "estetica", "service_count": 1 }
+      ];
+      const TAX_CATEGORY_FIXTURE = [
+        { "id": "tax-1", "key": "service.generic", "name": "Servicios" }
+      ];
+      const PRICING_TYPES = {
+        fixed: 'Precio fijo', hourly: 'Por hora', from: 'Desde', variable: 'Variable', free: 'Gratis',
+      };
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin servicios.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'servicio', recordPlural: 'servicios',
+      };
+
+      defineHubPage({
+        active: '/m/services/services',
+        title: 'Servicios',
+        body: `
+          <div class="services-page">
+            <ok-data-table id="services-table" fill>
+              <form id="services-form" slot="create" class="services-form">
+                <ion-input id="service-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-input id="service-price" type="number" step="0.01" fill="outline" label="Precio" label-placement="floating"></ion-input>
+                <ion-input id="service-duration" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-select id="service-category" fill="outline" label="Categoría" label-placement="floating">
+                  <ion-select-option value="">Sin categoría</ion-select-option>
+                  ${CATEGORY_FIXTURE.map((category) => `<ion-select-option value="${category.id}">${category.name}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-select id="service-tax-category" fill="outline" label="Categoría fiscal" label-placement="floating">
+                  <ion-select-option value="">Por defecto</ion-select-option>
+                  ${TAX_CATEGORY_FIXTURE.map((category) => `<ion-select-option value="${category.key}">${category.name} (${category.key})</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-button type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="services-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          let services = SERVICE_FIXTURE.map((service) => ({ ...service }));
+          const table = doc.getElementById('services-table');
+          const toast = doc.getElementById('services-toast');
+          const state = { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} };
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar servicios…';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'category', header: 'Categoría', sortable: true, filterable: true, filterType: 'select',
+              options: CATEGORY_FIXTURE.map((category) => ({ value: category.name, label: category.name })),
+              format: (row) => row.category ?? '—',
+            },
+            {
+              key: 'pricing_type', header: 'Tipo de precio', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'fixed', label: 'Precio fijo' },
+                { value: 'hourly', label: 'Por hora' },
+                { value: 'from', label: 'Desde' },
+                { value: 'variable', label: 'Variable' },
+                { value: 'free', label: 'Gratis' },
+              ],
+              format: (row) => PRICING_TYPES[row.pricing_type] ?? row.pricing_type,
+            },
+            { key: 'price', header: 'Precio', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => `${Number(row.price).toFixed(2)} €` },
+            { key: 'duration_minutes', header: 'Duración', align: 'right', sortable: true, filterable: true, filterType: 'text', format: (row) => `${row.duration_minutes} min` },
+          ];
+          table.actions = [{ id: 'delete', label: 'Eliminar', icon: 'trash', color: 'danger' }];
+
+          function matchesRange(value, filter) {
+            if (filter == null || filter === '') return true;
+            if (typeof filter !== 'object') return String(value).includes(String(filter));
+            const numeric = Number(value);
+            const min = filter.min ?? filter.from;
+            const max = filter.max ?? filter.to;
+            return (min == null || min === '' || numeric >= Number(min))
+              && (max == null || max === '' || numeric <= Number(max));
+          }
+
+          function queryPage() {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = services.filter((service) => {
+              if (search && !service.name.toLocaleLowerCase('es').includes(search)) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
+                if (key === 'price') return matchesRange(service.price, value);
+                if (Array.isArray(value)) return value.map(String).includes(String(service[key]));
+                return String(service[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+              });
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize);
+          }
+
+          function recordCommand(command, payload, message) {
+            console.info('[showcase command]', command, payload);
+            toast.message = message;
+            toast.present();
+          }
+
+          doc.getElementById('services-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = doc.getElementById('service-name').value?.trim();
+            if (!name) return;
+            const categoryId = doc.getElementById('service-category').value || null;
+            const category = CATEGORY_FIXTURE.find((item) => item.id === categoryId);
+            const row = {
+              id: `service-${Date.now()}`,
+              name,
+              description: '',
+              short_description: '',
+              category_id: categoryId,
+              category: category?.name ?? null,
+              pricing_type: 'fixed',
+              price: Number(doc.getElementById('service-price').value || 0),
+              cost: 0,
+              duration_minutes: Number(doc.getElementById('service-duration').value || 60),
+              buffer_before: 0,
+              buffer_after: 0,
+              max_capacity: 1,
+              is_bookable: 1,
+              requires_confirmation: 0,
+              allow_online_booking: 1,
+              sort_order: 0,
+              is_featured: 0,
+              sku: '',
+              barcode: '',
+              notes: '',
+              tax_category_key: doc.getElementById('service-tax-category').value || null,
+            };
+            services = [row, ...services];
+            recordCommand('services.services.create', row, 'Servicio añadido');
+            table.close();
+            queryPage();
+          });
+          table.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'delete') return;
+            services = services.filter((service) => service.id !== event.detail.row.id);
+            recordCommand('services.services.delete', { service_id: event.detail.row.id }, 'Servicio eliminado');
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => { state.page = event.detail; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = event.detail; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
+          table.addEventListener('searchChange', (event) => { state.search = event.detail; state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

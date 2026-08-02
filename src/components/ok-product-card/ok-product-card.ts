@@ -77,8 +77,9 @@ export class OkProductCard extends LitElement {
       mask: var(--u) center / contain no-repeat;
     }
     .cat {
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: var(--ok-type-eyebrow-size, 0.72rem);
+      font-weight: var(--ok-type-eyebrow-weight, 600);
+      line-height: var(--ok-type-eyebrow-leading, 1.2);
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--muted);
@@ -96,15 +97,15 @@ export class OkProductCard extends LitElement {
     }
     .name {
       margin: 0.3rem 0 0;
-      font-size: 1.05rem;
-      font-weight: 620;
+      font-size: var(--ok-type-card-title-size, 1.15rem);
+      font-weight: var(--ok-type-card-title-weight, 620);
       letter-spacing: -0.01em;
-      line-height: 1.25;
+      line-height: var(--ok-type-card-title-leading, 1.25);
     }
     .desc {
       color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.5;
+      font-size: var(--ok-type-card-body-size, 0.92rem);
+      line-height: var(--ok-type-card-body-leading, 1.55);
       flex: 1;
     }
     .foot {

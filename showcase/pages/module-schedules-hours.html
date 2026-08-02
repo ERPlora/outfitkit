@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Horarios</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .schedules-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      .schedules-tabs { padding: 0 0 0.75rem; }
+      .schedules-pane { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: 0.65rem; }
+      .schedules-pane[hidden] { display: none; }
+      .schedules-pane > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .schedule-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .schedule-form ion-button { align-self: flex-end; }
+      .schedule-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; }
+      .schedule-settings ion-button { justify-self: start; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const HOURS_FIXTURE = [
+        {
+          "id": "b1",
+          "day_of_week": 0,
+          "open_time": "09:00",
+          "close_time": "18:00",
+          "is_closed": 0,
+          "break_start": null,
+          "break_end": null
+        }
+      ];
+      const SPECIAL_FIXTURE = [
+        {
+          "id": "s1",
+          "date": "2026-12-25",
+          "name": "Navidad",
+          "is_closed": 1,
+          "open_time": null,
+          "close_time": null,
+          "recurring_yearly": 1,
+          "notes": ""
+        }
+      ];
+      const OVERRIDE_FIXTURE = [
+        {
+          "id": "o1",
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-15",
+          "reason": "Vacaciones",
+          "open_time": null,
+          "close_time": null,
+          "is_closed": 1
+        }
+      ];
+      const SETTINGS_FIXTURE = { timezone: 'Europe/Madrid', week_starts_on: 1, slot_duration: 30, auto_close_enabled: 0 };
+      const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const LABELS = {
+        search: 'Buscar…', empty: 'Sin resultados.', filters: 'Filtros', clear: 'Limpiar',
+        apply: 'Aplicar', moreActions: 'Más acciones', rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.', viewList: 'Vista lista', viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles', columns: 'Columnas', actions: 'Acciones',
+        close: 'Cerrar', filterPlaceholder: 'Filtrar…', noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de', recordSingular: 'registro', recordPlural: 'registros',
+      };
+
+      defineHubPage({
+        active: '/m/schedules/hours',
+        title: 'Horarios',
+        body: `
+          <div class="schedules-page">
+            <ion-segment id="schedules-tabs" class="schedules-tabs" value="hours" scrollable>
+              <ion-segment-button value="hours" data-tab="hours"><ion-label>Horario</ion-label></ion-segment-button>
+              <ion-segment-button value="special_days" data-tab="special_days"><ion-label>Días especiales</ion-label></ion-segment-button>
+              <ion-segment-button value="settings" data-tab="settings"><ion-label>Ajustes</ion-label></ion-segment-button>
+            </ion-segment>
+
+            <section id="schedule-pane-hours" class="schedules-pane">
+              <ok-data-table id="schedule-hours-table" fill>
+                <form id="schedule-hours-form" slot="create" class="schedule-form">
+                  <ion-select id="hours-day" value="0" fill="outline" label="Día" label-placement="floating">
+                    ${DAYS.map((day, index) => `<ion-select-option value="${index}">${day}</ion-select-option>`).join('')}
+                  </ion-select>
+                  <ion-input id="hours-open" value="09:00" type="time" fill="outline" label="Apertura" label-placement="floating"></ion-input>
+                  <ion-input id="hours-close" value="18:00" type="time" fill="outline" label="Cierre" label-placement="floating"></ion-input>
+                  <ion-toggle id="hours-closed">Cerrado</ion-toggle>
+                  <ion-input id="hours-break-start" type="time" fill="outline" label="Inicio descanso" label-placement="floating"></ion-input>
+                  <ion-input id="hours-break-end" type="time" fill="outline" label="Fin descanso" label-placement="floating"></ion-input>
+                  <ion-button type="submit" size="small">Guardar horario</ion-button>
+                </form>
+              </ok-data-table>
+            </section>
+
+            <section id="schedule-pane-special_days" class="schedules-pane" hidden>
+              <ok-data-table id="schedule-special-table" fill>
+                <form id="schedule-special-form" slot="create" class="schedule-form">
+                  <ion-input id="special-date" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+                  <ion-input id="special-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                  <ion-toggle id="special-closed" checked>Cerrado</ion-toggle>
+                  <ion-button type="submit" size="small">Añadir día especial</ion-button>
+                </form>
+              </ok-data-table>
+              <ok-data-table id="schedule-overrides-table" fill>
+                <form id="schedule-override-form" slot="create" class="schedule-form">
+                  <ion-input id="override-start" type="date" fill="outline" label="Desde" label-placement="floating"></ion-input>
+                  <ion-input id="override-end" type="date" fill="outline" label="Hasta" label-placement="floating"></ion-input>
+                  <ion-input id="override-reason" fill="outline" label="Motivo" label-placement="floating"></ion-input>
+                  <ion-button type="submit" size="small">Añadir excepción</ion-button>
+                </form>
+              </ok-data-table>
+            </section>
+
+            <section id="schedule-pane-settings" class="schedules-pane" hidden>
+              <form id="schedule-settings-form" class="schedule-settings">
+                <ion-input id="settings-timezone" value="Europe/Madrid" fill="outline" label="Zona horaria" label-placement="floating"></ion-input>
+                <ion-select id="settings-week-start" value="1" fill="outline" label="Inicio de semana" label-placement="floating">
+                  <ion-select-option value="1">Lunes</ion-select-option>
+                  <ion-select-option value="0">Domingo</ion-select-option>
+                </ion-select>
+                <ion-input id="settings-slot-duration" value="30" type="number" min="5" fill="outline" label="Duración de franja" label-placement="floating"></ion-input>
+                <ion-toggle id="settings-auto-close">Cierre automático</ion-toggle>
+                <ion-button type="submit" size="small">Guardar ajustes</ion-button>
+              </form>
+            </section>
+          </div>
+          <ion-toast id="schedules-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          let hours = HOURS_FIXTURE.map((row) => ({ ...row }));
+          let specialDays = SPECIAL_FIXTURE.map((row) => ({ ...row }));
+          let overrides = OVERRIDE_FIXTURE.map((row) => ({ ...row }));
+          let settings = { ...SETTINGS_FIXTURE };
+          const hoursTable = doc.getElementById('schedule-hours-table');
+          const specialTable = doc.getElementById('schedule-special-table');
+          const overridesTable = doc.getElementById('schedule-overrides-table');
+          const toast = doc.getElementById('schedules-toast');
+          const states = {
+            hours: { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} },
+            special: { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} },
+            overrides: { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} },
+          };
+          const closedOptions = [{ value: '1', label: 'Cerrado' }, { value: '0', label: 'Abierto' }];
+          const yesNoOptions = [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }];
+
+          function configureTable(table, cardIcon, state) {
+            table.serverSide = true;
+            table.fill = true;
+            table.addable = true;
+            table.views = true;
+            table.cardIcon = () => cardIcon;
+            table.searchable = true;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.labels = LABELS;
+          }
+
+          configureTable(hoursTable, 'time-outline', states.hours);
+          hoursTable.cardTitle = (row) => DAYS[row.day_of_week] ?? '—';
+          hoursTable.columns = [
+            { key: 'day_of_week', header: 'Día', sortable: true, filterable: true, filterType: 'select', options: DAYS.map((day, value) => ({ value: String(value), label: day })), format: (row) => DAYS[row.day_of_week] },
+            { key: 'open_time', header: 'Apertura', sortable: true, filterable: true, filterType: 'text', format: (row) => row.is_closed ? 'Cerrado' : row.open_time },
+            { key: 'close_time', header: 'Cierre', sortable: true, filterable: true, filterType: 'text', format: (row) => row.is_closed ? '—' : row.close_time },
+            { key: 'break_start', header: 'Descanso', sortable: true, filterable: true, filterType: 'text', format: (row) => row.break_start ? `${row.break_start}–${row.break_end ?? ''}` : '—' },
+          ];
+          hoursTable.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
+
+          configureTable(specialTable, 'star-outline', states.special);
+          specialTable.cardTitle = (row) => String(row.name ?? '—');
+          specialTable.columns = [
+            { key: 'date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'is_closed', header: 'Estado', sortable: true, filterable: true, filterType: 'select', options: closedOptions, format: (row) => row.is_closed ? 'Cerrado' : `${row.open_time ?? ''}–${row.close_time ?? ''}` },
+            { key: 'recurring_yearly', header: 'Anual', sortable: true, filterable: true, filterType: 'select', options: yesNoOptions, format: (row) => row.recurring_yearly ? 'Sí' : 'No' },
+          ];
+          specialTable.actions = [{ id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' }];
+
+          configureTable(overridesTable, 'calendar-clear-outline', states.overrides);
+          overridesTable.cardTitle = (row) => String(row.reason ?? '—');
+          overridesTable.columns = [
+            { key: 'start_date', header: 'Desde', sortable: true, filterable: true, filterType: 'daterange' },
+            { key: 'end_date', header: 'Hasta', sortable: true, filterable: true, filterType: 'daterange' },
+            { key: 'reason', header: 'Motivo', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'is_closed', header: 'Estado', sortable: true, filterable: true, filterType: 'select', options: closedOptions, format: (row) => row.is_closed ? 'Cerrado' : `${row.open_time ?? ''}–${row.close_time ?? ''}` },
+          ];
+          overridesTable.actions = [{ id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' }];
+
+          function queryPage(table, state, rows) {
+            const search = state.search.trim().toLocaleLowerCase('es');
+            let filtered = rows.filter((row) => {
+              if (search && !Object.values(row).join(' ').toLocaleLowerCase('es').includes(search)) return false;
+              return Object.entries(state.filters).every(([key, value]) => {
+                if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
+                if (Array.isArray(value)) return value.map(String).includes(String(row[key]));
+                return String(row[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+              });
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric: true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            Object.assign(table, { page: state.page, pageSize: state.pageSize, sort: state.sort, sortDir: state.dir, total: filtered.length, rows: filtered.slice(start, start + state.pageSize) });
+          }
+          const refreshHours = () => queryPage(hoursTable, states.hours, hours);
+          const refreshSpecial = () => queryPage(specialTable, states.special, specialDays);
+          const refreshOverrides = () => queryPage(overridesTable, states.overrides, overrides);
+          function command(name, payload, message) {
+            console.info('[showcase command]', name, payload);
+            toast.message = message;
+            toast.present();
+          }
+
+          doc.getElementById('schedules-tabs').addEventListener('ionChange', (event) => {
+            ['hours', 'special_days', 'settings'].forEach((tab) => {
+              doc.getElementById(`schedule-pane-${tab}`).hidden = event.detail.value !== tab;
+            });
+          });
+
+          doc.getElementById('schedule-hours-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const payload = {
+              day_of_week: Number(doc.getElementById('hours-day').value || 0),
+              open_time: doc.getElementById('hours-open').value || '09:00',
+              close_time: doc.getElementById('hours-close').value || '18:00',
+              is_closed: !!doc.getElementById('hours-closed').checked,
+              break_start: doc.getElementById('hours-break-start').value || null,
+              break_end: doc.getElementById('hours-break-end').value || null,
+            };
+            const current = hours.find((row) => row.day_of_week === payload.day_of_week);
+            hours = current ? hours.map((row) => row.id === current.id ? { ...row, ...payload } : row) : [...hours, { id: `h-${Date.now()}`, ...payload }];
+            command('schedules.business_hours.set', payload, 'Horario guardado');
+            hoursTable.close();
+            refreshHours();
+          });
+          hoursTable.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'edit') return;
+            const row = event.detail.row;
+            doc.getElementById('hours-day').value = String(row.day_of_week);
+            doc.getElementById('hours-open').value = row.open_time;
+            doc.getElementById('hours-close').value = row.close_time;
+            doc.getElementById('hours-closed').checked = !!row.is_closed;
+            doc.getElementById('hours-break-start').value = row.break_start || '';
+            doc.getElementById('hours-break-end').value = row.break_end || '';
+            hoursTable.open('create');
+          });
+
+          doc.getElementById('schedule-special-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const date = doc.getElementById('special-date').value;
+            const name = doc.getElementById('special-name').value;
+            if (!date || !name) return;
+            const row = { id: `s-${Date.now()}`, date, name, is_closed: doc.getElementById('special-closed').checked ? 1 : 0, open_time: null, close_time: null, recurring_yearly: 0, notes: '' };
+            specialDays = [row, ...specialDays];
+            command('schedules.special_days.create', { ...row, existing_dates: specialDays.map((item) => item.date) }, 'Día especial añadido');
+            specialTable.close();
+            refreshSpecial();
+          });
+          specialTable.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'delete') return;
+            specialDays = specialDays.filter((row) => row.id !== event.detail.row.id);
+            command('schedules.special_days.delete', { special_day_id: event.detail.row.id }, 'Día eliminado');
+            refreshSpecial();
+          });
+
+          doc.getElementById('schedule-override-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const start_date = doc.getElementById('override-start').value;
+            const end_date = doc.getElementById('override-end').value;
+            const reason = doc.getElementById('override-reason').value;
+            if (!start_date || !end_date || !reason) return;
+            const row = { id: `o-${Date.now()}`, start_date, end_date, reason, open_time: null, close_time: null, is_closed: 0 };
+            overrides = [row, ...overrides];
+            command('schedules.overrides.create', row, 'Excepción añadida');
+            overridesTable.close();
+            refreshOverrides();
+          });
+          overridesTable.addEventListener('rowAction', (event) => {
+            if (event.detail.actionId !== 'delete') return;
+            overrides = overrides.filter((row) => row.id !== event.detail.row.id);
+            command('schedules.overrides.delete', { override_id: event.detail.row.id }, 'Excepción eliminada');
+            refreshOverrides();
+          });
+
+          doc.getElementById('schedule-settings-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            settings = {
+              timezone: doc.getElementById('settings-timezone').value,
+              week_starts_on: Number(doc.getElementById('settings-week-start').value),
+              slot_duration: Number(doc.getElementById('settings-slot-duration').value),
+              auto_close_enabled: doc.getElementById('settings-auto-close').checked ? 1 : 0,
+            };
+            command('schedules.settings.save', settings, 'Ajustes guardados');
+          });
+
+          function connect(table, state, refresh) {
+            table.addEventListener('pageChange', (event) => { state.page = event.detail; refresh(); });
+            table.addEventListener('pageSizeChange', (event) => { state.pageSize = event.detail; state.page = 0; refresh(); });
+            table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; refresh(); });
+            table.addEventListener('searchChange', (event) => { state.search = event.detail; state.page = 0; refresh(); });
+            table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; refresh(); });
+          }
+          connect(hoursTable, states.hours, refreshHours);
+          connect(specialTable, states.special, refreshSpecial);
+          connect(overridesTable, states.overrides, refreshOverrides);
+          refreshHours();
+          refreshSpecial();
+          refreshOverrides();
+        },
+      });
+    </script>
+  </body>
+</html>

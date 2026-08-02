@@ -8,7 +8,7 @@ import { iconCloseOutline, iconNotificationsOffOutline, okIcon } from '../../bas
 // de avisos status-tintados, chips de filtro, contador de no-leídas y pie "marcar todas leídas").
 // AUTOCONTENIDO: scrim + panel propios (CSS en el shadow). Solo usa `ion-icon` (lo registra el host)
 // para iconos por nombre; las notificaciones pueden traer su propio SVG inline en `icon`.
-// Se compone como ok-drawer (lado 'end', columna header · filtros · lista scrollable · footer).
+// Se compone como panel lateral (lado 'end', columna header · filtros · lista scrollable · footer).
 //
 // Props:
 //   • `.items`   → Array<OkNotification> (datos declarativos, no demo hardcodeada).

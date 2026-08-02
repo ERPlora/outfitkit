@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Ajustes VeriFactu</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .verifactu-settings-page { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; max-width:72rem; margin:0 auto; align-items:start; }
+      .verifactu-settings-actions { display:flex; justify-content:flex-end; padding:.75rem 1rem; }
+      .verifactu-test-body { display:flex; flex-direction:column; gap:.7rem; }
+      .verifactu-test-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+      .verifactu-cert { width:100%; }
+      .verifactu-cert-head { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+      .verifactu-settings-note { display:block; line-height:1.4; }
+      [hidden] { display:none !important; }
+      @media (max-width:900px) { .verifactu-settings-page { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const PRODUCER = {
+        software_id: 'EC',
+        software_version: '1.0.0',
+        software_nif: 'B27593136',
+        software_name: 'ERPLORA CLOUD SL',
+      };
+      const config = {
+        enabled:true, mode:'verifactu', environment:'testing', issuer_nif:'B27593136',
+        issuer_name:'ERPLORA CLOUD SL', certificate_path:'', certificate_expiry:'2027-06-30',
+        has_certificate:1, has_password:1, auto_transmit:true,
+        retry_interval_minutes:5, max_retries:10,
+      };
+      const diagnostic = {
+        cert_ok:true, cert_message:'Certificado válido', environment:'testing',
+        huella:'EF5A891C8A40467B35B0F8D21C922D27F6F1D0CC6E1BA8BE5EEBB72B6896DC21',
+        qr_url:'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27593136',
+        aeat:{ ok:true, estado_registro:'Correcto', csv:'VF-TEST-2026' },
+      };
+
+      defineHubPage({
+        active: '/m/verifactu/settings',
+        title: 'Ajustes',
+        body: `
+          <ok-inline-feedback id="verifactu-settings-feedback" tone="success" icon="checkmark-circle-outline" hidden></ok-inline-feedback>
+          <div class="verifactu-settings-page">
+            <ion-card>
+              <form id="verifactu-settings-form">
+                <ion-list>
+                  <ion-item><ion-toggle id="verifactu-enabled">Activar VeriFactu</ion-toggle></ion-item>
+                  <ion-item>
+                    <ion-select id="verifactu-environment" label="Entorno AEAT" label-placement="stacked" interface="popover">
+                      <ion-select-option value="testing">Pruebas (AEAT Test)</ion-select-option>
+                      <ion-select-option value="production">Producción</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                  <ion-item><ion-input id="verifactu-issuer-nif" label="NIF del obligado tributario" label-placement="stacked" maxlength="15"></ion-input></ion-item>
+                  <ion-item><ion-input id="verifactu-issuer-name" label="Nombre / razón social del emisor" label-placement="stacked" maxlength="200"></ion-input></ion-item>
+                  <ion-item lines="none"><ion-note class="verifactu-settings-note">La AEAT valida el emisor y debe coincidir con el titular del certificado.</ion-note></ion-item>
+                  <ion-item>
+                    <ion-label class="ion-text-wrap">
+                      <strong>Identificación del software</strong><br />
+                      <ion-note>EC · 1.0.0 · B27593136 · ERPLORA CLOUD SL</ion-note>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <div class="verifactu-cert">
+                      <div class="verifactu-cert-head">
+                        <ion-label>Certificado PKCS#12</ion-label>
+                        <ok-status-pill id="verifactu-cert-status" dot tone="success" label="cargado ✓"></ok-status-pill>
+                      </div>
+                      <ion-button id="verifactu-certificate-pick" type="button" size="small" fill="outline">Elegir archivo…</ion-button>
+                      <input id="verifactu-certificate" type="file" accept=".p12,.pfx,application/x-pkcs12" hidden />
+                      <ion-note id="verifactu-certificate-name" class="verifactu-settings-note">Vacío = mantener el certificado actual.</ion-note>
+                    </div>
+                  </ion-item>
+                  <ion-item><ion-input id="verifactu-certificate-password" type="password" label="Contraseña del certificado" label-placement="stacked" placeholder="Vacío = no cambiarla"><ion-input-password-toggle slot="end"></ion-input-password-toggle></ion-input></ion-item>
+                  <ion-item><ion-input id="verifactu-certificate-path" label="Ruta del certificado (.p12)" label-placement="stacked" maxlength="500" placeholder="/ruta/al/certificado.p12"></ion-input></ion-item>
+                  <ion-item><ion-toggle id="verifactu-auto-transmit">Transmisión automática a AEAT</ion-toggle></ion-item>
+                  <ion-item><ion-input id="verifactu-retry-interval" type="number" min="1" max="1440" label="Intervalo de reintento (min)" label-placement="stacked"></ion-input></ion-item>
+                  <ion-item lines="none"><ion-input id="verifactu-max-retries" type="number" min="0" max="100" label="Máximo de reintentos" label-placement="stacked"></ion-input></ion-item>
+                </ion-list>
+                <div class="verifactu-settings-actions"><ion-button type="submit">Guardar</ion-button></div>
+              </form>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header><ion-card-title>Prueba en vivo</ion-card-title></ion-card-header>
+              <ion-card-content class="verifactu-test-body">
+                <ion-note>Verifica el certificado y hace un envío de prueba a la AEAT sin tocar la cadena real.</ion-note>
+                <ion-select id="verifactu-test-type" fill="outline" label="Tipo de prueba" label-placement="stacked" interface="popover">
+                  <ion-select-option value="F2">Tiquet simplificado (F2)</ion-select-option>
+                  <ion-select-option value="F1">Factura completa (F1)</ion-select-option>
+                </ion-select>
+                <div class="verifactu-test-actions">
+                  <ion-button id="verifactu-run-test">Enviar prueba</ion-button>
+                  <ion-button id="verifactu-create-test-invoice" fill="outline">Crear factura de prueba</ion-button>
+                </div>
+                <ok-inline-feedback id="verifactu-test-cert" tone="success" heading="Certificado" icon="ribbon-outline">Certificado válido.</ok-inline-feedback>
+                <ion-list>
+                  <ion-item><ion-label class="ion-text-wrap"><strong>Entorno</strong><p id="verifactu-test-environment">testing</p></ion-label></ion-item>
+                  <ion-item><ion-label class="ion-text-wrap"><strong>Huella de muestra</strong><p id="verifactu-test-hash"></p></ion-label></ion-item>
+                  <ion-item lines="none"><ion-label class="ion-text-wrap"><strong>Respuesta AEAT</strong><p id="verifactu-test-response">Correcto · CSV VF-TEST-2026</p></ion-label></ion-item>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
+          </div>
+        `,
+        setup(doc) {
+          const form = doc.getElementById('verifactu-settings-form');
+          const enabled = doc.getElementById('verifactu-enabled');
+          const environment = doc.getElementById('verifactu-environment');
+          const issuerNif = doc.getElementById('verifactu-issuer-nif');
+          const issuerName = doc.getElementById('verifactu-issuer-name');
+          const certificate = doc.getElementById('verifactu-certificate');
+          const certificatePassword = doc.getElementById('verifactu-certificate-password');
+          const certificatePath = doc.getElementById('verifactu-certificate-path');
+          const certificateName = doc.getElementById('verifactu-certificate-name');
+          const autoTransmit = doc.getElementById('verifactu-auto-transmit');
+          const retryInterval = doc.getElementById('verifactu-retry-interval');
+          const maxRetries = doc.getElementById('verifactu-max-retries');
+          const testType = doc.getElementById('verifactu-test-type');
+          const feedback = doc.getElementById('verifactu-settings-feedback');
+          let certificateBase64 = '';
+
+          function recordQuery(name, params = {}) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail:{ name, params } }));
+          }
+          function recordCommand(name, payload = {}) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+          }
+          function show(message, tone = 'success') {
+            feedback.hidden = false; feedback.tone = tone; feedback.textContent = message;
+          }
+          const toBase64 = (file) => file.arrayBuffer().then((buffer) => {
+            const bytes = new Uint8Array(buffer); let binary = '';
+            for (const byte of bytes) binary += String.fromCharCode(byte);
+            return btoa(binary);
+          });
+
+          function sync() {
+            enabled.checked = Boolean(config.enabled); environment.value = config.environment;
+            issuerNif.value = config.issuer_nif; issuerName.value = config.issuer_name;
+            certificatePath.value = config.certificate_path; autoTransmit.checked = Boolean(config.auto_transmit);
+            retryInterval.value = String(config.retry_interval_minutes); maxRetries.value = String(config.max_retries);
+            testType.value = 'F2';
+            doc.getElementById('verifactu-test-hash').textContent = diagnostic.huella;
+          }
+
+          doc.getElementById('verifactu-certificate-pick').addEventListener('click', () => certificate.click());
+          certificate.addEventListener('change', async () => {
+            const file = certificate.files?.[0];
+            if (!file) return;
+            certificateBase64 = await toBase64(file);
+            certificateName.textContent = `Nuevo: ${file.name} (se guardará al pulsar Guardar)`;
+          });
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const payload = {
+              enabled: Boolean(enabled.checked), mode: 'verifactu', environment: String(environment.value || 'testing'),
+              software_name: PRODUCER.software_name, software_version: PRODUCER.software_version,
+              software_id: PRODUCER.software_id, software_nif: PRODUCER.software_nif,
+              issuer_nif: String(issuerNif.value || '').trim().toUpperCase(), issuer_name: String(issuerName.value || ''),
+              certificate_path: String(certificatePath.value || ''),
+              certificate_password: String(certificatePassword.value || ''),
+              certificate_pkcs12: certificateBase64,
+              certificate_expiry: null, auto_transmit: Boolean(autoTransmit.checked),
+              retry_interval_minutes: Math.min(1440, Math.max(1, Number(retryInterval.value) || 5)),
+              max_retries: Math.min(100, Math.max(0, Number(maxRetries.value) || 0)),
+            };
+            recordCommand('verifactu.config.save', payload);
+            recordCommand('verifactu.certificate.inspect', {});
+            Object.assign(config, payload); certificatePassword.value = ''; certificateBase64 = '';
+            show('Configuración guardada correctamente.');
+          });
+          doc.getElementById('verifactu-run-test').addEventListener('click', () => {
+            recordCommand('verifactu.diagnostics.run', { invoice_type: String(testType.value || 'F2') });
+            show('Autodiagnóstico enviado.');
+          });
+          doc.getElementById('verifactu-create-test-invoice').addEventListener('click', () => {
+            if (String(environment.value) !== 'testing' || !String(issuerNif.value || '').trim()) {
+              show('La factura de prueba solo está disponible en el entorno de pruebas y con NIF.', 'warning'); return;
+            }
+            recordCommand('invoice.create', {
+              series_code:'TICKET', invoice_type:'F2', source_type:'test', notes:'Prueba VeriFactu',
+              items:[{ description:'Factura de PRUEBA VeriFactu (entorno de pruebas)', quantity:1, unit_price:100, tax_rate:21, product_id:null }],
+            });
+            show('Factura de prueba creada.');
+          });
+
+          recordQuery('verifactu.config.get', {});
+          recordQuery('verifactu.diagnostics.last', {});
+          sync();
+        },
+      });
+    </script>
+  </body>
+</html>

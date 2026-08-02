@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Pagos</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .payments-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .payments-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .payment-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .payment-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .payments-error {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Datos usados por las pruebas oficiales de erp-payments-list.
+      const PAYMENT_METHODS = [
+        {
+          "id": "m1",
+          "name": "Transferencia",
+          "method_type": "transfer",
+          "bank_account_ref": "ES00",
+          "is_active": 1
+        },
+        {
+          "id": "m2",
+          "name": "Caja",
+          "method_type": "cash",
+          "bank_account_ref": "",
+          "is_active": 1
+        }
+      ];
+
+      const PAYMENT_FIXTURE = [
+        {
+          "id": "p1",
+          "reference": "PAY-0001",
+          "payment_method_id": "m1",
+          "payment_date": "2026-07-13",
+          "amount": "250.00",
+          "currency": "EUR",
+          "beneficiary_name": "Proveedor SL",
+          "beneficiary_iban": "",
+          "concept": "Factura 12",
+          "status": "draft",
+          "supplier_invoice_ref": ""
+        }
+      ];
+
+      let payments = PAYMENT_FIXTURE.map((row) => ({ ...row }));
+
+      defineHubPage({
+        active: '/m/payments/list',
+        title: 'Pagos',
+        body: `
+          <div class="payments-page">
+            <p id="payments-error" class="payments-error" role="alert" hidden></p>
+            <ok-data-table id="payments-table" fill>
+              <form id="payment-create-form" slot="create" class="payment-create-form">
+                <ion-select id="payment-method" fill="outline" label="Método" label-placement="floating" placeholder="Método…" required>
+                  ${PAYMENT_METHODS.map((method) => `<ion-select-option value="${method.id}">${method.name}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-input id="payment-date" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
+                <ion-input id="payment-amount" fill="outline" label="Importe" label-placement="floating" type="number" step="0.01" min="0.01" required></ion-input>
+                <ion-input id="payment-beneficiary" fill="outline" label="Beneficiario" label-placement="floating" required></ion-input>
+                <ion-input id="payment-concept" fill="outline" label="Concepto" label-placement="floating"></ion-input>
+                <ion-button id="payment-save" type="submit">Nuevo pago</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+
+          <ion-alert id="payment-cancel-alert" header="Cancelar pago"></ion-alert>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('payments-table');
+          const form = doc.getElementById('payment-create-form');
+          const methodInput = doc.getElementById('payment-method');
+          const dateInput = doc.getElementById('payment-date');
+          const amountInput = doc.getElementById('payment-amount');
+          const beneficiaryInput = doc.getElementById('payment-beneficiary');
+          const conceptInput = doc.getElementById('payment-concept');
+          const error = doc.getElementById('payments-error');
+          const cancelAlert = doc.getElementById('payment-cancel-alert');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'payment_date';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const statusLabels = {
+            draft: 'Borrador',
+            approved: 'Aprobado',
+            sent: 'Enviado',
+            completed: 'Completado',
+            cancelled: 'Cancelado',
+          };
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          table.columns = [
+            { key: 'reference', header: 'Referencia', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'payment_date',
+              header: 'Fecha',
+              sortable: true,
+              filterable: true,
+              filterType: 'daterange',
+              format: (row) => String(row.payment_date ?? '').slice(0, 10),
+            },
+            { key: 'beneficiary_name', header: 'Beneficiario', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'amount',
+              header: 'Importe',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+              format: (row) => `${Number(row.amount).toFixed(2)} ${row.currency ?? ''}`.trim(),
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: [
+                { value: 'draft', label: 'Borrador' },
+                { value: 'approved', label: 'Aprobado' },
+                { value: 'sent', label: 'Enviado' },
+                { value: 'completed', label: 'Completado' },
+                { value: 'cancelled', label: 'Cancelado' },
+              ],
+              format: (row) => statusLabels[row.status] ?? row.status,
+            },
+          ];
+          table.actions = [
+            { id: 'advance', label: 'Avanzar', icon: 'arrow-forward', color: 'primary' },
+            { id: 'cancel', label: 'Cancelar', icon: 'close', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.reference || row.beneficiary_name || '—');
+          table.cardIcon = () => 'wallet-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar referencia o beneficiario…';
+          table.pageSize = 50;
+          table.sort = 'payment_date';
+          table.sortDir = 'desc';
+          table.emptyMessage = 'Sin pagos.';
+
+          function rangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            const number = Number(value);
+            return (from == null || number >= from) && (to == null || number <= to);
+          }
+
+          function dateRangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const date = String(value ?? '').slice(0, 10);
+            return (!range.from || date >= String(range.from).slice(0, 10))
+              && (!range.to || date <= String(range.to).slice(0, 10));
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = payments.filter((payment) => {
+              if (term && !`${payment.reference} ${payment.beneficiary_name} ${payment.supplier_invoice_ref}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'amount' && !rangeMatch(payment.amount, value)) return false;
+                if (column === 'payment_date' && !dateRangeMatch(payment.payment_date, value)) return false;
+                if (column === 'status' && payment.status !== value) return false;
+                if ((column === 'reference' || column === 'beneficiary_name')
+                  && !String(payment[column]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+
+            filtered.sort((left, right) => {
+              const a = sort === 'amount' ? Number(left[sort]) : String(left[sort] ?? '');
+              const b = sort === 'amount' ? Number(right[sort]) : String(right[sort] ?? '');
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function advanceStatus(status) {
+            switch (status) {
+              case 'draft':
+                return 'approved';
+              case 'approved':
+                return 'sent';
+              case 'sent':
+                return 'completed';
+              default:
+                return null;
+            }
+          }
+
+          function openCancellation(payment) {
+            cancelAlert.message = `${payment.reference} · ${payment.beneficiary_name}`;
+            cancelAlert.inputs = [{ name: 'reason', type: 'text', placeholder: 'Motivo de cancelación' }];
+            cancelAlert.buttons = [
+              { text: 'Volver', role: 'cancel' },
+              {
+                text: 'Cancelar pago',
+                role: 'destructive',
+                handler(values) {
+                  const reason = String(values?.reason ?? '').trim();
+                  if (!reason) {
+                    showError('Indica el motivo de cancelación.');
+                    return false;
+                  }
+                  payment.status = 'cancelled';
+                  payment.concept = `${payment.concept}${payment.concept ? ' ' : ''}[CANCELLED] ${reason}`;
+                  showError();
+                  queryPage();
+                  return true;
+                },
+              },
+            ];
+            cancelAlert.present();
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const payment = payments.find((candidate) => candidate.id === row.id);
+            if (!payment) return;
+
+            if (actionId === 'cancel') {
+              if (payment.status === 'completed' || payment.status === 'cancelled') {
+                showError('El pago ya no admite cancelación.');
+                return;
+              }
+              openCancellation(payment);
+              return;
+            }
+
+            if (actionId === 'advance') {
+              const nextStatus = advanceStatus(payment.status);
+              if (!nextStatus) {
+                showError('El pago no admite más transiciones.');
+                return;
+              }
+              payment.status = nextStatus;
+              showError();
+              queryPage();
+            }
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const methodId = String(methodInput.value ?? '');
+            const paymentDate = String(dateInput.value ?? '');
+            const amount = Number(amountInput.value);
+            const beneficiary = String(beneficiaryInput.value ?? '').trim();
+            const concept = String(conceptInput.value ?? '').trim();
+
+            if (!methodId || !paymentDate || !beneficiary || !Number.isFinite(amount) || amount <= 0) {
+              showError('Método, fecha, importe y beneficiario son obligatorios.');
+              return;
+            }
+
+            const sequence = payments.length + 1;
+            payments = [...payments, {
+              id: `payment-${sequence}`,
+              reference: `PAY-${paymentDate.replaceAll('-', '')}-${String(sequence).padStart(4, '0')}`,
+              payment_method_id: methodId,
+              payment_date: paymentDate,
+              amount: amount.toFixed(2),
+              currency: 'EUR',
+              beneficiary_name: beneficiary,
+              beneficiary_iban: '',
+              concept,
+              status: 'draft',
+              supplier_invoice_ref: '',
+            }];
+            methodInput.value = '';
+            dateInput.value = '';
+            amountInput.value = '';
+            beneficiaryInput.value = '';
+            conceptInput.value = '';
+            page = 0;
+            showError();
+            table.close();
+            queryPage();
+          });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

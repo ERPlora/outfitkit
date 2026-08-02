@@ -12,9 +12,9 @@ secret**. npm y GitHub establecen una relación de confianza; en cada publicaci�
 token efímero, firmado y específico de este workflow, que no se puede extraer ni reutilizar. En
 repo público, npm genera **provenance** automáticamente (prueba criptográfica de origen del build).
 
-Tú solo cortas la *release* (bump + tag + push); la Action publica sola.
+No cortas nada a mano: **la Action bumpea, taggea y publica sola** al mergear a `main` (ver abajo).
 
-## Prerrequisitos (una sola vez, en npmjs — columna del humano)
+## Prerrequisitos (una sola vez, en npmjs — requiere acceso a la cuenta org `erplora` en npmjs.com)
 
 1. **Scope `@erplora`.** El paquete `@erplora/outfitkit` se publica bajo la org npm `erplora`,
    **que ya existe** (el publicador es owner) — no hay que crear nada.
@@ -37,24 +37,32 @@ Tú solo cortas la *release* (bump + tag + push); la Action publica sola.
 
 ## Cortar una release
 
-```sh
-npm run release      # release-it: pregunta el bump (patch/minor/major)
-```
+**No hay paso manual: el único acto humano es mergear el PR a `main`.**
 
-`release-it` (config en [`.release-it.json`](../.release-it.json)):
+[`.github/workflows/publish.yml`](../.github/workflows/publish.yml) se dispara con un **push a
+`main`** que toque `src/**`, `vite.config*.ts` o `tsconfig*.json` — **no** con un tag. Entonces:
 
-1. corre el gate local `build` → `typecheck` → `verify:csp` (falla rápido si el `dist` no está sano),
-2. sube la `version` en `package.json`,
-3. commitea `chore: release vX.Y.Z`,
-4. crea el tag anotado `vX.Y.Z` y hace `push` del commit + el tag.
+1. corre el gate `build` → `typecheck` → `verify:csp` (hook `before:init` de release-it),
+2. ejecuta **`release-it patch --ci`**: sube la `version` en `package.json`, commitea
+   `chore: release vX.Y.Z`, crea el tag anotado y los pushea,
+3. hace `npm publish --access public` autenticándose por **OIDC** (sin token).
 
-El `push` del tag `v*` dispara
-[`.github/workflows/publish.yml`](../.github/workflows/publish.yml), que repite el gate
-(build/typecheck/csp), comprueba `tag == package.json.version`, **no republica** si la versión ya
-existe, y hace `npm publish --access public` autenticándose por **OIDC** (sin token).
+Detalles que conviene no deshacer sin leer el workflow:
 
-`release-it` tiene `npm.publish: false` a propósito: **no** publica desde local; deja que la Action
-publique con la confianza OIDC del servidor.
+- **El bump es siempre `patch` y lo decide la CI**, a partir de lo que haya en `main`. **No subas
+  la versión a mano en tu rama**: provoca conflicto de merge y, resuelto mal, `main` retrocede a
+  una versión ya publicada y el siguiente release muere con
+  `403 cannot publish over previously published version`.
+- Para un **minor/major**, o para publicar un cambio que no toca `src/**` (p. ej. solo
+  dependencias), usa **`workflow_dispatch`** sobre `publish.yml`.
+- `package.json` está **excluido** del filtro de `paths` a propósito: si no, el propio commit de
+  bump del bot volvería a disparar el workflow en bucle. Por el mismo motivo hay un guard que
+  ignora los commits que empiezan por `chore: release v`.
+- `release-it` tiene `npm.publish: false` a propósito: **no** publica; deja que el paso siguiente
+  publique con la confianza OIDC del servidor.
+
+⚠️ **`ci.yml` no ejecuta `npm test`** — solo `build`, `typecheck` y `verify:csp`. Los tests
+(`npx vitest run`) hay que correrlos **en local** antes de abrir el PR; nadie los va a correr por ti.
 
 ## Verificar
 

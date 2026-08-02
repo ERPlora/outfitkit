@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Copia de seguridad</title>
+
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+
+    <style>
+      .backup-page { max-width:72rem; margin:0 auto; }
+      .backup-status { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+      .backup-status p { margin:.2rem 0; color:var(--ion-color-medium); }
+      .backup-status strong { color:var(--ion-text-color); }
+      .backup-history-head { margin:1.25rem 0 .5rem; font-size:1.05rem; }
+      .backup-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%; }
+      .backup-date { color:var(--ion-color-medium); font-size:.82rem; }
+      @media (max-width:520px) { .backup-status ion-button { width:100%; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // No hay seed en el módulo: estas tres filas cubren el dominio exacto de backup_log.
+      const BACKUP_FIXTURE = [
+        {
+          "id": "backup-1",
+          "created_at": "2026-07-18T06:00:00Z",
+          "s3_key": "backups/local/demo/2026-07-18.dump",
+          "size_bytes": 13002342,
+          "status": "uploaded",
+          "error": null
+        },
+        {
+          "id": "backup-2",
+          "created_at": "2026-07-18T20:30:00Z",
+          "s3_key": null,
+          "size_bytes": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "id": "backup-3",
+          "created_at": "2026-07-17T06:00:00Z",
+          "s3_key": null,
+          "size_bytes": null,
+          "status": "failed",
+          "error": "No se pudo completar la subida"
+        }
+      ];
+
+      const STATUS_META = {
+        pending: { label:'En cola', color:'medium' },
+        uploaded: { label:'Subida', color:'success' },
+        failed: { label:'Error', color:'danger' },
+      };
+      const SCHEDULE_LABELS = {
+        daily: 'Diaria',
+        weekly: 'Semanal',
+        manual: 'Manual',
+      };
+      const settings = {
+        enabled:1,
+        schedule:'daily',
+        retention_days:7,
+        last_backup_at:'2026-07-18T06:00:00Z',
+      };
+      let backups = BACKUP_FIXTURE.map((row) => ({ ...row }));
+      const queryLog = [];
+      const commandLog = [];
+
+      function recordQuery(name, params = {}) {
+        queryLog.push({ name, params:{ ...params } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail:{ name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload:{ ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+      }
+
+      function formatDate(iso) {
+        if (!iso) return '—';
+        const date = new Date(iso);
+        return Number.isNaN(date.getTime()) ? iso : new Intl.DateTimeFormat('es-ES', {
+          dateStyle:'medium', timeStyle:'short',
+        }).format(date);
+      }
+
+      function formatSize(bytes) {
+        if (bytes == null) return '—';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      defineHubPage({
+        active: '/m/backup/backup',
+        title: 'Copia de seguridad',
+        body: `
+          <div class="backup-page">
+            <ion-card>
+              <ion-card-content class="backup-status">
+                <div>
+                  <p>Última copia: <strong id="backup-last">—</strong></p>
+                  <p>Programación: <strong id="backup-schedule-label">—</strong></p>
+                </div>
+                <ion-button id="backup-now">
+                  <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+                  Hacer copia ahora
+                </ion-button>
+              </ion-card-content>
+            </ion-card>
+            <h2 class="backup-history-head">Historial</h2>
+            <ion-card>
+              <ion-list id="backup-history"></ion-list>
+            </ion-card>
+          </div>
+          <ion-toast id="backup-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const last = doc.getElementById('backup-last');
+          const schedule = doc.getElementById('backup-schedule-label');
+          const runButton = doc.getElementById('backup-now');
+          const history = doc.getElementById('backup-history');
+          const toast = doc.getElementById('backup-toast');
+
+          function renderHistory() {
+            history.replaceChildren();
+            if (!backups.length) {
+              const empty = doc.createElement('ion-item');
+              empty.lines = 'none';
+              empty.textContent = 'Aún no hay copias.';
+              history.append(empty);
+              return;
+            }
+            backups.forEach((backup, index) => {
+              const item = doc.createElement('ion-item');
+              item.lines = index === backups.length - 1 ? 'none' : 'full';
+              const row = doc.createElement('div');
+              row.className = 'backup-row';
+              const details = doc.createElement('div');
+              const size = doc.createElement('div');
+              size.textContent = formatSize(backup.size_bytes);
+              const date = doc.createElement('div');
+              date.className = 'backup-date';
+              date.textContent = formatDate(backup.created_at);
+              details.append(size, date);
+              const badge = doc.createElement('ion-badge');
+              const meta = STATUS_META[backup.status] ?? { label:backup.status, color:'medium' };
+              badge.color = meta.color;
+              badge.textContent = meta.label;
+              row.append(details, badge);
+              item.append(row);
+              history.append(item);
+            });
+          }
+
+          function refresh() {
+            recordQuery('backup.settings.get', {});
+            recordQuery('backup.list', {});
+            last.textContent = formatDate(settings.last_backup_at);
+            schedule.textContent = settings.enabled
+              ? (SCHEDULE_LABELS[settings.schedule] ?? settings.schedule)
+              : 'desactivada';
+            renderHistory();
+          }
+
+          runButton.addEventListener('click', () => {
+            runButton.disabled = true;
+            recordCommand('backup.create', { trigger: 'manual' });
+            backups = [{
+              id:`preview-backup-${backups.length + 1}`,
+              created_at:new Date().toISOString(),
+              s3_key:null,
+              size_bytes:null,
+              status: 'pending',
+              error:null,
+            }, ...backups];
+            renderHistory();
+            toast.message = 'Copia añadida a la cola.';
+            toast.color = 'medium';
+            toast.isOpen = true;
+            runButton.disabled = false;
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          refresh();
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -3,728 +3,139 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Editar módulo</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Editar módulo · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-
-      /* Cabecera de módulo: badge de estado + meta info. */
-      .mod-meta {
-        display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-        font-size: .85rem;
-        color: var(--ion-color-medium);
-        margin-top: 4px;
-      }
-      .mod-meta code { font-size: .82rem; }
-
-      /* Tabs de la página (ion-segment como barra de navegación de secciones). */
-      .page-tabs {
-        width: 100%;
-        margin-bottom: 16px;
-      }
-
-      /* Columnas del tab General: 2/3 + 1/3. */
-      .tab-general-cols {
-        display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-        gap: 16px;
-        align-items: start;
-      }
-      @media (max-width: 900px) {
-        .tab-general-cols { grid-template-columns: 1fr; }
-      }
-
-      /* Panel de tab ocultable. */
-      .tab-panel { display: contents; }
-      .tab-panel[hidden] { display: none !important; }
-
-      /* Campos del formulario. */
-      .form-stack { display: flex; flex-direction: column; gap: 16px; }
-
-      /* Fila de dos campos en línea. */
-      .form-row {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-      }
-      @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
-
-      /* Grupo input con prefijo/sufijo (slug). */
-      .input-group {
-        display: flex; align-items: stretch;
-        border: 1.5px solid var(--ion-border-color, rgba(127,127,127,.3));
-        border-radius: 8px; overflow: hidden;
-        background: var(--ion-item-background, var(--ion-background-color));
-      }
-      .input-group__addon {
-        display: flex; align-items: center; padding: 0 10px;
-        background: var(--ion-color-step-50, rgba(127,127,127,.07));
-        border-right: 1px solid var(--ion-border-color, rgba(127,127,127,.3));
-        font-size: .85rem; color: var(--ion-color-medium);
-        white-space: nowrap;
-      }
-      .input-group__addon--btn {
-        border-right: 0;
-        border-left: 1px solid var(--ion-border-color, rgba(127,127,127,.3));
-        cursor: pointer; background: var(--ion-color-step-50, rgba(127,127,127,.07));
-      }
-      .input-group__addon--btn ion-icon { font-size: 15px; }
-      .input-group ion-input { flex: 1 1 auto; --padding-start: 10px; --padding-end: 0; }
-
-      /* Portada del módulo. */
-      .cover-box {
-        aspect-ratio: 16 / 9; max-width: 480px;
-        border-radius: 10px; overflow: hidden; position: relative;
-        background: linear-gradient(135deg, hsl(16deg 45% 33%) 0%, hsl(16deg 80% 55%) 100%);
-        display: flex; align-items: center; justify-content: center;
-      }
-      .cover-box__label {
-        color: #fff; font-weight: 700; font-size: 18px; letter-spacing: .04em;
-      }
-      .cover-box__actions {
-        position: absolute; top: 8px; right: 8px; display: flex; gap: 6px;
-      }
-
-      /* Tipos de negocio: checkboxes en rejilla. */
-      .check-group {
-        display: flex; flex-wrap: wrap; gap: 8px 16px;
-      }
-      .check-item {
-        display: flex; align-items: center; gap: 6px; font-size: .9rem;
-      }
-
-      /* Toggle rows (soporte oficial / certificado). */
-      .toggle-row {
-        display: flex; align-items: flex-start; justify-content: space-between;
-        gap: 12px; padding: 8px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-      .toggle-row:first-of-type { border-top: 0; padding-top: 0; }
-      .toggle-row__text { flex: 1 1 auto; font-size: .9rem; }
-      .toggle-row__sub { color: var(--ion-color-medium); font-size: .78rem; margin-top: 2px; }
-
-      /* Sidebar: resumen con filas key-value. */
-      .summary-rows { display: flex; flex-direction: column; gap: 10px; font-size: .875rem; }
-      .summary-row { display: flex; justify-content: space-between; align-items: center; }
-      .summary-row__label { color: var(--ion-color-medium); }
-      .summary-row__val { font-weight: 600; }
-      .summary-row a { color: var(--ion-color-primary); text-decoration: none; }
-
-      /* Card de acciones rápidas: botones apilados. */
-      .quick-actions { display: flex; flex-direction: column; gap: 8px; }
-      .quick-actions hr {
-        border: 0; border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        margin: 4px 0;
-      }
-
-      /* Footer sticky de acciones. */
-      .save-bar {
-        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-        padding: 12px 0; margin-top: 16px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .save-bar__meta {
-        flex: 1 1 auto; font-size: .78rem; color: var(--ion-color-medium);
-        white-space: nowrap;
-      }
-      @media (max-width: 600px) {
-        .save-bar { flex-direction: column; align-items: stretch; }
-        .save-bar__meta { text-align: center; }
-      }
-
-      /* Config: toggle rows reutilizables. */
-      .config-rows { display: flex; flex-direction: column; gap: 4px; }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'modules',
+        title: 'Inventario Avanzado',
         body: `
-          <!-- ── Cabecera de página ──────────────────────────────────────────── -->
-          <ok-page-header
-            heading="Editar: POS Caja Registradora Pro"
-            level="1">
-            <div slot="description" class="mod-meta">
-              <ion-badge color="medium">v3.2.1</ion-badge>
-              <ok-status-pill tone="success" dot label="Publicado"></ok-status-pill>
-              <span class="pg-muted"><code>@ioanb/pos-pro</code> · 2 184 descargas · ★ 4.8 (124)</span>
-            </div>
-            <div slot="actions">
-              <ion-button fill="outline" size="small">
-                <ion-icon slot="start" name="eye-outline"></ion-icon>
-                Vista pública
-              </ion-button>
-            </div>
-          </ok-page-header>
-
-          <!-- ── Tabs de sección ──────────────────────────────────────────────── -->
-          <ion-segment id="mod-tabs" value="general" class="page-tabs">
-            <ion-segment-button value="general"><ion-label>General</ion-label></ion-segment-button>
-            <ion-segment-button value="versions">
-              <ion-label>Versiones <ion-badge color="primary">5</ion-badge></ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="stats"><ion-label>Estadísticas</ion-label></ion-segment-button>
-            <ion-segment-button value="reviews">
-              <ion-label>Reseñas <ion-badge color="medium">124</ion-badge></ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="config"><ion-label>Configuración</ion-label></ion-segment-button>
-          </ion-segment>
-
-          <!-- ══════════════════════════════════════════════════════════════════
-               Tab: General
-          ══════════════════════════════════════════════════════════════════════ -->
-          <div id="tab-general" class="tab-general-cols">
-
-            <!-- COLUMNA IZQUIERDA -->
-            <div class="pg-stack">
-
-              <!-- Información general -->
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Información general</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="form-stack">
-
-                    <!-- Nombre -->
-                    <ion-input
-                      label="Nombre"
-                      label-placement="stacked"
-                      fill="outline"
-                      value="POS Caja Registradora Pro">
-                    </ion-input>
-
-                    <!-- Slug (solo lectura) -->
-                    <div>
-                      <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">
-                        Slug <span class="pg-muted" style="font-weight:400;">(no editable)</span>
-                      </div>
-                      <div class="input-group">
-                        <span class="input-group__addon">@ioanb/</span>
-                        <ion-input value="pos-pro" readonly style="--background:var(--ion-color-step-50,rgba(127,127,127,.07))"></ion-input>
-                        <button class="input-group__addon input-group__addon--btn" id="copy-slug" aria-label="Copiar slug">
-                          <ion-icon name="copy-outline"></ion-icon>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Categoría primaria + secundarias -->
-                    <div class="form-row">
-                      <ion-select
-                        label="Categoría primaria"
-                        label-placement="stacked"
-                        fill="outline"
-                        value="pos">
-                        <ion-select-option value="pos">POS · Punto de venta</ion-select-option>
-                        <ion-select-option value="accounting">Contabilidad</ion-select-option>
-                        <ion-select-option value="inventory">Inventario</ion-select-option>
-                      </ion-select>
-
-                      <div>
-                        <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">Categorías secundarias</div>
-                        <ok-tag-input id="cat-tags" placeholder="Añadir…"></ok-tag-input>
-                      </div>
-                    </div>
-
-                    <!-- Descripción corta -->
-                    <ion-input
-                      label="Descripción corta (máx 160 car.)"
-                      label-placement="stacked"
-                      fill="outline"
-                      value="TPV completo con caja, turnos, cajón, impresora térmica y facturación electrónica TicketBAI/Verifactu."
-                      helper-text="112 / 160 caracteres">
-                    </ion-input>
-
-                    <!-- Descripción larga (ok-rich-text) -->
-                    <div>
-                      <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">Descripción larga (Markdown)</div>
-                      <ok-rich-text id="mod-richtext"></ok-rich-text>
-                    </div>
-
-                    <!-- Imagen de portada -->
-                    <div>
-                      <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">Imagen de portada</div>
-                      <div class="cover-box">
-                        <span class="cover-box__label">POS PRO · v3.2</span>
-                        <div class="cover-box__actions">
-                          <ion-button size="small" fill="outline" color="light">Reemplazar</ion-button>
-                          <ion-button size="small" fill="clear" color="light">Eliminar</ion-button>
-                        </div>
-                      </div>
-                      <p style="font-size:.78rem;color:var(--ion-color-medium);margin-top:6px;">
-                        PNG/JPG · 1280×720 recomendado · máx 2 MB
-                      </p>
-                    </div>
-
-                    <!-- Tags -->
-                    <div>
-                      <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">Tags</div>
-                      <ok-tag-input id="mod-tags" placeholder="Añadir tag…"></ok-tag-input>
-                    </div>
-
-                    <!-- Tipos de negocio -->
-                    <div>
-                      <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">Tipos de negocio compatibles</div>
-                      <div class="check-group">
-                        <label class="check-item">
-                          <ion-checkbox checked></ion-checkbox>
-                          <span>Retail</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox checked></ion-checkbox>
-                          <span>Restauración</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox checked></ion-checkbox>
-                          <span>Servicios</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox></ion-checkbox>
-                          <span>Manufactura</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox checked></ion-checkbox>
-                          <span>Hostelería</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox></ion-checkbox>
-                          <span>e-commerce</span>
-                        </label>
-                        <label class="check-item">
-                          <ion-checkbox></ion-checkbox>
-                          <span>Logística</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <!-- Toggles -->
-                    <div class="form-row">
-                      <div class="toggle-row">
-                        <div class="toggle-row__text">
-                          <strong>Soporte oficial</strong>
-                          <div class="toggle-row__sub">Respondes a issues en &lt; 48 h.</div>
-                        </div>
-                        <ion-toggle checked></ion-toggle>
-                      </div>
-                      <div class="toggle-row" style="opacity:.7">
-                        <div class="toggle-row__text">
-                          <strong>Certified by ERPlora</strong>
-                          <ion-badge color="success" style="margin-left:6px;vertical-align:middle;">Certificado</ion-badge>
-                          <div class="toggle-row__sub">Auditoría aprobada el 12 mar 2026.</div>
-                        </div>
-                        <ion-toggle checked disabled></ion-toggle>
-                      </div>
-                    </div>
-
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-              <!-- Card de versiones (resumen en tab General) -->
-              <ion-card>
-                <ion-card-header>
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                    <div>
-                      <ion-card-title>Versiones</ion-card-title>
-                      <p class="pg-muted" style="font-size:.82rem;margin:2px 0 0;">5 versiones publicadas · v3.2.1 activa</p>
-                    </div>
-                    <ion-button fill="outline" size="small">
-                      <ion-icon slot="start" name="add-outline"></ion-icon>
-                      Nueva versión
-                    </ion-button>
-                  </div>
-                </ion-card-header>
-                <ion-card-content style="padding:0;">
-                  <ok-data-table id="vers-summary-dt" style="display:block;"></ok-data-table>
-                </ion-card-content>
-              </ion-card>
-            </div>
-
-            <!-- COLUMNA DERECHA (sidebar) -->
-            <div class="pg-stack">
-
-              <!-- Acciones rápidas -->
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Acciones rápidas</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="quick-actions">
-                    <ion-button expand="block" fill="outline">
-                      <ion-icon slot="start" name="ban-outline"></ion-icon>
-                      Despublicar
-                    </ion-button>
-                    <ion-button expand="block" fill="outline">
-                      <ion-icon slot="start" name="pause-outline"></ion-icon>
-                      Pausar
-                    </ion-button>
-                    <ion-button expand="block" fill="outline">
-                      <ion-icon slot="start" name="copy-outline"></ion-icon>
-                      Duplicar
-                    </ion-button>
-                    <ion-button expand="block" fill="outline">
-                      <ion-icon slot="start" name="download-outline"></ion-icon>
-                      Exportar manifest
-                    </ion-button>
-                    <hr />
-                    <ion-button expand="block" color="danger" fill="outline">
-                      <ion-icon slot="start" name="trash-outline"></ion-icon>
-                      Eliminar módulo
-                    </ion-button>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-              <!-- Resumen -->
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Resumen</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="summary-rows">
-                    <div class="summary-row">
-                      <span class="summary-row__label">Repositorio</span>
-                      <span class="summary-row__val"><a href="#">@ioanb/pos-pro</a></span>
-                    </div>
-                    <div class="summary-row">
-                      <span class="summary-row__label">Rama</span>
-                      <span class="summary-row__val"><code>main</code></span>
-                    </div>
-                    <div class="summary-row">
-                      <span class="summary-row__label">Auto-sync</span>
-                      <ok-status-pill tone="success" dot label="Activo"></ok-status-pill>
-                    </div>
-                    <div class="summary-row">
-                      <span class="summary-row__label">Última sync</span>
-                      <span class="summary-row__val">hace 4 min</span>
-                    </div>
-                    <div class="summary-row">
-                      <span class="summary-row__label">Hubs activos</span>
-                      <span class="summary-row__val">412</span>
-                    </div>
-                    <div class="summary-row">
-                      <span class="summary-row__label">Precio</span>
-                      <span class="summary-row__val">€29 /mes</span>
-                    </div>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-
-            </div>
-          </div>
-
-          <!-- ══════════════════════════════════════════════════════════════════
-               Tab: Versiones
-          ══════════════════════════════════════════════════════════════════════ -->
-          <div id="tab-versions" hidden>
-            <ok-data-table
-              id="versions-dt"
-              search-placeholder="Filtrar versión…"
-              style="display:block;">
-            </ok-data-table>
-          </div>
-
-          <!-- ══════════════════════════════════════════════════════════════════
-               Tab: Estadísticas
-          ══════════════════════════════════════════════════════════════════════ -->
-          <div id="tab-stats" hidden>
-
-            <!-- 4 KPIs -->
-            <div class="pg-grid pg-grid-4 pg-mb-4">
-              <ok-kpi
-                label="Descargas totales"
-                value="2 184"
-                delta="+12% mes"
-                trend="up"
-                icon="cloud-download-outline">
-              </ok-kpi>
-              <ok-kpi
-                label="Hubs activos"
-                value="412"
-                delta="+8 esta semana"
-                trend="up"
-                icon="cube-outline">
-              </ok-kpi>
-              <ok-kpi
-                label="Rating"
-                value="4.8 ★"
-                delta="124 reseñas"
-                trend="flat"
-                icon="star-outline">
-              </ok-kpi>
-              <ok-kpi
-                label="Ingresos / mes"
-                value="€11 948"
-                delta="+€1 240"
-                trend="up"
-                icon="card-outline">
-              </ok-kpi>
-            </div>
-
-            <!-- Gráfico de descargas -->
+          <form class="developer-page developer-section-stack">
             <ion-card>
-              <ion-card-header>
-                <ion-card-title>Descargas últimos 30 días</ion-card-title>
-              </ion-card-header>
               <ion-card-content>
-                <ok-sparkline
-                  id="downloads-spark"
-                  type="bar"
-                  filled
-                  width="100%"
-                  height="120"
-                  style="display:block;">
-                </ok-sparkline>
-              </ion-card-content>
-            </ion-card>
-          </div>
-
-          <!-- ══════════════════════════════════════════════════════════════════
-               Tab: Reseñas
-          ══════════════════════════════════════════════════════════════════════ -->
-          <div id="tab-reviews" hidden>
-            <ok-data-table id="reviews-dt" style="display:block;"></ok-data-table>
-          </div>
-
-          <!-- ══════════════════════════════════════════════════════════════════
-               Tab: Configuración
-          ══════════════════════════════════════════════════════════════════════ -->
-          <div id="tab-config" hidden>
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Configuración del módulo</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="form-stack">
-
-                  <!-- Visibilidad -->
-                  <div>
-                    <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;">Visibilidad</div>
-                    <ion-segment id="visibility-seg" value="public">
-                      <ion-segment-button value="public"><ion-label>Público</ion-label></ion-segment-button>
-                      <ion-segment-button value="unlisted"><ion-label>No listado</ion-label></ion-segment-button>
-                      <ion-segment-button value="private"><ion-label>Privado</ion-label></ion-segment-button>
-                    </ion-segment>
+                <div class="developer-summary">
+                  <div class="developer-summary-icon"><iconify-icon icon="lucide:box" width="28" height="28"></iconify-icon></div>
+                  <div class="developer-summary-body">
+                    <h2>Inventario Avanzado</h2>
+                    <p><ion-badge color="success">Publicado</ion-badge> &nbsp; <code>v1.8.0</code></p>
                   </div>
-
-                  <!-- Toggles de config -->
-                  <div class="config-rows">
-                    <div class="toggle-row">
-                      <div class="toggle-row__text">
-                        <strong>Auto-sync con repositorio</strong>
-                        <div class="toggle-row__sub">Despliega automáticamente al detectar cambios en main.</div>
-                      </div>
-                      <ion-toggle id="toggle-autosync" checked></ion-toggle>
-                    </div>
-                    <div class="toggle-row">
-                      <div class="toggle-row__text">
-                        <strong>Permitir fork</strong>
-                        <div class="toggle-row__sub">Otros desarrolladores pueden bifurcar este módulo.</div>
-                      </div>
-                      <ion-toggle id="toggle-fork"></ion-toggle>
-                    </div>
-                    <div class="toggle-row">
-                      <div class="toggle-row__text">
-                        <strong>Programa beta</strong>
-                        <div class="toggle-row__sub">Permitir suscripciones a versiones pre-release.</div>
-                      </div>
-                      <ion-toggle id="toggle-beta" checked></ion-toggle>
-                    </div>
+                  <div class="developer-summary-actions">
+                    <ion-button fill="outline" size="small"><iconify-icon slot="start" icon="lucide:cloud-off" width="13" height="13"></iconify-icon>Despublicar</ion-button>
+                    <ion-button fill="outline" size="small"><iconify-icon slot="start" icon="lucide:refresh-cw" width="13" height="13"></iconify-icon>Sincronizar desde Git</ion-button>
+                    <ion-button fill="outline" size="small"><iconify-icon slot="start" icon="lucide:bar-chart-3" width="13" height="13"></iconify-icon>Estadísticas</ion-button>
                   </div>
-
                 </div>
               </ion-card-content>
             </ion-card>
-          </div>
 
-          <!-- ── Barra de guardado ────────────────────────────────────────── -->
-          <div class="save-bar">
-            <span class="save-bar__meta">Borrador autoguardado · 14:32 · 4 cambios sin publicar</span>
-            <ion-button fill="clear">Cancelar</ion-button>
-            <ion-button fill="outline">Guardar borrador</ion-button>
-            <ion-button>Publicar cambios</ion-button>
-          </div>
-        `,
+            <ion-card>
+              <ion-card-content>
+                <h2 class="developer-card-title">Taxonomía</h2>
+                <p class="developer-card-subtitle">Elige una subcategoría principal y los tipos de negocio para los que sirve el módulo.</p>
+                <div class="developer-fields two-col">
+                  <div>
+                    <ion-select label="Categoría *" label-placement="stacked" fill="outline" interface="popover" value="COMM">
+                      <ion-select-option value="COMM">COM · Comercial</ion-select-option>
+                      <ion-select-option value="FIN">FIN · Finanzas</ion-select-option>
+                      <ion-select-option value="OPER">OPER · Operaciones</ion-select-option>
+                    </ion-select>
+                    <p class="developer-field-help">Agrupa subcategorías bajo una unidad macro.</p>
+                  </div>
+                  <div>
+                    <ion-select label="Subcategoría principal *" label-placement="stacked" fill="outline" interface="popover" value="inventory">
+                      <ion-select-option value="inventory">COMM · Inventario</ion-select-option>
+                      <ion-select-option value="catalog">COMM · Catálogo</ion-select-option>
+                    </ion-select>
+                    <p class="developer-field-help">Clasificación principal usada por los clientes para encontrar el módulo.</p>
+                  </div>
+                  <div>
+                    <ion-select label="Subcategorías secundarias" label-placement="stacked" fill="outline" interface="popover" multiple value='["catalog"]'>
+                      <ion-select-option value="catalog">COMM · Catálogo</ion-select-option>
+                      <ion-select-option value="purchase">OPER · Compras</ion-select-option>
+                    </ion-select>
+                    <p class="developer-field-help">Etiquetas cruzadas opcionales.</p>
+                  </div>
+                  <div>
+                    <ion-select label="Tipos de negocio *" label-placement="stacked" fill="outline" interface="popover" multiple value='["retail","restaurant"]'>
+                      <ion-select-option value="retail">Comercio minorista</ion-select-option>
+                      <ion-select-option value="restaurant">Restaurantes</ion-select-option>
+                      <ion-select-option value="services">Servicios profesionales</ion-select-option>
+                    </ion-select>
+                    <p class="developer-field-help">Al menos uno es obligatorio.</p>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
 
-        setup(doc) {
-          // ── Tabs ──────────────────────────────────────────────────────────
-          const tabs = doc.getElementById('mod-tabs');
-          const panels = {
-            general:  doc.getElementById('tab-general'),
-            versions: doc.getElementById('tab-versions'),
-            stats:    doc.getElementById('tab-stats'),
-            reviews:  doc.getElementById('tab-reviews'),
-            config:   doc.getElementById('tab-config'),
-          };
+            <div class="developer-grid">
+              <ion-card>
+                <ion-card-content>
+                  <h2 class="developer-card-title">Clasificación</h2>
+                  <p class="developer-card-subtitle">Sectores, unidades funcionales y países de destino.</p>
+                  <span class="developer-field-label">Sector</span>
+                  <div class="developer-chip-row">
+                    <ion-chip color="primary"><ion-label>Comercio</ion-label></ion-chip>
+                    <ion-chip><ion-label>Hostelería</ion-label></ion-chip>
+                    <ion-chip><ion-label>Servicios</ion-label></ion-chip>
+                  </div>
+                  <span class="developer-field-label ion-margin-top">Unidad funcional</span>
+                  <div class="developer-chip-row">
+                    <ion-chip color="primary"><ion-label>Operaciones</ion-label></ion-chip>
+                    <ion-chip><ion-label>Finanzas</ion-label></ion-chip>
+                    <ion-chip><ion-label>Cumplimiento</ion-label></ion-chip>
+                  </div>
+                  <span class="developer-field-label ion-margin-top">Países</span>
+                  <p class="developer-field-help">Opcional. Déjalo vacío si el módulo es universal.</p>
+                  <div class="developer-chip-row ion-margin-top">
+                    <ion-chip color="primary"><ion-label>España</ion-label></ion-chip>
+                    <ion-chip><ion-label>Portugal</ion-label></ion-chip>
+                    <ion-chip><ion-label>Francia</ion-label></ion-chip>
+                  </div>
+                </ion-card-content>
+              </ion-card>
 
-          const showTab = (val) => {
-            Object.entries(panels).forEach(([key, el]) => {
-              if (!el) return;
-              if (key === val) {
-                el.removeAttribute('hidden');
-              } else {
-                el.setAttribute('hidden', '');
-              }
-            });
-          };
+              <ion-card>
+                <ion-card-content>
+                  <h2 class="developer-card-title">Precios</h2>
+                  <p class="developer-card-subtitle">El precio está declarado en module.json y se aplica en cada sincronización; no se puede editar aquí.</p>
+                  <div class="developer-data-row"><span>Plan</span><ion-badge color="warning">Premium</ion-badge></div>
+                  <div class="developer-data-row"><span>Tipo de módulo</span><strong>Suscripción</strong></div>
+                  <div class="developer-data-row"><span>Planes</span><strong>Pro — 19,00 €/mes</strong></div>
+                  <p class="developer-field-help">ERPlora aplica una comisión del 15%. Recibes el 85% del precio de venta.</p>
+                </ion-card-content>
+              </ion-card>
+            </div>
 
-          if (tabs) {
-            tabs.addEventListener('ionChange', (e) => {
-              showTab((e.detail && e.detail.value) || 'general');
-            });
-          }
+            <div class="developer-actions">
+              <ion-button type="submit"><iconify-icon slot="start" icon="lucide:save" width="14" height="14"></iconify-icon>Guardar cambios</ion-button>
+              <ion-button type="button" fill="outline">Cancelar</ion-button>
+            </div>
 
-          // ── Categorías secundarias (ok-tag-input) ─────────────────────────
-          const catTags = doc.getElementById('cat-tags');
-          if (catTags) {
-            catTags.value = ['Caja', 'Tickets', 'Verifactu'];
-            catTags.suggestions = ['Facturación', 'TPV', 'Hostelería', 'Retail'];
-          }
-
-          // ── Tags del módulo (ok-tag-input) ────────────────────────────────
-          const modTags = doc.getElementById('mod-tags');
-          if (modTags) {
-            modTags.value = ['tpv', 'caja', 'verifactu', 'ticketbai', 'esc-pos'];
-            modTags.suggestions = ['pos', 'hostelería', 'retail', 'impresora'];
-          }
-
-          // ── Copiar slug ───────────────────────────────────────────────────
-          const copyBtn = doc.getElementById('copy-slug');
-          if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-              navigator.clipboard && navigator.clipboard.writeText('@ioanb/pos-pro');
-            });
-          }
-
-          // ── Rich text de descripción larga ───────────────────────────────
-          const richText = doc.getElementById('mod-richtext');
-          if (richText) {
-            richText.value = '<h2>Características principales</h2>'
-              + '<p>POS Caja Registradora Pro es un módulo completo de punto de venta diseñado para retail y hostelería en España. Incluye gestión de turnos, control de cajón, impresión térmica ESC/POS y facturación electrónica conforme a <strong>TicketBAI</strong> y <strong>Verifactu</strong> (RD 1007/2023).</p>'
-              + '<h3>Hardware compatible</h3>'
-              + '<ul><li>Impresoras Epson TM-T20III · TM-T88VII · TM-m30II</li><li>Cajones portamonedas RJ11 / RJ12 (24 V)</li><li>Lectores de código USB-HID y Bluetooth</li><li>Pantalla cliente secundaria (módulo opcional)</li></ul>'
-              + '<h3>Integraciones</h3>'
-              + '<p>Conexión nativa con <em>Contabilidad Plus PGC07</em>, <em>Inventario multitienda</em> y la pasarela <em>Stripe Avanzada</em> del mismo autor.</p>';
-          }
-
-          // ── ok-data-table de versiones (tab Versiones) ───────────────────
-          const versDt = doc.getElementById('versions-dt');
-          if (versDt) {
-            versDt.title = 'Todas las versiones';
-            versDt.searchable = true;
-            versDt.searchKeys = ['version', 'changelog'];
-            versDt.primaryAction = { label: 'Nueva versión', icon: 'add' };
-            versDt.columns = [
-              {
-                key: 'version', header: 'Versión', width: 'minmax(8rem,1fr)',
-                render: (r) => r.active
-                  ? h`<span><strong>${r.version}</strong> <ion-badge style="--background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);--color:var(--ion-color-success);--padding-top:3px;--padding-bottom:3px">Activa</ion-badge></span>`
-                  : h`<strong>${r.version}</strong>`,
-              },
-              { key: 'date', header: 'Fecha', width: '9rem' },
-              { key: 'changelog', header: 'Changelog', width: 'minmax(14rem,2fr)' },
-              {
-                key: 'status', header: 'Estado', width: '9rem',
-                render: (r) => h`<ok-status-pill tone="${r.active ? 'success' : 'neutral'}" label="${r.active ? 'Publicado' : 'Archivada'}"></ok-status-pill>`,
-              },
-              { key: 'downloads', header: 'Descargas', width: '8rem', align: 'right' },
-            ];
-            versDt.rowActions = [
-              {
-                label: 'Promote', icon: 'arrow-up-outline',
-                hidden: (r) => r.active,
-              },
-              { label: 'Más opciones', icon: 'ellipsis-vertical-outline' },
-            ];
-            versDt.rows = [
-              { version: 'v3.2.1', date: '02 may 2026', changelog: 'Fix: error parseo XML Verifactu lote > 100 tickets', downloads: 412, active: true },
-              { version: 'v3.2.0', date: '18 abr 2026', changelog: 'Feature: pantalla cliente secundaria · soporte Epson TM-m30II', downloads: 798, active: false },
-              { version: 'v3.1.4', date: '05 abr 2026', changelog: 'Fix: timeouts cajón monedas RJ11 firmware > 1.4', downloads: 312, active: false },
-              { version: 'v3.1.0', date: '10 mar 2026', changelog: 'Feature: turnos múltiples · arqueo automático · export CSV', downloads: 489, active: false },
-              { version: 'v3.0.0', date: '22 ene 2026', changelog: 'Major: rediseño UI · breaking changes API tickets', downloads: 173, active: false },
-            ];
-          }
-
-          // ── Sparkline de descargas (tab Estadísticas) ─────────────────────
-          const spark = doc.getElementById('downloads-spark');
-          if (spark) {
-            spark.values = [18, 24, 30, 28, 35, 40, 38, 45, 42, 50, 48, 55,
-                            60, 58, 65, 62, 70, 68, 72, 75, 73, 78, 80, 82,
-                            79, 85, 88, 84, 90, 87];
-          }
-
-          // ── Versiones (resumen embebido en tab General) ───────────────────
-          const versSummaryDt = doc.getElementById('vers-summary-dt');
-          if (versSummaryDt) {
-            versSummaryDt.searchable = false;
-            versSummaryDt.columns = [
-              {
-                key: 'version', header: 'Versión', width: 'minmax(7rem,1fr)',
-                render: (r) => r.active
-                  ? h`<span><strong>${r.version}</strong> <ion-badge style="--background:color-mix(in srgb, var(--ion-color-success) 15%, transparent);--color:var(--ion-color-success);--padding-top:3px;--padding-bottom:3px">Activa</ion-badge></span>`
-                  : h`<strong>${r.version}</strong>`,
-              },
-              { key: 'date', header: 'Fecha', width: '9rem' },
-              { key: 'changelog', header: 'Changelog', width: 'minmax(12rem,2fr)' },
-              {
-                key: 'status', header: 'Estado', width: '8rem',
-                render: (r) => h`<ok-status-pill tone="${r.active ? 'success' : 'neutral'}" label="${r.active ? 'Publicado' : 'Archivada'}"></ok-status-pill>`,
-              },
-            ];
-            versSummaryDt.rowActions = [
-              { label: 'Promote', icon: 'arrow-up-outline', hidden: (r) => r.active },
-              { label: 'Más opciones', icon: 'ellipsis-vertical-outline' },
-            ];
-            versSummaryDt.rows = [
-              { version: 'v3.2.1', date: '02 may 2026', changelog: 'Fix: error parseo XML Verifactu lote > 100 tickets', active: true },
-              { version: 'v3.2.0', date: '18 abr 2026', changelog: 'Feature: pantalla cliente secundaria · soporte Epson TM-m30II', active: false },
-              { version: 'v3.1.4', date: '05 abr 2026', changelog: 'Fix: timeouts cajón monedas RJ11 firmware > 1.4', active: false },
-              { version: 'v3.1.0', date: '10 mar 2026', changelog: 'Feature: turnos múltiples · arqueo automático · export CSV', active: false },
-              { version: 'v3.0.0', date: '22 ene 2026', changelog: 'Major: rediseño UI · breaking changes API tickets', active: false },
-            ];
-          }
-
-          // ── Reseñas (ok-data-table) ───────────────────────────────────────
-          const reviewsDt = doc.getElementById('reviews-dt');
-          if (reviewsDt) {
-            reviewsDt.title = 'Reseñas (124) · Promedio 4.8 ★';
-            reviewsDt.searchable = true;
-            reviewsDt.searchKeys = ['author', 'body'];
-            reviewsDt.columns = [
-              { key: 'author', header: 'Usuario', width: 'minmax(10rem,1.2fr)' },
-              {
-                key: 'stars', header: 'Valoración', width: '9rem',
-                render: (r) => h`<span style="color:var(--ion-color-warning);letter-spacing:1px">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>`,
-              },
-              { key: 'body', header: 'Comentario', width: 'minmax(14rem,2fr)' },
-              { key: 'date', header: 'Fecha', width: '9rem' },
-            ];
-            reviewsDt.rowActions = [
-              { label: 'Responder', icon: 'chatbubble-outline' },
-              { label: 'Ocultar', icon: 'eye-off-outline' },
-            ];
-            reviewsDt.rows = [
-              { author: 'María R. · Bar Tapas Cornellà', stars: 5, body: 'Lo mejor que he probado para hostelería. Verifactu funciona a la primera.', date: '08 may 2026' },
-              { author: 'Jordi S. · Tienda Modas', stars: 5, body: 'Soporte oficial responde rápido. Recomendado.', date: '02 may 2026' },
-              { author: 'Anna C. · Restaurante Mas', stars: 4, body: 'Muy completo, falta integración con TPV externos NCR.', date: '24 abr 2026' },
-              { author: 'Pere G. · Auditoría', stars: 3, body: 'Funciona bien pero la curva de aprendizaje es alta.', date: '15 abr 2026' },
-            ];
-          }
-        },
+            <ion-card color="light">
+              <ion-card-content>
+                <div class="developer-summary">
+                  <div class="developer-summary-body">
+                    <h2 class="developer-card-title" style="color:var(--ion-color-danger)">Eliminar este módulo</h2>
+                    <p>El módulo y todos sus datos se eliminarán de forma permanente.</p>
+                  </div>
+                  <ion-button type="button" color="danger" fill="outline" size="small"><iconify-icon slot="start" icon="lucide:trash-2" width="13" height="13"></iconify-icon>Eliminar</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </form>`,
       });
     </script>
   </body>

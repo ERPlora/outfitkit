@@ -1,6 +1,6 @@
 {
   "name": "@erplora/outfitkit",
-  "version": "0.1.18",
+  "version": "0.1.31",
   "description": "OutfitKit — librería de Web Components (Lit) que CONSTRUYE lo que Ionic no tiene (tree, data-table rica, inline-feedback, kpi/stat, stepper/wizard, calendar, kanban…) sobre primitivos de Ionic. Ionic es la base; OutfitKit cubre los huecos. npm + CDN, imports individuales, CSP-safe. Tema vía tokens --ok-* (fallback a --ion-*).",
   "type": "module",
   "license": "MIT",
@@ -26,6 +26,10 @@
     "./store-controller": {
       "types": "./dist/store/controller.d.ts",
       "import": "./dist/store-controller.js"
+    },
+    "./tabbar": {
+      "types": "./dist/tabbar/tabbar.d.ts",
+      "import": "./dist/tabbar.js"
     },
     "./ok-store": "./dist/ok-store.js",
     "./ok-data-table": "./dist/ok-data-table.js",
@@ -70,7 +74,6 @@
     "./ok-color-picker": "./dist/ok-color-picker.js",
     "./ok-avatar": "./dist/ok-avatar.js",
     "./ok-status-pill": "./dist/ok-status-pill.js",
-    "./ok-drawer": "./dist/ok-drawer.js",
     "./ok-page-header": "./dist/ok-page-header.js",
     "./ok-bento": "./dist/ok-bento.js",
     "./ok-bento-item": "./dist/ok-bento-item.js",
@@ -86,7 +89,6 @@
     "./ok-footer": "./dist/ok-footer.js",
     "./ok-hero": "./dist/ok-hero.js",
     "./ok-pagination": "./dist/ok-pagination.js",
-    "./ok-skeleton": "./dist/ok-skeleton.js",
     "./ok-gauge": "./dist/ok-gauge.js",
     "./ok-chart": "./dist/ok-chart.js",
     "./ok-donut": "./dist/ok-donut.js",
@@ -104,9 +106,6 @@
     "./ok-select-card": "./dist/ok-select-card.js",
     "./ok-theme-picker": "./dist/ok-theme-picker.js",
     "./ok-error-page": "./dist/ok-error-page.js",
-    "./ok-date-picker": "./dist/ok-date-picker.js",
-    "./ok-time-picker": "./dist/ok-time-picker.js",
-    "./ok-range-dual": "./dist/ok-range-dual.js",
     "./ok-file-item": "./dist/ok-file-item.js",
     "./ok-rich-text": "./dist/ok-rich-text.js",
     "./ok-code": "./dist/ok-code.js",
@@ -128,6 +127,7 @@
     "./erplora.css": "./dist/erplora.css",
     "./palettes.css": "./dist/palettes.css",
     "./layout.css": "./dist/layout.css",
+    "./tabbar.css": "./dist/tabbar.css",
     "./cdn": "./dist/outfitkit.js",
     "./bundle": "./dist/outfitkit.bundle.js"
   },
@@ -140,6 +140,7 @@
   "scripts": {
     "build": "vite build && vite build --config vite.config.cdn.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
+    "generate:module-pages": "node scripts/generate-module-pages.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "verify:csp": "node scripts/assert-csp-safe.mjs dist",

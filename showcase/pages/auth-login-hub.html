@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ERPlora Hub · Login</title>
 
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
     <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-    </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <link rel="stylesheet" href="../../dist/erplora.css" />
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
 
     <style>
       /* Pantalla de auth del Hub: fondo centrado con gradiente sutil (sin sidebar Cloud). */
@@ -151,8 +150,6 @@
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-
       /* ── Datos de empleados ────────────────────────────────────────────────── */
       const EMPLOYEES = [
         { id: 1, name: 'Joan Castell',  initials: 'JC', role: 'Encargado' },
@@ -292,18 +289,9 @@
         </ion-modal>
 
         <!-- Modal: información sobre confianza de dispositivo -->
-        <ion-modal id="modal-trust-info">
-          <ion-header class="ion-no-border">
-            <ion-toolbar>
-              <ion-title>Confiar en este dispositivo</ion-title>
-              <ion-buttons slot="end">
-                <ion-button id="btn-close-trust-info">
-                  <ion-icon slot="icon-only" name="close-outline"></ion-icon>
-                </ion-button>
-              </ion-buttons>
-            </ion-toolbar>
-          </ion-header>
+        <ion-popover id="modal-trust-info" trigger="btn-trust-info" trigger-action="click" side="top" alignment="center">
           <ion-content class="ion-padding">
+            <h3>Confiar en este dispositivo</h3>
             <div class="trust-info-content">
               <p>Cuando marcas un dispositivo como de confianza, puedes iniciar sesión rápidamente con tu PIN — sin escribir email y contraseña cada vez.</p>
               <p>Si no es de confianza, siempre necesitarás email y contraseña para acceder a este Hub.</p>
@@ -313,13 +301,12 @@
               <ion-button id="btn-trust-entendido" expand="block">Entendido</ion-button>
             </div>
           </ion-content>
-        </ion-modal>
+        </ion-popover>
       `;
 
-      definePage({
-        bare: true,
-        body,
-        setup(doc) {
+      document.body.innerHTML = `<ion-app><ion-content>${body}</ion-content></ion-app>`;
+
+      const setup = (doc) => {
           /* ── Estado interno ─────────────────────────────────────────────── */
           const state = {
             mode: 'cloud',          // 'local' | 'cloud'
@@ -362,10 +349,7 @@
             modalPinSetup.breakpoints = [0, 0.85, 1];
             modalPinSetup.initialBreakpoint = 0.85;
           }
-          if (modalTrustInfo) {
-            modalTrustInfo.breakpoints = [0, 0.6, 1];
-            modalTrustInfo.initialBreakpoint = 0.6;
-          }
+          // El popover de confianza se ancla al botón, igual que en LoginPage.vue.
 
           /* ── Helpers de panels ────────────────────────────────────────── */
           const showPanels = (mode, hasEmployee) => {
@@ -382,7 +366,7 @@
               <ion-card-content class="ion-text-center">
                 <ok-avatar name="${emp.name}" size="lg"></ok-avatar>
                 <p class="hub-employee__name">${emp.name}</p>
-                <ok-status-pill tone="neutral" label="${emp.role}" size="sm"></ok-status-pill>
+                <ion-badge color="medium">${emp.role}</ion-badge>
               </ion-card-content>`;
             card.addEventListener('click', () => {
               state.selectedEmployee = emp;
@@ -500,8 +484,8 @@
 
           /* ── Pantalla inicial → modo Cloud por defecto ─────────────────── */
           showPanels('cloud', false);
-        },
-      });
+      };
+      requestAnimationFrame(() => setup(document));
     </script>
   </body>
 </html>

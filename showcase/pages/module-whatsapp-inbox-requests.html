@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Solicitudes de WhatsApp</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .whatsapp-review {
+        margin-bottom: 1rem;
+      }
+
+      .whatsapp-review h3 {
+        margin: 0 0 0.4rem;
+        font-size: 1rem;
+      }
+
+      .whatsapp-review ion-list {
+        padding: 0;
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 12px;
+      }
+
+      .whatsapp-request-summary {
+        color: var(--ion-color-medium);
+        font-size: 0.82rem;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // No existe fixture oficial para esta query: los ejemplos respetan la forma del SELECT y sus dominios cerrados.
+      let requests = [
+        {
+          id: 'request-001', conversation_id: 'conv-001', reference_number: 'WA-20260718-0001',
+          request_type: 'reservation', status: 'pending_review', contact_name: 'Marta López',
+          raw_summary: 'Mesa para cuatro personas mañana a las 21:00.', confidence_score: 0.94,
+          linked_module: '', created_at: '2026-07-18T10:43:00',
+        },
+        {
+          id: 'request-002', conversation_id: 'conv-002', reference_number: 'WA-20260718-0002',
+          request_type: 'order', status: 'pending_review', contact_name: 'Restaurante Sol',
+          raw_summary: 'Pedido de seis cajas de café en grano.', confidence_score: 0.87,
+          linked_module: '', created_at: '2026-07-18T09:18:00',
+        },
+        {
+          id: 'request-003', conversation_id: 'conv-003', reference_number: 'WA-20260717-0004',
+          request_type: 'appointment', status: 'confirmed', contact_name: 'Diego Romero',
+          raw_summary: 'Cita de revisión para el viernes por la tarde.', confidence_score: 0.91,
+          linked_module: 'appointments', created_at: '2026-07-17T18:08:00',
+        },
+        {
+          id: 'request-004', conversation_id: 'conv-004', reference_number: 'WA-20260716-0003',
+          request_type: 'quote', status: 'fulfilled', contact_name: 'Lucía Martín',
+          raw_summary: 'Presupuesto para un servicio de mantenimiento.', confidence_score: 0.78,
+          linked_module: 'quotes', created_at: '2026-07-16T12:34:00',
+        },
+        {
+          id: 'request-005', conversation_id: 'conv-005', reference_number: 'WA-20260715-0002',
+          request_type: 'transport', status: 'rejected', contact_name: 'Logística Norte',
+          raw_summary: 'Solicitud de recogida fuera del área de servicio.', confidence_score: 0.69,
+          linked_module: '', created_at: '2026-07-15T16:20:00',
+        },
+      ];
+
+      defineHubPage({
+        active: '/m/whatsapp_inbox/requests',
+        title: 'Solicitudes',
+        body: `
+          <section id="whatsapp-pending-review" class="whatsapp-review" aria-labelledby="whatsapp-pending-title">
+            <h3 id="whatsapp-pending-title">Pendientes de revisión</h3>
+            <ion-list id="whatsapp-pending-list" lines="full"></ion-list>
+          </section>
+          <ok-data-table id="whatsapp-requests-table"></ok-data-table>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('whatsapp-requests-table');
+          const pendingSection = doc.getElementById('whatsapp-pending-review');
+          const pendingList = doc.getElementById('whatsapp-pending-list');
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'created_at';
+          let sortDir = 'desc';
+          let search = '';
+          let filters = {};
+
+          const TYPE_LABELS = {
+            order: 'Pedido', reservation: 'Reserva', appointment: 'Cita',
+            quote: 'Presupuesto', transport: 'Transporte', custom: 'Otro',
+          };
+          const STATUS_LABELS = {
+            pending_review: 'Pendiente', confirmed: 'Confirmada', fulfilled: 'Cumplida',
+            rejected: 'Rechazada', cancelled: 'Cancelada',
+          };
+
+          table.columns = [
+            { key: 'reference_number', header: 'Referencia', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'request_type', header: 'Tipo', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'order', label: 'Pedido' },
+                { value: 'reservation', label: 'Reserva' },
+                { value: 'appointment', label: 'Cita' },
+                { value: 'quote', label: 'Presupuesto' },
+                { value: 'transport', label: 'Transporte' },
+                { value: 'custom', label: 'Otro' },
+              ],
+              format: (row) => TYPE_LABELS[row.request_type] ?? row.request_type,
+            },
+            { key: 'contact_name', header: 'Contacto', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              options: [
+                { value: 'pending_review', label: 'Pendientes' },
+                { value: 'confirmed', label: 'Confirmadas' },
+                { value: 'fulfilled', label: 'Cumplidas' },
+                { value: 'rejected', label: 'Rechazadas' },
+                { value: 'cancelled', label: 'Canceladas' },
+              ],
+              format: (row) => STATUS_LABELS[row.status] ?? row.status,
+            },
+            {
+              key: 'confidence_score', header: 'Confianza', align: 'right', sortable: true,
+              filterable: true, filterType: 'range',
+              format: (row) => `${Math.round((Number(row.confidence_score) || 0) * 100)}%`,
+            },
+            { key: 'id', header: 'Acciones', format: (row) => row.status === 'pending_review' ? '⏳' : '' },
+          ];
+          table.serverSide = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.contact_name || row.reference_number || '—');
+          table.cardIcon = () => 'notifications-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar referencia o contacto…';
+          table.emptyMessage = 'Sin solicitudes.';
+          table.pageSize = 50;
+          table.sort = 'created_at';
+          table.sortDir = 'desc';
+
+          function emitCommand(name, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+          }
+
+          function renderPending() {
+            pendingList.replaceChildren();
+            const pending = requests.filter((row) => row.status === 'pending_review');
+            pendingSection.hidden = pending.length === 0;
+            for (const row of pending) {
+              const item = doc.createElement('ion-item');
+              const label = doc.createElement('ion-label');
+              label.className = 'ion-text-wrap';
+              const title = doc.createElement('strong');
+              title.textContent = `${row.reference_number} · ${TYPE_LABELS[row.request_type]}`;
+              const summary = doc.createElement('div');
+              summary.className = 'whatsapp-request-summary';
+              summary.textContent = `${row.contact_name} · ${row.raw_summary}`;
+              label.append(title, summary);
+
+              const buttons = doc.createElement('ion-buttons');
+              buttons.slot = 'end';
+              const approve = doc.createElement('ion-button');
+              approve.size = 'small';
+              approve.textContent = 'Aprobar';
+              approve.addEventListener('click', () => {
+                emitCommand('whatsapp_inbox.requests.approve', { request_id: row.id });
+                requests = requests.map((candidate) => candidate.id === row.id ? { ...candidate, status: 'confirmed' } : candidate);
+                renderPending();
+                queryPage();
+              });
+              const reject = doc.createElement('ion-button');
+              reject.size = 'small';
+              reject.color = 'medium';
+              reject.textContent = 'Rechazar';
+              reject.addEventListener('click', () => {
+                emitCommand('whatsapp_inbox.requests.reject', { request_id: row.id });
+                requests = requests.map((candidate) => candidate.id === row.id ? { ...candidate, status: 'rejected' } : candidate);
+                renderPending();
+                queryPage();
+              });
+              buttons.append(approve, reject);
+              item.append(label, buttons);
+              pendingList.append(item);
+            }
+          }
+
+          const matchesRange = (candidate, range) => {
+            if (!range || typeof range !== 'object') return true;
+            const value = Number(candidate);
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            return (from == null || value >= from) && (to == null || value <= to);
+          };
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = requests
+              .filter((row) => {
+                if (term && !`${row.reference_number} ${row.contact_name}`.toLocaleLowerCase('es').includes(term)) return false;
+                for (const [key, value] of Object.entries(filters)) {
+                  if (value == null || value === '') continue;
+                  if ((key === 'request_type' || key === 'status') && row[key] !== value) return false;
+                  if (key === 'confidence_score' && !matchesRange(row.confidence_score, value)) return false;
+                  if (key === 'reference_number' && !row.reference_number.toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                  if (key === 'contact_name' && !row.contact_name.toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                }
+                return true;
+              })
+              .sort((left, right) => {
+                const a = left[sort];
+                const b = right[sort];
+                const result = typeof a === 'number' && typeof b === 'number'
+                  ? a - b
+                  : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+                return sortDir === 'desc' ? -result : result;
+              });
+
+            const start = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail?.sort || 'created_at';
+            sortDir = event.detail?.dir === 'asc' ? 'asc' : 'desc';
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            const column = event.detail?.col;
+            if (!column) return;
+            filters = { ...filters, [column]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          renderPending();
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

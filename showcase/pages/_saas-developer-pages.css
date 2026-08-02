@@ -1,0 +1,208 @@
+/* Composición común de las vistas Developer; los controles y tarjetas siguen siendo Ionic. */
+.developer-section-stack {
+  display: grid;
+  gap: 16px;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.developer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.developer-grid.wide-first {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+}
+
+.developer-grid > ion-card,
+.developer-section-stack > ion-card {
+  margin: 0;
+}
+
+.developer-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.developer-card-subtitle {
+  margin: 4px 0 16px;
+  color: var(--ion-color-medium);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+.developer-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.developer-fields.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.developer-field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ion-color-medium);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.developer-field-help {
+  margin: 6px 0 0;
+  color: var(--ion-color-medium);
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.developer-actions,
+.developer-chip-row,
+.developer-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.developer-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.developer-summary-icon,
+.developer-step-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb), .12);
+}
+
+.developer-summary-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.developer-summary-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.developer-summary-body h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.developer-summary-body p {
+  margin: 5px 0 8px;
+  color: var(--ion-color-medium);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+
+.developer-data-row,
+.developer-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 11px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ion-text-color) 8%, transparent);
+}
+
+.developer-data-row:last-child,
+.developer-step:last-child {
+  border-bottom: 0;
+}
+
+.developer-data-row > :first-child {
+  color: var(--ion-color-medium);
+  font-size: .82rem;
+}
+
+.developer-data-row > :last-child {
+  margin-inline-start: auto;
+  text-align: end;
+  font-size: .84rem;
+  font-weight: 650;
+}
+
+.developer-step {
+  align-items: flex-start;
+}
+
+.developer-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.developer-step strong,
+.developer-step small {
+  display: block;
+}
+
+.developer-step small {
+  margin-top: 3px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}
+
+.developer-code {
+  padding: 14px;
+  overflow-x: auto;
+  margin: 0;
+  color: var(--ion-text-color);
+  font: .75rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  background: color-mix(in srgb, var(--ion-text-color) 5%, var(--ion-card-background));
+  border-radius: 10px;
+}
+
+.developer-api-frame {
+  display: block;
+  width: 100%;
+  height: calc(100dvh - 10rem);
+  min-height: 30rem;
+  border: 1px solid color-mix(in srgb, var(--ion-text-color) 12%, transparent);
+  border-radius: 14px;
+  background: var(--ion-background-color);
+}
+
+.developer-page ok-inline-feedback,
+.developer-page ok-dropzone {
+  max-width: none;
+}
+
+.developer-page ion-list {
+  padding: 0;
+  background: transparent;
+}
+
+.developer-page ion-item {
+  --background: transparent;
+}
+
+@media (max-width: 760px) {
+  .developer-grid,
+  .developer-grid.wide-first,
+  .developer-fields.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .developer-summary {
+    flex-wrap: wrap;
+  }
+
+  .developer-summary-actions {
+    width: 100%;
+  }
+}

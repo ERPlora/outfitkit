@@ -11,11 +11,15 @@
 
 import { html as h } from 'lit';
 import { CATEGORIES, COMPONENTS } from './components-data.js';
-import { PAGES } from './pages-data.js';
+import { IONIC_RECIPES } from './ionic-recipes-data.js';
+import { PAGES, SURFACES } from './pages-data.js';
+import { groupPagesBySurface } from './page-navigation.js';
 
 const GITHUB_URL = 'https://github.com/ERPlora/outfitkit';
 const BY_ID = new Map(COMPONENTS.map((c) => [c.id, c]));
+const IONIC_BY_ID = new Map(IONIC_RECIPES.map((recipe) => [recipe.id, recipe]));
 const PAGE_BY_ID = new Map(PAGES.map((p) => [p.id, p]));
+const SURFACE_BY_ID = new Map(SURFACES.map((surface) => [surface.id, surface]));
 
 // ── Paletas de tema ──────────────────────────────────────────────────────────
 // `erplora` = la paleta REAL de erplora.com (azul corporativo, neutros gris; primario distinto en
@@ -45,6 +49,7 @@ const LS = {
   viewport: 'ok-showcase-viewport',
   dark: 'ok-showcase-dark',
   secComponents: 'ok-showcase-sec-components',
+  secIonic: 'ok-showcase-sec-ionic',
   secPages: 'ok-showcase-sec-pages',
 };
 
@@ -58,6 +63,7 @@ const state = {
   // Por defecto «Componentes» desplegada y «Páginas» plegada; se persiste en localStorage.
   collapsed: {
     components: localStorage.getItem(LS.secComponents) === '1',
+    ionic: localStorage.getItem(LS.secIonic) !== '0',
     pages: localStorage.getItem(LS.secPages) !== '0',
   },
 };
@@ -140,17 +146,21 @@ function renderSidebarList() {
   const q = state.search.trim().toLowerCase();
   const route = currentRoute();
   const activeId = route.kind === 'component' ? route.id : null;
+  const activeIonic = route.kind === 'ionic' ? route.id : null;
   const activePage = route.kind === 'page' ? route.id : null;
 
   // Filtros de búsqueda.
-  const matchPage = (p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+  const matchPage = (p) => !q || [p.name, p.id, p.section, p.route, p.surface]
+    .some((value) => String(value || '').toLowerCase().includes(q));
   const matchComp = (c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
   const pageMatches = PAGES.filter(matchPage);
   const compMatches = COMPONENTS.filter(matchComp);
+  const ionicMatches = IONIC_RECIPES.filter(matchComp);
 
   // Con búsqueda activa las secciones con resultados se auto-despliegan (para no esconderlos).
   const searching = q.length > 0;
   const compCollapsed = searching ? compMatches.length === 0 : state.collapsed.components;
+  const ionicCollapsed = searching ? ionicMatches.length === 0 : state.collapsed.ionic;
   const pagesCollapsed = searching ? pageMatches.length === 0 : state.collapsed.pages;
 
   // Item "Inicio" siempre arriba.
@@ -180,27 +190,48 @@ function renderSidebarList() {
     }
   }
 
+  // ── Sección «Ionic» — composiciones que ERPlora reutiliza sin wrapper ok-* ──
+  htmlStr += sectionHeaderHtml('ionic', 'Ionic · recetas', 'logo-ionic', ionicCollapsed, ionicMatches.length);
+  if (!ionicCollapsed) {
+    if (ionicMatches.length === 0) {
+      htmlStr += `<div class="nav-empty">Sin recetas para «${escapeHtml(state.search)}»</div>`;
+    } else {
+      for (const recipe of ionicMatches) {
+        htmlStr += `
+          <ion-item button detail="false" class="nav-sub-item" data-href="#/i/${recipe.id}" ${recipe.id === activeIonic ? 'color="primary"' : ''}>
+            <ion-icon slot="start" name="logo-ionic"></ion-icon>
+            <ion-label><span class="nav-name">${escapeHtml(recipe.name)}</span></ion-label>
+          </ion-item>`;
+      }
+    }
+  }
+
   // ── Sección «Páginas» (group → PAGES) ──
   htmlStr += sectionHeaderHtml('pages', 'Páginas', 'documents-outline', pagesCollapsed, pageMatches.length);
   if (!pagesCollapsed) {
     if (pageMatches.length === 0) {
       htmlStr += `<div class="nav-empty">Sin páginas para «${escapeHtml(state.search)}»</div>`;
     } else {
-      // Orden de grupos = primera aparición en PAGES (estable).
-      const groups = [];
-      for (const p of pageMatches) {
-        const g = p.group || 'Otras';
-        if (!groups.includes(g)) groups.push(g);
-      }
-      for (const g of groups) {
-        const items = pageMatches.filter((p) => (p.group || 'Otras') === g);
-        htmlStr += `<ion-list-header class="nav-subhead"><ion-label>${escapeHtml(g)}</ion-label></ion-list-header>`;
-        for (const p of items) {
-          htmlStr += `
-            <ion-item button detail="false" class="nav-sub-item" data-href="#/p/${p.id}" ${p.id === activePage ? 'color="primary"' : ''}>
-              <ion-icon slot="start" name="${p.icon}"></ion-icon>
-              <ion-label><span class="nav-name">${p.name}</span></ion-label>
-            </ion-item>`;
+      for (const surfaceGroup of groupPagesBySurface(pageMatches)) {
+        const surface = SURFACE_BY_ID.get(surfaceGroup.surface) || {
+          label: surfaceGroup.surface,
+          icon: 'documents-outline',
+        };
+        htmlStr += `<ion-list-header class="nav-surface-head">
+          <ion-icon name="${escapeHtml(surface.icon)}"></ion-icon>
+          <ion-label>${escapeHtml(surface.label)}</ion-label>
+        </ion-list-header>`;
+        for (const sectionGroup of surfaceGroup.sections) {
+          htmlStr += `<ion-list-header class="nav-subhead"><ion-label>${escapeHtml(sectionGroup.section)}</ion-label></ion-list-header>`;
+          for (const p of sectionGroup.pages) {
+            const statusIcon = p.parity === 'current' ? 'checkmark-circle-outline' : 'time-outline';
+            htmlStr += `
+              <ion-item button detail="false" class="nav-sub-item" data-href="#/p/${p.id}" ${p.id === activePage ? 'color="primary"' : ''}>
+                <ion-icon slot="start" name="${p.icon}"></ion-icon>
+                <ion-label><span class="nav-name">${escapeHtml(p.name)}</span></ion-label>
+                <ion-icon slot="end" class="nav-page-status" name="${statusIcon}"></ion-icon>
+              </ion-item>`;
+          }
         }
       }
     }
@@ -224,7 +255,7 @@ function renderSidebarList() {
       const key = el.getAttribute('data-section');
       state.collapsed[key] = !state.collapsed[key];
       localStorage.setItem(
-        key === 'components' ? LS.secComponents : LS.secPages,
+        key === 'components' ? LS.secComponents : key === 'ionic' ? LS.secIonic : LS.secPages,
         state.collapsed[key] ? '1' : '0',
       );
       renderSidebarList();
@@ -254,6 +285,8 @@ function currentRoute() {
   const hash = location.hash || '';
   let m = hash.match(/^#\/p\/([\w-]+)/);
   if (m) return { kind: 'page', id: m[1] };
+  m = hash.match(/^#\/i\/([\w-]+)/);
+  if (m) return { kind: 'ionic', id: m[1] };
   m = hash.match(/^#\/c\/([\w-]+)/);
   if (m) return { kind: 'component', id: m[1] };
   return { kind: 'home', id: null };
@@ -269,6 +302,10 @@ function render() {
     const pg = PAGE_BY_ID.get(route.id);
     titleEl.textContent = pg.name;
     renderPageView(content, pg);
+  } else if (route.kind === 'ionic' && IONIC_BY_ID.has(route.id)) {
+    const recipe = IONIC_BY_ID.get(route.id);
+    titleEl.textContent = recipe.name;
+    renderComponentView(content, recipe, true);
   } else if (route.kind === 'component' && BY_ID.has(route.id)) {
     const comp = BY_ID.get(route.id);
     titleEl.textContent = comp.name;
@@ -283,15 +320,19 @@ function render() {
 
 // ── Vista de página de ejemplo (tabs Preview/Código + iframe a pantalla completa) ──
 function renderPageView(content, pg) {
+  if (pg.parity !== 'current' || !pg.file) {
+    renderPendingPageView(content, pg);
+    return;
+  }
   const vp = VIEWPORTS[state.viewport] || VIEWPORTS.desktop;
   content.innerHTML = `
     <div class="doc comp-view">
       <header class="comp-head">
-        <div class="tags"><span class="tag">página</span></div>
+        <div class="tags"><span class="tag">${escapeHtml(pg.surface)}</span><span class="tag">paridad 1:1</span></div>
         <h1>${escapeHtml(pg.name)}</h1>
-        <p class="desc">Pantalla completa compuesta con <code>ion-*</code> + <code>ok-*</code>
-          (estructura del prototipo ERPlora UX). La pestaña <strong>Código</strong> es el HTML
-          standalone de la página, listo para copiar y replicar.</p>
+        <p class="desc">Espejo del producto actual. Reutiliza <code>ion-*</code> directamente y
+          añade <code>ok-*</code> únicamente donde Ionic no cubre el patrón.</p>
+        <pre class="import-line">${escapeHtml(pg.route)} · ${escapeHtml(pg.source)}</pre>
         <pre class="import-line">showcase/${escapeHtml(pg.file)}</pre>
       </header>
 
@@ -346,6 +387,29 @@ function renderPageView(content, pg) {
   });
 }
 
+function renderPendingPageView(content, pg) {
+  const surface = SURFACE_BY_ID.get(pg.surface);
+  const generated = pg.parity === 'source';
+  content.innerHTML = `
+    <div class="doc comp-view">
+      <header class="comp-head">
+        <div class="tags">
+          <span class="tag">${escapeHtml(surface?.label || pg.surface)}</span>
+          <span class="tag">${generated ? 'fuente real' : 'pendiente de paridad'}</span>
+        </div>
+        <h1>${escapeHtml(pg.name)}</h1>
+        <p class="desc">${generated
+          ? 'Esta entrada se genera desde el manifest real del módulo; OutfitKit no duplica su componente de dominio.'
+          : 'La demo antigua se ha retirado de la vista pública porque no era idéntica al producto actual. Se publicará de nuevo cuando esté reconstruida desde esta fuente.'}</p>
+        <h2>Ruta real</h2>
+        <pre class="import-line">${escapeHtml(pg.route)}</pre>
+        <h2>Fuente de verdad</h2>
+        <pre class="import-line">${escapeHtml(pg.source)}</pre>
+        ${pg.component ? `<h2>Web Component</h2><pre class="import-line">&lt;${escapeHtml(pg.component)}&gt;</pre>` : ''}
+      </header>
+    </div>`;
+}
+
 // ── Vista de inicio ──────────────────────────────────────────────────────────
 function renderHome(content) {
   const cats = CATEGORIES.map((cat) => {
@@ -360,6 +424,9 @@ function renderHome(content) {
         <div class="home-chips">${chips}</div>
       </div>`;
   }).join('');
+  const ionicChips = IONIC_RECIPES
+    .map((recipe) => `<button class="home-chip" data-href="#/i/${recipe.id}">${escapeHtml(recipe.name)}</button>`)
+    .join('');
 
   content.innerHTML = `
     <div class="doc">
@@ -379,6 +446,11 @@ function renderHome(content) {
         <strong>viewports</strong> (Desktop / Tablet / Móvil) y cambia la <strong>paleta</strong> o
         el <strong>modo oscuro</strong> desde la barra superior.
       </p>
+      <div class="home-cat">
+        <h3><ion-icon name="logo-ionic"></ion-icon> Ionic directo</h3>
+        <p>Recetas usadas por ERPlora cuando Ionic ya cubre el patrón; no existe un wrapper <code>ok-*</code>.</p>
+        <div class="home-chips">${ionicChips}</div>
+      </div>
       <div class="home-cats">${cats}</div>
     </div>`;
 
@@ -390,7 +462,7 @@ function renderHome(content) {
 }
 
 // ── Vista de componente (cabecera + tabs Preview/Código + API) ──────────────
-function renderComponentView(content, comp) {
+function renderComponentView(content, comp, ionic = false) {
   const vp = VIEWPORTS[state.viewport] || VIEWPORTS.desktop;
   const apiRows = (comp.api || [])
     .map(
@@ -406,10 +478,10 @@ function renderComponentView(content, comp) {
   content.innerHTML = `
     <div class="doc comp-view">
       <header class="comp-head">
-        <div class="tags"><span class="tag">&lt;${comp.name.split(' ')[0]}&gt;</span></div>
+        <div class="tags"><span class="tag">${ionic ? 'Ionic directo' : `&lt;${comp.name.split(' ')[0]}&gt;`}</span></div>
         <h1>${comp.name}</h1>
         <p class="desc">${escapeHtml(comp.desc)}</p>
-        <pre class="import-line">import '${comp.importPath}';</pre>
+        <pre class="import-line">${ionic ? 'Ionic Core · sin wrapper OutfitKit' : `import '${comp.importPath}';`}</pre>
       </header>
 
       <ion-segment value="${state.tab}" id="tab-seg">
@@ -554,7 +626,7 @@ function buildChrome() {
               <ion-title class="brand-title"><img src="logo.png" height="20" alt="" /> OutfitKit</ion-title>
             </ion-toolbar>
             <ion-toolbar>
-              <ion-searchbar id="nav-search" placeholder="Buscar componente…" debounce="80" class="nav-search"></ion-searchbar>
+              <ion-searchbar id="nav-search" placeholder="Buscar componente o página…" debounce="80" class="nav-search"></ion-searchbar>
             </ion-toolbar>
           </ion-header>
           <ion-content>

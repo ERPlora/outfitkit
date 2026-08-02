@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Inventario · Productos</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .inventory-products-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .inventory-products-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .inventory-product-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .inventory-product-form ion-button {
+        align-self: flex-end;
+      }
+
+      .inventory-error {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-danger);
+        font-weight: 600;
+      }
+
+      .inventory-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .inventory-detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid var(--ion-border-color, #eee);
+      }
+
+      .inventory-detail-row span {
+        color: var(--ion-color-medium, #6b6557);
+      }
+
+      .inventory-barcode {
+        padding: 1rem;
+        margin: 1rem 0;
+        text-align: center;
+        border: 1px solid var(--ion-border-color, #e6e2d8);
+        border-radius: 10px;
+      }
+
+      .inventory-barcode svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .inventory-barcode-code {
+        margin-top: 0.4rem;
+        font: 14px ui-monospace, monospace;
+        letter-spacing: 0.08em;
+      }
+
+      .inventory-import-choice {
+        padding: 0.6rem 0.8rem;
+        border: 1px solid var(--ion-border-color, #e6e2d8);
+        border-radius: 10px;
+      }
+
+      .inventory-import-fields {
+        display: grid;
+        gap: 0.5rem;
+        margin-top: 0.65rem;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable de modules/inventory/fixtures/inventory.products.list.json.
+      const PRODUCT_FIXTURE = [
+        {
+          "id": "p-1",
+          "name": "Café en grano 1kg",
+          "sku": "CAF-1000",
+          "price": 14.9,
+          "stock": 42,
+          "is_active": 1,
+          "cost": 8.94,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-2",
+          "name": "Leche entera 1L",
+          "sku": "LEC-0100",
+          "price": 1.15,
+          "stock": 120,
+          "is_active": 1,
+          "cost": 0.69,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-3",
+          "name": "Azúcar blanca 1kg",
+          "sku": "AZU-1000",
+          "price": 1.05,
+          "stock": 8,
+          "is_active": 1,
+          "cost": 0.63,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-4",
+          "name": "Vaso cartón 240ml (50u)",
+          "sku": "VAS-0240",
+          "price": 3.4,
+          "stock": 15,
+          "is_active": 1,
+          "cost": 2.04,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-5",
+          "name": "Servilletas (100u)",
+          "sku": "SRV-0100",
+          "price": 0.95,
+          "stock": 200,
+          "is_active": 1,
+          "cost": 0.57,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-6",
+          "name": "Croissant congelado (caja)",
+          "sku": "CRO-0050",
+          "price": 9.8,
+          "stock": 6,
+          "is_active": 1,
+          "cost": 5.88,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-7",
+          "name": "Té verde (caja 25)",
+          "sku": "TEV-0025",
+          "price": 2.75,
+          "stock": 33,
+          "is_active": 1,
+          "cost": 1.65,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-8",
+          "name": "Bolsa take-away (100u)",
+          "sku": "BOL-0100",
+          "price": 4.2,
+          "stock": 0,
+          "is_active": 0,
+          "cost": 2.52,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-9",
+          "name": "Chocolate caliente 1kg",
+          "sku": "CHO-1000",
+          "price": 7.5,
+          "stock": 18,
+          "is_active": 1,
+          "cost": 4.5,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-10",
+          "name": "Sirope vainilla 750ml",
+          "sku": "SIR-0750",
+          "price": 6.3,
+          "stock": 9,
+          "is_active": 1,
+          "cost": 3.78,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-11",
+          "name": "Tapa vaso (50u)",
+          "sku": "TAP-0050",
+          "price": 2.1,
+          "stock": 27,
+          "is_active": 1,
+          "cost": 1.26,
+          "low_stock_threshold": 10
+        },
+        {
+          "id": "p-12",
+          "name": "Agua mineral 50cl (24u)",
+          "sku": "AGU-0050",
+          "price": 5.9,
+          "stock": 60,
+          "is_active": 1,
+          "cost": 3.54,
+          "low_stock_threshold": 10
+        }
+      ];
+
+      // El fixture histórico está expresado en euros; el contrato vigente de Product usa céntimos.
+      let products = PRODUCT_FIXTURE.map((row) => ({
+        ...row,
+        price: Math.round(Number(row.price) * 100),
+        cost: Math.round(Number(row.cost) * 100),
+        tax_category_key: null,
+      }));
+
+      const PATTERNS = [
+        '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+        '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+        '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+        '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+        '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+        '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+        '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+        '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+        '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+        '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+        '114131','311141','411131','211412','211214','211232','2331112',
+      ];
+
+      function code128b(text, moduleWidth = 2, height = 70) {
+        const codes = [104];
+        let sum = 104;
+        let pos = 1;
+        for (const char of text) {
+          const value = char.charCodeAt(0) - 32;
+          if (value < 0 || value > 94) continue;
+          codes.push(value);
+          sum += value * pos;
+          pos += 1;
+        }
+        codes.push(sum % 103, 106);
+
+        const bars = [];
+        let x = 0;
+        for (const code of codes) {
+          const pattern = PATTERNS[code];
+          for (let index = 0; index < pattern.length; index += 1) {
+            const width = Number(pattern[index]) * moduleWidth;
+            if (index % 2 === 0) bars.push({ x, width });
+            x += width;
+          }
+        }
+        return { width: x, height, bars };
+      }
+
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const formatMoney = (cents) => money.format((Number(cents) || 0) / 100);
+      const eurosToCents = (value) => Math.round((Number(String(value).replace(',', '.')) || 0) * 100);
+
+      defineHubPage({
+        active: '/m/inventory/products',
+        title: 'Productos',
+        body: `
+          <div class="inventory-products-page">
+            <p id="inventory-products-error" class="inventory-error" hidden></p>
+            <ok-data-table id="inventory-products-table" fill>
+              <form id="inventory-product-form" slot="create" class="inventory-product-form">
+                <ion-input id="product-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="product-sku" fill="outline" label="SKU" label-placement="floating" required></ion-input>
+                <ion-input id="product-price" fill="outline" label="Precio" label-placement="floating" type="number" step="0.01"></ion-input>
+                <ion-select id="product-tax-category" fill="outline" label="Tipo de IVA / Impuesto" label-placement="floating" value="">
+                  <ion-select-option value="">— (por defecto)</ion-select-option>
+                </ion-select>
+                <ion-button id="product-save" type="submit">Guardar</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+
+          <ion-modal id="inventory-product-detail">
+            <ion-header class="ion-no-border">
+              <ion-toolbar>
+                <ion-title id="inventory-detail-title"></ion-title>
+                <ion-buttons slot="end">
+                  <ion-button id="inventory-detail-close" aria-label="Cerrar">
+                    <ion-icon name="close" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <div class="inventory-detail">
+                <div class="inventory-detail-row"><span>SKU</span><b id="inventory-detail-sku"></b></div>
+                <div class="inventory-detail-row"><span>Precio</span><b id="inventory-detail-price"></b></div>
+                <div class="inventory-detail-row"><span>Stock</span><b id="inventory-detail-stock"></b></div>
+                <div class="inventory-detail-row"><span>Activo</span><b id="inventory-detail-active"></b></div>
+                <div class="inventory-barcode">
+                  <svg id="inventory-detail-barcode" aria-label="Código de barras"></svg>
+                  <div id="inventory-detail-barcode-code" class="inventory-barcode-code"></div>
+                </div>
+                <ion-button id="inventory-detail-print" expand="block">
+                  <ion-icon name="print-outline" slot="start"></ion-icon>
+                  Imprimir código de barras
+                </ion-button>
+              </div>
+            </ion-content>
+          </ion-modal>
+
+          <ion-modal id="inventory-import-tax-modal">
+            <ion-header>
+              <ion-toolbar>
+                <ion-title>Categorías fiscales del CSV</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button id="inventory-import-cancel">Cancelar</ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <p>Algunos textos de categoría del CSV no se reconocen. Elige una categoría existente o crea una nueva; se recordará para futuras importaciones.</p>
+              <div class="inventory-import-choice">
+                <strong id="inventory-import-tax-value"></strong>
+                <ion-segment id="inventory-import-tax-choice" value="pick">
+                  <ion-segment-button value="pick"><ion-label>Elegir</ion-label></ion-segment-button>
+                  <ion-segment-button value="create"><ion-label>Crear</ion-label></ion-segment-button>
+                  <ion-segment-button value="skip"><ion-label>Omitir</ion-label></ion-segment-button>
+                </ion-segment>
+                <div id="inventory-import-pick" class="inventory-import-fields">
+                  <ion-select fill="outline" label="Categoría" label-placement="floating" value="">
+                    <ion-select-option value="">— (por defecto)</ion-select-option>
+                  </ion-select>
+                </div>
+                <div id="inventory-import-create" class="inventory-import-fields" hidden>
+                  <ion-input id="inventory-import-key" fill="outline" label="Clave" label-placement="floating" placeholder="restaurant.food"></ion-input>
+                  <ion-input id="inventory-import-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                </div>
+              </div>
+              <ion-button id="inventory-import-confirm" expand="block">Confirmar e importar</ion-button>
+            </ion-content>
+          </ion-modal>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('inventory-products-table');
+          const form = doc.getElementById('inventory-product-form');
+          const nameInput = doc.getElementById('product-name');
+          const skuInput = doc.getElementById('product-sku');
+          const priceInput = doc.getElementById('product-price');
+          const taxSelect = doc.getElementById('product-tax-category');
+          const saveButton = doc.getElementById('product-save');
+          const error = doc.getElementById('inventory-products-error');
+          const detailModal = doc.getElementById('inventory-product-detail');
+          const importModal = doc.getElementById('inventory-import-tax-modal');
+
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'name';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+          let editingId = null;
+          let detailProduct = null;
+          let pendingImportRows = [];
+
+          const showError = (message = '') => {
+            error.textContent = message;
+            error.hidden = !message;
+          };
+
+          const activeCell = (row) => {
+            const toggle = doc.createElement('ion-toggle');
+            toggle.checked = Boolean(row.is_active);
+            toggle.style.cssText = '--track-background-checked:rgba(var(--ion-color-success-rgb,45,211,111),.5);--handle-background-checked:var(--ion-color-success,#2dd36f)';
+            toggle.addEventListener('ionChange', (event) => {
+              row.is_active = event.detail.checked ? 1 : 0;
+              renderRows();
+            });
+            return toggle;
+          };
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'sku', header: 'SKU', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'price', header: 'Precio', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => formatMoney(row.price) },
+            { key: 'stock', header: 'Stock', align: 'right', sortable: true, filterable: true, filterType: 'range' },
+            { key: 'is_active', header: 'Activo', align: 'center', filterable: true, filterType: 'select', options: [
+              { value: '1', label: 'Sí' },
+              { value: '0', label: 'No' },
+            ], render: activeCell },
+          ];
+          table.actions = [
+            { id: 'detail', label: 'Detalles', icon: 'eye-outline' },
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'cube-outline';
+          table.views = true;
+          table.columnPicker = true;
+          table.csv = true;
+          table.csvName = 'inventory-products.csv';
+          table.addable = true;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nombre o SKU…';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.emptyMessage = 'Sin productos.';
+
+          function rangeMatch(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            const number = Number(value);
+            return (from == null || number >= from) && (to == null || number <= to);
+          }
+
+          function renderRows() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = products.filter((row) => {
+              if (term && !`${row.name} ${row.sku}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if ((column === 'price' || column === 'stock') && !rangeMatch(row[column], value)) return false;
+                if (column === 'is_active' && String(row.is_active) !== String(value)) return false;
+                if ((column === 'name' || column === 'sku') && !String(row[column]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+            filtered.sort((left, right) => {
+              const a = left[sort];
+              const b = right[sort];
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.total = filtered.length;
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function resetForm() {
+            editingId = null;
+            nameInput.value = '';
+            skuInput.value = '';
+            priceInput.value = '';
+            taxSelect.value = '';
+            saveButton.textContent = 'Guardar';
+            showError();
+          }
+
+          function openEditor(row) {
+            editingId = row.id;
+            nameInput.value = row.name;
+            skuInput.value = row.sku;
+            priceInput.value = (Number(row.price) / 100).toFixed(2);
+            taxSelect.value = row.tax_category_key ?? '';
+            saveButton.textContent = 'Guardar';
+            table.open('create');
+          }
+
+          function drawBarcode(sku) {
+            const barcode = code128b(sku, 2, 70);
+            const svg = doc.getElementById('inventory-detail-barcode');
+            svg.setAttribute('viewBox', `0 0 ${barcode.width} ${barcode.height}`);
+            svg.setAttribute('width', String(barcode.width));
+            svg.setAttribute('height', String(barcode.height));
+            svg.innerHTML = barcode.bars.map((bar) => `<rect x="${bar.x}" y="0" width="${bar.width}" height="${barcode.height}"></rect>`).join('');
+          }
+
+          function openDetail(row) {
+            detailProduct = row;
+            doc.getElementById('inventory-detail-title').textContent = row.name;
+            doc.getElementById('inventory-detail-sku').textContent = row.sku;
+            doc.getElementById('inventory-detail-price').textContent = formatMoney(row.price);
+            doc.getElementById('inventory-detail-stock').textContent = String(row.stock);
+            doc.getElementById('inventory-detail-active').textContent = row.is_active ? 'Sí' : 'No';
+            doc.getElementById('inventory-detail-barcode-code').textContent = row.sku;
+            drawBarcode(row.sku);
+            detailModal.present();
+          }
+
+          function taxValue(row) {
+            const headers = ['tax_category', 'tax_category_key', 'category_tax', 'fiscal_category', 'tax', 'iva', 'vat', 'impuesto', 'tax_class'];
+            const key = Object.keys(row).find((candidate) => headers.includes(candidate.trim().toLowerCase()));
+            return key ? String(row[key] ?? '').trim() : '';
+          }
+
+          function finalizeImport(rows) {
+            const nextNumber = products.length + 1;
+            const imported = rows
+              .filter((row) => row.name || row.sku)
+              .map((row, index) => ({
+                id: `csv-${nextNumber + index}`,
+                name: row.name ?? '',
+                sku: row.sku ?? '',
+                price: eurosToCents(row.price),
+                cost: eurosToCents(row.cost),
+                stock: Number(row.stock) || 0,
+                low_stock_threshold: Number(row.low_stock_threshold) || 10,
+                tax_category_key: null,
+                is_active: 1,
+              }));
+            products = [...products, ...imported];
+            page = 0;
+            renderRows();
+          }
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            const product = products.find((candidate) => candidate.id === row.id);
+            if (!product) return;
+            if (actionId === 'detail') openDetail(product);
+            if (actionId === 'edit') openEditor(product);
+            if (actionId === 'delete') {
+              products = products.filter((candidate) => candidate.id !== product.id);
+              renderRows();
+            }
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            renderRows();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            renderRows();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            renderRows();
+          });
+          table.addEventListener('csvImport', (event) => {
+            const rows = event.detail.rows ?? [];
+            const unresolved = [...new Set(rows.map(taxValue).filter(Boolean))];
+            if (unresolved.length === 0) {
+              finalizeImport(rows);
+              return;
+            }
+            pendingImportRows = rows;
+            doc.getElementById('inventory-import-tax-value').textContent = `"${unresolved[0]}"`;
+            doc.getElementById('inventory-import-name').value = unresolved[0];
+            importModal.present();
+          });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            const sku = String(skuInput.value ?? '').trim();
+            if (!name || !sku) {
+              showError('Nombre y SKU son obligatorios.');
+              return;
+            }
+            if (editingId) {
+              products = products.map((row) => row.id === editingId ? {
+                ...row,
+                name,
+                sku,
+                price: eurosToCents(priceInput.value),
+                tax_category_key: taxSelect.value || null,
+              } : row);
+            } else {
+              products = [...products, {
+                id: `product-${products.length + 1}`,
+                name,
+                sku,
+                price: eurosToCents(priceInput.value),
+                cost: 0,
+                stock: 0,
+                low_stock_threshold: 10,
+                tax_category_key: taxSelect.value || null,
+                is_active: 1,
+              }];
+            }
+            resetForm();
+            table.close();
+            renderRows();
+          });
+
+          doc.getElementById('inventory-detail-close').addEventListener('click', () => detailModal.dismiss());
+          doc.getElementById('inventory-detail-print').addEventListener('click', () => {
+            if (!detailProduct) return;
+            window.print();
+          });
+          doc.getElementById('inventory-import-cancel').addEventListener('click', () => {
+            pendingImportRows = [];
+            importModal.dismiss();
+          });
+          doc.getElementById('inventory-import-tax-choice').addEventListener('ionChange', (event) => {
+            const mode = event.detail.value;
+            doc.getElementById('inventory-import-pick').hidden = mode !== 'pick';
+            doc.getElementById('inventory-import-create').hidden = mode !== 'create';
+          });
+          doc.getElementById('inventory-import-confirm').addEventListener('click', () => {
+            finalizeImport(pendingImportRows);
+            pendingImportRows = [];
+            importModal.dismiss();
+          });
+
+          renderRows();
+          resetForm();
+        },
+      });
+    </script>
+  </body>
+</html>

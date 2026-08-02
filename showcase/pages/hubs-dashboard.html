@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resumen de Hubs - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/ok-kpi.js"></script>
+    <style>
+      .stack { display:grid;gap:1rem; }
+      .kpis,.hub-grid,.quick-actions { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem; }
+      .section-title { margin:.25rem 0 0;font-size:1rem; }
+      .hub-title { display:flex;align-items:center;gap:.5rem; }
+      .hub-title h3 { margin:0;font-size:1rem; }
+      .online-dot { width:.5rem;height:.5rem;border-radius:50%;background:var(--ion-color-success); }
+      .hub-meta { display:flex;align-items:center;gap:.35rem;margin:.65rem 0 0;color:var(--ion-color-medium);font-size:.8rem; }
+      @media (max-width:760px) { .kpis,.hub-grid,.quick-actions { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      const footer = `
+        <footer id="section-tabbar"><ion-segment value="active" aria-label="Navegación de Hubs">
+          <ion-segment-button value="active"><iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon><ion-label>Activo</ion-label></ion-segment-button>
+          <ion-segment-button value="inactive"><iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon><ion-label>Inactivo</ion-label></ion-segment-button>
+          <ion-segment-button value="create"><iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon><ion-label>Crear</ion-label></ion-segment-button>
+          <ion-segment-button value="domain"><iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon><ion-label>Dominio</ion-label></ion-segment-button>
+        </ion-segment></footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Resumen de Hubs',
+        body: `
+          <div class="stack">
+            <div class="kpis">
+              <ok-kpi label="Total hubs" value="3" icon="server-outline"></ok-kpi>
+              <ok-kpi label="Activos" value="3" icon="checkmark-circle-outline"></ok-kpi>
+              <ok-kpi label="Usuarios" value="8" icon="people-outline"></ok-kpi>
+            </div>
+            <h2 class="section-title">Tus Hubs</h2>
+            <div class="hub-grid">
+              <ion-card>
+                <ion-card-content>
+                  <div class="hub-title"><h3>Terminal principal</h3><span class="online-dot"></span></div>
+                  <p>Barcelona</p>
+                  <div class="hub-meta"><iconify-icon icon="lucide:link" width="13" height="13"></iconify-icon><strong>Slug:</strong> terminal-principal</div>
+                  <div class="hub-meta"><iconify-icon icon="lucide:clock" width="13" height="13"></iconify-icon><strong>Última conexión:</strong> hace 2 minutos</div>
+                  <ion-button size="small" expand="block"><iconify-icon slot="start" icon="lucide:external-link" width="14" height="14"></iconify-icon>Acceder</ion-button>
+                </ion-card-content>
+              </ion-card>
+              <ion-card>
+                <ion-card-content>
+                  <div class="hub-title"><h3>Tienda Centro</h3><span class="online-dot"></span></div>
+                  <p>Barcelona</p>
+                  <div class="hub-meta"><iconify-icon icon="lucide:link" width="13" height="13"></iconify-icon><strong>Slug:</strong> tienda-centro</div>
+                  <div class="hub-meta"><iconify-icon icon="lucide:clock" width="13" height="13"></iconify-icon><strong>Última conexión:</strong> hace 8 minutos</div>
+                  <ion-button size="small" expand="block"><iconify-icon slot="start" icon="lucide:external-link" width="14" height="14"></iconify-icon>Acceder</ion-button>
+                </ion-card-content>
+              </ion-card>
+            </div>
+            <h2 class="section-title">Acciones rápidas</h2>
+            <div class="quick-actions">
+              <ion-button fill="outline"><iconify-icon slot="start" icon="lucide:server" width="14" height="14"></iconify-icon>Ver todos los Hubs</ion-button>
+              <ion-button fill="outline"><iconify-icon slot="start" icon="lucide:credit-card" width="14" height="14"></iconify-icon>Facturación</ion-button>
+              <ion-button fill="outline"><iconify-icon slot="start" icon="lucide:settings" width="14" height="14"></iconify-icon>Ajustes</ion-button>
+            </div>
+          </div>
+        `,
+        footer,
+      });
+    </script>
+  </body>
+</html>

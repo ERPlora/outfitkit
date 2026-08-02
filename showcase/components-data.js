@@ -438,53 +438,72 @@ pill.tone = 'danger'; pill.label = 'Bloqueado';`,
     ],
   },
   {
-    id: 'ok-drawer',
-    name: 'ok-drawer',
+    id: 'ok-widget-board',
+    name: 'ok-widget-board',
     category: 'dashboard',
-    desc: 'Panel lateral deslizante (slide-over) contextual: asistente, detalle de registro, filtros. Ionic no lo trae (ion-menu es navegación de app; ion-modal sheet es bottom-sheet). Scrim clicable, focus-trap, ESC, slots de cabecera/pie. Modo controlado: los gestos emiten ok-close cancelable. (Overlay display:contents: ábrelo con el botón.)',
-    importPath: "@erplora/outfitkit/ok-drawer",
-    example: `<div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-start">
-  <ion-button id="drw-open" size="small">Abrir drawer</ion-button>
-  <small style="color:var(--ion-color-medium)">Cierra con ESC, click fuera o el botón X.</small>
-  <ok-drawer id="drw" heading="Asistente" icon="sparkles-outline" width="380px">
-    <ion-button slot="header-actions" size="small" fill="clear">
-      <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
-    </ion-button>
-    <p style="margin:0 0 .75rem">Hola 👋 Soy el asistente. Este es el cuerpo del drawer, con scroll interno.</p>
-    <ok-inline-feedback tone="info" heading="Contextual">Úsame para detalle de registro o filtros.</ok-inline-feedback>
-    <div slot="footer" style="display:flex;gap:.5rem">
-      <ion-button size="small" expand="block" style="flex:1">Acción principal</ion-button>
-    </div>
-  </ok-drawer>
-</div>`,
+    desc: 'Panel configurable para dashboards: activa, oculta y reordena widgets Ionic/OutfitKit sin apropiarse de sus datos. Admite presets por rol y persistencia opcional.',
+    importPath: "@erplora/outfitkit/ok-widget-board",
+    example: `<ok-widget-board id="widget-board-demo" editable>
+  <span slot="title">Panel operativo</span>
+</ok-widget-board>`,
     setup: (root) => {
-      const drawer = root.querySelector('#drw');
-      root.querySelector('#drw-open').addEventListener('click', () => { drawer.open = true; });
+      const board = root.querySelector('#widget-board-demo');
+      const cardWidget = (title, value, note) => (cell) => {
+        const card = document.createElement('ion-card');
+        const header = document.createElement('ion-card-header');
+        const subtitle = document.createElement('ion-card-subtitle');
+        const heading = document.createElement('ion-card-title');
+        const content = document.createElement('ion-card-content');
+        subtitle.textContent = title;
+        heading.textContent = value;
+        content.textContent = note;
+        header.append(subtitle, heading);
+        card.append(header, content);
+        cell.append(card);
+      };
+      board.widgets = [
+        { id: 'sales', title: 'Ventas', icon: 'trending-up-outline', category: 'Operaciones', size: 'sm', render: cardWidget('VENTAS HOY', '4.820 €', '+12 % frente a ayer') },
+        { id: 'orders', title: 'Pedidos', icon: 'receipt-outline', category: 'Operaciones', size: 'sm', render: cardWidget('PEDIDOS', '86', '7 pendientes') },
+        { id: 'stock', title: 'Stock crítico', icon: 'cube-outline', category: 'Inventario', size: 'md', render: cardWidget('STOCK CRÍTICO', '14 referencias', 'Revisión necesaria') },
+      ];
+      board.presets = [
+        { id: 'manager', label: 'Gerencia', widgets: ['sales', 'orders', 'stock'] },
+        { id: 'warehouse', label: 'Almacén', widgets: ['stock', 'orders'] },
+      ];
+      board.value = ['sales', 'orders', 'stock'];
+      board.labels = {
+        customize: 'Personalizar panel',
+        close: 'Cerrar',
+        presets: 'Presets',
+        active: 'Activos · arrastra para reordenar',
+        available: 'Disponibles',
+        empty: 'Panel vacío',
+      };
     },
-    code: `<ok-drawer heading="Asistente" icon="sparkles-outline" side="end" width="420px">
-  <ion-button slot="header-actions" size="small" fill="clear">…</ion-button>
-  … cuerpo con scroll interno …
-  <div slot="footer">…</div>
-</ok-drawer>
-drawer.open = true;                       // controlado por el padre (señal/ref)
-drawer.addEventListener('ok-close', (e) => {
-  // e.detail.reason: 'scrim' | 'esc' | 'button'
-  // e.preventDefault() para vetar el cierre (modo controlado);
-  // si nadie lo veta, el drawer se cierra solo.
-});`,
+    code: `<ok-widget-board id="board" editable storage-key="dashboard"></ok-widget-board>
+
+const board = document.querySelector('#board');
+board.widgets = [
+  {
+    id: 'sales',
+    title: 'Ventas',
+    size: 'sm',
+    render(cell) {
+      const card = document.createElement('ion-card');
+      // El host compone aquí sus ion-* y ok-* con datos reales.
+      cell.append(card);
+    },
+  },
+];
+board.presets = [{ id: 'manager', label: 'Gerencia', widgets: ['sales'] }];`,
     api: [
-      { kind: 'prop', name: 'open', type: 'bool (reflejado)', detail: 'Abierto/cerrado; el padre puede controlarlo' },
-      { kind: 'prop', name: 'side · width', type: 'end|start · string', detail: 'Lado (def end) · ancho (def 420px; móvil 100%)' },
-      { kind: 'prop', name: 'heading · icon', type: 'string', detail: 'Título e icono de la cabecera' },
-      { kind: 'prop', name: 'scrim · dismissible', type: 'bool · bool', detail: 'Fondo clicable (def true) · ESC/scrim/X cierran (def true)' },
-      { kind: 'prop', name: '.labels', type: '{close}', detail: 'Textos traducibles (default inglés)' },
-      { kind: 'slot', name: '(default) · header-actions · footer', type: '—', detail: 'Cuerpo (scroll) · botones extra cabecera · pie fijo' },
-      { kind: 'event', name: 'ok-open', type: '{open:true}', detail: 'Al abrirse' },
-      { kind: 'event', name: 'ok-close', type: '{reason} cancelable', detail: 'Gesto de cierre; preventDefault() lo veta' },
+      { kind: 'prop', name: '.widgets', type: 'WidgetDef[]', detail: 'Catálogo {id,title,icon?,category?,size?,render(cell)}' },
+      { kind: 'prop', name: '.value', type: 'string[]', detail: 'Ids activos en su orden actual' },
+      { kind: 'prop', name: '.presets', type: 'WidgetPreset[]', detail: 'Combinaciones recomendadas por rol o sector' },
+      { kind: 'prop', name: 'editable · storage-key', type: 'boolean · string', detail: 'Abre el configurador · persiste la selección' },
+      { kind: 'event', name: 'ok-change', type: '{value:string[]}', detail: 'Al activar, ocultar o reordenar widgets' },
     ],
   },
-
-  // ════════════════════════════════ FLUJO ═════════════════════════════════
   {
     id: 'ok-stepper',
     name: 'ok-stepper',
@@ -991,7 +1010,7 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
     id: 'ok-spotlight-search',
     name: 'ok-spotlight-search',
     category: 'acciones',
-    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante (arriba-centro, fondo desenfocado) que NO rompe la vista de debajo. Aporta solo el chrome (input hero + ✕ + trigger opcional + autofoco + Esc); los RESULTADOS los pone el consumidor por slot (datos síncronos o async), así sirve para cualquier búsqueda. Es un <dialog> nativo en el TOP LAYER: escapa el containing block de un ion-toolbar donde viva el trigger.',
+    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante que no rompe la vista de debajo. Aporta el campo, cierre, trigger opcional, autofoco y Esc; los resultados los pone el consumidor por slot, con datos síncronos o asíncronos. Es un <dialog> nativo con showModal(): se pinta en el TOP LAYER, así que escapa el containing block de un ion-toolbar donde viva el trigger.',
     importPath: "@erplora/outfitkit/ok-spotlight-search",
     example: `<div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-start">
   <small style="color:var(--ion-color-medium)">Pulsa el icono para abrir el buscador.</small>
@@ -1005,16 +1024,18 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
   </ok-spotlight-search>
 </div>`,
     setup: (root) => {
-      const sp = root.querySelector('#sp');
+      const spotlight = root.querySelector('#sp');
       const items = [...root.querySelectorAll('#sp-list ion-item')];
       // Filtra los resultados según lo tecleado (el consumidor decide cómo; aquí, por texto).
-      sp.addEventListener('ok-input', (e) => {
-        const q = (e.detail.value || '').toLowerCase();
-        items.forEach((it) => { it.style.display = it.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+      spotlight.addEventListener('ok-input', (event) => {
+        const query = (event.detail.value || '').toLowerCase();
+        items.forEach((item) => {
+          item.style.display = item.textContent.toLowerCase().includes(query) ? '' : 'none';
+        });
       });
       // Al elegir un resultado se cierra el overlay.
-      items.forEach((it) => it.addEventListener('click', () => sp.close()));
-      root.querySelector('[slot="footer"]').addEventListener('click', () => sp.close());
+      items.forEach((item) => item.addEventListener('click', () => spotlight.close()));
+      root.querySelector('[slot="footer"]').addEventListener('click', () => spotlight.close());
     },
     code: `<ok-spotlight-search trigger-icon="person" placeholder="Buscar cliente…">
   <ion-list><!-- el consumidor pinta y estila los resultados --></ion-list>
@@ -1022,15 +1043,15 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
 </ok-spotlight-search>
 
 // Filtrar según lo tecleado (datos síncronos o async):
-sp.addEventListener('ok-input', (e) => buscar(e.detail.value));
-sp.addEventListener('ok-open',  (e) => { if (e.detail.open) cargar(); });
-sp.openSearch();  // close() / toggle()  · o desde una lupa externa`,
+spotlight.addEventListener('ok-input', (e) => buscar(e.detail.value));
+spotlight.addEventListener('ok-open', (e) => { if (e.detail.open) cargar(); });
+spotlight.openSearch();  // close() / toggle()`,
     api: [
-      { kind: 'prop', name: 'open · placeholder · value', type: 'bool · string · string', detail: 'Abierto (reflejado) · guía del input · texto de búsqueda' },
-      { kind: 'prop', name: 'trigger-icon · trigger-label', type: 'string · string', detail: 'Si se da, pinta su botón-icono; si no, el consumidor controla la apertura' },
-      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados (los pone el consumidor) · acciones (p.ej. Quitar)' },
+      { kind: 'prop', name: 'open · placeholder · value', type: 'bool · string · string', detail: 'Abierto · guía del input · texto de búsqueda' },
+      { kind: 'prop', name: 'trigger-icon · trigger-label', type: 'string · string', detail: 'Botón opcional para abrir; si no se indica, el consumidor controla la apertura' },
+      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados (los pone el consumidor) · acciones del pie' },
       { kind: 'event', name: 'openSearch() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
-      { kind: 'event', name: 'ok-input · ok-open', type: '{value} · {open}', detail: 'Al teclear · al abrir/cerrar' },
+      { kind: 'event', name: 'ok-input · ok-open', type: '{value} · {open}', detail: 'Al escribir · al abrir o cerrar' },
     ],
   },
 
@@ -1150,7 +1171,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
     id: 'ok-layout',
     name: 'layout.css (container · grid)',
     category: 'web',
-    desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fill, sin breakpoints). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
+    desc: 'Primitivos de layout como CSS PLANO (sin web component, sin FOUC): .ok-container (ancho máximo centrado), .ok-container-fluid, y rejilla de 12 columnas .ok-grid/.ok-col con spans responsive (.ok-md-* / .ok-lg-* / .ok-xl-*, breakpoints de Ionic) + .ok-grid-cards (auto-fit, sin breakpoints ni tracks vacíos). Sustituye a los antiguos <ok-container>/<ok-container-full>.',
     importPath: "@erplora/outfitkit/layout.css",
     example: `<div class="ok-container">
   <div style="background:var(--ok-surface-2);padding:1rem;border-radius:8px;text-align:center;margin-bottom:1rem">
@@ -1183,7 +1204,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       { kind: 'prop', name: '.ok-container · .ok-container-fluid', type: 'class', detail: 'Ancho máximo centrado (--ok-container-max) · fluido a ancho completo' },
       { kind: 'prop', name: '.ok-grid · .ok-col', type: 'class', detail: 'Rejilla de 12 col (gap --ok-grid-gap) · celda (span 12 por defecto, min-width:0)' },
       { kind: 'prop', name: '.ok-md-N · .ok-lg-N · .ok-xl-N', type: 'class', detail: 'Span responsive (N = 3·4·6·8·9·12; breakpoints 768/992/1200)' },
-      { kind: 'prop', name: '.ok-grid-cards', type: 'class', detail: 'Grid auto-fill minmax(--ok-card-min, 1fr) — sin clases de breakpoint' },
+      { kind: 'prop', name: '.ok-grid-cards', type: 'class', detail: 'Grid auto-fit minmax(--ok-card-min, 1fr) — sin clases de breakpoint ni tracks vacíos' },
     ],
   },
   {
@@ -1219,7 +1240,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
   </div>
 
   <div>
-    <p style="margin:0 0 .5rem;font-weight:600">3 · .ok-grid-cards — auto-fill, sin clases de breakpoint</p>
+    <p style="margin:0 0 .5rem;font-weight:600">3 · .ok-grid-cards — auto-fit, sin clases de breakpoint</p>
     <div class="ok-grid-cards" style="--ok-card-min:180px">
       <ion-card style="margin:0"><ion-card-content>Café solo<br><strong>€1,40</strong></ion-card-content></ion-card>
       <ion-card style="margin:0"><ion-card-content>Cortado<br><strong>€1,50</strong></ion-card-content></ion-card>
@@ -1254,7 +1275,7 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
   <div class="ok-col ok-md-4"><ion-card>…resumen…</ion-card></div>
 </div>
 
-<!-- 3 · Grid de cards sin breakpoints (auto-fill; ajusta el mínimo con --ok-card-min) -->
+<!-- 3 · Grid de cards sin breakpoints (auto-fit; ajusta el mínimo con --ok-card-min) -->
 <div class="ok-grid-cards" style="--ok-card-min:220px">
   <ion-card>…</ion-card>
   <ion-card>…</ion-card>
@@ -1267,16 +1288,16 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       { kind: 'prop', name: 'Spans', type: 'receta', detail: 'Móvil siempre 12 (apilado); .ok-md-N desde 768, .ok-lg-N desde 992, .ok-xl-N desde 1200 — combinables (ok-md-6 ok-xl-3 = 2 col tablet, 4 col desktop)' },
       { kind: 'prop', name: 'Cards/KPIs', type: 'receta', detail: '.ok-grid-cards cuando todas las celdas son iguales: cero clases de breakpoint, el nº de columnas sale solo de --ok-card-min' },
       { kind: 'prop', name: 'Web pública', type: 'receta', detail: '.ok-container para centrar secciones a --ok-container-max; .ok-section ya trae su propio centrado (no anidar ambos)' },
-      { kind: 'prop', name: '--ok-grid-gap · --ok-card-min', type: 'CSS var', detail: 'Gap del grid (clamp fluido por defecto) · ancho mínimo de celda en .ok-grid-cards (260px por defecto)' },
+      { kind: 'prop', name: '--ok-grid-gap · --ok-card-min', type: 'CSS var', detail: 'Gap del grid (clamp fluido por defecto) · ancho mínimo de celda en .ok-grid-cards (16rem por defecto)' },
     ],
   },
   {
     id: 'ok-table-stack',
     name: '.ok-table-stack (layout.css)',
     category: 'datos',
-    desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una card apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). Funciona con <table> nativa, con divs (.ok-thead/.ok-trow/.ok-tcell) y con ion-grid/ion-row/ion-col.',
+    desc: 'Tabla responsive «no more tables» como CSS PLANO (sin web component; para CRUDs ricos usa <ok-data-table>): en escritorio se ve como tabla y bajo 768px cada fila se convierte en una superficie apilada con la etiqueta de columna delante de cada celda (content: attr(data-title)). .ok-table-surface aporta el marco editorial reutilizable sin duplicarlo en móvil.',
     importPath: "@erplora/outfitkit/layout.css",
-    example: `<table class="ok-table-stack">
+    example: `<div class="ok-table-surface"><table class="ok-table-stack">
   <thead>
     <tr><th>Producto</th><th>SKU</th><th>Precio</th><th>Stock</th></tr>
   </thead>
@@ -1294,11 +1315,11 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       <td data-title="Stock">38</td>
     </tr>
   </tbody>
-</table>`,
+</table></div>`,
     code: `<link rel="stylesheet" href=".../layout.css">
 
-<!-- 1 · Tabla nativa -->
-<table class="ok-table-stack">
+<!-- 1 · Tabla nativa con superficie editorial -->
+<div class="ok-table-surface"><table class="ok-table-stack">
   <thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead>
   <tbody>
     <tr>
@@ -1306,8 +1327,9 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
       <td data-title="Precio">9,90 €</td>
       <td><ion-button size="small">Editar</ion-button></td> <!-- sin data-title: ancho completo en móvil -->
     </tr>
+    <tr class="ok-table-group"><td colspan="3">Inventario</td></tr>
   </tbody>
-</table>
+</table></div>
 
 <!-- 2 · Divs (o cualquier elemento) -->
 <div class="ok-table-stack">
@@ -1324,7 +1346,9 @@ form.addEventListener('ok-submit', (e) => …); // { name, email, subject, messa
 <!-- Tokens: --ok-table-cols (columnas del markup no-<table>; p.ej. 2fr 1fr auto),
      --ok-table-label-w (ancho de la etiqueta en móvil, 45%) -->`,
     api: [
-      { kind: 'prop', name: '.ok-table-stack', type: 'class', detail: 'Contenedor (en <table>, en un div o en ion-grid). Bajo 768px (md de Ionic) las filas se apilan como cards' },
+      { kind: 'prop', name: '.ok-table-stack', type: 'class', detail: 'Contenedor (en <table>, en un div o en ion-grid). Bajo 768px (md de Ionic) las filas se apilan como superficies' },
+      { kind: 'prop', name: '.ok-table-surface', type: 'class', detail: 'Marco editorial opcional: superficie y línea óptica sutil en escritorio; desaparece en móvil para evitar superficies anidadas' },
+      { kind: 'prop', name: '.ok-table-group', type: 'class', detail: 'Fila de sección o categoría; en móvil se conserva como rótulo y no se convierte en card' },
       { kind: 'prop', name: '.ok-thead · .ok-trow · .ok-tcell', type: 'class', detail: 'Cabecera/fila/celda para markup no-<table> (divs o ion-row/ion-col); en <table> nativa no hacen falta' },
       { kind: 'prop', name: '[data-title]', type: 'attr', detail: 'Etiqueta de columna que la celda pinta delante en móvil (::before); sin él la celda ocupa el ancho completo (acciones)' },
       { kind: 'prop', name: '--ok-table-cols · --ok-table-label-w', type: 'CSS var', detail: 'Columnas del grid no-<table> (por defecto partes iguales) · ancho de etiqueta en móvil (45%)' },
@@ -1386,9 +1410,9 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
     id: 'ok-section',
     name: '.ok-section (layout.css)',
     category: 'marketing',
-    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Modificadores --center (encabezado centrado) y --divider (separador superior). El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
+    desc: 'Sección de marketing como CSS PLANO sobre <section> nativo (sin web component, sin FOUC; antes era <ok-section>): eyebrow (píldora), título display, subtítulo y cuerpo. Incluye una escala responsive de ritmo vertical: compacta, estándar y destacada. El centrado horizontal va en el propio elemento (padding-inline calculado), así el divisor cruza todo el ancho.',
     importPath: "@erplora/outfitkit/layout.css",
-    example: `<section class="ok-section ok-section--center ok-section--divider" style="padding-block:2rem">
+    example: `<section class="ok-section ok-section--compact ok-section--center ok-section--divider">
   <header class="ok-section-head">
     <span class="ok-eyebrow">Plataforma</span>
     <h2 class="ok-section-title">Todo en uno</h2>
@@ -1409,8 +1433,10 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
   …contenido…
 </section>`,
     api: [
-      { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo vertical (--ok-section-pad-y) y ancho máximo (--ok-container-max)' },
-      { kind: 'prop', name: '.ok-section--center · .ok-section--divider', type: 'class', detail: 'Encabezado centrado · separador superior de 1px' },
+      { kind: 'prop', name: '.ok-section', type: 'class', detail: 'Sección con ritmo estándar responsive y ancho máximo (--ok-container-max)' },
+      { kind: 'prop', name: '.ok-section-content', type: 'class', detail: 'Aplica el mismo ritmo vertical dentro de un .ok-container explícito' },
+      { kind: 'prop', name: '.ok-section--compact · .ok-section--featured', type: 'class', detail: 'Densidad compacta para contenido repetitivo · respiración destacada para CTA o bloques clave' },
+      { kind: 'prop', name: '.ok-section--center · .ok-section--divider · .ok-section--soft', type: 'class', detail: 'Encabezado centrado · separador superior de 1px · superficie alterna para el ritmo de página' },
       { kind: 'prop', name: '.ok-section-head · .ok-eyebrow · .ok-section-title · .ok-section-sub', type: 'class', detail: 'Encabezado · píldora · título display · subtítulo' },
     ],
   },
@@ -1658,6 +1684,7 @@ menubar.addEventListener('ok-open', (e) => …);   // { open }`,
       { kind: 'prop', name: 'eyebrow · heading · subheading', type: 'string', detail: 'Eyebrow · título (slot="heading" para markup rico) · subtítulo' },
       { kind: 'prop', name: 'variant', type: 'solid|soft|glass', detail: 'Estilo de fondo (def solid, degradado de marca)' },
       { kind: 'slot', name: 'heading · actions', type: '—', detail: 'Título rico · CTAs (ion-button)' },
+      { kind: 'prop', name: '--ok-cta-action-outline-*', type: 'CSS var', detail: 'Overrides opcionales de color, borde y estados del ion-button outline; en solid derivan automáticamente de --ok-primary-contrast' },
     ],
   },
 
@@ -1930,16 +1957,6 @@ if (full) {
     },
     code: "<ok-pagination total=\"487\" page=\"4\" page-size=\"20\" info></ok-pagination>\nconst pg = document.querySelector('ok-pagination');\npg.pageSizeOptions = [10, 20, 50, 100];\npg.addEventListener('ok-page-change', (e) => { pg.page = e.detail.page; load(pg.page); });\npg.addEventListener('ok-page-size-change', (e) => { pg.pageSize = e.detail.size; pg.page = 1; });",
     api: [{"kind": "prop", "name": "total · page · page-size", "type": "number · number · number", "detail": "Total de elementos, página actual (base 1) y tamaño de página"}, {"kind": "prop", "name": "variant", "type": "'default'|'compact'", "detail": "Numerado completo o compacto (prev/valor/next)"}, {"kind": "prop", "name": "info", "type": "boolean", "detail": "Muestra el texto \"X–Y de Z\""}, {"kind": "prop", "name": ".pageSizeOptions", "type": "number[]", "detail": "Si se pasan, muestra un ion-select de filas por página"}, {"kind": "prop", "name": "sibling-count · boundary-count", "type": "number · number", "detail": "Páginas vecinas a cada lado de la activa y fijas en cada extremo"}, {"kind": "event", "name": "ok-page-change", "type": "CustomEvent<{page:number}>", "detail": "Emitido al pulsar una página o chevron"}, {"kind": "event", "name": "ok-page-size-change", "type": "CustomEvent<{size:number}>", "detail": "Emitido al cambiar filas por página en el selector"}],
-  },
-  {
-    id: "ok-skeleton",
-    name: "ok-skeleton",
-    category: "feedback",
-    desc: "Placeholder de carga (shimmer) con variantes de forma (text/title/circle/avatar/button/chip/card/row), stack de líneas de anchos decrecientes (lines) y presets compuestos (preset=\"card\"/\"table\"/\"chart\"). Respeta prefers-reduced-motion. Sin eventos.",
-    importPath: "@erplora/outfitkit/ok-skeleton",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem\">\n  <ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n  <ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n  <div style=\"display:flex;gap:1rem;align-items:center;flex-wrap:wrap\">\n    <ok-skeleton variant=\"avatar\" width=\"48px\" height=\"48px\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"chip\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"button\" style=\"width:auto\"></ok-skeleton>\n    <ok-skeleton variant=\"circle\" width=\"56px\" height=\"56px\" style=\"width:auto\"></ok-skeleton>\n  </div>\n  <ok-skeleton preset=\"card\"></ok-skeleton>\n  <ok-skeleton preset=\"table\" rows=\"4\" cols=\"4\"></ok-skeleton>\n  <ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>\n</div>",
-    code: "// Variante simple\n<ok-skeleton variant=\"title\" width=\"40%\"></ok-skeleton>\n<ok-skeleton variant=\"text\" lines=\"3\"></ok-skeleton>\n\n// Presets compuestos\n<ok-skeleton preset=\"card\"></ok-skeleton>\n<ok-skeleton preset=\"table\" rows=\"5\" cols=\"4\"></ok-skeleton>\n<ok-skeleton preset=\"chart\" cols=\"9\"></ok-skeleton>",
-    api: [{"kind": "prop", "name": "variant", "type": "text|title|circle|avatar|button|chip|card|row", "detail": "Forma del bloque individual"}, {"kind": "prop", "name": "lines", "type": "number", "detail": "Nº de líneas apiladas (text/title; >1 activa el stack 92/78/60%)"}, {"kind": "prop", "name": "preset", "type": "none|card|table|chart", "detail": "Scaffold de placeholder compuesto"}, {"kind": "prop", "name": "rows", "type": "number", "detail": "Filas del preset table (incluye cabecera)"}, {"kind": "prop", "name": "cols", "type": "number", "detail": "Columnas del preset table / nº de barras del preset chart"}, {"kind": "prop", "name": "width · height · radius", "type": "string", "detail": "Overrides CSS explícitos de la variante (p.ej. \"120px\", \"40%\")"}],
   },
   {
     id: "ok-gauge",
@@ -2335,53 +2352,6 @@ el.addEventListener('ok-shortcut', (e) => console.log('shortcut', e.detail.short
     },
     code: "// Error HTTP con atajos y acciones\nconst p = document.querySelector('ok-error-page');\np.code = '500';\np.title = 'Algo salió mal';\np.message = 'Estamos trabajando para solucionarlo.';\np.variant = 'danger';\np.trace = 'Traceback (most recent call last)\\n  File \"runtime.rs\", line 142...';\np.shortcuts = [{ title: 'Inicio', icon: 'home-outline', href: '/' }];\np.addEventListener('ok-shortcut', e => navigate(e.detail.shortcut.href));\n\n// Pantalla de arranque (bootstrap) con health-check + reintento\n// <ok-error-page mode=\"bootstrap\" retry-seconds=\"10\" .checks=${checks}>",
     api: [{"kind": "prop", "name": "code · title · message", "type": "string", "detail": "Código HTTP, título destacado y mensaje explicativo"}, {"kind": "prop", "name": "variant · mode", "type": "info|warn|danger · http|bootstrap", "detail": "Acento/ilustración · error HTTP o pantalla de arranque"}, {"kind": "prop", "name": ".shortcuts", "type": "OkErrorShortcut[]", "detail": "Tiles de atajo {title, desc?, href?, icon?}"}, {"kind": "prop", "name": ".checks", "type": "OkErrorCheck[]", "detail": "Checklist de salud (solo mode=bootstrap): {name, message?, status?, time?}"}, {"kind": "prop", "name": "trace · meta", "type": "string", "detail": "Traza en <details> colapsable · línea de meta (trace id·timestamp)"}, {"kind": "prop", "name": "retry-seconds · retry-label", "type": "number · string", "detail": "Cuenta atrás de reintento (chip+barra) y su etiqueta"}, {"kind": "event", "name": "ok-retry · ok-shortcut", "type": "CustomEvent", "detail": "Al acabar la cuenta atrás · al pulsar un atajo (detail.shortcut)"}],
-  },
-  {
-    id: "ok-date-picker",
-    name: "ok-date-picker",
-    category: "inputs",
-    desc: "Campo de fecha con popover de calendario propio (lo que Ionic no trae cómodo): selección single o range con chips de preset (Hoy/7d/Esta semana/Mes/Trimestre/YTD), navegación de mes, min/max y 1-2 paneles. Props .value, mode, min/max, .presets, months; evento ok-change.",
-    importPath: "@erplora/outfitkit/ok-date-picker",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;max-width:340px\">\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">FECHA DE FACTURA\n    <ok-date-picker id=\"dpSingle\" mode=\"single\" placeholder=\"Seleccionar fecha\"></ok-date-picker>\n  </label>\n  <label style=\"display:flex;flex-direction:column;gap:.4rem;font:600 .75rem system-ui;color:var(--ion-color-medium)\">PERIODO DEL INFORME\n    <ok-date-picker id=\"dpRange\" mode=\"range\" months=\"1\"></ok-date-picker>\n  </label>\n</div>",
-    setup: (root, ctx) => {
-root.querySelector('#dpSingle').value = '2026-06-09';
-const range = root.querySelector('#dpRange');
-range.value = { start: '2026-06-01', end: '2026-06-14' };
-range.presets = [
-  { id: '7d', label: '7d' },
-  { id: 'week', label: 'Esta semana' },
-  { id: 'month', label: 'Mes' },
-  { id: 'quarter', label: 'Trimestre' },
-  { id: 'ytd', label: 'YTD' },
-];
-    },
-    code: "const dp = document.querySelector('ok-date-picker');\ndp.mode = 'range';\ndp.value = { start: '2026-06-01', end: '2026-06-14' };\ndp.addEventListener('ok-change', (e) => console.log(e.detail.value));\n// <ok-date-picker mode=\"range\" min=\"2026-01-01\" max=\"2026-12-31\"></ok-date-picker>",
-    api: [{"kind": "prop", "name": "mode", "type": "'single'|'range'", "detail": "Una fecha o un rango {start,end}"}, {"kind": "prop", "name": ".value", "type": "string | {start,end} | null", "detail": "ISO YYYY-MM-DD (single) o rango (range)"}, {"kind": "prop", "name": "min · max", "type": "string", "detail": "Límites ISO; los días fuera quedan deshabilitados"}, {"kind": "prop", "name": ".presets", "type": "OkDatePreset[]", "detail": "Chips de atajo; [] oculta la fila"}, {"kind": "prop", "name": "months", "type": "1|2", "detail": "Paneles de mes lado a lado en pantalla ancha"}, {"kind": "prop", "name": "locale · placeholder", "type": "string", "detail": "Locale del mes (es-ES) · texto sin valor"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{value}>", "detail": "Emite ISO (single) o {start,end} (range) al elegir"}],
-  },
-  {
-    id: "ok-time-picker",
-    name: "ok-time-picker",
-    category: "inputs",
-    desc: "Selector compacto de hora del día (pastilla HH:MM mono + popover con listas de horas/minutos): más ligero que ion-datetime. Props value \"HH:MM\" (24h), step, use-ampm, min/max, disabled; emite ok-change { value }.",
-    importPath: "@erplora/outfitkit/ok-time-picker",
-    example: "<div style=\"display:flex;flex-direction:column;gap:1.25rem;padding:.5rem 0\">\n  <div style=\"display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap\">\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      APERTURA\n      <ok-time-picker value=\"09:30\" step=\"15\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      CIERRE (12h)\n      <ok-time-picker value=\"21:00\" step=\"30\" use-ampm></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      RESERVA\n      <ok-time-picker id=\"tp-resa\" value=\"13:45\" step=\"5\" min=\"12:00\" max=\"16:30\"></ok-time-picker>\n    </label>\n    <label style=\"display:flex;flex-direction:column;gap:.35rem;font:600 .75rem system-ui;color:#6b7280\">\n      BLOQUEADO\n      <ok-time-picker value=\"08:00\" disabled></ok-time-picker>\n    </label>\n  </div>\n  <p style=\"margin:0;font:.85rem system-ui;color:#374151\">\n    Reserva seleccionada: <strong id=\"tp-out\" style=\"font-variant-numeric:tabular-nums\">13:45</strong>\n  </p>\n</div>",
-    setup: (root, ctx) => {
-const resa = root.querySelector('#tp-resa');
-const out = root.querySelector('#tp-out');
-resa.addEventListener('ok-change', (e) => { out.textContent = e.detail.value; });
-    },
-    code: "<ok-time-picker value=\"13:45\" step=\"15\" min=\"12:00\" max=\"16:30\"></ok-time-picker>\n<ok-time-picker value=\"21:00\" use-ampm></ok-time-picker>\n\npicker.addEventListener('ok-change', (e) => console.log(e.detail.value)); // \"HH:MM\" 24h",
-    api: [{"kind": "prop", "name": "value", "type": "string", "detail": "Hora canónica \"HH:MM\" en 24h (valor que entra y sale)"}, {"kind": "prop", "name": "step", "type": "number", "detail": "Paso de minutos de la lista (default 5, 1-30)"}, {"kind": "prop", "name": "use-ampm", "type": "boolean", "detail": "Presentación 12h con columna AM/PM (el valor sigue en 24h)"}, {"kind": "prop", "name": "min · max", "type": "string · string", "detail": "\"HH:MM\" que acotan las horas/minutos seleccionables (inclusive)"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Desactiva la interacción (refleja a atributo)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{ value: string }>", "detail": "Al elegir hora; value canónico \"HH:MM\" 24h (bubbles + composed)"}],
-  },
-  {
-    id: "ok-range-dual",
-    name: "ok-range-dual",
-    category: "inputs",
-    desc: "Slider de rango min–max con doble thumb (el hueco que ion-range no cubre): pista con relleno coloreado entre los dos thumbs y readout «low – high». Props low/high/min/max/step + prefix/suffix; emite ok-change con {low, high}.",
-    importPath: "@erplora/outfitkit/ok-range-dual",
-    example: "<div style=\"display:grid;gap:2rem;max-width:420px;padding:0.5rem\">\n  <ok-range-dual id=\"precio\" label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"></ok-range-dual>\n  <ok-range-dual id=\"desc\" label=\"Descuento\" min=\"0\" max=\"100\" step=\"5\" low=\"10\" high=\"40\" suffix=\"%\"></ok-range-dual>\n  <ok-range-dual id=\"peso\" label=\"Peso (kg)\" min=\"0\" max=\"50\" step=\"0.5\" low=\"5\" high=\"22.5\" suffix=\" kg\"></ok-range-dual>\n  <ok-range-dual id=\"off\" label=\"Deshabilitado\" min=\"0\" max=\"100\" low=\"20\" high=\"80\" suffix=\"%\" disabled></ok-range-dual>\n</div>",
-    code: "&lt;ok-range-dual label=\"Precio\" min=\"0\" max=\"500\" step=\"5\" low=\"60\" high=\"320\" prefix=\"€\"&gt;&lt;/ok-range-dual&gt;\n\nrange.addEventListener('ok-change', (e) =&gt; {\n  console.log(e.detail.low, e.detail.high); // { low, high }\n});",
-    api: [{"kind": "prop", "name": "low", "type": "number", "detail": "Valor inferior actual del rango"}, {"kind": "prop", "name": "high", "type": "number", "detail": "Valor superior actual del rango"}, {"kind": "prop", "name": "min · max · step", "type": "number", "detail": "Límites del rango y paso de incremento"}, {"kind": "prop", "name": "label", "type": "string", "detail": "Etiqueta opcional a la izquierda del readout"}, {"kind": "prop", "name": "prefix · suffix", "type": "string", "detail": "Prefijo/sufijo en el readout (ej. '€', '%', ' kg')"}, {"kind": "prop", "name": "disabled", "type": "boolean", "detail": "Deshabilita la interacción (atenúa el control)"}, {"kind": "event", "name": "ok-change", "type": "CustomEvent<{low,high}>", "detail": "Emitido al mover cualquiera de los dos thumbs"}],
   },
   {
     id: "ok-file-item",

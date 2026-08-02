@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Clientes · Etiquetas</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .customer-tags-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .customer-tags-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .customer-tag-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .customer-tag-form h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .customer-tag-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.45rem;
+      }
+
+      .customer-tag-feedback {
+        margin: 0 0 0.75rem;
+        color: var(--ion-color-success);
+        font-weight: 600;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-customers-tags.test.ts.
+      const TAG_FIXTURE = [
+        {
+          "id": "t1",
+          "name": "Fiel",
+          "color": "success",
+          "is_active": 1
+        }
+      ];
+
+      defineHubPage({
+        active: '/m/customers/tags',
+        title: 'Etiquetas de clientes',
+        body: `
+          <div class="customer-tags-page">
+            <p id="customer-tag-feedback" class="customer-tag-feedback" hidden></p>
+
+            <ok-data-table id="customer-tags-table" fill>
+              <form id="customer-tag-form" slot="create" class="customer-tag-form">
+                <h3 id="customer-tag-form-title" hidden></h3>
+                <ion-input
+                  id="customer-tag-name"
+                  fill="outline"
+                  label="Nombre"
+                  label-placement="floating"
+                  required
+                ></ion-input>
+                <ion-input
+                  id="customer-tag-color"
+                  fill="outline"
+                  label="Color"
+                  label-placement="floating"
+                  value="primary"
+                  required
+                ></ion-input>
+                <ion-checkbox id="customer-tag-is-active" hidden>Activa</ion-checkbox>
+                <div class="customer-tag-form-actions">
+                  <ion-button id="customer-tag-cancel" size="small" fill="outline" hidden>Cancelar</ion-button>
+                  <ion-button id="customer-tag-save" type="submit" size="small">Guardar</ion-button>
+                </div>
+              </form>
+            </ok-data-table>
+
+            <ion-alert id="customer-tag-delete-alert"></ion-alert>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('customer-tags-table');
+          const form = doc.getElementById('customer-tag-form');
+          const formTitle = doc.getElementById('customer-tag-form-title');
+          const nameInput = doc.getElementById('customer-tag-name');
+          const colorInput = doc.getElementById('customer-tag-color');
+          const activeInput = doc.getElementById('customer-tag-is-active');
+          const cancelButton = doc.getElementById('customer-tag-cancel');
+          const feedback = doc.getElementById('customer-tag-feedback');
+          const deleteAlert = doc.getElementById('customer-tag-delete-alert');
+
+          let tags = TAG_FIXTURE.map((row) => ({ ...row }));
+          let editingTag = null;
+          let pendingDelete = null;
+          let tagSequence = 2;
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'name';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'color', header: 'Color', sortable: true },
+          ];
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'create-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'pricetag-outline';
+          table.addable = true;
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar etiqueta…';
+          table.emptyMessage = 'Sin etiquetas.';
+          table.pageSizeOptions = [10, 25, 50];
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+
+          function emitTagCommand(name, payload) {
+            doc.dispatchEvent(new CustomEvent('erplora:command', {
+              detail: { name, payload },
+              bubbles: true,
+            }));
+          }
+
+          function showFeedback(message) {
+            feedback.textContent = message;
+            feedback.hidden = false;
+          }
+
+          function queryPage() {
+            const normalizedSearch = search.trim().toLocaleLowerCase('es');
+            let filtered = tags.filter((tag) => {
+              if (normalizedSearch && !tag.name.toLocaleLowerCase('es').includes(normalizedSearch)) return false;
+              if (filters.name && !tag.name.toLocaleLowerCase('es').includes(String(filters.name).toLocaleLowerCase('es'))) return false;
+              if (filters.color && tag.color !== filters.color) return false;
+              if (filters.is_active !== undefined && filters.is_active !== '' && Number(tag.is_active) !== Number(filters.is_active)) return false;
+              return true;
+            });
+
+            filtered = filtered.sort((left, right) => {
+              const a = left[sort] ?? '';
+              const b = right[sort] ?? '';
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+              return sortDir === 'asc' ? result : -result;
+            });
+
+            const offset = page * pageSize;
+            table.total = filtered.length;
+            table.rows = filtered.slice(offset, offset + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function resetForm() {
+            editingTag = null;
+            form.reset();
+            nameInput.value = '';
+            colorInput.value = 'primary';
+            activeInput.checked = true;
+            activeInput.hidden = true;
+            cancelButton.hidden = true;
+            formTitle.hidden = true;
+            formTitle.textContent = '';
+          }
+
+          function startEdit(tag) {
+            editingTag = tag;
+            nameInput.value = tag.name;
+            colorInput.value = tag.color || 'primary';
+            activeInput.checked = Boolean(tag.is_active);
+            activeInput.hidden = false;
+            cancelButton.hidden = false;
+            formTitle.textContent = `Editar · ${tag.name}`;
+            formTitle.hidden = false;
+            table.open('create');
+          }
+
+          function askDelete(tag) {
+            pendingDelete = tag;
+            deleteAlert.header = 'Eliminar etiqueta';
+            deleteAlert.message = `¿Eliminar ${tag.name}? Los clientes asignados pierden la etiqueta.`;
+            deleteAlert.buttons = [
+              {
+                text: 'Cancelar',
+                role: 'cancel',
+                handler: () => { pendingDelete = null; },
+              },
+              {
+                text: 'Eliminar',
+                role: 'destructive',
+                handler: () => {
+                  if (!pendingDelete) return;
+                  const deleted = pendingDelete;
+                  emitTagCommand('customers.tags.delete', { tag_id: deleted.id });
+                  tags = tags.filter((tagRow) => tagRow.id !== deleted.id);
+                  pendingDelete = null;
+                  showFeedback(`Etiqueta ${deleted.name} eliminada`);
+                  queryPage();
+                },
+              },
+            ];
+            deleteAlert.isOpen = true;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = String(nameInput.value ?? '').trim();
+            const color = String(colorInput.value ?? '').trim() || 'primary';
+            if (!name) return;
+
+            if (editingTag) {
+              const payload = {
+                tag_id: editingTag.id,
+                name,
+                color,
+                is_active: activeInput.checked ? 1 : 0,
+              };
+              emitTagCommand('customers.tags.update', payload);
+              tags = tags.map((tag) => tag.id === editingTag.id ? { ...tag, ...payload } : tag);
+              showFeedback('Etiqueta actualizada');
+            } else {
+              const payload = { name, color };
+              emitTagCommand('customers.tags.create', payload);
+              tags.push({ id: `t${tagSequence}`, ...payload, is_active: 1 });
+              tagSequence += 1;
+              showFeedback('Etiqueta creada');
+            }
+
+            resetForm();
+            table.close();
+            queryPage();
+          });
+
+          cancelButton.addEventListener('click', () => {
+            resetForm();
+            table.close();
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            if (actionId === 'edit') startEdit(row);
+            if (actionId === 'delete') askDelete(row);
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+
+          resetForm();
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

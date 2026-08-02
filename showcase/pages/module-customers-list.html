@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Clientes</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .customers-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .customers-page > ok-data-table {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .customer-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .customer-create-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .customer-create-form ion-button {
+        align-self: flex-end;
+      }
+
+      .customer-detail-page {
+        height: 100%;
+        overflow: auto;
+      }
+
+      .customer-detail-head {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .customer-detail-head h2 {
+        flex: 1;
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .customer-panel {
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--ion-border-color, #e7e2d6);
+        border-radius: 10px;
+        background: var(--ok-surface-2, var(--ion-color-step-50, rgba(24, 24, 27, 0.04)));
+      }
+
+      .customer-panel h3 {
+        margin: 0.25rem 0 0.65rem;
+        font-size: 1rem;
+      }
+
+      .customer-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+        gap: 0.25rem 0.75rem;
+        margin: 0;
+      }
+
+      .customer-meta dt {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+
+      .customer-meta dd {
+        margin: 0 0 0.45rem;
+        font-weight: 600;
+      }
+
+      .customer-edit-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+        gap: 0.75rem;
+      }
+
+      .customer-edit-wide {
+        grid-column: 1 / -1;
+      }
+
+      .customer-checks,
+      .customer-actions,
+      .customer-memberships {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.9rem;
+        margin-top: 0.75rem;
+      }
+
+      .customer-checks label,
+      .customer-memberships label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .customer-timeline {
+        padding: 0;
+        margin: 0.5rem 0 0;
+        list-style: none;
+      }
+
+      .customer-timeline li {
+        padding: 0.25rem 0 0.55rem 0.75rem;
+        border-left: 3px solid var(--ion-border-color, #e7e2d6);
+      }
+
+      .customer-timeline small {
+        display: block;
+        margin-top: 0.2rem;
+        opacity: 0.6;
+      }
+
+      .customer-feedback {
+        margin: 0 0 0.75rem;
+        font-weight: 600;
+      }
+
+      .customer-feedback.error {
+        color: var(--ion-color-danger);
+      }
+
+      .customer-feedback.success {
+        color: var(--ion-color-success);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Fixture canónico de erp-customers-list.test.ts. La demo no mantiene una base paralela.
+      const CUSTOMER_FIXTURE = [
+        {
+          "id": "c1",
+          "name": "Ada Lovelace",
+          "email": "ada@example.com",
+          "phone": "600000000",
+          "tax_id": "",
+          "address": "",
+          "city": "",
+          "postal_code": "",
+          "country": "",
+          "notes": "",
+          "is_active": 1,
+          "lifecycle_stage": "lead",
+          "source": "walk_in",
+          "company_name": "",
+          "birthday": null,
+          "anniversary": null,
+          "preferred_channel": "none",
+          "marketing_consent": 0,
+          "consent_date": null,
+          "total_purchases": 0,
+          "total_spent": 0,
+          "last_purchase_date": null
+        }
+      ];
+
+      const STAGES = [
+        ['lead', 'Lead'],
+        ['prospect', 'Prospecto'],
+        ['first_purchase', 'Primera compra'],
+        ['active', 'Activo'],
+        ['at_risk', 'En riesgo'],
+        ['dormant', 'Inactivo'],
+        ['churned', 'Perdido'],
+        ['vip', 'VIP'],
+      ];
+
+      const CHANNELS = [
+        ['none', 'Ninguno'],
+        ['email', 'Email'],
+        ['sms', 'SMS'],
+        ['whatsapp', 'WhatsApp'],
+        ['phone', 'Teléfono'],
+      ];
+
+      const GROUPS = [
+        { id: 'g1', name: 'VIP', discount_percent: 10 },
+      ];
+
+      const TAGS = [
+        { id: 't1', name: 'Fiel' },
+      ];
+
+      const FIELD_VALUES = [
+        { id: 'f1', name: 'Tinte habitual', field_type: 'text', value: '6.34' },
+        { id: 'f3', name: 'Tipo de piel', field_type: 'select', options: ['Seca', 'Grasa'], value: 'Seca' },
+      ];
+
+      const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const stageLabel = (value) => STAGES.find(([key]) => key === value)?.[1] ?? value;
+      const channelLabel = (value) => CHANNELS.find(([key]) => key === value)?.[1] ?? value;
+
+      defineHubPage({
+        active: '/m/customers/customers',
+        title: 'Clientes',
+        body: `
+          <div id="customers-list-page" class="customers-page">
+            <div class="customer-kpis">
+              <ok-kpi id="customers-kpi-total" label="Clientes" value="1"></ok-kpi>
+              <ok-kpi id="customers-kpi-active" label="Activos" value="1"></ok-kpi>
+              <ok-kpi id="customers-kpi-vip" label="VIP" value="0"></ok-kpi>
+              <ok-kpi id="customers-kpi-revenue" label="Ingresos" value="0,00 €"></ok-kpi>
+            </div>
+
+            <p id="customers-feedback" class="customer-feedback" hidden></p>
+
+            <ok-data-table id="customers-table" fill>
+              <form id="customer-create-form" slot="create" class="customer-create-form">
+                <ion-input id="customer-create-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="customer-create-email" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
+                <ion-button type="submit">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+
+          <div id="customer-detail-page" class="customer-detail-page" hidden>
+            <header class="customer-detail-head">
+              <h2 id="customer-detail-name"></h2>
+              <ion-button id="customer-detail-back" size="small" fill="outline">Volver</ion-button>
+              <ion-button id="customer-detail-edit" size="small">Editar</ion-button>
+              <ion-button id="customer-detail-delete" size="small" color="danger" fill="outline">Eliminar</ion-button>
+            </header>
+
+            <p id="customer-detail-feedback" class="customer-feedback" hidden></p>
+
+            <section id="customer-delete-confirm" class="customer-panel" hidden>
+              <h3>Eliminar cliente</h3>
+              <p id="customer-delete-text"></p>
+              <div class="customer-actions">
+                <ion-button id="customer-delete-confirm-button" size="small" color="danger">Eliminar</ion-button>
+                <ion-button id="customer-delete-cancel" size="small" fill="outline">Cancelar</ion-button>
+              </div>
+            </section>
+
+            <section id="customer-detail-summary" class="customer-panel">
+              <dl class="customer-meta">
+                <div><dt>Email</dt><dd id="customer-detail-email"></dd></div>
+                <div><dt>Teléfono</dt><dd id="customer-detail-phone"></dd></div>
+                <div><dt>NIF</dt><dd id="customer-detail-tax-id"></dd></div>
+                <div><dt>Empresa</dt><dd id="customer-detail-company"></dd></div>
+                <div><dt>Dirección</dt><dd id="customer-detail-address"></dd></div>
+                <div><dt>Etapa</dt><dd id="customer-detail-stage"></dd></div>
+                <div><dt>Origen</dt><dd id="customer-detail-source"></dd></div>
+                <div><dt>Canal preferido</dt><dd id="customer-detail-channel"></dd></div>
+                <div><dt>Compras</dt><dd id="customer-detail-purchases"></dd></div>
+                <div><dt>Gasto total</dt><dd id="customer-detail-spent"></dd></div>
+                <div><dt>Última compra</dt><dd id="customer-detail-last-purchase"></dd></div>
+                <div><dt>Activo</dt><dd id="customer-detail-active"></dd></div>
+              </dl>
+            </section>
+
+            <section id="customer-edit-panel" class="customer-panel" hidden>
+              <form id="customer-edit-form">
+                <div class="customer-edit-grid">
+                  <ion-input id="customer-edit-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                  <ion-input id="customer-edit-email" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
+                  <ion-input id="customer-edit-phone" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-tax-id" fill="outline" label="NIF" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-company" fill="outline" label="Empresa" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-address" fill="outline" label="Dirección" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-city" fill="outline" label="Ciudad" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-postal-code" fill="outline" label="Código postal" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-country" fill="outline" label="País" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-birthday" fill="outline" label="Cumpleaños" label-placement="floating" type="date"></ion-input>
+                  <ion-input id="customer-edit-anniversary" fill="outline" label="Aniversario" label-placement="floating" type="date"></ion-input>
+                  <ion-input id="customer-edit-source" fill="outline" label="Origen" label-placement="floating"></ion-input>
+                  <ion-select id="customer-edit-stage" fill="outline" label="Etapa" label-placement="floating"></ion-select>
+                  <ion-select id="customer-edit-channel" fill="outline" label="Canal preferido" label-placement="floating"></ion-select>
+                  <ion-textarea id="customer-edit-notes" class="customer-edit-wide" fill="outline" label="Notas internas" label-placement="floating" auto-grow></ion-textarea>
+                  <ion-input id="customer-field-tint" fill="outline" label="Tinte habitual" label-placement="floating"></ion-input>
+                  <ion-select id="customer-field-skin" fill="outline" label="Tipo de piel" label-placement="floating">
+                    <ion-select-option value="Seca">Seca</ion-select-option>
+                    <ion-select-option value="Grasa">Grasa</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="customer-checks">
+                  <label><ion-checkbox id="customer-edit-marketing"></ion-checkbox> Consentimiento comercial</label>
+                  <label><ion-checkbox id="customer-edit-active"></ion-checkbox> Activo</label>
+                </div>
+                <div class="customer-actions">
+                  <ion-button type="submit" size="small">Guardar</ion-button>
+                  <ion-button id="customer-edit-cancel" size="small" fill="outline">Cancelar</ion-button>
+                </div>
+              </form>
+            </section>
+
+            <section class="customer-panel">
+              <h3>Grupos</h3>
+              <div id="customer-groups" class="customer-memberships"></div>
+              <h3>Etiquetas</h3>
+              <div id="customer-tags" class="customer-memberships"></div>
+            </section>
+
+            <section class="customer-panel">
+              <h3>Añadir nota</h3>
+              <form id="customer-note-form">
+                <ion-textarea id="customer-note" fill="outline" label="Nota" label-placement="floating" auto-grow></ion-textarea>
+                <ion-button type="submit" size="small">Añadir</ion-button>
+              </form>
+              <h3>Actividad</h3>
+              <ul id="customer-timeline" class="customer-timeline"></ul>
+            </section>
+          </div>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('customers-table');
+          const listPage = doc.getElementById('customers-list-page');
+          const detailPage = doc.getElementById('customer-detail-page');
+          const createForm = doc.getElementById('customer-create-form');
+          const editForm = doc.getElementById('customer-edit-form');
+          const feedback = doc.getElementById('customers-feedback');
+          const detailFeedback = doc.getElementById('customer-detail-feedback');
+          const deleteConfirm = doc.getElementById('customer-delete-confirm');
+          const editPanel = doc.getElementById('customer-edit-panel');
+          const detailSummary = doc.getElementById('customer-detail-summary');
+
+          let customers = CUSTOMER_FIXTURE.map((row) => ({ ...row }));
+          let page = 0;
+          let pageSize = 50;
+          let sort = 'name';
+          let sortDir = 'asc';
+          let search = '';
+          let filters = {};
+          let currentCustomer = null;
+          let pendingDelete = null;
+          let customerSequence = 2;
+          let activities = [];
+          let selectedGroups = ['g1'];
+          let selectedTags = ['t1'];
+
+          const eventSubscribers = new Map([
+            ['customer.created', new Set()],
+            ['customer.updated', new Set()],
+            ['customer.deleted', new Set()],
+          ]);
+
+          function onCustomerEvent(name, callback) {
+            eventSubscribers.get(name)?.add(callback);
+            return () => eventSubscribers.get(name)?.delete(callback);
+          }
+
+          function emitCustomerEvent(name, payload) {
+            eventSubscribers.get(name)?.forEach((callback) => callback(payload));
+          }
+
+          const setFeedback = (target, message = '', type = 'success') => {
+            target.textContent = message;
+            target.className = `customer-feedback ${type}`;
+            target.hidden = !message;
+          };
+
+          const valueOf = (id) => String(doc.getElementById(id)?.value ?? '').trim();
+          const checkedOf = (id) => Boolean(doc.getElementById(id)?.checked);
+          const putValue = (id, value) => { doc.getElementById(id).value = value ?? ''; };
+          const putChecked = (id, value) => { doc.getElementById(id).checked = Boolean(value); };
+          const display = (value) => value == null || value === '' ? '—' : String(value);
+
+          table.columns = [
+            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'email', header: 'Email', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'phone', header: 'Teléfono', sortable: true, filterable: true, filterType: 'text' },
+            {
+              key: 'lifecycle_stage',
+              header: 'Etapa',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: STAGES.map(([value, label]) => ({ value, label })),
+              format: (row) => stageLabel(row.lifecycle_stage),
+            },
+            {
+              key: 'total_spent',
+              header: 'Gasto total',
+              align: 'right',
+              sortable: true,
+              filterable: true,
+              filterType: 'range',
+              format: (row) => Number(row.total_spent || 0).toFixed(2),
+            },
+          ];
+          table.actions = [
+            { id: 'view', label: 'Ver', icon: 'eye-outline' },
+            { id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.name ?? '—');
+          table.cardIcon = () => 'person-outline';
+          table.addable = true;
+          table.columnPicker = true;
+          table.csv = true;
+          table.csvName = 'clientes.csv';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar nombre o email…';
+          table.pageSize = 50;
+          table.sort = 'name';
+          table.sortDir = 'asc';
+          table.emptyMessage = 'Sin clientes.';
+
+          function rangeMatches(value, range) {
+            if (!range || typeof range !== 'object') return true;
+            const from = range.from === '' || range.from == null ? null : Number(range.from);
+            const to = range.to === '' || range.to == null ? null : Number(range.to);
+            const number = Number(value);
+            return (from == null || number >= from) && (to == null || number <= to);
+          }
+
+          function queryPage() {
+            const term = search.trim().toLocaleLowerCase('es');
+            const filtered = customers.filter((row) => {
+              if (term && !`${row.name} ${row.email} ${row.phone} ${row.tax_id} ${row.company_name}`.toLocaleLowerCase('es').includes(term)) return false;
+              for (const [column, value] of Object.entries(filters)) {
+                if (value == null || value === '') continue;
+                if (column === 'total_spent' && !rangeMatches(row.total_spent, value)) return false;
+                if (column === 'lifecycle_stage' && row.lifecycle_stage !== value) return false;
+                if (['name', 'email', 'phone'].includes(column) && !String(row[column] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+              }
+              return true;
+            });
+            filtered.sort((left, right) => {
+              const a = left[sort];
+              const b = right[sort];
+              const result = typeof a === 'number' && typeof b === 'number'
+                ? a - b
+                : String(a ?? '').localeCompare(String(b ?? ''), 'es');
+              return sortDir === 'desc' ? -result : result;
+            });
+            table.total = filtered.length;
+            table.rows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+            table.page = page;
+            table.pageSize = pageSize;
+            table.sort = sort;
+            table.sortDir = sortDir;
+          }
+
+          function renderStats() {
+            const total = customers.length;
+            const active = customers.filter((row) => Boolean(row.is_active)).length;
+            const vip = customers.filter((row) => row.lifecycle_stage === 'vip').length;
+            const revenue = customers.reduce((sum, row) => sum + Number(row.total_spent || 0), 0);
+            doc.getElementById('customers-kpi-total').value = String(total);
+            doc.getElementById('customers-kpi-active').value = String(active);
+            doc.getElementById('customers-kpi-vip').value = String(vip);
+            doc.getElementById('customers-kpi-revenue').value = money.format(revenue);
+          }
+
+          function refreshList() {
+            queryPage();
+            renderStats();
+          }
+
+          onCustomerEvent('customer.created', refreshList);
+          onCustomerEvent('customer.updated', refreshList);
+          onCustomerEvent('customer.deleted', refreshList);
+
+          function resetCreateForm() {
+            putValue('customer-create-name', '');
+            putValue('customer-create-email', '');
+          }
+
+          function renderMemberships() {
+            const groups = doc.getElementById('customer-groups');
+            const tags = doc.getElementById('customer-tags');
+            groups.innerHTML = GROUPS.map((group) => `
+              <label><ion-checkbox data-group="${group.id}" ${selectedGroups.includes(group.id) ? 'checked' : ''}></ion-checkbox>
+              ${group.name} (−${group.discount_percent}%)</label>`).join('');
+            tags.innerHTML = TAGS.map((tag) => `
+              <label><ion-checkbox data-tag="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}></ion-checkbox>
+              ${tag.name}</label>`).join('');
+            groups.querySelectorAll('[data-group]').forEach((checkbox) => checkbox.addEventListener('ionChange', (event) => {
+              const id = checkbox.dataset.group;
+              selectedGroups = event.detail.checked ? [...new Set([...selectedGroups, id])] : selectedGroups.filter((item) => item !== id);
+            }));
+            tags.querySelectorAll('[data-tag]').forEach((checkbox) => checkbox.addEventListener('ionChange', (event) => {
+              const id = checkbox.dataset.tag;
+              selectedTags = event.detail.checked ? [...new Set([...selectedTags, id])] : selectedTags.filter((item) => item !== id);
+            }));
+          }
+
+          function renderTimeline() {
+            const timeline = doc.getElementById('customer-timeline');
+            timeline.innerHTML = activities.length
+              ? activities.map((activity) => `<li><strong>${activity.title}</strong><div>${activity.description}</div><small>${activity.created_at}</small></li>`).join('')
+              : '<li>Sin actividad.</li>';
+          }
+
+          function renderDetail() {
+            if (!currentCustomer) return;
+            const row = currentCustomer;
+            doc.getElementById('customer-detail-name').textContent = row.name;
+            doc.getElementById('customer-detail-email').textContent = display(row.email);
+            doc.getElementById('customer-detail-phone').textContent = display(row.phone);
+            doc.getElementById('customer-detail-tax-id').textContent = display(row.tax_id);
+            doc.getElementById('customer-detail-company').textContent = display(row.company_name);
+            doc.getElementById('customer-detail-address').textContent = display([row.address, row.postal_code, row.city, row.country].filter(Boolean).join(', '));
+            doc.getElementById('customer-detail-stage').textContent = stageLabel(row.lifecycle_stage);
+            doc.getElementById('customer-detail-source').textContent = display(row.source);
+            doc.getElementById('customer-detail-channel').textContent = channelLabel(row.preferred_channel);
+            doc.getElementById('customer-detail-purchases').textContent = String(row.total_purchases ?? 0);
+            doc.getElementById('customer-detail-spent').textContent = money.format(Number(row.total_spent || 0));
+            doc.getElementById('customer-detail-last-purchase').textContent = display(row.last_purchase_date);
+            doc.getElementById('customer-detail-active').textContent = row.is_active ? 'Sí' : 'No';
+            renderMemberships();
+            renderTimeline();
+          }
+
+          function openDetail(row) {
+            currentCustomer = row;
+            activities = [];
+            listPage.hidden = true;
+            detailPage.hidden = false;
+            editPanel.hidden = true;
+            detailSummary.hidden = false;
+            deleteConfirm.hidden = true;
+            setFeedback(detailFeedback);
+            renderDetail();
+          }
+
+          function closeDetail() {
+            currentCustomer = null;
+            pendingDelete = null;
+            detailPage.hidden = true;
+            listPage.hidden = false;
+            deleteConfirm.hidden = true;
+            editPanel.hidden = true;
+            refreshList();
+          }
+
+          function startEdit() {
+            if (!currentCustomer) return;
+            const row = currentCustomer;
+            for (const [field, id] of Object.entries({
+              name: 'customer-edit-name', email: 'customer-edit-email', phone: 'customer-edit-phone',
+              tax_id: 'customer-edit-tax-id', company_name: 'customer-edit-company', address: 'customer-edit-address',
+              city: 'customer-edit-city', postal_code: 'customer-edit-postal-code', country: 'customer-edit-country',
+              birthday: 'customer-edit-birthday', anniversary: 'customer-edit-anniversary', source: 'customer-edit-source',
+              lifecycle_stage: 'customer-edit-stage', preferred_channel: 'customer-edit-channel', notes: 'customer-edit-notes',
+            })) putValue(id, row[field]);
+            putValue('customer-field-tint', FIELD_VALUES[0].value);
+            putValue('customer-field-skin', FIELD_VALUES[1].value);
+            putChecked('customer-edit-marketing', row.marketing_consent);
+            putChecked('customer-edit-active', row.is_active);
+            detailSummary.hidden = true;
+            editPanel.hidden = false;
+          }
+
+          function askDelete(row) {
+            pendingDelete = row;
+            const deleteHost = detailPage.hidden ? listPage : detailPage;
+            const deleteAnchor = deleteHost === listPage ? table : detailSummary;
+            deleteHost.insertBefore(deleteConfirm, deleteAnchor);
+            doc.getElementById('customer-delete-text').textContent = `¿Eliminar ${row.name}? La ficha deja de estar disponible (borrado lógico).`;
+            deleteConfirm.hidden = false;
+          }
+
+          function createFromRow(row) {
+            const name = String(row.name ?? row.Nombre ?? '').trim();
+            if (!name) return false;
+            customers = [...customers, {
+              id: `c${customerSequence++}`,
+              name,
+              email: String(row.email ?? row.Email ?? '').trim(),
+              phone: String(row.phone ?? row.telefono ?? row['Teléfono'] ?? '').trim(),
+              tax_id: '', address: '', city: '', postal_code: '', country: '', notes: '',
+              is_active: 1,
+              lifecycle_stage: String(row.lifecycle_stage ?? 'lead') || 'lead',
+              source: 'walk_in', company_name: String(row.company_name ?? '').trim(),
+              birthday: null, anniversary: null, preferred_channel: 'none',
+              marketing_consent: 0, consent_date: null, total_purchases: 0,
+              total_spent: 0, last_purchase_date: null,
+            }];
+            emitCustomerEvent('customer.created', customers.at(-1));
+            return true;
+          }
+
+          STAGES.forEach(([value, label]) => {
+            const option = doc.createElement('ion-select-option');
+            option.value = value;
+            option.textContent = label;
+            doc.getElementById('customer-edit-stage').append(option);
+          });
+          CHANNELS.forEach(([value, label]) => {
+            const option = doc.createElement('ion-select-option');
+            option.value = value;
+            option.textContent = label;
+            doc.getElementById('customer-edit-channel').append(option);
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const row = customers.find((customer) => customer.id === event.detail.row.id);
+            if (!row) return;
+            if (event.detail.actionId === 'view') openDetail(row);
+            if (event.detail.actionId === 'delete') askDelete(row);
+          });
+          table.addEventListener('pageChange', (event) => {
+            page = Number(event.detail) || 0;
+            queryPage();
+          });
+          table.addEventListener('pageSizeChange', (event) => {
+            pageSize = Number(event.detail) || 50;
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            sort = event.detail.sort;
+            sortDir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            search = String(event.detail ?? '');
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            filters = { ...filters, [event.detail.col]: event.detail.value };
+            page = 0;
+            queryPage();
+          });
+          table.addEventListener('csvImport', (event) => {
+            const count = (event.detail.rows ?? []).filter(createFromRow).length;
+            setFeedback(feedback, count ? `${count} cliente(s) importado(s).` : 'El CSV no contiene clientes válidos.', count ? 'success' : 'error');
+          });
+
+          createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = valueOf('customer-create-name');
+            if (!name) {
+              setFeedback(feedback, 'El nombre es obligatorio.', 'error');
+              return;
+            }
+            createFromRow({ name, email: valueOf('customer-create-email') });
+            resetCreateForm();
+            table.close();
+            setFeedback(feedback, 'Cliente añadido.');
+          });
+
+          editForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!currentCustomer) return;
+            const name = valueOf('customer-edit-name');
+            if (!name) {
+              setFeedback(detailFeedback, 'El nombre es obligatorio.', 'error');
+              return;
+            }
+            const updated = {
+              ...currentCustomer,
+              name,
+              email: valueOf('customer-edit-email'),
+              phone: valueOf('customer-edit-phone'),
+              tax_id: valueOf('customer-edit-tax-id'),
+              company_name: valueOf('customer-edit-company'),
+              address: valueOf('customer-edit-address'),
+              city: valueOf('customer-edit-city'),
+              postal_code: valueOf('customer-edit-postal-code'),
+              country: valueOf('customer-edit-country'),
+              birthday: valueOf('customer-edit-birthday') || null,
+              anniversary: valueOf('customer-edit-anniversary') || null,
+              source: valueOf('customer-edit-source') || 'walk_in',
+              lifecycle_stage: valueOf('customer-edit-stage') || 'lead',
+              preferred_channel: valueOf('customer-edit-channel') || 'none',
+              notes: valueOf('customer-edit-notes'),
+              marketing_consent: checkedOf('customer-edit-marketing') ? 1 : 0,
+              is_active: checkedOf('customer-edit-active') ? 1 : 0,
+            };
+            FIELD_VALUES[0].value = valueOf('customer-field-tint');
+            FIELD_VALUES[1].value = valueOf('customer-field-skin');
+            customers = customers.map((row) => row.id === updated.id ? updated : row);
+            currentCustomer = updated;
+            editPanel.hidden = true;
+            detailSummary.hidden = false;
+            renderDetail();
+            setFeedback(detailFeedback, 'Cliente actualizado.');
+            emitCustomerEvent('customer.updated', updated);
+          });
+
+          doc.getElementById('customer-detail-back').addEventListener('click', closeDetail);
+          doc.getElementById('customer-detail-edit').addEventListener('click', startEdit);
+          doc.getElementById('customer-edit-cancel').addEventListener('click', () => {
+            editPanel.hidden = true;
+            detailSummary.hidden = false;
+          });
+          doc.getElementById('customer-detail-delete').addEventListener('click', () => currentCustomer && askDelete(currentCustomer));
+          doc.getElementById('customer-delete-cancel').addEventListener('click', () => {
+            pendingDelete = null;
+            deleteConfirm.hidden = true;
+          });
+          doc.getElementById('customer-delete-confirm-button').addEventListener('click', () => {
+            if (!pendingDelete) return;
+            const deleted = pendingDelete;
+            customers = customers.filter((row) => row.id !== deleted.id);
+            pendingDelete = null;
+            deleteConfirm.hidden = true;
+            emitCustomerEvent('customer.deleted', deleted);
+            if (currentCustomer?.id === deleted.id) closeDetail();
+            else setFeedback(feedback, `Cliente ${deleted.name} eliminado.`);
+          });
+
+          doc.getElementById('customer-note-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const note = valueOf('customer-note');
+            if (!note) return;
+            activities = [{ title: 'Nota añadida', description: note, created_at: new Date().toLocaleString('es-ES') }, ...activities];
+            putValue('customer-note', '');
+            renderTimeline();
+            setFeedback(detailFeedback, 'Nota añadida.');
+          });
+
+          refreshList();
+          resetCreateForm();
+        },
+      });
+    </script>
+  </body>
+</html>

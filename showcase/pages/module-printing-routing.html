@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Enrutamiento de impresión</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .printing-routing-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .printing-routing-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      .printing-routing-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .printing-routing-form ion-button { align-self: flex-end; }
+      .printing-routing-intro { margin: 0; color: var(--ion-color-medium); font-size: 0.86rem; }
+
+      @media (max-width: 520px) {
+        .printing-routing-form ion-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Copia auditable del fixture oficial printing.routing.list.json.
+      const ROUTING_FIXTURE = [
+        {
+          "id": "routing-1",
+          "category": "Bebidas",
+          "station": "bar",
+          "created_at": "2026-06-10T10:00:00Z"
+        },
+        {
+          "id": "routing-2",
+          "category": "Platos calientes",
+          "station": "kitchen",
+          "created_at": "2026-06-10T10:01:00Z"
+        },
+        {
+          "id": "routing-3",
+          "category": "Postres",
+          "station": "kitchen",
+          "created_at": "2026-06-10T10:02:00Z"
+        }
+      ];
+
+      const STATIONS = [
+        { value: 'receipt', label: 'Recibo' },
+        { value: 'kitchen', label: 'Cocina' },
+        { value: 'bar', label: 'Barra' },
+      ];
+      let rules = ROUTING_FIXTURE.map((row) => ({ ...row }));
+      const commandLog = [];
+      const queryLog = [];
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params: { ...params } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload: { ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail: { name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/printing/routing',
+        title: 'Enrutamiento',
+        body: `
+          <div class="printing-routing-page">
+            <ok-data-table id="printing-routing-table" fill>
+              <form id="printing-routing-form" slot="create" class="printing-routing-form">
+                <p class="printing-routing-intro">
+                  Sin regla, los productos van a cocina por defecto; «recibo» los excluye de las comandas.
+                </p>
+                <ion-input
+                  id="printing-routing-category"
+                  fill="outline"
+                  label="Categoría"
+                  label-placement="floating"
+                  placeholder="Bebidas"
+                  required
+                ></ion-input>
+                <ion-select
+                  id="printing-routing-station"
+                  fill="outline"
+                  label="Estación"
+                  label-placement="floating"
+                  interface="popover"
+                  value="kitchen"
+                >
+                  <ion-select-option value="receipt">Recibo</ion-select-option>
+                  <ion-select-option value="kitchen">Cocina</ion-select-option>
+                  <ion-select-option value="bar">Barra</ion-select-option>
+                </ion-select>
+                <ion-button id="printing-routing-save" type="submit">Asignar</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="printing-routing-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('printing-routing-table');
+          const form = doc.getElementById('printing-routing-form');
+          const categoryInput = doc.getElementById('printing-routing-category');
+          const stationSelect = doc.getElementById('printing-routing-station');
+          const saveButton = doc.getElementById('printing-routing-save');
+          const toast = doc.getElementById('printing-routing-toast');
+          const state = {
+            page: 0,
+            pageSize: 50,
+            sort: 'category',
+            dir: 'asc',
+            search: '',
+            filters: {},
+          };
+
+          table.columns = [
+            { key: 'category', header: 'Categoría', sortable: true },
+            {
+              key: 'station',
+              header: 'Estación',
+              sortable: true,
+              filterable: true,
+              filterType: 'select',
+              options: STATIONS,
+              format: (row) => STATIONS.find((station) => station.value === row.station)?.label ?? row.station,
+            },
+          ];
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.category || '—');
+          table.cardIcon = () => 'print-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar categoría o estación…';
+          table.emptyMessage = 'Sin reglas: todo va a cocina por defecto.';
+          table.pageSize = 50;
+          table.sort = 'category';
+          table.sortDir = 'asc';
+          table.actions = [
+            { id: 'edit', label: 'Editar', icon: 'pencil' },
+            { id: 'remove', label: 'Eliminar', icon: 'trash', color: 'danger' },
+          ];
+
+          function showToast(message, color = 'success') {
+            toast.message = message;
+            toast.color = color;
+            toast.isOpen = true;
+          }
+
+          function queryPage() {
+            recordQuery('printing.routing.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            const filtered = rules
+              .filter((row) => {
+                if (term && !`${row.category} ${row.station}`.toLocaleLowerCase('es').includes(term)) return false;
+                const station = state.filters.station;
+                return !station || row.station === station;
+              })
+              .sort((left, right) => {
+                const result = String(left[state.sort] ?? '').localeCompare(
+                  String(right[state.sort] ?? ''),
+                  'es',
+                  { numeric: true },
+                );
+                return state.dir === 'desc' ? -result : result;
+              });
+            const start = state.page * state.pageSize;
+            table.rows = filtered.slice(start, start + state.pageSize);
+            table.total = filtered.length;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const category = String(categoryInput.value ?? '').trim();
+            const station = String(stationSelect.value ?? 'kitchen');
+            if (!category || !STATIONS.some((option) => option.value === station)) return;
+
+            saveButton.disabled = true;
+            const payload = { category, station };
+            recordCommand('printing.routing.set', payload);
+            const current = rules.find((row) => row.category.toLocaleLowerCase('es') === category.toLocaleLowerCase('es'));
+            if (current) {
+              rules = rules.map((row) => row === current ? { ...row, category, station } : row);
+            } else {
+              rules = [...rules, {
+                id: `preview-routing-${rules.length + 1}`,
+                category,
+                station,
+                created_at: new Date().toISOString(),
+              }];
+            }
+            categoryInput.value = '';
+            stationSelect.value = 'kitchen';
+            table.close();
+            state.page = 0;
+            queryPage();
+            showToast('Regla guardada.');
+            saveButton.disabled = false;
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail;
+            if (actionId === 'edit') {
+              categoryInput.value = row.category;
+              stationSelect.value = row.station;
+              table.open('create');
+              return;
+            }
+            if (actionId === 'remove') {
+              recordCommand('printing.routing.remove', { category: row.category });
+              rules = rules.filter((candidate) => candidate.category !== row.category);
+              queryPage();
+              showToast('Regla eliminada.');
+            }
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => {
+            state.pageSize = Number(event.detail) || 50;
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail.sort;
+            state.dir = event.detail.dir;
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => {
+            state.search = String(event.detail ?? '');
+            state.page = 0;
+            queryPage();
+          });
+          table.addEventListener('filterChange', (event) => {
+            state.filters[event.detail.col] = event.detail.value;
+            state.page = 0;
+            queryPage();
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

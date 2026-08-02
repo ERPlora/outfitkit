@@ -3,639 +3,76 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · acme-prod · Configuración</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
+    <title>Ajustes del Hub - ERPlora Cloud</title>
+    <script src="./_ionic-config.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
-    <script type="importmap">
-      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
-    </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
-    <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <style>
-      /* Geometría puntual de esta vista — solo estructura, sin colores de marca. */
-
-      /* Filas de toggle (notificaciones, integraciones, backups). */
-      .ui-toggle-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.18));
-      }
-      .ui-toggle-row:first-of-type { border-top: 0; }
-      .ui-toggle-row__text { flex: 1 1 auto; }
-      .ui-toggle-row__label { font-weight: 600; font-size: .9rem; }
-      .ui-toggle-row__desc { color: var(--ion-color-medium); font-size: .8rem; margin-top: 2px; }
-
-      /* Fila de dominio. */
-      .ui-domain-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        padding: 10px 12px;
-        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 8px;
-        background: var(--ion-color-step-50, rgba(127,127,127,.04));
-        margin-bottom: 8px;
-      }
-      .ui-domain-name { font-family: monospace; font-size: 13px; flex: 1 1 auto; }
-
-      /* Fila de acción avanzada. */
-      .ui-action-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 8px;
-        margin-bottom: 8px;
-      }
-      .ui-action-row--danger {
-        border-color: var(--ion-color-danger, #eb445a);
-      }
-      .ui-action-row__title { font-weight: 600; margin-bottom: 2px; }
-      .ui-action-row__desc { font-size: .8rem; color: var(--ion-color-medium); margin: 0; }
-      .ui-action-row--danger .ui-action-row__title { color: var(--ion-color-danger, #eb445a); }
-
-      /* Barra sticky de guardado. */
-      .ui-save-bar {
-        position: sticky;
-        bottom: 0;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        padding: 14px 0 0;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.18));
-        background: var(--ion-background-color, #fff);
-        z-index: 10;
-        margin-top: 8px;
-      }
-
-      /* Añadir dominio: input + botón en línea. */
-      .ui-add-domain {
-        display: flex;
-        gap: 8px;
-        align-items: stretch;
-        margin-top: 8px;
-      }
-      .ui-add-domain ion-input { flex: 1; max-width: 300px; }
-
-      /* Layout de campos en fila 2 cols / 3 cols. */
-      .ui-fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .ui-fields-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-      @media (max-width: 640px) {
-        .ui-fields-2 { grid-template-columns: 1fr; }
-        .ui-fields-3 { grid-template-columns: 1fr; }
-      }
-
-      /* Copiar URL: input + botón. */
-      .ui-copy-row { display: flex; gap: 8px; align-items: stretch; }
-      .ui-copy-row ion-input { flex: 1; }
-
-      /* Pestaña: ocultar/mostrar. */
-      .ui-tab-panel { display: flex; flex-direction: column; gap: 18px; }
-      .ui-tab-panel[hidden] { display: none; }
-
-      /* Espacio inferior. */
-      .ui-bottom-spacer { height: 32px; }
-
-      /* ion-card section gap. */
-      .ui-section-sub {
-        font-size: .82rem;
-        color: var(--ion-color-medium);
-        margin: 0 0 16px;
-      }
+      .stack { display:grid;gap:1rem;max-width:56rem; }
+      .form-stack { display:grid;gap:1rem; }
+      .card-title { margin:0 0 1rem;font-size:1rem; }
+      .domain-row { display:flex;align-items:center;gap:.75rem;flex-wrap:wrap; }
+      .domain-row strong { flex:1;min-width:12rem;font-family:monospace; }
+      .info-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .info-item { padding:.9rem;border-bottom:1px solid var(--ion-color-step-150); }
+      .info-item small { display:block;margin-bottom:.2rem;color:var(--ion-color-medium);text-transform:uppercase; }
+      @media (max-width:560px) { .info-grid { grid-template-columns:1fr; } }
     </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
 
-      definePage({
-        bare: true,
+      const footer = `
+        <footer id="section-tabbar"><ion-segment value="active" aria-label="Navegación de Hubs">
+          <ion-segment-button value="active"><iconify-icon icon="lucide:check-circle" width="20" height="20"></iconify-icon><ion-label>Activo</ion-label></ion-segment-button>
+          <ion-segment-button value="inactive"><iconify-icon icon="lucide:pause-circle" width="20" height="20"></iconify-icon><ion-label>Inactivo</ion-label></ion-segment-button>
+          <ion-segment-button value="create"><iconify-icon icon="lucide:plus-circle" width="20" height="20"></iconify-icon><ion-label>Crear</ion-label></ion-segment-button>
+          <ion-segment-button value="domain"><iconify-icon icon="lucide:globe" width="20" height="20"></iconify-icon><ion-label>Dominio</ion-label></ion-segment-button>
+        </ion-segment></footer>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'Ajustes del Hub · Terminal principal',
         body: `
-          <ok-page-header
-            heading="acme-prod · Configuración"
-            description="acme.erplora.cloud · región EU-West-1 · plan Enterprise">
-            <div slot="actions">
-              <ion-button fill="outline" size="small">
-                <ion-icon slot="start" name="open-outline"></ion-icon>
-                Ver hub
-              </ion-button>
-              <ion-button fill="outline" size="small" color="medium">
-                <ion-icon slot="start" name="refresh-outline"></ion-icon>
-                Reiniciar
-              </ion-button>
-            </div>
-          </ok-page-header>
-
-          <!-- Badge de estado junto al heading -->
-          <div style="margin:-8px 0 16px">
-            <ok-status-pill tone="success" dot label="Producción · Activo"></ok-status-pill>
+          <div class="stack">
+            <ion-card>
+              <ion-card-content>
+                <h2 class="card-title">Ajustes generales</h2>
+                <form id="hub-settings-form" class="form-stack">
+                  <ion-input label="Nombre del Hub" label-placement="floating" fill="outline" value="Terminal principal" required></ion-input>
+                  <ion-textarea label="Dirección" label-placement="floating" fill="outline" rows="3" auto-grow value="Barcelona"></ion-textarea>
+                  <ion-button type="submit" size="small" style="justify-self:start"><iconify-icon slot="start" icon="lucide:save" width="15" height="15"></iconify-icon>Guardar cambios</ion-button>
+                </form>
+              </ion-card-content>
+            </ion-card>
+            <ion-card>
+              <ion-card-content>
+                <h2 class="card-title">Dominio personalizado</h2>
+                <div class="domain-row">
+                  <strong>terminal-principal.erplora.com</strong>
+                  <ion-badge color="success">Activo</ion-badge>
+                  <ion-button fill="outline" size="small">Gestionar</ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+            <ion-card>
+              <ion-card-content style="padding:0">
+                <h2 class="card-title" style="padding:1rem 1rem 0">Información del Hub</h2>
+                <div class="info-grid">
+                  <div class="info-item"><small>ID del Hub</small><span style="font-family:monospace">9a0d58ee-5d13-47f7-a68a-395e4f38ae18</span></div>
+                  <div class="info-item"><small>Slug</small><span style="font-family:monospace">terminal-principal</span></div>
+                  <div class="info-item"><small>Estado</small><ion-badge color="success">Online</ion-badge></div>
+                  <div class="info-item"><small>Creado</small><span>12 enero 2025</span></div>
+                </div>
+              </ion-card-content>
+            </ion-card>
           </div>
-
-          <!-- Tabs -->
-          <ion-segment id="settings-tabs" value="general" style="margin-bottom:24px">
-            <ion-segment-button value="general"><ion-label>General</ion-label></ion-segment-button>
-            <ion-segment-button value="domains"><ion-label>Dominios</ion-label></ion-segment-button>
-            <ion-segment-button value="integrations"><ion-label>Integraciones</ion-label></ion-segment-button>
-            <ion-segment-button value="backups"><ion-label>Backups</ion-label></ion-segment-button>
-            <ion-segment-button value="advanced"><ion-label>Avanzado</ion-label></ion-segment-button>
-          </ion-segment>
-
-          <!-- ── TAB: GENERAL ─────────────────────────────────────────── -->
-          <div class="ui-tab-panel" id="panel-general">
-
-            <!-- Información general -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>General</ion-card-title>
-                <p class="ui-section-sub">Información básica del hub.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-fields-2" style="margin-bottom:12px">
-                  <ion-input
-                    label="Nombre del hub"
-                    label-placement="stacked"
-                    fill="outline"
-                    value="Acme Industries · Producción">
-                  </ion-input>
-                  <ion-input
-                    label="Identificador interno"
-                    label-placement="stacked"
-                    fill="outline"
-                    value="acme-prod"
-                    readonly>
-                  </ion-input>
-                </div>
-                <ion-textarea
-                  label="Descripción"
-                  label-placement="stacked"
-                  fill="outline"
-                  rows="3"
-                  value="Hub principal de Acme Industries S.L. para todas las tiendas físicas y el almacén central de Sant Cugat."
-                  style="margin-bottom:12px">
-                </ion-textarea>
-                <div class="ui-fields-2">
-                  <ion-select label="Zona horaria" label-placement="stacked" fill="outline" value="madrid">
-                    <ion-select-option value="madrid">Europe/Madrid (UTC+01:00)</ion-select-option>
-                    <ion-select-option value="lisbon">Europe/Lisbon (UTC+00:00)</ion-select-option>
-                    <ion-select-option value="london">Europe/London (UTC+00:00)</ion-select-option>
-                  </ion-select>
-                  <ion-select label="Idioma por defecto" label-placement="stacked" fill="outline" value="es">
-                    <ion-select-option value="es">Español (España)</ion-select-option>
-                    <ion-select-option value="ca">Català</ion-select-option>
-                    <ion-select-option value="en">English (UK)</ion-select-option>
-                  </ion-select>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- URL y dominios (inline dentro de General) -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>URL y dominios</ion-card-title>
-                <p class="ui-section-sub">Subdominio gestionado por ERPlora y dominios personalizados.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div style="margin-bottom:16px">
-                  <div class="ui-copy-row">
-                    <ion-input
-                      label="Subdominio principal"
-                      label-placement="stacked"
-                      fill="outline"
-                      value="acme.erplora.cloud"
-                      readonly>
-                    </ion-input>
-                    <ion-button fill="outline" id="copy-url-btn" style="align-self:flex-end">
-                      <ion-icon slot="start" name="copy-outline"></ion-icon>
-                      Copiar
-                    </ion-button>
-                  </div>
-                  <p style="font-size:.78rem;color:var(--ion-color-medium);margin:6px 0 0">
-                    El subdominio gestionado no se puede cambiar tras la creación.
-                  </p>
-                </div>
-
-                <div style="font-weight:600;font-size:.9rem;margin-bottom:8px">Dominios personalizados</div>
-                <div id="domains-list-general"></div>
-                <div class="ui-add-domain">
-                  <ion-input
-                    id="new-domain-general"
-                    fill="outline"
-                    placeholder="dominio.acme.com"
-                    style="max-width:300px">
-                  </ion-input>
-                  <ion-button fill="outline" id="add-domain-general-btn">
-                    <ion-icon slot="start" name="add-outline"></ion-icon>
-                    Añadir dominio
-                  </ion-button>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Contacto -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Contacto</ion-card-title>
-                <p class="ui-section-sub">Quién recibe alertas e incidencias del hub.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-fields-2">
-                  <ion-input
-                    label="Email del admin"
-                    label-placement="stacked"
-                    fill="outline"
-                    type="email"
-                    value="ioan@acme.com">
-                  </ion-input>
-                  <div>
-                    <ion-input
-                      label="Contacto de incidencias"
-                      label-placement="stacked"
-                      fill="outline"
-                      type="email"
-                      value="incidencias@acme.com">
-                    </ion-input>
-                    <p style="font-size:.78rem;color:var(--ion-color-medium);margin:6px 0 0">
-                      Recibe alertas críticas las 24 h.
-                    </p>
-                  </div>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Notificaciones -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Notificaciones</ion-card-title>
-                <p class="ui-section-sub">Qué emails envía ERPlora al equipo del hub.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Alertas críticas</div>
-                    <div class="ui-toggle-row__desc">Hub caído, pago fallido, brechas de seguridad. No se puede desactivar.</div>
-                  </div>
-                  <ion-toggle checked disabled></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Resumen diario</div>
-                    <div class="ui-toggle-row__desc">Email cada mañana con KPIs del día anterior.</div>
-                  </div>
-                  <ion-toggle id="toggle-notif-daily" checked></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Métricas semanales</div>
-                    <div class="ui-toggle-row__desc">Tendencias y comparativa con la semana anterior, los lunes.</div>
-                  </div>
-                  <ion-toggle id="toggle-notif-weekly" checked></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Marketing y novedades</div>
-                    <div class="ui-toggle-row__desc">Nuevos módulos, casos de uso y eventos de ERPlora.</div>
-                  </div>
-                  <ion-toggle id="toggle-notif-marketing"></ion-toggle>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Mantenimiento -->
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Mantenimiento</ion-card-title>
-                <p class="ui-section-sub">Ventana programada para actualizaciones del hub.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-fields-3" style="margin-bottom:14px">
-                  <ion-select label="Día de la semana" label-placement="stacked" fill="outline" value="domingo">
-                    <ion-select-option value="domingo">Domingo</ion-select-option>
-                    <ion-select-option value="lunes">Lunes</ion-select-option>
-                    <ion-select-option value="martes">Martes</ion-select-option>
-                    <ion-select-option value="miercoles">Miércoles</ion-select-option>
-                    <ion-select-option value="jueves">Jueves</ion-select-option>
-                    <ion-select-option value="viernes">Viernes</ion-select-option>
-                    <ion-select-option value="sabado">Sábado</ion-select-option>
-                  </ion-select>
-                  <ion-input
-                    label="Hora de inicio"
-                    label-placement="stacked"
-                    fill="outline"
-                    type="time"
-                    value="03:00">
-                  </ion-input>
-                  <ion-select label="Duración máxima" label-placement="stacked" fill="outline" value="1h">
-                    <ion-select-option value="30m">30 minutos</ion-select-option>
-                    <ion-select-option value="1h">1 hora</ion-select-option>
-                    <ion-select-option value="2h">2 horas</ion-select-option>
-                  </ion-select>
-                </div>
-                <ok-inline-feedback tone="info" icon="information-circle-outline">
-                  Próxima ventana: <strong>domingo 11 mayo 2026, 03:00</strong>. Avisaremos por email 24 h antes.
-                </ok-inline-feedback>
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Barra de guardado sticky -->
-            <div class="ui-save-bar">
-              <ion-button fill="outline" color="medium" size="small">
-                <ion-icon slot="start" name="close-outline"></ion-icon>
-                Descartar cambios
-              </ion-button>
-              <ion-button size="small">
-                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-                Guardar cambios
-              </ion-button>
-            </div>
-
-          </div>
-
-          <!-- ── TAB: DOMINIOS ─────────────────────────────────────────── -->
-          <div class="ui-tab-panel" id="panel-domains" hidden>
-
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Dominios personalizados</ion-card-title>
-                <p class="ui-section-sub">Añade tus propios dominios y configura el SSL automático.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div id="domains-list-tab"></div>
-                <div class="ui-add-domain">
-                  <ion-input
-                    id="new-domain-tab"
-                    fill="outline"
-                    placeholder="dominio.acme.com"
-                    style="max-width:300px">
-                  </ion-input>
-                  <ion-button fill="outline" id="add-domain-tab-btn">
-                    <ion-icon slot="start" name="add-outline"></ion-icon>
-                    Añadir dominio
-                  </ion-button>
-                </div>
-                <div style="margin-top:14px">
-                  <ok-inline-feedback tone="info" icon="information-circle-outline">
-                    Añade un registro CNAME apuntando a <code>acme.erplora.cloud</code>. SSL se emite automáticamente vía Let's Encrypt.
-                  </ok-inline-feedback>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <!-- ── TAB: INTEGRACIONES ────────────────────────────────────── -->
-          <div class="ui-tab-panel" id="panel-integrations" hidden>
-
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Integraciones externas</ion-card-title>
-                <p class="ui-section-sub">Conecta servicios de terceros con este hub.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Stripe</div>
-                    <div class="ui-toggle-row__desc">Procesamiento de pagos y suscripciones.</div>
-                  </div>
-                  <ion-toggle id="toggle-stripe" checked></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Slack</div>
-                    <div class="ui-toggle-row__desc">Notificaciones de pedidos y alertas en canales.</div>
-                  </div>
-                  <ion-toggle id="toggle-slack"></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Google Calendar</div>
-                    <div class="ui-toggle-row__desc">Sincroniza eventos y reservas.</div>
-                  </div>
-                  <ion-toggle id="toggle-gcal" checked></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Zapier</div>
-                    <div class="ui-toggle-row__desc">Conecta con +5 000 apps mediante zaps.</div>
-                  </div>
-                  <ion-toggle id="toggle-zapier"></ion-toggle>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <!-- ── TAB: BACKUPS ──────────────────────────────────────────── -->
-          <div class="ui-tab-panel" id="panel-backups" hidden>
-
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Copias de seguridad</ion-card-title>
-                <p class="ui-section-sub">Snapshots diarios cifrados, retención 30 días.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Backups automáticos</div>
-                    <div class="ui-toggle-row__desc">Snapshot diario a las 04:00 UTC.</div>
-                  </div>
-                  <ion-toggle id="toggle-auto-backup" checked></ion-toggle>
-                </div>
-                <div class="ui-toggle-row">
-                  <div class="ui-toggle-row__text">
-                    <div class="ui-toggle-row__label">Cifrado AES-256</div>
-                    <div class="ui-toggle-row__desc">Cifra los snapshots con tu propia clave KMS.</div>
-                  </div>
-                  <ion-toggle id="toggle-encrypt-backup" checked></ion-toggle>
-                </div>
-                <div style="display:flex;gap:8px;margin-top:16px">
-                  <ion-button fill="outline" size="small">
-                    <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-                    Crear snapshot manual
-                  </ion-button>
-                  <ion-button fill="clear" size="small">
-                    <ion-icon slot="start" name="cloud-download-outline"></ion-icon>
-                    Restaurar desde…
-                  </ion-button>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <!-- ── TAB: AVANZADO ─────────────────────────────────────────── -->
-          <div class="ui-tab-panel" id="panel-advanced" hidden>
-
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>Avanzado · zona de peligro</ion-card-title>
-                <p class="ui-section-sub">Acciones irreversibles. Procede con precaución.</p>
-              </ion-card-header>
-              <ion-card-content>
-                <div class="ui-action-row">
-                  <div>
-                    <div class="ui-action-row__title">Pausar hub</div>
-                    <p class="ui-action-row__desc">El hub pasa a estado read-only.</p>
-                  </div>
-                  <ion-button fill="outline" size="small" color="medium">
-                    <ion-icon slot="start" name="pause-outline"></ion-icon>
-                    Pausar
-                  </ion-button>
-                </div>
-                <div class="ui-action-row ui-action-row--danger">
-                  <div>
-                    <div class="ui-action-row__title">Eliminar hub</div>
-                    <p class="ui-action-row__desc">Borra todos los datos. No se puede deshacer.</p>
-                  </div>
-                  <ion-button size="small" color="danger">
-                    <ion-icon slot="start" name="trash-outline"></ion-icon>
-                    Eliminar
-                  </ion-button>
-                </div>
-              </ion-card-content>
-            </ion-card>
-
-          </div>
-
-          <div class="ui-bottom-spacer"></div>
         `,
-
+        footer,
         setup(doc) {
-          // ── Estado de dominios ──────────────────────────────────────
-          const domains = [
-            { name: 'pos.acme.com', ssl: true },
-            { name: 'tienda.acme.com', ssl: false },
-          ];
-
-          // Renderiza la lista de dominios en un contenedor.
-          function renderDomains(container) {
-            container.innerHTML = '';
-            if (domains.length === 0) {
-              const p = doc.createElement('p');
-              p.style.cssText = 'font-size:12px;color:var(--ion-color-medium);padding:6px 0;margin:0 0 8px';
-              p.textContent = 'No hay dominios personalizados.';
-              container.appendChild(p);
-              return;
-            }
-            domains.forEach((d) => {
-              const row = doc.createElement('div');
-              row.className = 'ui-domain-row';
-              row.setAttribute('data-domain', d.name);
-
-              const nameEl = doc.createElement('span');
-              nameEl.className = 'ui-domain-name';
-              nameEl.textContent = d.name;
-
-              const pill = doc.createElement('ok-status-pill');
-              pill.setAttribute('tone', d.ssl ? 'success' : 'warning');
-              pill.setAttribute('dot', '');
-              pill.setAttribute('label', d.ssl ? 'SSL activo' : 'Esperando DNS');
-              pill.setAttribute('size', 'sm');
-
-              const btn = doc.createElement('ion-button');
-              btn.setAttribute('fill', 'clear');
-              btn.setAttribute('size', 'small');
-              btn.setAttribute('color', 'danger');
-              btn.textContent = 'Quitar';
-              btn.addEventListener('click', () => {
-                const idx = domains.findIndex((x) => x.name === d.name);
-                if (idx !== -1) domains.splice(idx, 1);
-                renderDomains(listGeneral);
-                renderDomains(listTab);
-              });
-
-              row.appendChild(nameEl);
-              row.appendChild(pill);
-              row.appendChild(btn);
-              container.appendChild(row);
-            });
-          }
-
-          const listGeneral = doc.getElementById('domains-list-general');
-          const listTab = doc.getElementById('domains-list-tab');
-          if (listGeneral) renderDomains(listGeneral);
-          if (listTab) renderDomains(listTab);
-
-          // Añadir dominio (panel General).
-          const newDomainGeneral = doc.getElementById('new-domain-general');
-          const addBtnGeneral = doc.getElementById('add-domain-general-btn');
-          if (addBtnGeneral && newDomainGeneral) {
-            addBtnGeneral.addEventListener('click', () => {
-              const val = (newDomainGeneral.value || '').trim();
-              if (val) {
-                domains.push({ name: val, ssl: false });
-                newDomainGeneral.value = '';
-                renderDomains(listGeneral);
-                renderDomains(listTab);
-              }
-            });
-          }
-
-          // Añadir dominio (panel Dominios).
-          const newDomainTab = doc.getElementById('new-domain-tab');
-          const addBtnTab = doc.getElementById('add-domain-tab-btn');
-          if (addBtnTab && newDomainTab) {
-            addBtnTab.addEventListener('click', () => {
-              const val = (newDomainTab.value || '').trim();
-              if (val) {
-                domains.push({ name: val, ssl: false });
-                newDomainTab.value = '';
-                renderDomains(listGeneral);
-                renderDomains(listTab);
-              }
-            });
-          }
-
-          // ── Botón Copiar URL ───────────────────────────────────────
-          const copyBtn = doc.getElementById('copy-url-btn');
-          if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-              navigator.clipboard && navigator.clipboard.writeText('acme.erplora.cloud');
-              const orig = copyBtn.textContent.trim();
-              copyBtn.innerHTML = '<ion-icon slot="start" name="checkmark-outline"></ion-icon>Copiado';
-              setTimeout(() => {
-                copyBtn.innerHTML = '<ion-icon slot="start" name="copy-outline"></ion-icon>Copiar';
-              }, 2000);
-            });
-          }
-
-          // ── Tabs: mostrar/ocultar paneles ─────────────────────────
-          const segment = doc.getElementById('settings-tabs');
-          const panels = {
-            general: doc.getElementById('panel-general'),
-            domains: doc.getElementById('panel-domains'),
-            integrations: doc.getElementById('panel-integrations'),
-            backups: doc.getElementById('panel-backups'),
-            advanced: doc.getElementById('panel-advanced'),
-          };
-
-          function showPanel(tab) {
-            Object.entries(panels).forEach(([key, el]) => {
-              if (!el) return;
-              if (key === tab) {
-                el.hidden = false;
-              } else {
-                el.hidden = true;
-              }
-            });
-          }
-
-          if (segment) {
-            segment.addEventListener('ionChange', (e) => {
-              const val = e.detail && e.detail.value;
-              if (val) showPanel(val);
-            });
-          }
-          showPanel('general');
+          doc.getElementById('hub-settings-form')?.addEventListener('submit', (event) => event.preventDefault());
         },
       });
     </script>

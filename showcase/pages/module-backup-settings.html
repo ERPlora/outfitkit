@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Ajustes de copia de seguridad</title>
+
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+
+    <style>
+      .backup-settings-page { max-width:52rem; margin:0 auto; }
+      .backup-settings-page h2 { margin:0 0 .75rem; font-size:1.1rem; }
+      .backup-hint { display:block; padding:.5rem 1rem 1rem; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      const settings = { enabled: 0, schedule: 'daily', retention_days: 7 };
+      let previous = { ...settings };
+      let pendingLabel = '';
+      const queryLog = [];
+      const commandLog = [];
+
+      function recordQuery(name, params = {}) {
+        queryLog.push({ name, params:{ ...params } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail:{ name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload:{ ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+      }
+
+      defineHubPage({
+        active: '/m/backup/settings',
+        title: 'Ajustes',
+        body: `
+          <div class="backup-settings-page">
+            <h2>Ajustes de copia de seguridad</h2>
+            <ion-card>
+              <ion-list>
+                <ion-item>
+                  <ion-toggle id="backup-enabled" label-placement="end">Copias automáticas</ion-toggle>
+                </ion-item>
+                <ion-item>
+                  <ion-select id="backup-schedule" label="Cadencia" label-placement="stacked" interface="popover">
+                    <ion-select-option value="daily">Diaria</ion-select-option>
+                    <ion-select-option value="weekly">Semanal</ion-select-option>
+                    <ion-select-option value="manual">Manual</ion-select-option>
+                  </ion-select>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-input id="backup-retention" type="number" min="1" max="365" label="Copias a conservar" label-placement="stacked"></ion-input>
+                </ion-item>
+              </ion-list>
+              <ion-note class="backup-hint">El cifrado lo aplica el Cloud al guardar en S3; este dispositivo no cifra.</ion-note>
+            </ion-card>
+          </div>
+          <ion-alert id="backup-confirm"></ion-alert>
+          <ion-toast id="backup-settings-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const enabled = doc.getElementById('backup-enabled');
+          const schedule = doc.getElementById('backup-schedule');
+          const retention = doc.getElementById('backup-retention');
+          const confirm = doc.getElementById('backup-confirm');
+          const toast = doc.getElementById('backup-settings-toast');
+
+          function syncControls() {
+            enabled.checked = Boolean(settings.enabled);
+            schedule.value = settings.schedule;
+            retention.value = String(settings.retention_days);
+          }
+
+          function cancelChange() {
+            Object.assign(settings, previous);
+            syncControls();
+          }
+
+          function applyChange() {
+            recordCommand('backup.settings.update', {
+              enabled: settings.enabled,
+              schedule: settings.schedule,
+              retention_days: settings.retention_days,
+            });
+            previous = { ...settings };
+            toast.message = 'Ajustes actualizados.';
+            toast.color = 'success';
+            toast.isOpen = true;
+          }
+
+          function askConfirmation(label) {
+            pendingLabel = label;
+            confirm.header = 'Confirmar cambio';
+            confirm.message = `¿Aplicar el cambio en «${pendingLabel}»?`;
+            confirm.buttons = [
+              { text: 'Cancelar', role: 'cancel', handler: () => cancelChange() },
+              { text: 'Aplicar', role: 'confirm', handler: () => applyChange() },
+            ];
+            confirm.isOpen = true;
+          }
+
+          enabled.addEventListener('ionChange', (event) => {
+            previous = { ...settings };
+            settings.enabled = event.detail?.checked ? 1 : 0;
+            askConfirmation('Copias automáticas');
+          });
+          schedule.addEventListener('ionChange', (event) => {
+            const value = String(event.detail?.value ?? 'daily');
+            if (!['daily', 'weekly', 'manual'].includes(value)) return;
+            previous = { ...settings };
+            settings.schedule = value;
+            askConfirmation('Cadencia');
+          });
+          retention.addEventListener('ionChange', (event) => {
+            const value = Math.min(365, Math.max(1, Number(event.detail?.value) || 7));
+            previous = { ...settings };
+            settings.retention_days = value;
+            askConfirmation('Copias a conservar');
+          });
+          confirm.addEventListener('didDismiss', () => { confirm.isOpen = false; });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          recordQuery('backup.settings.get', {});
+          syncControls();
+        },
+      });
+    </script>
+  </body>
+</html>

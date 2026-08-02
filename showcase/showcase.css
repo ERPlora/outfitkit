@@ -237,13 +237,30 @@ ion-searchbar.nav-search {
   margin-inline-end: 4px;
 }
 /* Sub-encabezado de categoría/grupo dentro de una sección. */
+#nav-list ion-list-header.nav-surface-head {
+  min-height: 34px;
+  margin-top: 0.6rem;
+  padding-inline-start: 14px;
+  color: var(--ion-text-color);
+  font-weight: 700;
+  gap: 8px;
+}
+#nav-list ion-list-header.nav-surface-head ion-icon {
+  color: var(--ion-color-primary);
+  font-size: 1rem;
+  margin-inline-end: 8px;
+}
 #nav-list ion-list-header.nav-subhead {
-  padding-inline-start: 16px;
+  padding-inline-start: 28px;
   min-height: 26px;
   margin-top: 0.25rem;
 }
 /* Ítems dentro de una sección (sangrados respecto a la cabecera). */
-#nav-list ion-item.nav-sub-item { --padding-start: 22px; }
+#nav-list ion-item.nav-sub-item { --padding-start: 34px; }
+#nav-list .nav-page-status {
+  color: var(--ok-muted);
+  font-size: 0.9rem;
+}
 .nav-empty {
   padding: 1rem 1.2rem;
   color: var(--ok-muted);
@@ -281,6 +298,7 @@ ion-select.theme-select {
   margin: 0.1rem 0 0.4rem;
 }
 .comp-view .desc { color: var(--ok-muted); font-size: 1rem; margin: 0 0 0.75rem; max-width: 70ch; }
+.comp-view .comp-head h2 { margin: 1.25rem 0 0.4rem; font-size: 0.9rem; }
 pre.import-line {
   display: inline-block;
   margin: 0 0 0.5rem;

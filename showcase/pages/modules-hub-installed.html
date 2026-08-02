@@ -3,287 +3,269 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Hub · Módulos instalados</title>
+    <title>ERPlora Hub · Apps</title>
 
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
+
+    <style>
+      [hidden] { display: none !important; }
+
+      .apps-fill,
+      .apps-panel {
+        height: 100%;
+        min-height: 420px;
+      }
+
+      ok-data-table[fill] {
+        height: 100%;
+      }
+
+      .consent-intro {
+        margin: 0 0 12px;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+      }
+
+      .consent-actions {
+        display: grid;
+        gap: 8px;
+        margin-top: 16px;
+      }
+    </style>
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
-      import { html as h } from 'lit';
+      import { defineHubPage } from './_hub.js';
 
-      // Datos de módulos instalados.
-      const MODULES_ACTIVE = [
-        { id: 'sales',     name: 'Sales',        version: 'v2.4.1',        status: 'active',  system: false, icon: 'cart-outline',                 color: 'primary',   desc: 'Motor universal de ventas. Tickets, pedidos, devoluciones, descuentos, tarifas.' },
-        { id: 'pos',       name: 'POS',           version: 'v1.9.3',        status: 'active',  system: false, icon: 'receipt-outline',               color: 'secondary', desc: 'Terminal punto de venta para hostelería y retail. KDS, comandero, caja.' },
-        { id: 'employees', name: 'Employees',     version: 'v1.4.0',        status: 'active',  system: true,  icon: 'people-outline',                color: 'success',   desc: 'Gestión de empleados, fichajes, turnos, vacaciones. Módulo del sistema.' },
-        { id: 'verifactu', name: 'Verifactu ES',  version: 'v0.8.2',        status: 'active',  system: false, icon: 'checkmark-done-circle-outline', color: 'primary',   desc: 'Cumplimiento Verifactu / AEAT. Remisión automática de facturas a Hacienda.' },
-        { id: 'inventory', name: 'Inventory',     version: 'v3.0.0-beta.4', status: 'error',   system: false, icon: 'cube-outline',                  color: 'warning',   desc: 'Stock, almacenes, lotes y trazabilidad.' },
-        { id: 'orders',    name: 'Orders',        version: 'v1.2.5',        status: 'active',  system: false, icon: 'list-outline',                  color: 'secondary', desc: 'Pedidos web, delivery, recogida y reservas integradas con sales.' },
-        { id: 'tables',    name: 'Tables',        version: 'v1.1.0',        status: 'active',  system: false, icon: 'grid-outline',                  color: 'tertiary',  desc: 'Gestión de mesas y zonas para hostelería. Canvas interactivo y asignación de pedidos.' },
-        { id: 'loyalty',   name: 'Loyalty',       version: 'v0.6.2',        status: 'active',  system: false, icon: 'star-outline',                  color: 'warning',   desc: 'Programa de fidelización con puntos, sellos y recompensas. Integrado con POS y Orders.' },
+      // Fallback demo literal de AppsPage.vue. El catálogo Cloud conserva este mismo contrato.
+      const MODULES_DEMO = [
+        { id: 'inventory', name: 'Inventario', desc: 'Productos, stock y movimientos', price: 'Gratis', installed: true, cat: 'Operación' },
+        { id: 'pos', name: 'TPV / POS', desc: 'Punto de venta y caja', price: 'Gratis', installed: true, cat: 'Ventas' },
+        { id: 'customers', name: 'Clientes (CRM)', desc: 'Fichas, grupos y actividad', price: 'Gratis', installed: true, cat: 'Ventas' },
+        { id: 'invoice', name: 'Facturación', desc: 'Facturas y rectificativas', price: '9 €/mes', installed: false, cat: 'Finanzas' },
+        { id: 'couriers', name: 'Envíos', desc: 'Integración con transportistas', price: '12 €/mes', installed: false, cat: 'Logística' },
+        { id: 'appointments', name: 'Reservas', desc: 'Agenda y citas online', price: '7 €/mes', installed: false, cat: 'Operación' },
+        { id: 'messaging', name: 'Mensajería', desc: 'WhatsApp y email unificados', price: '15 €/mes', installed: false, cat: 'Comunicación' },
+        { id: 'analytics', name: 'Analítica', desc: 'Cuadros de mando e informes', price: '9 €/mes', installed: false, cat: 'BI' },
       ];
 
-      const MODULES_INACTIVE = [
-        { id: 'whatsapp',  name: 'WhatsApp Inbox', version: 'v0.5.1', status: 'inactive', system: false, icon: 'logo-whatsapp',         color: 'medium', desc: 'Bandeja de entrada de WhatsApp integrada con el asistente y el sistema de pedidos.' },
-        { id: 'invoicing', name: 'Invoicing',       version: 'v1.0.3', status: 'inactive', system: false, icon: 'document-text-outline', color: 'medium', desc: 'Facturación completa F1/F2/R1 con PDF y envío por email.' },
-      ];
+      // listInstalledModules() es la fuente de verdad de esta pestaña. En un showcase sin runtime
+      // el fallback honesto es el mismo que usa AppsPage cuando falla la petición: lista vacía.
+      let installedModules = [];
+      let catalogModules = MODULES_DEMO.map((module) => ({
+        ...module,
+        state: module.installed ? 'installed' : 'available',
+        stateLabel: module.installed ? 'Instalado' : 'Disponible',
+      }));
 
-      // Estado → etiqueta/color (badges shadow-safe con vars inline — .ion-color-* no penetra shadow).
-      const STATUS_LABEL = { active: 'Activo', inactive: 'Desactivado', error: 'Error de migración' };
-      const STATUS_COLOR = { active: 'success', inactive: 'medium', error: 'danger' };
-
-      const statusBadge = (s) => {
-        const c = STATUS_COLOR[s] ?? 'medium';
-        return h`<ion-badge style="--background:color-mix(in srgb,var(--ion-color-${c}) 15%,transparent);--color:var(--ion-color-${c});--padding-top:4px;--padding-bottom:4px">${STATUS_LABEL[s]}</ion-badge>`;
+      const DT_LABELS_ES = {
+        search: 'Buscar…',
+        empty: 'Sin resultados',
+        filters: 'Filtros',
+        clear: 'Limpiar',
+        apply: 'Aplicar',
+        moreActions: 'Más acciones',
+        rowsPerPage: 'Filas por página',
+        perPageShort: '{n} / pág.',
+        viewList: 'Vista lista',
+        viewCards: 'Vista tarjetas',
+        columnsVisible: 'Columnas visibles',
+        columns: 'Columnas',
+        actions: 'Acciones',
+        close: 'Cerrar',
+        filterPlaceholder: 'Filtrar…',
+        noValues: 'Sin valores',
+        showing: 'Mostrando {from}–{to} de',
+        recordSingular: 'registro',
+        recordPlural: 'registros',
       };
 
-      // Cuerpo de tarjeta de módulo (renderCard de ok-data-table).
-      const renderModuleCard = (r) => h`
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
-          <div style="width:40px;height:40px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:20px;background:color-mix(in srgb,var(--ion-color-${r.color}) 15%,transparent);color:var(--ion-color-${r.color})">
-            <ion-icon name="${r.icon}"></ion-icon>
-          </div>
-          <div style="flex:1 1 auto;min-width:0">
-            <div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.name}</div>
-            <div style="font-size:11.5px;color:var(--ion-color-medium);margin-bottom:6px">ERPlora · ${r.version}${r.system ? ' · sistema' : ''}</div>
-            ${statusBadge(r.status)}
-          </div>
-          ${r.system
-            ? h`<ion-toggle checked disabled size="small"></ion-toggle>`
-            : h`<ion-toggle .checked=${r.status !== 'inactive'} size="small" data-mod-id="${r.id}"></ion-toggle>`
-          }
-        </div>
-        <p style="font-size:13px;color:var(--ion-color-medium);line-height:1.45;margin:0 0 6px">
-          ${r.status === 'error'
-            ? h`${r.desc} <strong style="color:var(--ion-color-danger)">Falta migración ${r.version}.</strong>`
-            : r.desc
-          }
-        </p>`;
+      function badgeCell(text, tone) {
+        const badge = document.createElement('span');
+        badge.textContent = text;
+        badge.style.cssText =
+          'display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;' +
+          `background:rgba(var(--ion-color-${tone}-rgb),.14);` +
+          `color:var(--ion-color-${tone}-shade,var(--ion-color-${tone}))`;
+        return badge;
+      }
 
-      definePage({
-        bare: true,
+      function configureBaseTable(table) {
+        table.views = ['cards', 'table'];
+        table.defaultView = 'cards';
+        table.pageSize = 10;
+        table.columnPicker = true;
+        table.labels = DT_LABELS_ES;
+      }
+
+      defineHubPage({
+        active: 'apps',
+        title: 'Apps',
         body: `
-          <ok-page-header
-            heading="Módulos del Hub"
-            description="8 instalados · 2 desactivados · 1 con error">
-            <div slot="actions">
-              <ion-button fill="outline" size="small">
-                <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-                Subir paquete
-              </ion-button>
-              <ion-button size="small">
-                <ion-icon slot="start" name="storefront-outline"></ion-icon>
-                Ir al Marketplace
-              </ion-button>
-            </div>
-          </ok-page-header>
-
-          <!-- Banner CTA Marketplace -->
-          <ok-inline-feedback
-            id="marketplace-banner"
-            class="pg-mb-4"
-            tone="info"
-            heading="Explora más módulos en el Marketplace"
-            icon="storefront-outline"
-            dismissible>
-            Inventario avanzado, e-commerce, RRHH, contabilidad… 96 módulos disponibles para tu sector.
-            <div slot="actions">
-              <ion-button size="small">
-                <ion-icon slot="start" name="open-outline"></ion-icon>
-                Ver Marketplace
-              </ion-button>
-            </div>
-          </ok-inline-feedback>
-
-          <!-- Tabs internos -->
-          <ion-segment id="modules-tab" value="active" class="pg-mb-4">
-            <ion-segment-button value="active">
-              <ion-label>
-                Activos
-                <ion-badge color="primary" style="margin-left:6px">8</ion-badge>
-              </ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="inactive">
-              <ion-label>
-                Desactivados
-                <ion-badge color="medium" style="margin-left:6px">2</ion-badge>
-              </ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="available">
-              <ion-label>
-                Disponibles
-                <ion-badge color="medium" style="margin-left:6px">88</ion-badge>
-              </ion-label>
-            </ion-segment-button>
-          </ion-segment>
-
-          <!-- Pestaña: Activos -->
-          <div id="tab-active">
-            <ok-data-table id="dt-active" style="display:block"></ok-data-table>
+          <div class="apps-fill">
+            <ok-data-table id="mine-table" fill></ok-data-table>
+            <ok-data-table id="catalog-table" fill hidden></ok-data-table>
           </div>
 
-          <!-- Pestaña: Desactivados -->
-          <div id="tab-inactive" hidden>
-            <ok-data-table id="dt-inactive" style="display:block"></ok-data-table>
-          </div>
+          <ion-modal id="consent-modal">
+            <ion-header class="ion-no-border">
+              <ion-toolbar>
+                <ion-title>Permisos solicitados</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button class="consent-close" aria-label="Cerrar">
+                    <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <p class="consent-intro">
+                Este módulo solicita estos permisos. Podrás revisarlos después en Ajustes → Permisos.
+              </p>
+              <ion-list id="consent-list" lines="full"></ion-list>
+              <div class="consent-actions">
+                <ion-button id="consent-confirm" expand="block">
+                  <ion-icon slot="start" name="download-outline"></ion-icon>
+                  Instalar y conceder
+                </ion-button>
+                <ion-button class="consent-close" expand="block" fill="outline">Cancelar</ion-button>
+              </div>
+            </ion-content>
+          </ion-modal>
 
-          <!-- Pestaña: Disponibles -->
-          <div id="tab-available" hidden>
-            <ok-empty-state
-              icon="storefront-outline"
-              heading="96 módulos disponibles en el Marketplace"
-              message="Amplía tu hub con módulos de inventario avanzado, e-commerce, RRHH, contabilidad y mucho más.">
-            </ok-empty-state>
-            <div style="text-align:center;margin-top:20px">
-              <ion-button>
-                <ion-icon slot="start" name="open-outline"></ion-icon>
-                Abrir Marketplace
-              </ion-button>
-            </div>
-          </div>
+          <ion-toast id="apps-toast" duration="2500" position="bottom"></ion-toast>
+        `,
+        footer: `
+          <ion-footer class="ion-no-border apps-footer">
+            <ion-toolbar>
+              <ion-segment id="apps-tabs" value="mine">
+                <ion-segment-button value="mine">
+                  <ion-icon name="cube-outline"></ion-icon>
+                  <ion-label>Mis módulos</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="all">
+                  <ion-icon name="storefront-outline"></ion-icon>
+                  <ion-label>Catálogo</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="paid">
+                  <ion-icon name="wallet-outline"></ion-icon>
+                  <ion-label>Pago</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+            </ion-toolbar>
+          </ion-footer>
         `,
         setup(doc) {
-          // ── Configurar ok-data-table (activos) ──────────────────────────
-          const dtActive = doc.getElementById('dt-active');
-          dtActive.rowKey = (r) => r.id;
-          dtActive.views = ['cards', 'table'];
-          dtActive.viewMode = 'cards';
-          dtActive.searchable = true;
-          dtActive.searchKeys = ['name', 'desc', 'version'];
-          dtActive.labels = { search: 'Buscar módulo (sales, pos, verifactu…)' };
-          dtActive.columns = [
-            { key: 'name',    header: 'Módulo',  width: 'minmax(10rem,1.2fr)', render: (r) => h`<span style="font-weight:600">${r.name}</span>` },
-            { key: 'version', header: 'Versión', width: '9rem' },
-            { key: 'status',  header: 'Estado',  width: '10rem', render: (r) => statusBadge(r.status) },
-          ];
-          dtActive.cardIcon = (r) => r.icon;
-          dtActive.cardTitle = (r) => r.name;
-          dtActive.renderCard = renderModuleCard;
-          dtActive.actions = [
-            { id: 'configure', icon: 'settings-outline', label: 'Configurar' },
-            { id: 'log',       icon: 'terminal-outline', label: 'Ver log',              show: (r) => r.status === 'error' },
-            { id: 'retry',     icon: 'refresh-outline',  label: 'Reintentar migración', color: 'primary', show: (r) => r.status === 'error' },
-            { id: 'uninstall', icon: 'trash-outline',    label: 'Desinstalar',          color: 'danger',  show: (r) => !r.system },
-          ];
-          dtActive.rows = MODULES_ACTIVE;
+          const mineTable = doc.getElementById('mine-table');
+          const catalogTable = doc.getElementById('catalog-table');
+          const tabs = doc.getElementById('apps-tabs');
+          const toast = doc.getElementById('apps-toast');
+          const consent = doc.getElementById('consent-modal');
 
-          // ── Configurar ok-data-table (inactivos) ────────────────────────
-          const dtInactive = doc.getElementById('dt-inactive');
-          dtInactive.rowKey = (r) => r.id;
-          dtInactive.views = ['cards', 'table'];
-          dtInactive.viewMode = 'cards';
-          dtInactive.searchable = true;
-          dtInactive.searchKeys = ['name', 'desc', 'version'];
-          dtInactive.labels = { search: 'Buscar módulo…' };
-          dtInactive.columns = [
-            { key: 'name',    header: 'Módulo',  width: 'minmax(10rem,1.2fr)', render: (r) => h`<span style="font-weight:600">${r.name}</span>` },
-            { key: 'version', header: 'Versión', width: '9rem' },
-            { key: 'status',  header: 'Estado',  width: '10rem', render: (r) => statusBadge(r.status) },
+          configureBaseTable(mineTable);
+          mineTable.searchKeys = ['name'];
+          mineTable.searchPlaceholder = 'Buscar módulo instalado…';
+          mineTable.columns = [
+            { key: 'name', header: 'Módulo' },
+            { key: 'version', header: 'Versión', format: (row) => `v${String(row.version ?? '')}` },
+            {
+              key: 'status',
+              header: 'Estado',
+              filterable: true,
+              filterType: 'select',
+              render: (row) => badgeCell(
+                row.status === 'active'
+                  ? 'Activo'
+                  : row.status === 'inactive_auto'
+                    ? 'Inactivo (en cascada)'
+                    : 'Inactivo',
+                row.status === 'active' ? 'success' : row.status === 'inactive_auto' ? 'warning' : 'medium',
+              ),
+            },
           ];
-          dtInactive.cardIcon = (r) => r.icon;
-          dtInactive.cardTitle = (r) => r.name;
-          dtInactive.renderCard = renderModuleCard;
-          dtInactive.actions = [
-            { id: 'configure', icon: 'settings-outline', label: 'Configurar' },
-            { id: 'uninstall', icon: 'trash-outline',    label: 'Desinstalar', color: 'danger' },
+          mineTable.actions = [
+            { id: 'toggle', label: 'Activar/Desactivar', icon: 'power-outline' },
+            { id: 'uninstall', label: 'Desinstalar', icon: 'trash', color: 'danger' },
           ];
-          dtInactive.rows = MODULES_INACTIVE;
+          mineTable.rows = installedModules;
 
-          // ── Estado del tab activo ────────────────────────────────────────
-          const tabs = {
-            active:    doc.getElementById('tab-active'),
-            inactive:  doc.getElementById('tab-inactive'),
-            available: doc.getElementById('tab-available'),
-          };
-          const seg = doc.getElementById('modules-tab');
+          configureBaseTable(catalogTable);
+          catalogTable.searchKeys = ['name', 'desc', 'cat'];
+          catalogTable.searchPlaceholder = 'Buscar en el catálogo…';
+          catalogTable.columns = [
+            { key: 'name', header: 'Módulo' },
+            { key: 'cat', header: 'Categoría', filterable: true, filterType: 'select', render: (row) => badgeCell(String(row.cat ?? ''), 'medium') },
+            { key: 'desc', header: 'Descripción' },
+            { key: 'price', header: 'Precio', filterable: true, filterType: 'select', render: (row) => badgeCell(String(row.price ?? ''), row.price === 'Gratis' ? 'success' : 'medium') },
+            { key: 'stateLabel', header: 'Estado', align: 'center', filterable: true, filterType: 'select', render: (row) => badgeCell(String(row.stateLabel), row.state === 'installed' ? 'success' : 'medium') },
+          ];
+          catalogTable.actions = [
+            { id: 'install', label: 'Instalar', icon: 'download-outline', disabled: (row) => row.state !== 'available' },
+          ];
+          catalogTable.rows = catalogModules;
 
-          const showTab = (val) => {
-            Object.keys(tabs).forEach((k) => {
-              const el = tabs[k];
-              if (el) el.hidden = k !== val;
-            });
-          };
-
-          if (seg) {
-            seg.addEventListener('ionChange', (e) => {
-              const val = e.detail && e.detail.value;
-              if (val) showTab(val);
-            });
+          function showToast(message, color = 'primary') {
+            toast.message = message;
+            toast.color = color;
+            toast.isOpen = true;
           }
-          showTab('active');
 
-          // ── Acciones de fila ─────────────────────────────────────────────
-          const handleRowAction = async (e) => {
-            const { actionId, row } = e.detail || {};
-            if (actionId === 'uninstall') {
-              const alert = document.createElement('ion-alert');
-              alert.header  = 'Desinstalar módulo';
-              alert.message = `¿Seguro que quieres desinstalar <strong>${row.name}</strong>? Esta acción no se puede deshacer.`;
-              alert.buttons = [
-                { text: 'Cancelar', role: 'cancel' },
-                { text: 'Desinstalar', role: 'destructive', cssClass: 'ok-danger' },
-              ];
-              document.body.appendChild(alert);
-              await alert.present();
-              alert.addEventListener('didDismiss', () => alert.remove());
-              return;
+          function showTab(value) {
+            const mine = value === 'mine';
+            mineTable.hidden = !mine;
+            catalogTable.hidden = mine;
+            if (!mine) {
+              catalogTable.rows = value === 'paid'
+                ? catalogModules.filter((module) => module.price !== 'Gratis')
+                : catalogModules;
             }
-            if (actionId === 'retry') {
-              const toast = document.createElement('ion-toast');
-              toast.message  = `Reintentando migración de ${row.name}…`;
-              toast.duration = 2500;
-              toast.position = 'bottom';
-              toast.color    = 'primary';
-              document.body.appendChild(toast);
-              toast.present();
-              toast.addEventListener('didDismiss', () => toast.remove());
-              return;
-            }
-            if (actionId === 'configure' || actionId === 'log') {
-              const toast = document.createElement('ion-toast');
-              toast.message  = actionId === 'log'
-                ? `Abriendo log de ${row.name}…`
-                : `Configuración de ${row.name}…`;
-              toast.duration = 1500;
-              toast.position = 'bottom';
-              document.body.appendChild(toast);
-              toast.present();
-              toast.addEventListener('didDismiss', () => toast.remove());
-            }
-          };
+          }
 
-          doc.getElementById('dt-active').addEventListener('rowAction', handleRowAction);
-          doc.getElementById('dt-inactive').addEventListener('rowAction', handleRowAction);
-
-          // ── Toggle activar/desactivar (delegado al documento) ───────────
-          doc.addEventListener('ionChange', (e) => {
-            const toggle = e.target;
-            if (toggle.tagName !== 'ION-TOGGLE' || toggle.disabled) return;
-            const modId  = toggle.getAttribute('data-mod-id');
-            if (!modId) return;
-            const checked = e.detail && e.detail.checked;
-            const mod     = [...MODULES_ACTIVE, ...MODULES_INACTIVE].find((m) => m.id === modId);
-            const name    = mod ? mod.name : modId;
-            const toast   = document.createElement('ion-toast');
-            toast.message  = checked ? `${name} activado correctamente.` : `${name} desactivado.`;
-            toast.duration = 2200;
-            toast.position = 'bottom';
-            toast.color    = checked ? 'success' : 'medium';
-            document.body.appendChild(toast);
-            toast.present();
-            toast.addEventListener('didDismiss', () => toast.remove());
+          tabs.addEventListener('ionChange', (event) => {
+            const value = event.detail?.value;
+            if (value === 'mine' || value === 'all' || value === 'paid') showTab(value);
           });
+
+          mineTable.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail || {};
+            if (!row) return;
+            if (actionId === 'toggle') {
+              row.status = row.status === 'active' ? 'inactive' : 'active';
+              installedModules = [...installedModules];
+              mineTable.rows = installedModules;
+              showToast(row.status === 'active' ? `${row.name} activado.` : `${row.name} desactivado.`, row.status === 'active' ? 'success' : 'primary');
+            }
+            if (actionId === 'uninstall') {
+              installedModules = installedModules.filter((module) => module.id !== row.id);
+              mineTable.rows = installedModules;
+              showToast(`${row.name} desinstalado.`);
+            }
+          });
+
+          catalogTable.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail || {};
+            if (actionId !== 'install' || !row || row.state !== 'available') return;
+            row.state = 'installed';
+            row.stateLabel = 'Instalado';
+            catalogModules = [...catalogModules];
+            catalogTable.rows = catalogModules;
+            showToast(`${row.name} instalado correctamente.`, 'success');
+          });
+
+          doc.querySelectorAll('.consent-close').forEach((button) => {
+            button.addEventListener('click', () => consent.dismiss());
+          });
+          doc.getElementById('consent-confirm').addEventListener('click', () => consent.dismiss());
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          showTab('mine');
         },
       });
     </script>

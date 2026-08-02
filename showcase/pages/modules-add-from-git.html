@@ -3,513 +3,126 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERPlora Cloud · Conectar repositorio</title>
-
-    <!-- Misma carga que showcase/index.html, pero rutas relativas a showcase/pages/. -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <title>Añadir desde Git · ERPlora Cloud</title>
     <script type="importmap">
       { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
     </script>
-    <link rel="stylesheet" href="../../dist/theme.example.css" />
-    <link rel="stylesheet" href="../../dist/layout.css" />
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
     <script type="module" src="../../dist/outfitkit.js"></script>
-    <link rel="stylesheet" href="./_shell.css" />
-
-    <style>
-      /* Geometría puntual de esta vista (estructura, sin colores de marca). */
-
-      /* Bloque del wizard */
-      .ui-wizard {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-        margin-bottom: 80px;
-      }
-
-      /* Cuerpo de la tarjeta del wizard */
-      .ui-wizard-body {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      /* Títulos del wizard */
-      .ui-wizard-title {
-        margin: 0 0 4px;
-        font-size: 1.1rem;
-        font-weight: 700;
-      }
-      .ui-wizard-sub {
-        margin: 0;
-        color: var(--ion-color-medium);
-        font-size: 0.875rem;
-        line-height: 1.5;
-      }
-
-      /* Tarjeta de la cuenta GitHub */
-      .ui-gh-card {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-      .ui-gh-info { flex: 1 1 auto; min-width: 0; }
-      .ui-gh-name { font-weight: 600; font-size: 0.9375rem; }
-      .ui-gh-meta { font-size: 0.8125rem; color: var(--ion-color-medium); margin-top: 2px; }
-      .ui-gh-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      /* Lista de repositorios */
-      .ui-repo-list {
-        border: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-        border-radius: 10px;
-        overflow: hidden;
-        background: var(--ion-color-step-50, rgba(127,127,127,.03));
-      }
-      .ui-repo-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 16px;
-        border-bottom: 1px solid var(--ion-border-color, rgba(127,127,127,.15));
-      }
-      .ui-repo-item:last-child { border-bottom: 0; }
-      .ui-repo-icon {
-        flex: 0 0 18px;
-        padding-top: 2px;
-        color: var(--ion-color-medium);
-      }
-      .ui-repo-body { flex: 1 1 auto; min-width: 0; }
-      .ui-repo-title {
-        font-size: 0.875rem;
-        font-weight: 600;
-        line-height: 1.3;
-        margin-bottom: 2px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-      .ui-repo-desc {
-        font-size: 0.8rem;
-        color: var(--ion-color-medium);
-        line-height: 1.4;
-        margin-bottom: 4px;
-      }
-      .ui-repo-meta {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.75rem;
-        color: var(--ion-color-medium);
-      }
-      .ui-repo-lang {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .ui-lang-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        flex: 0 0 9px;
-      }
-      .ui-repo-aside {
-        flex: 0 0 auto;
-        padding-top: 2px;
-      }
-
-      /* Paginación */
-      .ui-pager-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8125rem;
-        color: var(--ion-color-medium);
-        margin-top: 4px;
-      }
-
-      /* Footer del wizard */
-      .ui-wizard-foot {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        padding-top: 16px;
-        border-top: 1px solid var(--ion-border-color, rgba(127,127,127,.2));
-      }
-      .ui-wizard-foot-meta {
-        font-size: 0.8125rem;
-        color: var(--ion-color-medium);
-      }
-      .ui-wizard-foot-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      @media (max-width: 600px) {
-        .ui-gh-card { flex-direction: column; align-items: flex-start; }
-        .ui-wizard-foot { flex-direction: column; align-items: flex-start; }
-        .ui-wizard-foot-actions { width: 100%; }
-        .ui-wizard-foot-actions ion-button { flex: 1; }
-      }
-    </style>
+    <link rel="stylesheet" href="./_saas-developer.css" />
+    <link rel="stylesheet" href="./_saas-developer-pages.css" />
   </head>
   <body>
     <script type="module">
-      import { definePage } from './_page.js';
+      import { defineDeveloperPage } from './_saas-developer.js';
 
-      definePage({
-        bare: true,
+      defineDeveloperPage({
+        activeTab: 'repositories',
+        title: 'Añadir módulo desde Git',
         body: `
-          <ok-page-header
-            heading="Conectar repositorio GitHub"
-            description="Importa un módulo desde un repositorio existente para activarlo en tus hubs">
-          </ok-page-header>
+          <div class="developer-page developer-section-stack">
+            <div class="developer-grid">
+              <ion-card>
+                <ion-card-content>
+                  <div class="developer-summary">
+                    <div class="developer-summary-icon" style="color:var(--ion-color-success);background:rgba(var(--ion-color-success-rgb),.12)"><iconify-icon icon="lucide:globe" width="23" height="23"></iconify-icon></div>
+                    <div class="developer-summary-body">
+                      <h2 class="developer-card-title">Repositorios públicos</h2>
+                      <p>Importa módulos directamente desde cualquier repositorio Git público.</p>
+                      <strong>Requisitos</strong>
+                      <ul class="developer-field-help"><li><code>module.json</code> válido en el directorio raíz.</li><li>Campos obligatorios: <code>id</code>, <code>name</code> y <code>version</code>.</li></ul>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
 
-          <div class="ui-wizard">
+              <ion-card style="border:2px solid var(--ion-color-primary)">
+                <ion-card-content>
+                  <div class="developer-summary">
+                    <div class="developer-summary-icon"><iconify-icon icon="lucide:lock" width="23" height="23"></iconify-icon></div>
+                    <div class="developer-summary-body">
+                      <h2 class="developer-card-title">Repositorios privados</h2>
+                      <p>Instala nuestra aplicación de GitHub para importar repositorios privados de forma segura.</p>
+                      <ion-button size="small"><iconify-icon slot="start" icon="lucide:github" width="14" height="14"></iconify-icon>Instalar GitHub App<iconify-icon slot="end" icon="lucide:external-link" width="12" height="12"></iconify-icon></ion-button>
+                      <p class="developer-field-help">Después podrás usar el mismo formulario para repositorios privados.</p>
+                    </div>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </div>
 
-            <!-- STEPPER: 4 pasos, paso 2 activo -->
-            <ok-stepper id="wizard-stepper" current="1"></ok-stepper>
-
-            <!-- CUERPO DEL WIZARD -->
-            <ion-card>
+            <ion-card id="import-form-card">
               <ion-card-content>
-                <div class="ui-wizard-body">
+                <h2 class="developer-card-title">Detalles del repositorio</h2>
+                <p class="developer-card-subtitle">Indica el origen y la clasificación del módulo.</p>
+                <form class="developer-fields">
+                  <div class="developer-fields two-col">
+                    <div>
+                      <ion-input type="url" label="URL del repositorio *" label-placement="stacked" fill="outline" placeholder="https://github.com/usuario/nombre-modulo" required></ion-input>
+                      <p class="developer-field-help">Compatible con repositorios de GitHub, GitLab y Bitbucket.</p>
+                    </div>
+                    <ion-input type="text" label="Rama" label-placement="stacked" fill="outline" value="main" placeholder="main"></ion-input>
+                  </div>
+
+                  <ion-select label="Sector" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona sectores">
+                    <ion-select-option value="retail">Comercio</ion-select-option>
+                    <ion-select-option value="hospitality">Hostelería</ion-select-option>
+                    <ion-select-option value="services">Servicios</ion-select-option>
+                  </ion-select>
+
+                  <ion-select label="Unidad funcional" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona unidades funcionales">
+                    <ion-select-option value="operations">Operaciones</ion-select-option>
+                    <ion-select-option value="finance">Finanzas</ion-select-option>
+                    <ion-select-option value="compliance">Cumplimiento</ion-select-option>
+                  </ion-select>
+
+                  <div class="developer-fields two-col">
+                    <ion-select id="module-type-select" label="Tipo de módulo" label-placement="stacked" fill="outline" interface="popover" value="free">
+                      <ion-select-option value="free">Gratis</ion-select-option>
+                      <ion-select-option value="one_time">Pago único</ion-select-option>
+                      <ion-select-option value="subscription">Suscripción mensual</ion-select-option>
+                    </ion-select>
+                    <div data-price-field="one_time" hidden>
+                      <ion-input type="number" label="Precio (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="9,99"></ion-input>
+                      <p class="developer-field-help">Recibes el 85% del precio de venta.</p>
+                    </div>
+                    <div data-price-field="subscription" hidden>
+                      <ion-input type="number" label="Precio mensual (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="4,99"></ion-input>
+                      <p class="developer-field-help">Recibes el 85% del precio mensual.</p>
+                    </div>
+                  </div>
 
                   <div>
-                    <h2 class="ui-wizard-title">Selecciona un repositorio de tu cuenta GitHub</h2>
-                    <p class="ui-wizard-sub">
-                      Solo se listan repos que contienen un
-                      <code style="font-size:.85em;background:var(--ion-color-step-100,rgba(0,0,0,.06));padding:1px 5px;border-radius:4px">erplora.module.json</code>
-                      en la raíz.
-                    </p>
+                    <h3 class="developer-card-title">Ejemplo de module.json</h3>
+                    <pre class="developer-code"><code>{
+  "id": "mi-modulo",
+  "name": "Mi módulo",
+  "version": "1.0.0",
+  "depends_on": [],
+  "navigation": [
+    { "id": "dashboard", "label": "Dashboard", "component": "mi-modulo-dashboard" }
+  ]
+}</code></pre>
                   </div>
 
-                  <!-- Tarjeta de cuenta GitHub -->
-                  <ion-card style="margin:0">
-                    <ion-card-content>
-                      <div class="ui-gh-card">
-                        <ok-avatar name="acme-dev" size="lg" style="--ok-avatar-bg:var(--ion-color-dark,#1f2024);--ok-avatar-color:var(--ion-color-light,#f0f1f3)">
-                          <ion-icon name="logo-github" style="font-size:22px" aria-hidden="true"></ion-icon>
-                        </ok-avatar>
-                        <div class="ui-gh-info">
-                          <div class="ui-gh-name">@acme-dev</div>
-                          <div class="ui-gh-meta">Conectado desde 12 mar 2026 · 47 repos accesibles</div>
-                        </div>
-                        <div class="ui-gh-actions">
-                          <ok-status-pill tone="success" dot label="OAuth válido" size="sm"></ok-status-pill>
-                          <ion-button fill="outline" size="small">
-                            <ion-icon slot="start" name="refresh-outline"></ion-icon>
-                            Reautorizar
-                          </ion-button>
-                        </div>
-                      </div>
-                    </ion-card-content>
-                  </ion-card>
-
-                  <!-- Búsqueda de repos -->
-                  <ion-input
-                    id="repo-search"
-                    fill="outline"
-                    label="Filtrar repositorios"
-                    label-placement="floating"
-                    placeholder="Filtrar por nombre o descripción…"
-                    clear-input>
-                    <ion-icon name="search-outline" slot="start"></ion-icon>
-                  </ion-input>
-
-                  <!-- Lista de repos -->
-                  <div class="ui-repo-list" id="repo-list">
-                    <!-- Los ítems se inyectan por JS en setup -->
-                  </div>
-
-                  <!-- Paginación -->
-                  <div class="ui-pager-row">
-                    <span>Mostrando 12 de 47 repos</span>
-                    <ok-pagination
-                      id="repo-pager"
-                      page="1"
-                      total="47"
-                      page-size="12"
-                      variant="compact">
-                    </ok-pagination>
-                  </div>
-
-                </div>
-
-                <!-- Footer del wizard -->
-                <div class="ui-wizard-foot" style="margin-top:20px">
-                  <span class="ui-wizard-foot-meta" id="foot-meta">PASO 2 / 4 — ningún repo seleccionado</span>
-                  <div class="ui-wizard-foot-actions">
-                    <ion-button fill="ghost">
-                      <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
-                      Atrás
-                    </ion-button>
-                    <ion-button id="btn-continuar" disabled>
-                      Continuar
-                      <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
-                    </ion-button>
-                  </div>
-                </div>
-
+                  <ion-button type="submit" expand="block"><iconify-icon slot="start" icon="lucide:cloud-download" width="15" height="15"></iconify-icon>Importar módulo</ion-button>
+                </form>
               </ion-card-content>
             </ion-card>
-
-          </div>
-        `,
+          </div>`,
         setup(doc) {
-          // ── Datos de los repositorios ──────────────────────────────────────────
-          const REPOS = [
-            {
-              id: 'erplora-pos-tablet',
-              owner: 'acme-dev',
-              name: 'erplora-pos-tablet',
-              visibility: 'privado',
-              description: 'POS optimizado para tablet Android · checkout offline-first · sync en background.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 12, since: 'hace 3 h',
-              connected: false,
-            },
-            {
-              id: 'erplora-warehouse-mobile',
-              owner: 'acme-dev',
-              name: 'erplora-warehouse-mobile',
-              visibility: 'privado',
-              description: 'App handheld para almacén · escaneo de barcode · gestión de albaranes.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 8, since: 'hace 1 d',
-              connected: true,
-            },
-            {
-              id: 'erplora-public-docs',
-              owner: 'acme-dev',
-              name: 'erplora-public-docs',
-              visibility: 'público',
-              description: 'Documentación abierta del módulo POS · Astro + MDX.',
-              lang: 'JavaScript', langColor: '#f1e05a',
-              stars: 142, since: 'hace 6 h',
-              connected: false,
-            },
-            {
-              id: 'erplora-financiero',
-              owner: 'acme-dev',
-              name: 'erplora-financiero',
-              visibility: 'privado',
-              description: 'Módulo de tesorería · conciliación bancaria · informes IRPF.',
-              lang: 'Python', langColor: '#3572A5',
-              stars: 4, since: 'hace 2 h',
-              connected: false,
-            },
-            {
-              id: 'erplora-loyalty-cards',
-              owner: 'acme-dev',
-              name: 'erplora-loyalty-cards',
-              visibility: 'público',
-              description: 'Sistema de tarjetas de fidelización · NFC · puntos por compra.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 38, since: 'hace 4 d',
-              connected: false,
-            },
-            {
-              id: 'erplora-rrhh-portal',
-              owner: 'acme-dev',
-              name: 'erplora-rrhh-portal',
-              visibility: 'privado',
-              description: 'Portal del empleado · vacaciones · nóminas · fichaje.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 6, since: 'hace 12 h',
-              connected: false,
-            },
-            {
-              id: 'inventario-vinos',
-              owner: 'bodegas-casadejus',
-              name: 'inventario-vinos',
-              visibility: 'privado',
-              description: 'Trazabilidad de barricas · DO Ribera del Duero · catas y notas.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 2, since: 'hace 1 h',
-              connected: true,
-            },
-            {
-              id: 'erplora-restaurant-kds',
-              owner: 'acme-dev',
-              name: 'erplora-restaurant-kds',
-              visibility: 'privado',
-              description: 'Kitchen Display System · ticket routing por estación.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 17, since: 'hace 9 h',
-              connected: false,
-            },
-            {
-              id: 'erplora-marketplace-sdk',
-              owner: 'acme-dev',
-              name: 'erplora-marketplace-sdk',
-              visibility: 'público',
-              description: 'SDK para publicar módulos en el marketplace de ERPlora · CLI incluida.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 287, since: 'hace 2 d',
-              connected: false,
-            },
-            {
-              id: 'etiquetas-ai',
-              owner: 'vinos-roca',
-              name: 'etiquetas-ai',
-              visibility: 'privado',
-              description: 'Reconocimiento de etiquetas con visión por IA · Tensorflow Lite.',
-              lang: 'Python', langColor: '#3572A5',
-              stars: 11, since: 'hace 6 h',
-              connected: true,
-            },
-            {
-              id: 'erplora-stock-alerts',
-              owner: 'acme-dev',
-              name: 'erplora-stock-alerts',
-              visibility: 'privado',
-              description: 'Reglas de reorden y notificaciones de stock mínimo.',
-              lang: 'TypeScript', langColor: '#3178c6',
-              stars: 3, since: 'hace 5 h',
-              connected: false,
-            },
-            {
-              id: 'erplora-data-pipelines',
-              owner: 'acme-dev',
-              name: 'erplora-data-pipelines',
-              visibility: 'público',
-              description: 'ETLs y dashboards para BI · DuckDB + Metabase.',
-              lang: 'Python', langColor: '#3572A5',
-              stars: 64, since: 'hace 1 d',
-              connected: false,
-            },
-          ];
-
-          // Estado: repo seleccionado
-          let selected = '';
-
-          // ── Stepper ────────────────────────────────────────────────────────────
-          const stepper = doc.getElementById('wizard-stepper');
-          if (stepper) {
-            stepper.steps = [
-              { label: 'Autorizar GitHub', description: 'OAuth completado' },
-              { label: 'Seleccionar repo', description: 'Elige el repositorio' },
-              { label: 'Detectar metadata', description: 'manifest.json + tests' },
-              { label: 'Confirmar', description: 'Asignar a módulo' },
-            ];
-            stepper.labels = { stepCount: 'Paso {n} de {total}' };
-            stepper.current = 1; // paso 2 activo (0-based)
-          }
-
-          // ── Helpers de icono de repo ────────────────────────────────────────
-          const lockSvg = `<ion-icon name="lock-closed-outline" aria-hidden="true" style="font-size:16px"></ion-icon>`;
-          const globeSvg = `<ion-icon name="globe-outline" aria-hidden="true" style="font-size:16px"></ion-icon>`;
-
-          // ── Renderizar lista de repos ──────────────────────────────────────
-          const repoList = doc.getElementById('repo-list');
-
-          const updateFooter = () => {
-            const meta = doc.getElementById('foot-meta');
-            const btn = doc.getElementById('btn-continuar');
-            if (meta) {
-              meta.textContent = 'PASO 2 / 4 — ' + (selected ? selected : 'ningún repo seleccionado');
-            }
-            if (btn) {
-              if (selected) {
-                btn.removeAttribute('disabled');
-              } else {
-                btn.setAttribute('disabled', '');
-              }
-            }
-          };
-
-          const renderRepos = (repos) => {
-            if (!repoList) return;
-            repoList.innerHTML = '';
-            repos.forEach((r) => {
-              const item = document.createElement('div');
-              item.className = 'ui-repo-item';
-              item.setAttribute('data-repo-id', r.id);
-
-              const visColor = r.visibility === 'público' ? 'success' : 'medium';
-              const isSelected = selected === r.id;
-
-              item.innerHTML = `
-                <span class="ui-repo-icon">${r.visibility === 'privado' ? lockSvg : globeSvg}</span>
-                <div class="ui-repo-body">
-                  <div class="ui-repo-title">
-                    <span>${r.owner}/${r.name}</span>
-                    <ion-badge color="${visColor}" style="font-size:.68rem">${r.visibility}</ion-badge>
-                    ${isSelected ? '<ion-badge color="primary" style="font-size:.68rem">seleccionado</ion-badge>' : ''}
-                  </div>
-                  <div class="ui-repo-desc">${r.description}</div>
-                  <div class="ui-repo-meta">
-                    <span class="ui-repo-lang">
-                      <span class="ui-lang-dot" style="background:${r.langColor}"></span>
-                      ${r.lang}
-                    </span>
-                    <span>★ ${r.stars}</span>
-                    <span>Último commit · ${r.since}</span>
-                  </div>
-                </div>
-                <div class="ui-repo-aside">
-                  ${r.connected
-                    ? `<ion-button fill="outline" size="small" disabled color="medium"><ion-icon slot="start" name="checkmark-outline"></ion-icon>Ya conectado</ion-button>`
-                    : `<ion-button fill="${isSelected ? 'solid' : 'outline'}" size="small" color="primary" class="ui-btn-conectar" data-repo-id="${r.id}"><ion-icon slot="start" name="git-branch-outline"></ion-icon>Conectar</ion-button>`
-                  }
-                </div>
-              `;
-              repoList.appendChild(item);
-            });
-
-            // Listeners en botones "Conectar"
-            repoList.querySelectorAll('.ui-btn-conectar').forEach((btn) => {
-              btn.addEventListener('click', () => {
-                const id = btn.getAttribute('data-repo-id');
-                selected = selected === id ? '' : id;
-                renderRepos(getFilteredRepos());
-                updateFooter();
-              });
+          const type = doc.getElementById('module-type-select');
+          const syncPrice = () => {
+            const current = type?.value || 'free';
+            doc.querySelectorAll('[data-price-field]').forEach((field) => {
+              field.hidden = field.getAttribute('data-price-field') !== current;
             });
           };
-
-          let filterText = '';
-          const getFilteredRepos = () => {
-            if (!filterText) return REPOS;
-            const q = filterText.toLowerCase();
-            return REPOS.filter(
-              (r) =>
-                r.name.toLowerCase().includes(q) ||
-                r.description.toLowerCase().includes(q) ||
-                r.owner.toLowerCase().includes(q)
-            );
-          };
-
-          renderRepos(REPOS);
-          updateFooter();
-
-          // ── Búsqueda ────────────────────────────────────────────────────
-          const searchInput = doc.getElementById('repo-search');
-          if (searchInput) {
-            searchInput.addEventListener('ionInput', (e) => {
-              filterText = (e.detail && e.detail.value) || '';
-              renderRepos(getFilteredRepos());
-            });
-          }
-
-          // ── Paginador (presentacional — muestra páginas 1 de 4 aprox.) ──
-          const pager = doc.getElementById('repo-pager');
-          if (pager) {
-            pager.page = 1;
-            pager.total = 47;
-            pager.pageSize = 12;
-          }
+          type?.addEventListener('ionChange', syncPrice);
+          syncPrice();
         },
       });
     </script>

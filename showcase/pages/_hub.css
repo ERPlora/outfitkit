@@ -1,0 +1,426 @@
+/* _hub.css — geometría del shell del Hub para las páginas estáticas del showcase.
+ * Los colores y tokens vienen de dist/erplora.css; aquí solo se compone Ionic como en el Hub. */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ion-background-color);
+  color: var(--ion-text-color);
+  font-family: var(--ion-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+ion-app,
+ion-split-pane.hub-shell {
+  background: var(--ion-background-color);
+}
+
+/* Topbar compartida. */
+ion-header {
+  --background: var(--ion-background-color);
+  box-shadow: none;
+}
+
+ion-header::after {
+  display: none;
+}
+
+ion-toolbar {
+  --border-width: 0;
+  --border-color: transparent;
+  --min-height: 60px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+}
+
+ion-title {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+ion-button {
+  --border-radius: 10px;
+  --box-shadow: none;
+  height: 40px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+ion-button[fill='clear'] {
+  --color: var(--ion-text-color);
+}
+
+.app-topbar {
+  position: relative;
+}
+
+.topbar-notif {
+  position: relative;
+  overflow: visible;
+}
+
+.topbar-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  overflow: hidden;
+}
+
+.topbar-progress > div {
+  height: 100%;
+  background: var(--ion-color-primary);
+}
+
+.hub-muted {
+  opacity: 0.6;
+}
+
+ok-app-launcher {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Split pane y rail de escritorio. */
+ion-split-pane.hub-shell {
+  --background: var(--ion-background-color);
+  --border: none;
+  --side-min-width: 232px;
+  --side-max-width: 248px;
+  --side-width: 240px;
+}
+
+ion-split-pane.hub-shell.rail {
+  --side-min-width: 68px;
+  --side-max-width: 68px;
+  --side-width: 68px;
+}
+
+.rail-toggle {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .rail-toggle {
+    display: inline-flex;
+  }
+
+  ion-menu.dash-menu.menu-pane-visible {
+    transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease;
+  }
+}
+
+@media (min-width: 992px) and (prefers-reduced-motion: reduce) {
+  ion-menu.dash-menu.menu-pane-visible {
+    transition: none;
+  }
+}
+
+/* Menú lateral: usuario arriba, navegación al centro, marca abajo. */
+ion-menu.dash-menu {
+  --background: var(--ion-background-color);
+  --border: none;
+  --width: 280px;
+  border-right: 0;
+}
+
+ion-menu.dash-menu ion-header,
+ion-menu.dash-menu ion-content,
+ion-menu.dash-menu ion-toolbar {
+  --background: var(--ion-background-color);
+}
+
+ion-menu.dash-menu ion-content.sidebar-content {
+  --background: var(--ion-background-color);
+}
+
+.brand-toolbar {
+  --min-height: 60px;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: calc(100% - 0.7rem);
+  margin: 0.35rem 0.35rem 0.5rem;
+  padding: 0.4rem 0.45rem;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+}
+
+.sidebar-user:hover {
+  background: color-mix(in oklab, var(--ion-text-color) 6%, transparent);
+}
+
+.sidebar-user-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--ion-color-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in oklab, var(--ion-color-primary) 18%, transparent);
+  border-radius: 999px;
+}
+
+.sidebar-user-meta {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name,
+.sidebar-user-email {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sidebar-user-email {
+  color: color-mix(in oklab, var(--ion-text-color) 55%, transparent);
+  font-size: 0.72rem;
+}
+
+.sidebar-user-chevron {
+  flex: none;
+  color: var(--ion-color-medium);
+  font-size: 15px;
+}
+
+.sidebar-user-popover {
+  --width: 220px;
+}
+
+.sidebar-user-popover ion-item {
+  --min-height: 42px;
+  font-size: 0.9rem;
+}
+
+.nav-list {
+  padding: 0.25rem 0;
+  background: transparent;
+}
+
+.nav-section-label {
+  width: auto;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: 0.6rem 1rem;
+  overflow: hidden;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  background: var(--ion-border-color);
+  --color: transparent;
+}
+
+.nav-item {
+  --background: transparent;
+  --background-hover: color-mix(in oklab, var(--ion-text-color) 6%, transparent);
+  --background-hover-opacity: 1;
+  --border-radius: 9px;
+  --color: color-mix(in oklab, var(--ion-text-color) 78%, transparent);
+  --inner-padding-end: 0.5rem;
+  --min-height: 42px;
+  --padding-start: 0.7rem;
+  margin: 1px 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.nav-item.selected {
+  --background: color-mix(in oklab, var(--ion-color-primary) 13%, transparent);
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+.nav-item.selected::part(native) {
+  box-shadow: inset 3px 0 0 var(--ion-color-primary);
+}
+
+.nav-icon {
+  flex: none;
+  margin-inline-end: 0.7rem;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.sidebar-foot {
+  --background: var(--ion-background-color);
+}
+
+.sidebar-foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem 0.7rem;
+  font-size: 0.72rem;
+}
+
+.sidebar-foot-text {
+  margin-inline-start: auto;
+  color: color-mix(in oklab, var(--ion-text-color) 55%, transparent);
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Marca del footer, misma geometría de la marca del Hub. */
+.erp-logo {
+  --u: 0.444px;
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: calc(72 * var(--u));
+  height: calc(72 * var(--u));
+  vertical-align: middle;
+}
+
+.erp-logo > i {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  border-radius: calc(2 * var(--u));
+}
+
+.erp-nw { top: calc(6 * var(--u)); left: calc(6 * var(--u)); background: #ef4444; }
+.erp-n { top: calc(6 * var(--u)); left: calc(30 * var(--u)); background: #10b981; }
+.erp-ne { top: calc(6 * var(--u)); left: calc(54 * var(--u)); background: #f59e0b; }
+.erp-w { top: calc(30 * var(--u)); left: calc(6 * var(--u)); background: #10b981; }
+.erp-hub {
+  top: calc(24 * var(--u));
+  left: calc(24 * var(--u));
+  width: calc(24 * var(--u)) !important;
+  height: calc(24 * var(--u)) !important;
+  background: var(--ion-color-primary);
+  border-radius: calc(4 * var(--u)) !important;
+}
+.erp-e { top: calc(30 * var(--u)); left: calc(54 * var(--u)); background: #ef4444; }
+.erp-sw { top: calc(54 * var(--u)); left: calc(6 * var(--u)); background: #f59e0b; }
+.erp-s { top: calc(54 * var(--u)); left: calc(30 * var(--u)); background: #ef4444; }
+.erp-se { top: calc(54 * var(--u)); left: calc(54 * var(--u)); background: #10b981; }
+
+.erp-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  vertical-align: middle;
+}
+
+.erp-wordmark {
+  color: var(--ion-text-color);
+  font-family: var(--ion-font-family);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+/* Rail colapsado: iconos y marca centrados. */
+ion-split-pane.hub-shell.rail .erp-wordmark,
+ion-split-pane.hub-shell.rail .nav-label,
+ion-split-pane.hub-shell.rail .sidebar-user-meta,
+ion-split-pane.hub-shell.rail .sidebar-foot-text {
+  display: none;
+}
+
+ion-split-pane.hub-shell.rail .sidebar-foot-brand,
+ion-split-pane.hub-shell.rail .sidebar-user,
+ion-split-pane.hub-shell.rail .nav-item::part(native) {
+  justify-content: center;
+}
+
+ion-split-pane.hub-shell.rail .sidebar-foot-brand {
+  padding-inline: 0;
+}
+
+ion-split-pane.hub-shell.rail .nav-item {
+  --inner-padding-end: 0;
+}
+
+ion-split-pane.hub-shell.rail .nav-icon {
+  margin-inline-end: 0;
+}
+
+/* AppPage: el contenido principal es la tarjeta redondeada entre topbar y footer. */
+.hub-shell-main,
+.split-pane-main {
+  background: var(--ion-background-color);
+}
+
+.hub-shell-main > ion-content,
+.split-pane-main > ion-content.hub-main-content {
+  --background: var(--ion-card-background);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  overflow: hidden;
+  border-radius: 25px;
+}
+
+.split-pane-main > ion-content.hub-main-content::part(background),
+.split-pane-main > ion-content.hub-main-content::part(scroll) {
+  border-radius: 25px;
+}
+
+/* Footer secundario de cada vista. */
+ion-footer {
+  box-shadow: none;
+}
+
+ion-footer ion-toolbar {
+  --border-width: 0;
+}
+
+ion-segment {
+  gap: 4px;
+  padding: 4px;
+  --background: transparent;
+}
+
+ion-segment-button {
+  min-height: 46px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  --border-radius: 10px;
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-primary);
+  --indicator-color: transparent;
+}
+
+ion-segment-button::part(indicator-background) {
+  border-radius: 10px;
+}

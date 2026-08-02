@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Reservas online</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .online-bookings-page { display:flex; flex-direction:column; height:100%; min-height:0; }
+      .online-bookings-page > ok-data-table { flex:1 1 auto; min-height:0; }
+      .online-booking-form { display:flex; flex-direction:column; gap:.7rem; }
+      .online-booking-form ion-button { align-self:flex-end; }
+      @media (max-width:520px) { .online-booking-form ion-button { width:100%; } }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // Reserva canónica de erp-online-booking-list.test.ts.
+      const BOOKING_FIXTURE = [
+        {
+          "id": "b1",
+          "booking_reference": "OB-001",
+          "customer_name": "Ana",
+          "customer_email": "",
+          "customer_phone": "600",
+          "service_name": "Corte",
+          "staff_name": "Eva",
+          "booking_date": "2026-07-13",
+          "booking_time": "10:00:00",
+          "duration_minutes": 30,
+          "status": "pending",
+          "booking_type": "appointment",
+          "notes": ""
+        }
+      ];
+
+      const STATUS_OPTIONS = [
+        { value: 'pending', label: 'Pendiente' },
+        { value: 'confirmed', label: 'Confirmada' },
+        { value: 'completed', label: 'Completada' },
+        { value: 'cancelled', label: 'Cancelada' },
+        { value: 'no_show', label: 'No-show' },
+      ];
+      const ACTION_COMMANDS = {
+        'confirm': 'online_booking.bookings.confirm',
+        'complete': 'online_booking.bookings.complete',
+        'no_show': 'online_booking.bookings.no_show',
+        'cancel': 'online_booking.bookings.cancel',
+        'delete': 'online_booking.bookings.delete',
+      };
+      const NEXT_STATUS = {
+        confirm: 'confirmed', complete: 'completed', no_show: 'no_show', cancel: 'cancelled',
+      };
+      const LABELS = {
+        search:'Buscar…', empty:'Sin reservas.', filters:'Filtros', clear:'Limpiar', apply:'Aplicar',
+        add:'Añadir', moreActions:'Más acciones', rowsPerPage:'Filas por página',
+        perPageShort:'{n} / pág.', viewList:'Vista lista', viewCards:'Vista tarjetas',
+        columnsVisible:'Columnas visibles', columns:'Columnas', actions:'Acciones', close:'Cerrar',
+        filterPlaceholder:'Filtrar…', noValues:'Sin valores', showing:'Mostrando {from}–{to} de',
+        recordSingular:'reserva', recordPlural:'reservas',
+      };
+
+      let bookings = BOOKING_FIXTURE.map((row) => ({ ...row }));
+      const state = { page:0, pageSize:50, sort:'id', dir:'asc', search:'', filters:{} };
+      const queryLog = [];
+      const commandLog = [];
+
+      function recordQuery(name, params) {
+        queryLog.push({ name, params:{ ...params } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail:{ name, params } }));
+      }
+
+      function recordCommand(name, payload) {
+        commandLog.push({ name, payload:{ ...payload } });
+        document.dispatchEvent(new CustomEvent('erplora:preview-command', { detail:{ name, payload } }));
+      }
+
+      function statusLabel(status) {
+        return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
+      }
+
+      function matchesDateRange(value, filter) {
+        if (filter == null || filter === '') return true;
+        if (typeof filter !== 'object') return String(value).includes(String(filter));
+        const from = filter.from ?? filter.min ?? filter.start;
+        const to = filter.to ?? filter.max ?? filter.end;
+        return (!from || String(value) >= String(from)) && (!to || String(value) <= String(to));
+      }
+
+      defineHubPage({
+        active: '/m/online_booking/bookings',
+        title: 'Reservas',
+        body: `
+          <div class="online-bookings-page">
+            <ok-data-table id="online-bookings-table" fill>
+              <form id="online-booking-form" slot="create" class="online-booking-form">
+                <ion-input id="booking-customer" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-input id="booking-service" fill="outline" label="Servicio" label-placement="floating" required></ion-input>
+                <ion-input id="booking-staff" fill="outline" label="Personal (opcional)" label-placement="floating"></ion-input>
+                <ion-input id="booking-date" fill="outline" type="date" label="Fecha" label-placement="floating" required></ion-input>
+                <ion-input id="booking-time" fill="outline" type="time" label="Hora" label-placement="floating" required></ion-input>
+                <ion-input id="booking-duration" fill="outline" type="number" min="5" max="480" step="5" value="30" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-button id="online-booking-save" type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
+          </div>
+          <ion-toast id="online-booking-toast" duration="2200" position="bottom"></ion-toast>
+        `,
+        setup(doc) {
+          const table = doc.getElementById('online-bookings-table');
+          const form = doc.getElementById('online-booking-form');
+          const customerInput = doc.getElementById('booking-customer');
+          const serviceInput = doc.getElementById('booking-service');
+          const staffInput = doc.getElementById('booking-staff');
+          const dateInput = doc.getElementById('booking-date');
+          const timeInput = doc.getElementById('booking-time');
+          const durationInput = doc.getElementById('booking-duration');
+          const saveButton = doc.getElementById('online-booking-save');
+          const toast = doc.getElementById('online-booking-toast');
+
+          table.serverSide = true;
+          table.fill = true;
+          table.addable = true;
+          table.views = true;
+          table.cardTitle = (row) => String(row.customer_name || row.booking_reference || '—');
+          table.cardIcon = () => 'globe-outline';
+          table.searchable = true;
+          table.searchPlaceholder = 'Buscar ref, cliente, servicio…';
+          table.emptyMessage = 'Sin reservas.';
+          table.pageSize = 50;
+          table.sort = 'id';
+          table.sortDir = 'asc';
+          table.columnPicker = true;
+          table.labels = LABELS;
+          table.columns = [
+            { key: 'booking_reference', header: 'Ref', sortable:true, filterable:true, filterType:'text' },
+            { key: 'customer_name', header: 'Cliente', sortable:true, filterable:true, filterType:'text' },
+            { key: 'service_name', header: 'Servicio', sortable:true, filterable:true, filterType:'text' },
+            { key: 'staff_name', header: 'Personal', sortable:true, filterable:true, filterType:'text', format:(row) => row.staff_name || '—' },
+            { key: 'booking_date', header: 'Fecha', sortable:true, filterable:true, filterType:'daterange' },
+            { key: 'booking_time', header: 'Hora', sortable:true, filterable:true, filterType:'text', format:(row) => String(row.booking_time ?? '').slice(0, 5) },
+            { key: 'status', header: 'Estado', sortable:true, filterable:true, filterType:'select', options:STATUS_OPTIONS, format:(row) => statusLabel(row.status) },
+          ];
+          table.actions = [
+            { id:'confirm', label:'Confirmar', icon:'checkmark-outline', color:'success' },
+            { id:'complete', label:'Completar', icon:'checkmark-done-outline', color:'primary' },
+            { id:'no_show', label:'No-show', icon:'close-circle-outline', color:'medium' },
+            { id:'cancel', label:'Cancelar', icon:'ban-outline', color:'warning' },
+            { id:'delete', label:'Borrar', icon:'trash-outline', color:'danger' },
+          ];
+
+          function queryPage() {
+            recordQuery('online_booking.bookings.list', { ...state });
+            const term = state.search.trim().toLocaleLowerCase('es');
+            let filtered = bookings.filter((row) => {
+              if (term && ![
+                row.booking_reference, row.customer_name, row.customer_email, row.customer_phone,
+                row.service_name, row.staff_name,
+              ].some((value) => String(value ?? '').toLocaleLowerCase('es').includes(term))) return false;
+              for (const [key, value] of Object.entries(state.filters)) {
+                if (value == null || value === '' || (Array.isArray(value) && !value.length)) continue;
+                if (key === 'booking_date') {
+                  if (!matchesDateRange(row.booking_date, value)) return false;
+                } else if (Array.isArray(value)) {
+                  if (!value.map(String).includes(String(row[key]))) return false;
+                } else if (key === 'customer_name' || key === 'service_name' || key === 'staff_name') {
+                  if (!String(row[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
+                } else if (String(row[key] ?? '') !== String(value)) return false;
+              }
+              return true;
+            });
+            filtered.sort((left, right) => {
+              const result = String(left[state.sort] ?? '').localeCompare(String(right[state.sort] ?? ''), 'es', { numeric:true });
+              return state.dir === 'desc' ? -result : result;
+            });
+            const start = state.page * state.pageSize;
+            table.page = state.page;
+            table.pageSize = state.pageSize;
+            table.sort = state.sort;
+            table.sortDir = state.dir;
+            table.total = filtered.length;
+            table.rows = filtered.slice(start, start + state.pageSize).map((row) => ({ ...row }));
+          }
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const customer = String(customerInput.value ?? '').trim();
+            const service = String(serviceInput.value ?? '').trim();
+            const staff = String(staffInput.value ?? '').trim();
+            const date = String(dateInput.value ?? '');
+            const time = String(timeInput.value ?? '');
+            if (!customer || !service || !date || !time) return;
+            saveButton.disabled = true;
+            const payload = {
+              customer_name: customer,
+              service_name: service,
+              staff_name: staff,
+              booking_date: date,
+              booking_time: time.length === 5 ? `${time}:00` : time,
+              duration_minutes: Number(durationInput.value) || 30,
+              booking_type: 'appointment',
+              notes: '',
+            };
+            recordCommand('online_booking.bookings.create', payload);
+            bookings = [...bookings, {
+              id:`preview-booking-${bookings.length + 1}`,
+              booking_reference:`BK-${String(bookings.length + 1).padStart(5, '0')}`,
+              customer_email:'', customer_phone:'', status:'pending', ...payload,
+            }];
+            customerInput.value = '';
+            serviceInput.value = '';
+            staffInput.value = '';
+            dateInput.value = '';
+            timeInput.value = '';
+            durationInput.value = '30';
+            table.close();
+            state.page = 0;
+            queryPage();
+            toast.message = 'Reserva añadida.';
+            toast.color = 'success';
+            toast.isOpen = true;
+            saveButton.disabled = false;
+          });
+
+          table.addEventListener('rowAction', (event) => {
+            const { actionId, row } = event.detail ?? {};
+            const commandName = ACTION_COMMANDS[actionId];
+            if (!row?.id || !commandName) return;
+            const payload = actionId === 'cancel'
+              ? { booking_id:String(row.id), reason:'' }
+              : { booking_id:String(row.id) };
+            recordCommand(commandName, payload);
+            if (actionId === 'delete') {
+              bookings = bookings.filter((booking) => booking.id !== row.id);
+            } else {
+              bookings = bookings.map((booking) => booking.id === row.id
+                ? { ...booking, status:NEXT_STATUS[actionId] ?? booking.status }
+                : booking);
+            }
+            toast.message = actionId === 'delete' ? 'Reserva borrada.' : 'Reserva actualizada.';
+            toast.color = actionId === 'delete' ? 'danger' : 'success';
+            toast.isOpen = true;
+            queryPage();
+          });
+          table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
+          table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
+          table.addEventListener('sortChange', (event) => {
+            state.sort = event.detail?.sort || 'id';
+            state.dir = event.detail?.dir === 'desc' ? 'desc' : 'asc';
+            queryPage();
+          });
+          table.addEventListener('searchChange', (event) => { state.search = String(event.detail ?? ''); state.page = 0; queryPage(); });
+          table.addEventListener('filterChange', (event) => {
+            const key = event.detail?.col ?? event.detail?.key;
+            if (!key) return;
+            state.filters[key] = event.detail?.value;
+            state.page = 0;
+            queryPage();
+          });
+          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
+
+          queryPage();
+        },
+      });
+    </script>
+  </body>
+</html>

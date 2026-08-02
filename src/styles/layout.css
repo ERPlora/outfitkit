@@ -18,7 +18,11 @@
 
 :root {
   --ok-grid-gap: clamp(0.75rem, 1.5vw, 1.25rem);
-  --ok-section-pad-y: clamp(3rem, 7vw, 5.5rem);
+  --ok-section-pad-y-compact: clamp(2rem, 4vw, 3rem);
+  --ok-section-pad-y-standard: clamp(2.5rem, 5vw, 4.5rem);
+  --ok-section-pad-y-featured: clamp(3.5rem, 6vw, 5.5rem);
+  --ok-section-pad-y: var(--ok-section-pad-y-standard);
+  --ok-section-head-space: clamp(1.75rem, 3vw, 2.5rem);
 }
 
 /* ===== Container (web pública; en dashboard NO: ahí el ancho lo da el split-pane) ===== */
@@ -53,10 +57,11 @@
   min-width: 0;
 }
 
-/* Grid de cards/KPIs sin clases de breakpoint: se adapta solo al ancho útil. */
+/* Grid de cards/KPIs sin clases de breakpoint: se adapta solo al ancho útil.
+   auto-fit colapsa tracks vacíos para que 2–3 tarjetas sigan llenando el eje. */
 .ok-grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--ok-card-min, 260px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--ok-card-min, 16rem), 100%), 1fr));
   gap: var(--ok-grid-gap);
 }
 
@@ -116,15 +121,44 @@
   font-family: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 }
 
+/* Ritmo vertical compartido. .ok-section-content permite conservar un
+   .ok-container explícito dentro de superficies full-bleed. Los modificadores
+   pueden vivir en el propio bloque o en un wrapper y se heredan por tokens. */
+.ok-section-content {
+  box-sizing: border-box;
+  padding-block: var(--ok-section-pad-y);
+}
+
+.ok-section--compact {
+  --ok-section-pad-y: var(--ok-section-pad-y-compact);
+  --ok-section-head-space: clamp(1.5rem, 2.5vw, 2rem);
+}
+
+.ok-section--featured {
+  --ok-section-pad-y: var(--ok-section-pad-y-featured);
+  --ok-section-head-space: clamp(2rem, 4vw, 3rem);
+}
+
 .ok-section--divider {
   border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 8%, transparent);
+}
+
+/* Superficie alterna para crear ritmo entre secciones de página. Funciona
+   tanto sobre .ok-section como sobre un wrapper full-bleed con .ok-container
+   en su interior. */
+.ok-section--soft {
+  background: color-mix(
+    in oklab,
+    var(--ok-text, var(--ion-text-color, #18181b)) 2.5%,
+    var(--ok-surface, var(--ion-background-color, #fff))
+  );
 }
 
 .ok-section-head {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  margin-bottom: clamp(2rem, 4vw, 3rem);
+  margin-bottom: var(--ok-section-head-space);
   max-width: 56ch;
 }
 
@@ -141,8 +175,9 @@
   align-self: flex-start;
   padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: var(--ok-type-eyebrow-size, 0.72rem);
+  font-weight: var(--ok-type-eyebrow-weight, 600);
+  line-height: var(--ok-type-eyebrow-leading, 1.2);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ok-primary, var(--ion-color-primary, #1496d6));
@@ -156,19 +191,194 @@
 
 .ok-section-title {
   margin: 0;
-  font-size: clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem);
-  line-height: 1.06;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+  font-size: var(--ok-type-section-title-size, clamp(1.75rem, 1.1rem + 2.6vw, 2.85rem));
+  line-height: var(--ok-type-section-title-leading, 1.06);
   letter-spacing: -0.025em;
-  font-weight: 650;
+  font-weight: var(--ok-type-section-title-weight, 650);
 }
 
 .ok-section-sub {
   margin: 0;
-  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
-  line-height: 1.55;
+  font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+  line-height: var(--ok-type-intro-leading, 1.6);
   color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
 }
 
+/* ===== Editorial content and documentation surfaces =====
+ *
+ * Reusable public/documentation primitives: constrained readable width,
+ * Ionic search/accordion theming and rich-text content generated from Markdown.
+ */
+ion-searchbar.ok-search {
+  --background: var(--ok-surface, var(--ion-card-background, #fff));
+  --border-radius: 0.875rem;
+  --box-shadow: 0 10px 28px -22px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 45%, transparent);
+  --color: var(--ok-text, var(--ion-text-color, #18181b));
+  --icon-color: var(--ok-primary, var(--ion-color-primary, #1496d6));
+  --placeholder-color: var(--ok-text, var(--ion-text-color, #18181b));
+  --placeholder-opacity: 0.55;
+  padding-inline: 0;
+  margin-block-end: 1rem;
+}
+
+ion-accordion.ok-accordion {
+  --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+}
+
+ion-item.ok-accordion-header {
+  --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+  --color: var(--ok-text, var(--ion-text-color, #18181b));
+  --padding-start: 1.125rem;
+  --inner-padding-end: 1rem;
+  font-weight: 600;
+}
+
+ion-item.ok-accordion-header iconify-icon {
+  color: var(--ok-primary, var(--ion-color-primary, #1496d6));
+  margin-inline-end: 0.75rem;
+}
+
+.ok-accordion-body {
+  padding: 0.25rem 1.25rem 1.5rem;
+  background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #fff)));
+}
+
+.ok-prose {
+  color: var(--ok-text, var(--ion-text-color, #18181b));
+  line-height: 1.7;
+}
+
+.ok-prose h2 {
+  margin: 1.5rem 0 0.75rem;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, sans-serif));
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ok-prose h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, sans-serif));
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.ok-prose p {
+  margin: 0.5rem 0;
+}
+
+.ok-prose :is(ul, ol) {
+  margin: 0.5rem 0;
+  padding-inline-start: 1.5rem;
+}
+
+.ok-prose ul {
+  list-style: disc;
+}
+
+.ok-prose ol {
+  list-style: decimal;
+}
+
+.ok-prose li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.ok-prose table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ok-prose :is(th, td) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
+  text-align: start;
+}
+
+.ok-prose th {
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 5%, transparent);
+  font-weight: 600;
+}
+
+.ok-prose code {
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+  font-size: 0.875em;
+}
+
+.ok-prose pre {
+  overflow-x: auto;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+}
+
+.ok-prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.ok-prose blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-inline-start: 3px solid var(--ok-primary, var(--ion-color-primary, #1496d6));
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: color-mix(in oklab, var(--ok-primary, var(--ion-color-primary, #1496d6)) 5%, transparent);
+}
+
+.ok-prose strong {
+  font-weight: 600;
+}
+
+.ok-prose hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
+}
+/* Tipografía editorial reutilizable fuera de los componentes. El display se
+ * reserva para el hero principal; page-title para cabeceras interiores e
+ * intro/body para el texto que las acompaña. */
+.ok-display-title,
+.ok-page-title {
+  margin: 0;
+  font-family: var(--ok-font-display, var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+  letter-spacing: -0.045em;
+}
+
+.ok-display-title {
+  font-size: var(--ok-type-display-size, clamp(3rem, 2.25rem + 3vw, 4.5rem));
+  font-weight: var(--ok-type-display-weight, 650);
+  line-height: var(--ok-type-display-leading, 1);
+}
+
+.ok-page-title {
+  font-size: var(--ok-type-page-title-size, clamp(2.35rem, 1.75rem + 2.6vw, 4rem));
+  font-weight: var(--ok-type-page-title-weight, 650);
+  line-height: var(--ok-type-page-title-leading, 1.04);
+  text-wrap: balance;
+}
+
+.ok-intro,
+.ok-body {
+  margin: 0;
+  color: var(--ok-muted, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.62));
+  text-wrap: pretty;
+}
+
+.ok-intro {
+  font-size: var(--ok-type-intro-size, clamp(1rem, 0.95rem + 0.25vw, 1.125rem));
+  line-height: var(--ok-type-intro-leading, 1.6);
+}
+
+.ok-body {
+  font-size: var(--ok-type-body-size, 1rem);
+  line-height: var(--ok-type-body-leading, 1.6);
+}
 /* ===== Tabla apilable (.ok-table-stack) — patrón «no more tables» =====
  *
  * Solo CSS, sin web component (para CRUDs ricos usa <ok-data-table>; esto es
@@ -187,6 +397,10 @@
  *      propio sustituye al flex de ion-row; ::before sí renderiza en hosts
  *      con shadow DOM)
  *
+ * En tablas editoriales, envolver con .ok-table-surface para obtener una
+ * superficie común sin añadir bordes de página. .ok-table-group identifica
+ * filas de sección que no deben convertirse en superficies independientes.
+ *
  * Tokens: --ok-table-cols (columnas del markup no-<table>; por defecto
  * partes iguales) · --ok-table-label-w (ancho de la etiqueta en móvil, 45%).
  * Celdas sin data-title (p.ej. acciones) ocupan el ancho completo en móvil.
@@ -201,6 +415,24 @@
 
 table.ok-table-stack {
   border-collapse: collapse;
+}
+
+/* Marco editorial reutilizable. Usa una línea óptica muy suave en escritorio
+ * y desaparece en móvil, donde las filas ya construyen su propia superficie. */
+.ok-table-surface {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--ok-surface, var(--ion-card-background, #fff));
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 6%, transparent);
+}
+
+.ok-table-surface > .ok-table-stack {
+  margin: 0;
+}
+
+.ok-table-surface > .ok-table-stack :is(tbody tr:last-child td, .ok-trow:last-child .ok-tcell) {
+  border-bottom: 0;
 }
 
 /* Markup no-<table>: cabecera y filas como grid de columnas iguales */
@@ -230,6 +462,13 @@ table.ok-table-stack {
 }
 
 @media (max-width: 767px) {
+  .ok-table-surface {
+    overflow: visible;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   /* La tabla nativa deja de comportarse como tabla */
   table.ok-table-stack,
   table.ok-table-stack :is(thead, tbody, tfoot, tr, th, td),
@@ -248,12 +487,24 @@ table.ok-table-stack {
     border: 0;
   }
 
-  /* Fila = card */
+  /* Fila = superficie ligera. Sin borde: la separación procede del fondo,
+     la sombra mínima y los divisores internos, evitando superficies anidadas. */
   .ok-table-stack :is(tbody tr, .ok-trow) {
-    border: 1px solid color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 12%, transparent);
-    border-radius: 8px;
+    border: 0;
+    border-radius: 12px;
     margin-bottom: 0.75rem;
     overflow: hidden;
+    background: var(--ok-surface, var(--ion-card-background, #fff));
+    box-shadow: 0 1px 3px color-mix(in oklab, var(--ok-text, var(--ion-text-color, #18181b)) 9%, transparent);
+  }
+
+  /* Una fila de grupo es un rótulo editorial, no otra card de datos. */
+  .ok-table-stack :is(tbody tr.ok-table-group, .ok-trow.ok-table-group) {
+    margin: 1.25rem 0 0.35rem;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
   }
 
   /* Celda = par etiqueta/valor (display/width explícitos: pisan el :host

@@ -100,8 +100,9 @@ export interface DataTablePrimaryAction {
 /** Clave estable de fila: nombre de campo o función que la devuelve. */
 export type DataTableRowKey = string | ((row: Record<string, unknown>) => string);
 
-/** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n. Default en INGLÉS.
- *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al default inglés.
+/** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n.
+ *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al idioma del documento
+ *  (`<html lang="es">` → español; cualquier otro idioma → inglés).
  *  El contenido data-driven (columns/rows/options) NO va aquí — ya es externo. */
 export interface OkDataTableLabels {
   /** Placeholder del buscador. */
@@ -212,6 +213,43 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   recordPlural: 'records',
 };
 
+const ES_LABELS: OkDataTableLabels = {
+  search: 'Buscar…',
+  empty: 'Sin resultados',
+  filters: 'Filtros',
+  clear: 'Limpiar',
+  apply: 'Aplicar',
+  selected: '{n} seleccionados',
+  importCsv: 'Importar CSV',
+  exportCsv: 'Exportar CSV',
+  add: 'Añadir',
+  moreActions: 'Más acciones',
+  rowsPerPage: 'Filas por página',
+  perPageShort: '{n} / pág.',
+  viewList: 'Vista lista',
+  viewCards: 'Vista tarjetas',
+  columnsVisible: 'Columnas visibles',
+  columns: 'Columnas',
+  actions: 'Acciones',
+  close: 'Cerrar',
+  newRecord: 'Nuevo',
+  form: 'Formulario',
+  filterPlaceholder: 'Filtrar…',
+  from: 'Desde',
+  to: 'Hasta',
+  fromOf: '{label} desde',
+  toOf: '{label} hasta',
+  gte: '≥',
+  lte: '≤',
+  noValues: 'Sin valores',
+  selectAll: 'Seleccionar todo',
+  selectRow: 'Seleccionar fila',
+  select: 'Seleccionar',
+  showing: 'Mostrando {from}–{to} de',
+  recordSingular: 'registro',
+  recordPlural: 'registros',
+};
+
 export class OkDataTable extends LitElement {
   static styles = css`
     :host {
@@ -253,7 +291,7 @@ export class OkDataTable extends LitElement {
     .tk-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.18); z-index: 19; }
     .drawer { position: absolute; top: 0; right: 0; height: 100%; width: 340px; max-width: 88%;
       background: var(--background); border-left: 1px solid var(--border-color);
-      box-shadow: -10px 0 28px rgba(0, 0, 0, 0.10); display: flex; flex-direction: column; z-index: 20;
+      display: flex; flex-direction: column; z-index: 20;
       animation: tk-slide-in 0.18s ease; }
     @keyframes tk-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
     .drawer .dh { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
@@ -417,6 +455,13 @@ export class OkDataTable extends LitElement {
     .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
 
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+    /* Las acciones de fila son icon-only y de tamaño small en escritorio. En tablet/móvil se
+     * amplía el host completo (no solo el icono) para que el área táctil alcance 44×44 px. */
+    @media (pointer: coarse), (max-width: 834px) {
+      .actions ion-button { min-width: 44px; min-height: 44px; margin: 0; }
+      .toolbtn { width: 44px; height: 44px; }
+      .pager .nav ion-button { min-width: 44px; min-height: 44px; margin: 0; }
+    }
     /* Spinner de acción en curso (loading): contenido dentro del ion-button small (Ionic lo fija
      * a 28px en el :host, por eso width/height y no font-size). Cubre tabla y tarjetas: los
      * botones de fila siempre van dentro de .actions. */
@@ -551,6 +596,16 @@ export class OkDataTable extends LitElement {
   // funciona igual en vista lista y tarjetas. Inspirado en el Filters Tool Panel de AG Grid.
   @state() private panel: 'none' | 'filters' | 'create' = 'none';
   @state() private viewMode: 'table' | 'cards' = 'table';
+  /** El usuario eligió vista a mano: a partir de ahí el arranque automático no vuelve a tocarla. */
+  private viewChosenByUser = false;
+  // #274 — breakpoint móvil: por debajo, si las tarjetas están disponibles se fuerza la vista de
+  // tarjetas (la tabla con scroll lateral es hostil en móvil). El usuario puede volver a tabla con
+  // el toggle; al cruzar de vuelta el breakpoint se restaura. null = aún no se ha evaluado.
+  @state() private isMobile = false;
+  private mq?: MediaQueryList;
+  // Breakpoint (móvil) en px. Coincide con el punto donde la rejilla de tarjetas es más usable que
+  // una tabla con scroll horizontal. 640px = límite habitual móvil↔tablet.
+  private static readonly MOBILE_BREAKPOINT = 640;
   // Columnas ocultas por el usuario (column chooser). Vacío = todas visibles.
   @state() private hiddenKeys = new Set<string>();
   // Selección interna (cuando el padre no controla `selectedKeys`).
@@ -560,9 +615,52 @@ export class OkDataTable extends LitElement {
   @state() private menuOpen = false;
   private menuEv?: Event;
 
-  // ── i18n: textos efectivos (default inglés ← overrides de `.labels`) ──────────────────────
+  private readonly onLocaleChanged = (): void => this.requestUpdate();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
+    }
+    // #274 — escucha el breakpoint móvil para forzar tarjetas en pantallas estrechas.
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this.mq = window.matchMedia(`(max-width: ${OkDataTable.MOBILE_BREAKPOINT}px)`);
+      this.isMobile = this.mq.matches;
+      // El arranque inicial del viewMode se hace en `firstUpdated` (las props como `.views`
+      // aún no están aplicadas aquí, así que `cardViewEnabled` devolvería false prematuramente).
+      // `change` es el estándar moderno; el listener `addEventListener` cubre Safari < 14.
+      const handler = (e: MediaQueryListEvent | Event) => {
+        const matches = 'matches' in e ? e.matches : this.mq?.matches ?? false;
+        if (this.isMobile === matches) return;
+        this.isMobile = matches;
+        // Al cruzar a móvil (y tarjetas disponibles) → tarjetas; al volver a escritorio → tabla,
+        // salvo que el usuario la hubiera cambiado a mano (lo respetamos no tocando viewMode si ya
+        // coincide con lo que tocaría).
+        if (matches && this.cardViewEnabled) this.viewMode = 'cards';
+        else if (!matches && this.viewMode === 'cards') this.viewMode = 'table';
+      };
+      this.mq.addEventListener('change', handler);
+      (this as unknown as { _mqHandler: typeof handler })._mqHandler = handler;
+    }
+  }
+
+  disconnectedCallback(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+    }
+    if (this.mq) {
+      const handler = (this as unknown as { _mqHandler?: (e: MediaQueryListEvent | Event) => void })._mqHandler;
+      if (handler) this.mq.removeEventListener('change', handler);
+      this.mq = undefined;
+    }
+    super.disconnectedCallback();
+  }
+
+  // ── i18n: idioma del documento ← overrides explícitos de `.labels` ─────────────────────────
   private get t(): OkDataTableLabels {
-    return { ...DEFAULT_LABELS, ...this.labels };
+    const lang =
+      typeof document === 'undefined' ? 'en' : document.documentElement.lang.toLowerCase();
+    return { ...(lang.startsWith('es') ? ES_LABELS : DEFAULT_LABELS), ...this.labels };
   }
   /** Placeholder efectivo del buscador (prop explícita → label i18n → default inglés). */
   private get effSearchPlaceholder(): string {
@@ -954,11 +1052,46 @@ export class OkDataTable extends LitElement {
   // forma robusta de arrancar en tarjetas sin depender de fijar `viewMode` por referencia (que
   // falla si la tabla monta detrás de un `v-if`/loading y el ref aún es null).
   firstUpdated(): void {
-    if (this.defaultView === 'cards' && this.cardViewEnabled) this.viewMode = 'cards';
-    else if (this.defaultView === 'table') this.viewMode = 'table';
+    this.applyInitialView();
+  }
+
+  /** Re-evalúa la vista inicial cada render mientras el usuario no haya elegido a mano.
+   *
+   * `firstUpdated` NO basta: decide una sola vez, y los consumidores que asignan las props por JS
+   * DESPUÉS de insertar el elemento —lo normal en páginas renderizadas por el servidor— llegan
+   * tarde. En ese momento `cardViewEnabled` aún era `false`, así que no se conmutaba; y el
+   * listener de `matchMedia` solo dispara al CAMBIAR el viewport, cosa que en un móvil no pasa
+   * nunca. La tabla se quedaba con scroll lateral para siempre.
+   *
+   * Medido en Android contra producción el 2026-08-02 con el bundle ya actualizado:
+   *   `views` antes de insertar  → tarjetas
+   *   `views` después de insertar → tabla   ← lo que hace la página
+   */
+  protected willUpdate(): void {
+    // `willUpdate` y no `updated`: corre ANTES de renderizar, así que el cambio de vista entra en
+    // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
+    // tabla ancha antes de las tarjetas.
+    this.applyInitialView();
+  }
+
+  private applyInitialView(): void {
+    // Una elección manual manda siempre: el arranque automático es una cortesía, no una
+    // imposición, y pisarla sería peor que no tener automatismo.
+    if (this.viewChosenByUser) return;
+    // #274 — arranque en móvil: si las tarjetas están disponibles y el viewport es estrecho,
+    // empieza en tarjetas (la tabla con scroll lateral es hostil en móvil).
+    if (this.isMobile && this.cardViewEnabled) {
+      this.viewMode = 'cards';
+    } else if (this.defaultView === 'cards' && this.cardViewEnabled) {
+      this.viewMode = 'cards';
+    } else if (this.defaultView === 'table') {
+      this.viewMode = 'table';
+    }
   }
 
   private setViewMode(mode: 'table' | 'cards'): void {
+    // A partir de aquí el arranque automático deja de tocar la vista (ver `applyInitialView`).
+    this.viewChosenByUser = true;
     if (this.viewMode === mode) return;
     this.viewMode = mode;
     this.emit('viewChange', mode);
@@ -1110,6 +1243,8 @@ export class OkDataTable extends LitElement {
               color=${a.color ?? 'medium'}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
+              aria-label=${a.label}
+              title=${a.label}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
               ${loading
