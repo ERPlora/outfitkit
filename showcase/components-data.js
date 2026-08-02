@@ -1010,7 +1010,7 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
     id: 'ok-spotlight-search',
     name: 'ok-spotlight-search',
     category: 'acciones',
-    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante que no rompe la vista de debajo. Aporta el campo, cierre, trigger opcional, autofoco y Esc; los resultados los pone el consumidor por slot, con datos síncronos o asíncronos.',
+    desc: 'Buscador estilo Spotlight (macOS): overlay translúcido flotante que no rompe la vista de debajo. Aporta el campo, cierre, trigger opcional, autofoco y Esc; los resultados los pone el consumidor por slot, con datos síncronos o asíncronos. Es un <dialog> nativo con showModal(): se pinta en el TOP LAYER, así que escapa el containing block de un ion-toolbar donde viva el trigger.',
     importPath: "@erplora/outfitkit/ok-spotlight-search",
     example: `<div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-start">
   <small style="color:var(--ion-color-medium)">Pulsa el icono para abrir el buscador.</small>
@@ -1026,12 +1026,14 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
     setup: (root) => {
       const spotlight = root.querySelector('#sp');
       const items = [...root.querySelectorAll('#sp-list ion-item')];
+      // Filtra los resultados según lo tecleado (el consumidor decide cómo; aquí, por texto).
       spotlight.addEventListener('ok-input', (event) => {
         const query = (event.detail.value || '').toLowerCase();
         items.forEach((item) => {
           item.style.display = item.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
       });
+      // Al elegir un resultado se cierra el overlay.
       items.forEach((item) => item.addEventListener('click', () => spotlight.close()));
       root.querySelector('[slot="footer"]').addEventListener('click', () => spotlight.close());
     },
@@ -1040,13 +1042,14 @@ palette.addEventListener('ok-open', (e) => …);   // { open }`,
   <ion-button slot="footer">Quitar</ion-button>
 </ok-spotlight-search>
 
+// Filtrar según lo tecleado (datos síncronos o async):
 spotlight.addEventListener('ok-input', (e) => buscar(e.detail.value));
 spotlight.addEventListener('ok-open', (e) => { if (e.detail.open) cargar(); });
 spotlight.openSearch();  // close() / toggle()`,
     api: [
       { kind: 'prop', name: 'open · placeholder · value', type: 'bool · string · string', detail: 'Abierto · guía del input · texto de búsqueda' },
       { kind: 'prop', name: 'trigger-icon · trigger-label', type: 'string · string', detail: 'Botón opcional para abrir; si no se indica, el consumidor controla la apertura' },
-      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados · acciones del pie' },
+      { kind: 'slot', name: '(default) · footer', type: 'slot', detail: 'Resultados (los pone el consumidor) · acciones del pie' },
       { kind: 'event', name: 'openSearch() · close() · toggle()', type: 'método', detail: 'Abrir · cerrar · alternar' },
       { kind: 'event', name: 'ok-input · ok-open', type: '{value} · {open}', detail: 'Al escribir · al abrir o cerrar' },
     ],
