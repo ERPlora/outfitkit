@@ -596,6 +596,8 @@ export class OkDataTable extends LitElement {
   // funciona igual en vista lista y tarjetas. Inspirado en el Filters Tool Panel de AG Grid.
   @state() private panel: 'none' | 'filters' | 'create' = 'none';
   @state() private viewMode: 'table' | 'cards' = 'table';
+  /** El usuario eligió vista a mano: a partir de ahí el arranque automático no vuelve a tocarla. */
+  private viewChosenByUser = false;
   // #274 — breakpoint móvil: por debajo, si las tarjetas están disponibles se fuerza la vista de
   // tarjetas (la tabla con scroll lateral es hostil en móvil). El usuario puede volver a tabla con
   // el toggle; al cruzar de vuelta el breakpoint se restaura. null = aún no se ha evaluado.
@@ -1050,9 +1052,34 @@ export class OkDataTable extends LitElement {
   // forma robusta de arrancar en tarjetas sin depender de fijar `viewMode` por referencia (que
   // falla si la tabla monta detrás de un `v-if`/loading y el ref aún es null).
   firstUpdated(): void {
+    this.applyInitialView();
+  }
+
+  /** Re-evalúa la vista inicial cada render mientras el usuario no haya elegido a mano.
+   *
+   * `firstUpdated` NO basta: decide una sola vez, y los consumidores que asignan las props por JS
+   * DESPUÉS de insertar el elemento —lo normal en páginas renderizadas por el servidor— llegan
+   * tarde. En ese momento `cardViewEnabled` aún era `false`, así que no se conmutaba; y el
+   * listener de `matchMedia` solo dispara al CAMBIAR el viewport, cosa que en un móvil no pasa
+   * nunca. La tabla se quedaba con scroll lateral para siempre.
+   *
+   * Medido en Android contra producción el 2026-08-02 con el bundle ya actualizado:
+   *   `views` antes de insertar  → tarjetas
+   *   `views` después de insertar → tabla   ← lo que hace la página
+   */
+  protected willUpdate(): void {
+    // `willUpdate` y no `updated`: corre ANTES de renderizar, así que el cambio de vista entra en
+    // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
+    // tabla ancha antes de las tarjetas.
+    this.applyInitialView();
+  }
+
+  private applyInitialView(): void {
+    // Una elección manual manda siempre: el arranque automático es una cortesía, no una
+    // imposición, y pisarla sería peor que no tener automatismo.
+    if (this.viewChosenByUser) return;
     // #274 — arranque en móvil: si las tarjetas están disponibles y el viewport es estrecho,
-    // empieza en tarjetas (la tabla con scroll lateral es hostil en móvil). Aquí `cardViewEnabled`
-    // ya es fiable (las props de Lit, incluida `.views`, ya están aplicadas).
+    // empieza en tarjetas (la tabla con scroll lateral es hostil en móvil).
     if (this.isMobile && this.cardViewEnabled) {
       this.viewMode = 'cards';
     } else if (this.defaultView === 'cards' && this.cardViewEnabled) {
@@ -1063,6 +1090,8 @@ export class OkDataTable extends LitElement {
   }
 
   private setViewMode(mode: 'table' | 'cards'): void {
+    // A partir de aquí el arranque automático deja de tocar la vista (ver `applyInitialView`).
+    this.viewChosenByUser = true;
     if (this.viewMode === mode) return;
     this.viewMode = mode;
     this.emit('viewChange', mode);

@@ -83,4 +83,63 @@ describe('ok-data-table cambia a tarjetas en móvil (#274)', () => {
     await table.updateComplete;
     expect(isCardView(table), 'en escritorio arranca en tabla').toBe(false);
   });
+
+  it('conmuta aunque `views` se asigne DESPUÉS del primer render', async () => {
+    // El caso real, y el que dejaba la tabla rota en producción: la página crea la tabla, la
+    // inserta, y solo después le asigna `.views` por JS. `firstUpdated` ya había decidido con
+    // `cardViewEnabled === false`, y el listener de `matchMedia` solo dispara al CAMBIAR el
+    // viewport — que en un móvil no cambia nunca. Resultado: tabla con scroll lateral para
+    // siempre, con la columna de estado cortada.
+    //
+    // Medido en Android contra producción el 2026-08-02 con el bundle 0.1.31 ya servido:
+    //   views antes de insertar  → viewMode "cards"
+    //   views después de insertar → viewMode "table"   ← la página hace esto
+    (window as unknown as { matchMedia: unknown }).matchMedia = (q: string) => ({
+      media: q, matches: true, onchange: null,
+      addListener: () => {}, removeListener: () => {},
+      addEventListener: () => {}, removeEventListener: () => {},
+      dispatchEvent: () => false,
+    });
+
+    const table = document.createElement('ok-data-table') as unknown as Table;
+    table.rows = [{ id: 1, name: 'Corte' }];
+    table.columns = [{ key: 'name', header: 'Nombre' }];
+    document.body.appendChild(table);
+    await table.updateComplete;
+
+    // …y AHORA se habilitan las tarjetas, como hace la página.
+    table.views = true;
+    await table.updateComplete;
+
+    expect(isCardView(table)).toBe(true);
+  });
+
+  it('una vez el usuario elige vista, habilitar tarjetas más tarde NO se la pisa', async () => {
+    // El arranque automático es una cortesía, no una imposición: si alguien pulsó «tabla» a
+    // propósito, un cambio posterior de props no puede devolverlo a tarjetas.
+    (window as unknown as { matchMedia: unknown }).matchMedia = (q: string) => ({
+      media: q, matches: true, onchange: null,
+      addListener: () => {}, removeListener: () => {},
+      addEventListener: () => {}, removeEventListener: () => {},
+      dispatchEvent: () => false,
+    });
+
+    const table = document.createElement('ok-data-table') as unknown as Table;
+    table.rows = [{ id: 1, name: 'Corte' }];
+    table.columns = [{ key: 'name', header: 'Nombre' }];
+    table.views = true;
+    document.body.appendChild(table);
+    await table.updateComplete;
+    expect(isCardView(table)).toBe(true);
+
+    // El usuario pasa a tabla a mano.
+    (table as unknown as { setViewMode: (m: string) => void }).setViewMode?.('table');
+    await table.updateComplete;
+
+    // Un cambio posterior de props no debe resucitar las tarjetas.
+    table.rows = [{ id: 2, name: 'Barba' }];
+    await table.updateComplete;
+    expect(isCardView(table)).toBe(false);
+  });
+
 });
