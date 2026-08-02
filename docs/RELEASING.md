@@ -14,7 +14,7 @@ repo público, npm genera **provenance** automáticamente (prueba criptográfica
 
 No cortas nada a mano: **la Action bumpea, taggea y publica sola** al mergear a `main` (ver abajo).
 
-## Prerrequisitos (una sola vez, en npmjs — columna del humano)
+## Prerrequisitos (una sola vez, en npmjs — requiere acceso a la cuenta org `erplora` en npmjs.com)
 
 1. **Scope `@erplora`.** El paquete `@erplora/outfitkit` se publica bajo la org npm `erplora`,
    **que ya existe** (el publicador es owner) — no hay que crear nada.
