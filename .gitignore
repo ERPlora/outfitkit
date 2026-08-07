@@ -1,4 +1,6 @@
-node_modules/
+# No trailing slash on purpose: `node_modules/` only matches directories, so a *symlink*
+# named node_modules stays committable (that is how outfitkit#51 got in, twice).
+node_modules
 dist/
 .DS_Store
 *.log

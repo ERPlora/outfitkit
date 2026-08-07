@@ -1,6 +1,6 @@
 name: CI
 
-# Gate de calidad del paquete: build + typecheck + verify:csp.
+# Gate de calidad del paquete: higiene de git + build + typecheck + verify:csp.
 # Corre en cada PR y en cada push a main. Si cualquiera falla, el check sale rojo
 # y la regresión (tipos rotos, wiring incompleto, eval/new Function que viola la
 # CSP estricta de Cloud/Hub) no entra a main sin avisar.
@@ -29,6 +29,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # Antes de instalar nada: el índice de git no puede llevar node_modules (outfitkit#51).
+      # Un symlink `node_modules` commiteado rompía la resolución de `lit/*` desde dist/ y
+      # tumbaba al 100% los tests de Web Components de TODOS los módulos que consumen el paquete.
+      - name: Verify git hygiene (node_modules fuera del índice)
+        run: npm run verify:node-modules
 
       # No hay package-lock.json en el repo: mismo patrón que pages.yml.
       - name: Install dependencies
