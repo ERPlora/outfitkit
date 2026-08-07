@@ -33,6 +33,10 @@ export interface OkLauncherApp {
 // El disparador es INLINE (ocupa solo lo que mide el botón); la hoja es full-width abajo.
 // Click en una app: si tiene `href` navega; si no, emite `ok-app-select`. Cierra al click en el
 // scrim, al pulsar el icono de cerrar o con Esc.
+// The sheet is MODAL: while it is open the rest of the page is locked (`inert` + `aria-hidden`,
+// see `lockPage`) so nothing underneath is announced, focusable or clickable — the scrim already
+// swallowed the pointer, but the page stayed in the a11y tree and kept its tab order. Closing
+// restores the exact previous state of every node it touched.
 // Eventos (bubbles + composed):
 //   • `ok-app-select` detail { id, app }
 //   • `ok-open`        detail { open }
@@ -45,6 +49,16 @@ export interface OkAppLauncherLabels {
   empty: string;
   /** aria-label del botón de cerrar. */
   close: string;
+}
+
+// Snapshot of a page node locked while the sheet is open. Kept so that closing restores its EXACT
+// previous state: a node that was ALREADY inert (or already aria-hidden) keeps it on release.
+interface LockedNode {
+  el: HTMLElement;
+  hadInert: boolean;
+  prevAriaHidden: string | null;
+  /** Previous inline `pointer-events`; only recorded when the no-`inert` fallback is used. */
+  prevPointerEvents: string | null;
 }
 
 const DEFAULT_LABELS: OkAppLauncherLabels = {
@@ -287,9 +301,17 @@ export class OkAppLauncher extends LitElement {
   // transformado (Ionic pone `transform` en `ion-buttons`/`ion-router-outlet`).
   private portalRoot: ShadowRoot | null = null;
 
+  // Page nodes locked while the overlay is open (every child of `<body>` but our own portal).
+  private lockedNodes: LockedNode[] = [];
+  // Element that had focus before locking. Engines blur whatever focus falls inside an inert
+  // subtree, so the launcher hands it back when it closes.
+  private previouslyFocused: HTMLElement | null = null;
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unbind();
+    // Never leave the page locked behind a launcher that is gone.
+    this.releasePage();
     // Limpia el portal del body (si quedó montado) para no dejar nodos huérfanos.
     const host = this.portalRoot?.host;
     this.portalRoot = null;
@@ -316,7 +338,60 @@ export class OkAppLauncher extends LitElement {
   // portal hasta la primera apertura (evita divs vacíos en el body por cada launcher montado).
   protected updated(): void {
     if (!this.open && !this.portalRoot) return;
-    render(this.open ? this.overlayTemplate() : nothing, this.ensurePortal());
+    const root = this.ensurePortal();
+    render(this.open ? this.overlayTemplate() : nothing, root);
+    // The overlay owns the viewport while it is mounted, so the page under it stays inert. The
+    // lock is released when the sheet is really gone (after the exit transition), not when the
+    // close starts: until then the scrim is still there.
+    if (this.open) this.lockPage(root.host as HTMLElement);
+    else this.releasePage();
+  }
+
+  // `inert` is the mechanism: one attribute takes a subtree out of the accessibility tree, out of
+  // the tab order and out of hit-testing. Supported by every target engine (Chrome 102+, Safari
+  // 15.5+, Firefox 112+, and the WebViews of Tauri/Android based on them). Probed at lock time —
+  // not at module load — so a host that polyfills it later is honoured.
+  private static supportsInert(): boolean {
+    return typeof HTMLElement !== 'undefined' && 'inert' in HTMLElement.prototype;
+  }
+
+  // Locks the page while the sheet is open: every top-level node of `<body>` except our own portal
+  // becomes `inert` + `aria-hidden`. Where `inert` is not supported, inline `pointer-events:none`
+  // keeps at least the click-blocking half of the contract explicit.
+  private lockPage(portalHost: HTMLElement): void {
+    if (this.lockedNodes.length) return;
+    const fallback = !OkAppLauncher.supportsInert();
+    const active = document.activeElement;
+    this.previouslyFocused =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+    for (const node of Array.from(document.body.children)) {
+      if (!(node instanceof HTMLElement) || node === portalHost) continue;
+      this.lockedNodes.push({
+        el: node,
+        hadInert: node.hasAttribute('inert'),
+        prevAriaHidden: node.getAttribute('aria-hidden'),
+        prevPointerEvents: fallback ? node.style.pointerEvents : null,
+      });
+      node.setAttribute('inert', '');
+      node.setAttribute('aria-hidden', 'true');
+      if (fallback) node.style.pointerEvents = 'none';
+    }
+  }
+
+  // Releases the lock restoring the EXACT previous state of every node (a node that was already
+  // inert stays inert) and hands focus back to where it was before opening.
+  private releasePage(): void {
+    if (!this.lockedNodes.length) return;
+    for (const { el, hadInert, prevAriaHidden, prevPointerEvents } of this.lockedNodes) {
+      if (!hadInert) el.removeAttribute('inert');
+      if (prevAriaHidden === null) el.removeAttribute('aria-hidden');
+      else el.setAttribute('aria-hidden', prevAriaHidden);
+      if (prevPointerEvents !== null) el.style.pointerEvents = prevPointerEvents;
+    }
+    this.lockedNodes = [];
+    const focusTarget = this.previouslyFocused;
+    this.previouslyFocused = null;
+    if (focusTarget?.isConnected) focusTarget.focus({ preventScroll: true });
   }
 
   private bind(): void {
