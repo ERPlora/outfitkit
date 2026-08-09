@@ -794,6 +794,9 @@ export class OkFileManager extends LitElement {
   @state() private dragging = false;
   // Id de la carpeta del árbol sobre la que se está soltando (resalta esa fila); '' = raíz (main).
   @state() private dropTarget: string | null = null;
+  // Origen del drag interno ({ id, kind }) mientras se arrastra un fichero/carpeta del gestor.
+  // El DataTransfer no es fiable en todos los entornos, así que el drop lee este estado.
+  private dragSource: { id: string; kind: 'file' | 'folder' } | null = null;
   private seeded = false;
 
   // MIME propio para arrastrar elementos internos (ficheros/carpetas del gestor). Distingue el
@@ -901,15 +904,31 @@ export class OkFileManager extends LitElement {
   //      revalida, así que esto es solo UX (evita ofrecer un movimiento que dará 403).
 
   private isMoveDrag(e: DragEvent): boolean {
+    // Durante un drag interno activo consideramos cualquier dragover/drop sobre zonas válidas
+    // como movimiento. Comprobamos además el DataTransfer cuando está disponible (navegador real:
+    // en dragover los `types` son visibles) para no confundirlo con un drop de ficheros externos.
+    if (this.dragSource != null) return true;
     return !!e.dataTransfer?.types.includes(OkFileManager.MOVE_MIME);
   }
 
   // Comienza a arrastrar un fichero o carpeta del gestor. Las carpetas readOnly no se arrastran:
   // el atributo `draggable` de su fila lo impide, pero esto es un cinturón extra.
   private onItemDragStart(e: DragEvent, id: string, kind: 'file' | 'folder'): void {
-    if (!e.dataTransfer) return;
-    e.dataTransfer.setData(OkFileManager.MOVE_MIME, JSON.stringify({ id, kind }));
-    e.dataTransfer.effectAllowed = 'move';
+    // El DataTransfer no existe en algunos entornos (happy-dom no lo adjunta a DragEvent
+    // sintéticos); como `id`/`kind` llegan por parámetro, marcamos el origen siempre y decoramos el
+    // DataTransfer solo si está disponible (navegador real: lo usa para el cursor y para que otros
+    // componentes detecten el tipo).
+    this.dragSource = { id, kind };
+    if (e.dataTransfer) {
+      e.dataTransfer.setData(OkFileManager.MOVE_MIME, JSON.stringify({ id, kind }));
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  private onItemDragEnd(): void {
+    this.dragSource = null;
+    this.dragging = false;
+    this.dropTarget = null;
   }
 
   // Soltar sobre el área main equivale a soltar en la raíz (`''`).
@@ -946,7 +965,7 @@ export class OkFileManager extends LitElement {
       return;
     }
     // Movimiento interno → raíz.
-    this.emitMoveIfAny(e, '');
+    this.emitMove('');
   }
 
   // ---- Drag & drop sobre filas de carpeta del árbol ----
@@ -955,7 +974,7 @@ export class OkFileManager extends LitElement {
     if (folder.readOnly) return; // carpetas readOnly: no reciben drops.
     e.preventDefault();
     this.dropTarget = folder.id;
-    e.dataTransfer!.dropEffect = 'move';
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
   }
 
   private onFolderDragLeave(folder: OkFmFolder): void {
@@ -967,19 +986,13 @@ export class OkFileManager extends LitElement {
     e.preventDefault();
     e.stopPropagation();
     this.dropTarget = null;
-    this.emitMoveIfAny(e, folder.id);
+    this.emitMove(folder.id);
   }
 
-  /** Decodifica el payload de movimiento del evento y emite `ok-move` hacia `to`. */
-  private emitMoveIfAny(e: DragEvent, to: string): void {
-    const raw = e.dataTransfer?.getData(OkFileManager.MOVE_MIME);
-    if (!raw) return;
-    try {
-      const { id } = JSON.parse(raw) as { id: string };
-      if (id) this.emit('ok-move', { from: id, to });
-    } catch {
-      /* payload corrupto: se ignora */
-    }
+  /** Emite `ok-move` con el origen del drag interno hacia `to`. */
+  private emitMove(to: string): void {
+    if (!this.dragSource) return;
+    this.emit('ok-move', { from: this.dragSource.id, to });
   }
 
   // Deriva la extensión: usa `ext` o la cola del nombre.
@@ -1031,6 +1044,7 @@ export class OkFileManager extends LitElement {
         draggable=${folder.readOnly ? 'false' : 'true'}
         @click=${() => this.navigate(folder.id)}
         @dragstart=${(e: DragEvent) => this.onItemDragStart(e, folder.id, 'folder')}
+        @dragend=${() => this.onItemDragEnd()}
         @dragover=${(e: DragEvent) => this.onFolderDragOver(e, folder)}
         @dragleave=${() => this.onFolderDragLeave(folder)}
         @drop=${(e: DragEvent) => this.onFolderDrop(e, folder)}
@@ -1342,6 +1356,7 @@ export class OkFileManager extends LitElement {
             if (e.key === 'Enter') this.open(file.id);
           }}
           @dragstart=${(e: DragEvent) => this.onItemDragStart(e, file.id, 'file')}
+          @dragend=${() => this.onItemDragEnd()}
         >
           <div class="card-actions">${this.fileActions(file)}</div>
           ${this.renderBadge(file)}
@@ -1367,6 +1382,7 @@ export class OkFileManager extends LitElement {
             if (e.key === 'Enter') this.open(file.id);
           }}
           @dragstart=${(e: DragEvent) => this.onItemDragStart(e, file.id, 'file')}
+          @dragend=${() => this.onItemDragEnd()}
         >
           ${this.renderBadge(file)}
           <span class="lname" title=${file.name}>${file.name}</span>

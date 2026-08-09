@@ -146,20 +146,29 @@ function makeMoveDrag(detail: { id: string; kind: 'file' | 'folder' }): DataTran
   return dt;
 }
 
+/** Dispara la secuencia dragstart → dragover → drop (→ dragend) entre dos elementos del shadow. */
+function dragBetween(
+  from: HTMLElement,
+  to: HTMLElement,
+  detail: { id: string; kind: 'file' | 'folder' },
+): void {
+  const dt = makeMoveDrag(detail);
+  from.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+  to.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
+  to.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+  from.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+}
+
 describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
   it('suelta un fichero sobre una carpeta del árbol → emite ok-move con from y to', async () => {
     const el = await mount(undefined, '');
     const moved = vi.fn();
     el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
 
-    // Origen: la fila del fichero en la lista. Destino: la fila de la carpeta "facturas".
     const fileRow = el.shadowRoot!.querySelector('.lrow') as HTMLElement;
     const folderRow = el.shadowRoot!.querySelectorAll('.trow')[1] as HTMLElement; // [0]=media, [1]=facturas
 
-    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
-    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
-    folderRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
-    folderRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+    dragBetween(fileRow, folderRow, { id: 'facturas/a.pdf', kind: 'file' });
 
     expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: 'facturas' });
   });
@@ -172,10 +181,7 @@ describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
     const fileRow = el.shadowRoot!.querySelector('.lrow') as HTMLElement;
     const main = el.shadowRoot!.querySelector('.main') as HTMLElement;
 
-    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
-    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
-    main.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
-    main.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+    dragBetween(fileRow, main, { id: 'facturas/a.pdf', kind: 'file' });
 
     expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: '' });
   });
@@ -213,10 +219,7 @@ describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
     const rows = Array.from(el.shadowRoot!.querySelectorAll('.trow')) as HTMLElement[];
     const logsRow = rows.find((r) => r.textContent?.includes('_logs'))!;
 
-    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
-    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
-    logsRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
-    logsRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+    dragBetween(fileRow, logsRow, { id: 'facturas/a.pdf', kind: 'file' });
 
     expect(moved).not.toHaveBeenCalled();
     // Y la fila readOnly no es arrastrable.
