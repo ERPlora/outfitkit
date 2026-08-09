@@ -131,3 +131,126 @@ describe('ok-file-manager · política del host', () => {
     expect(act(el, 'rename-file')).toBeNull();
   });
 });
+
+// ── Drag & drop de reubicación (ok-move) ──────────────────────────────
+//
+// El gestor distingue dos flujos de arrastre: subir ficheros externos (ok-upload) y reubicar un
+// fichero o carpeta del propio gestor a otra carpeta (ok-move). Aquí probamos el segundo: que se
+// emite `ok-move` con {from,to}, que la raíz (main) es destino válido, y que una carpeta readOnly
+// NO recibe el drop. Construimos DragEvent con un DataTransfer real para que el componente lea los
+// tipos y el payload como en el navegador.
+
+function makeMoveDrag(detail: { id: string; kind: 'file' | 'folder' }): DataTransfer {
+  const dt = new DataTransfer();
+  dt.setData('application/x-ok-file-manager-move', JSON.stringify(detail));
+  return dt;
+}
+
+describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
+  it('suelta un fichero sobre una carpeta del árbol → emite ok-move con from y to', async () => {
+    const el = await mount(undefined, '');
+    const moved = vi.fn();
+    el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
+
+    // Origen: la fila del fichero en la lista. Destino: la fila de la carpeta "facturas".
+    const fileRow = el.shadowRoot!.querySelector('.lrow') as HTMLElement;
+    const folderRow = el.shadowRoot!.querySelectorAll('.trow')[1] as HTMLElement; // [0]=media, [1]=facturas
+
+    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
+    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+    folderRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
+    folderRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+
+    expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: 'facturas' });
+  });
+
+  it('suelta sobre el área main → el destino es la raíz (to = "")', async () => {
+    const el = await mount(undefined, '');
+    const moved = vi.fn();
+    el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
+
+    const fileRow = el.shadowRoot!.querySelector('.lrow') as HTMLElement;
+    const main = el.shadowRoot!.querySelector('.main') as HTMLElement;
+
+    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
+    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+    main.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
+    main.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+
+    expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: '' });
+  });
+
+  it('una carpeta de solo lectura NO recibe el drop (no emite ok-move)', async () => {
+    const folders: OkFmFolder[] = [
+      {
+        id: '',
+        label: 'media',
+        children: [
+          { id: 'facturas', label: 'facturas' },
+          { id: '_logs', label: '_logs', readOnly: true },
+        ],
+      },
+    ];
+    const el = document.createElement('ok-file-manager') as HTMLElement & {
+      files: OkFmFile[];
+      folders: OkFmFolder[];
+      selected: string;
+      view: 'grid' | 'list';
+      updateComplete: Promise<unknown>;
+    };
+    el.folders = folders;
+    el.files = FILES;
+    el.selected = '';
+    el.view = 'list';
+    document.body.appendChild(el);
+    await el.updateComplete;
+
+    const moved = vi.fn();
+    el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
+
+    const fileRow = el.shadowRoot!.querySelector('.lrow') as HTMLElement;
+    // Localiza la fila de "_logs" por su texto.
+    const rows = Array.from(el.shadowRoot!.querySelectorAll('.trow')) as HTMLElement[];
+    const logsRow = rows.find((r) => r.textContent?.includes('_logs'))!;
+
+    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
+    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+    logsRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
+    logsRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+
+    expect(moved).not.toHaveBeenCalled();
+    // Y la fila readOnly no es arrastrable.
+    expect(logsRow.getAttribute('draggable')).toBe('false');
+  });
+
+  it('una carpeta normal es arrastrable; una readOnly no', async () => {
+    const folders: OkFmFolder[] = [
+      {
+        id: '',
+        label: 'media',
+        children: [
+          { id: 'facturas', label: 'facturas' },
+          { id: 'modules/v', label: 'modules/v', readOnly: true },
+        ],
+      },
+    ];
+    const el = document.createElement('ok-file-manager') as HTMLElement & {
+      folders: OkFmFolder[];
+      selected: string;
+      view: 'grid' | 'list';
+      updateComplete: Promise<unknown>;
+    };
+    el.folders = folders;
+    el.selected = '';
+    el.view = 'list';
+    document.body.appendChild(el);
+    await el.updateComplete;
+
+    const rows = Array.from(el.shadowRoot!.querySelectorAll('.trow')) as HTMLElement[];
+    const facturas = rows.find((r) => r.textContent?.includes('facturas'))!;
+    const module = rows.find((r) => r.textContent?.includes('modules/v'))!;
+
+    expect(facturas.getAttribute('draggable')).toBe('true');
+    expect(module.getAttribute('draggable')).toBe('false');
+  });
+});
