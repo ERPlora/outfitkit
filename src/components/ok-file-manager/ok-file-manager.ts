@@ -26,6 +26,8 @@ export interface OkFmFolder {
   count?: number;
   /** Sub-carpetas; si las hay, se dibuja el caret expandible. */
   children?: OkFmFolder[];
+  /** Solo lectura (carpeta reservada del hub o de un módulo): no se arrastra ni recibe drops. */
+  readOnly?: boolean;
 }
 
 /** Archivo del contenido de la carpeta actual. Lo aporta el host vía `.files`. */
@@ -232,6 +234,12 @@ export class OkFileManager extends LitElement {
       background: color-mix(in srgb, var(--brand) 14%, transparent);
       color: var(--brand);
       font-weight: 600;
+    }
+    /* Carpeta que recibe un drop mientras se arrastra sobre ella. */
+    .trow.drop {
+      background: color-mix(in srgb, var(--brand) 10%, transparent);
+      outline: 2px dashed var(--brand);
+      outline-offset: -2px;
     }
     .caret {
       flex: 0 0 auto;
@@ -784,7 +792,13 @@ export class OkFileManager extends LitElement {
   @state() private expandedIds = new Set<string>();
   // Resaltado visual mientras se arrastra un fichero sobre el main.
   @state() private dragging = false;
+  // Id de la carpeta del árbol sobre la que se está soltando (resalta esa fila); '' = raíz (main).
+  @state() private dropTarget: string | null = null;
   private seeded = false;
+
+  // MIME propio para arrastrar elementos internos (ficheros/carpetas del gestor). Distingue el
+  // DnD de reubicación del de subida (que arrastra ficheros del SO y viene con `files`).
+  private static readonly MOVE_MIME = 'application/x-ok-file-manager-move';
 
   @query('input[type="file"]') private fileInput!: HTMLInputElement;
 
@@ -878,25 +892,94 @@ export class OkFileManager extends LitElement {
     this.expandedIds = next;
   }
 
-  // ---- Drag & drop sobre el main ----
+  // ---- Drag & drop ----
+  //
+  // Hay DOS flujos:
+  //   1. Subida: arrastrar ficheros del SO sobre el área main → `ok-upload`.
+  //   2. Reubicación: arrastrar un fichero o carpeta del gestor a otra carpeta (o a la raíz) →
+  //      `ok-move`. Las carpetas de solo lectura nunca se arrastran ni reciben drops; el backend
+  //      revalida, así que esto es solo UX (evita ofrecer un movimiento que dará 403).
+
+  private isMoveDrag(e: DragEvent): boolean {
+    return !!e.dataTransfer?.types.includes(OkFileManager.MOVE_MIME);
+  }
+
+  // Comienza a arrastrar un fichero o carpeta del gestor. Las carpetas readOnly no se arrastran:
+  // el atributo `draggable` de su fila lo impide, pero esto es un cinturón extra.
+  private onItemDragStart(e: DragEvent, id: string, kind: 'file' | 'folder'): void {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.setData(OkFileManager.MOVE_MIME, JSON.stringify({ id, kind }));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  // Soltar sobre el área main equivale a soltar en la raíz (`''`).
   private onDragOver(e: DragEvent): void {
-    if (!this.uploadable) return;
-    e.preventDefault();
-    this.dragging = true;
+    // Subida de ficheros externos: sólo si la carpeta actual admite escritura.
+    const externalFiles = !!e.dataTransfer?.types.includes('Files');
+    if (externalFiles) {
+      if (!this.uploadable || !this.can('upload')) return;
+      e.preventDefault();
+      this.dragging = true;
+      return;
+    }
+    // Movimiento interno: permitido en el main (raíz) siempre que no estemos ya en la raíz.
+    if (this.isMoveDrag(e)) {
+      e.preventDefault();
+      this.dragging = true;
+    }
   }
 
   private onDragLeave(e: DragEvent): void {
-    if (!this.uploadable) return;
-    e.preventDefault();
-    this.dragging = false;
+    // relatedTarget fuera del host → salimos del área.
+    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) {
+      this.dragging = false;
+    }
   }
 
   private onDrop(e: DragEvent): void {
-    if (!this.uploadable) return;
     e.preventDefault();
     this.dragging = false;
+    // Subida externa.
     const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-    if (files.length) this.emit('ok-upload', { files });
+    if (files.length) {
+      if (this.uploadable && this.can('upload')) this.emit('ok-upload', { files });
+      return;
+    }
+    // Movimiento interno → raíz.
+    this.emitMoveIfAny(e, '');
+  }
+
+  // ---- Drag & drop sobre filas de carpeta del árbol ----
+  private onFolderDragOver(e: DragEvent, folder: OkFmFolder): void {
+    if (!this.isMoveDrag(e)) return;
+    if (folder.readOnly) return; // carpetas readOnly: no reciben drops.
+    e.preventDefault();
+    this.dropTarget = folder.id;
+    e.dataTransfer!.dropEffect = 'move';
+  }
+
+  private onFolderDragLeave(folder: OkFmFolder): void {
+    if (this.dropTarget === folder.id) this.dropTarget = null;
+  }
+
+  private onFolderDrop(e: DragEvent, folder: OkFmFolder): void {
+    if (!this.isMoveDrag(e) || folder.readOnly) return;
+    e.preventDefault();
+    e.stopPropagation();
+    this.dropTarget = null;
+    this.emitMoveIfAny(e, folder.id);
+  }
+
+  /** Decodifica el payload de movimiento del evento y emite `ok-move` hacia `to`. */
+  private emitMoveIfAny(e: DragEvent, to: string): void {
+    const raw = e.dataTransfer?.getData(OkFileManager.MOVE_MIME);
+    if (!raw) return;
+    try {
+      const { id } = JSON.parse(raw) as { id: string };
+      if (id) this.emit('ok-move', { from: id, to });
+    } catch {
+      /* payload corrupto: se ignora */
+    }
   }
 
   // Deriva la extensión: usa `ext` o la cola del nombre.
@@ -938,11 +1021,20 @@ export class OkFileManager extends LitElement {
     const hasChildren = !!folder.children?.length;
     const expanded = hasChildren && this.expandedIds.has(folder.id);
     const active = folder.id === this.selected;
+    const over = this.dropTarget === folder.id;
 
     return html`<li role="treeitem" aria-selected=${active ? 'true' : 'false'} aria-expanded=${
       hasChildren ? String(expanded) : ''
     }>
-      <div class=${`trow ${active ? 'active' : ''}`.trim()} @click=${() => this.navigate(folder.id)}>
+      <div
+        class=${`trow ${active ? 'active' : ''} ${over ? 'drop' : ''}`.trim()}
+        draggable=${folder.readOnly ? 'false' : 'true'}
+        @click=${() => this.navigate(folder.id)}
+        @dragstart=${(e: DragEvent) => this.onItemDragStart(e, folder.id, 'folder')}
+        @dragover=${(e: DragEvent) => this.onFolderDragOver(e, folder)}
+        @dragleave=${() => this.onFolderDragLeave(folder)}
+        @drop=${(e: DragEvent) => this.onFolderDrop(e, folder)}
+      >
         <button
           type="button"
           class=${`caret ${hasChildren ? '' : 'leaf'} ${expanded ? 'open' : ''}`.trim()}
@@ -1244,10 +1336,12 @@ export class OkFileManager extends LitElement {
         (file) => html`<article
           class="card"
           tabindex="0"
+          draggable="true"
           @dblclick=${() => this.open(file.id)}
           @keydown=${(e: KeyboardEvent) => {
             if (e.key === 'Enter') this.open(file.id);
           }}
+          @dragstart=${(e: DragEvent) => this.onItemDragStart(e, file.id, 'file')}
         >
           <div class="card-actions">${this.fileActions(file)}</div>
           ${this.renderBadge(file)}
@@ -1267,10 +1361,12 @@ export class OkFileManager extends LitElement {
           class="lrow"
           role="listitem"
           tabindex="0"
+          draggable="true"
           @dblclick=${() => this.open(file.id)}
           @keydown=${(e: KeyboardEvent) => {
             if (e.key === 'Enter') this.open(file.id);
           }}
+          @dragstart=${(e: DragEvent) => this.onItemDragStart(e, file.id, 'file')}
         >
           ${this.renderBadge(file)}
           <span class="lname" title=${file.name}>${file.name}</span>
