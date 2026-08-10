@@ -256,4 +256,25 @@ describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
     expect(facturas.getAttribute('draggable')).toBe('true');
     expect(module.getAttribute('draggable')).toBe('false');
   });
+
+  it('arrancar el drag desde un botón de acción también mueve el fichero', async () => {
+    // En el grid los iconos de acción cubren buena parte del card; el cursor cae a menudo sobre
+    // ellos. Los botones son draggable para que el dragstart burbujee al card y se trate como drag
+    // del fichero, no como un click del botón.
+    const el = await mount(undefined, '');
+    const moved = vi.fn();
+    el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
+
+    const openBtn = act(el, 'open') as HTMLElement;
+    const folderRow = el.shadowRoot!.querySelectorAll('.trow')[1] as HTMLElement;
+
+    // dragstart nace en el botón; dragover/drop en la carpeta destino.
+    const dt = makeMoveDrag({ id: 'facturas/a.pdf', kind: 'file' });
+    openBtn.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+    folderRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }));
+    folderRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
+    openBtn.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+
+    expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: 'facturas' });
+  });
 });
