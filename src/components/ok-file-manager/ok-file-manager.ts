@@ -1270,9 +1270,13 @@ export class OkFileManager extends LitElement {
   // Acciones de un archivo, reutilizadas en grid y lista. Abrir y descargar SIEMPRE se ofrecen;
   // renombrar y borrar solo si la política de la carpeta los concede.
   private fileActions(file: OkFmFile): unknown {
+    // Los botones llevan `draggable="true"` para que iniciar un drag sobre ellos (el cursor cae en
+    // un icono de acción, muy frecuente en el grid) arranque el drag del fichero en vez de quedarse
+    // en el botón. El `dragstart` burbujea al card, que tiene el handler que marca el origen.
     return html`<button
         type="button"
         class="action"
+        draggable="true"
         data-act="open"
         aria-label=${this.t.open}
         title=${this.t.open}
@@ -1286,6 +1290,7 @@ export class OkFileManager extends LitElement {
       <button
         type="button"
         class="action"
+        draggable="true"
         data-act="download"
         aria-label=${this.t.download}
         title=${this.t.download}
@@ -1300,6 +1305,7 @@ export class OkFileManager extends LitElement {
         ? html`<button
             type="button"
             class="action"
+            draggable="true"
             data-act="rename-file"
             aria-label=${this.t.rename}
             title=${this.t.rename}
@@ -1315,6 +1321,7 @@ export class OkFileManager extends LitElement {
         ? html`<button
             type="button"
             class="action danger"
+            draggable="true"
             data-act="delete-file"
             aria-label=${this.t.delete}
             title=${this.t.delete}
