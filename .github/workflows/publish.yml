@@ -45,7 +45,11 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # Corre en `ci-runner-1` (Hetzner, self-hosted) si la Variable `CI_RUNNER_LABEL` está
+    # puesta a nivel de org, y en los runners de GitHub si no. El 2026-08-11 la org agotó el
+    # presupuesto de Actions y los jobs dejaron de ARRANCAR: rojo en 2 s, sin una línea de log.
+    # Aquí eso bloquea la publicación del paquete, que es lo que consumen Hub y SaaS.
+    runs-on: ${{ vars.CI_RUNNER_LABEL || 'ubuntu-latest' }}
     # No relanzar sobre el propio commit de release (el push de GITHUB_TOKEN ya no
     # dispara workflows; esto cubre el caso de un PAT futuro).
     if: >-
