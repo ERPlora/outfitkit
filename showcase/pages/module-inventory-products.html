@@ -107,70 +107,70 @@
           "name": "Café en grano 1kg",
           "sku": "CAF-1000",
           "price": 14.9,
-          "stock": 42,
+          "stock": 42000000,
           "is_active": 1,
           "cost": 8.94,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-2",
           "name": "Leche entera 1L",
           "sku": "LEC-0100",
           "price": 1.15,
-          "stock": 120,
+          "stock": 120000000,
           "is_active": 1,
           "cost": 0.69,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-3",
           "name": "Azúcar blanca 1kg",
           "sku": "AZU-1000",
           "price": 1.05,
-          "stock": 8,
+          "stock": 8000000,
           "is_active": 1,
           "cost": 0.63,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-4",
           "name": "Vaso cartón 240ml (50u)",
           "sku": "VAS-0240",
           "price": 3.4,
-          "stock": 15,
+          "stock": 15000000,
           "is_active": 1,
           "cost": 2.04,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-5",
           "name": "Servilletas (100u)",
           "sku": "SRV-0100",
           "price": 0.95,
-          "stock": 200,
+          "stock": 200000000,
           "is_active": 1,
           "cost": 0.57,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-6",
           "name": "Croissant congelado (caja)",
           "sku": "CRO-0050",
           "price": 9.8,
-          "stock": 6,
+          "stock": 6000000,
           "is_active": 1,
           "cost": 5.88,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-7",
           "name": "Té verde (caja 25)",
           "sku": "TEV-0025",
           "price": 2.75,
-          "stock": 33,
+          "stock": 33000000,
           "is_active": 1,
           "cost": 1.65,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-8",
@@ -180,47 +180,47 @@
           "stock": 0,
           "is_active": 0,
           "cost": 2.52,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-9",
           "name": "Chocolate caliente 1kg",
           "sku": "CHO-1000",
           "price": 7.5,
-          "stock": 18,
+          "stock": 18000000,
           "is_active": 1,
           "cost": 4.5,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-10",
           "name": "Sirope vainilla 750ml",
           "sku": "SIR-0750",
           "price": 6.3,
-          "stock": 9,
+          "stock": 9000000,
           "is_active": 1,
           "cost": 3.78,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-11",
           "name": "Tapa vaso (50u)",
           "sku": "TAP-0050",
           "price": 2.1,
-          "stock": 27,
+          "stock": 27000000,
           "is_active": 1,
           "cost": 1.26,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         },
         {
           "id": "p-12",
           "name": "Agua mineral 50cl (24u)",
           "sku": "AGU-0050",
           "price": 5.9,
-          "stock": 60,
+          "stock": 60000000,
           "is_active": 1,
           "cost": 3.54,
-          "low_stock_threshold": 10
+          "low_stock_threshold": 10000000
         }
       ];
 
@@ -275,6 +275,9 @@
       const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
       const formatMoney = (cents) => money.format((Number(cents) || 0) / 100);
       const eurosToCents = (value) => Math.round((Number(String(value).replace(',', '.')) || 0) * 100);
+      // Quantity boundary (ADR-0147): rows carry 10⁶ fixed-point integers, people see logical numbers.
+      const formatQuantity = (raw) => String((Number(raw) || 0) / 1000000);
+      const quantityToMicro = (value) => Math.round((Number(String(value).replace(',', '.')) || 0) * 1000000);
 
       defineHubPage({
         active: '/m/inventory/products',
@@ -398,7 +401,7 @@
             { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
             { key: 'sku', header: 'SKU', sortable: true, filterable: true, filterType: 'text' },
             { key: 'price', header: 'Precio', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => formatMoney(row.price) },
-            { key: 'stock', header: 'Stock', align: 'right', sortable: true, filterable: true, filterType: 'range' },
+            { key: 'stock', header: 'Stock', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => formatQuantity(row.stock) },
             { key: 'is_active', header: 'Activo', align: 'center', filterable: true, filterType: 'select', options: [
               { value: '1', label: 'Sí' },
               { value: '0', label: 'No' },
@@ -439,7 +442,8 @@
               if (term && !`${row.name} ${row.sku}`.toLocaleLowerCase('es').includes(term)) return false;
               for (const [column, value] of Object.entries(filters)) {
                 if (value == null || value === '') continue;
-                if ((column === 'price' || column === 'stock') && !rangeMatch(row[column], value)) return false;
+                if (column === 'price' && !rangeMatch(row[column], value)) return false;
+                if (column === 'stock' && !rangeMatch(Number(row.stock) / 1000000, value)) return false;
                 if (column === 'is_active' && String(row.is_active) !== String(value)) return false;
                 if ((column === 'name' || column === 'sku') && !String(row[column]).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
               }
@@ -495,7 +499,7 @@
             doc.getElementById('inventory-detail-title').textContent = row.name;
             doc.getElementById('inventory-detail-sku').textContent = row.sku;
             doc.getElementById('inventory-detail-price').textContent = formatMoney(row.price);
-            doc.getElementById('inventory-detail-stock').textContent = String(row.stock);
+            doc.getElementById('inventory-detail-stock').textContent = formatQuantity(row.stock);
             doc.getElementById('inventory-detail-active').textContent = row.is_active ? 'Sí' : 'No';
             doc.getElementById('inventory-detail-barcode-code').textContent = row.sku;
             drawBarcode(row.sku);
@@ -518,8 +522,8 @@
                 sku: row.sku ?? '',
                 price: eurosToCents(row.price),
                 cost: eurosToCents(row.cost),
-                stock: Number(row.stock) || 0,
-                low_stock_threshold: Number(row.low_stock_threshold) || 10,
+                stock: quantityToMicro(row.stock),
+                low_stock_threshold: row.low_stock_threshold ? quantityToMicro(row.low_stock_threshold) : 10000000,
                 tax_category_key: null,
                 is_active: 1,
               }));
@@ -600,7 +604,7 @@
                 price: eurosToCents(priceInput.value),
                 cost: 0,
                 stock: 0,
-                low_stock_threshold: 10,
+                low_stock_threshold: 10000000,
                 tax_category_key: taxSelect.value || null,
                 is_active: 1,
               }];

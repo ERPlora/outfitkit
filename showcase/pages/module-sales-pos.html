@@ -659,11 +659,13 @@
             showToast(`Ticket ${ticket.ticket_number} recuperado`);
           }
 
+          // Mirrors orderToPrebill (sales/ui/lib/document-mappers.ts): the pre-bill is titled
+          // like the ESC/POS paper («Cuenta») and carries no number, payment or QR — the fiscal
+          // receipt is issued on payment (ADR-0141).
           function buildPrebillData() {
-            const selectedMethod = PAYMENT_METHOD_FIXTURE.find((method) => method.id === paymentMethodId);
             return {
-              business: { name: 'ERPlora Demo', address: 'Cuenta previa · no fiscal' },
-              number: 'BORRADOR',
+              title: 'Cuenta',
+              business: { name: 'ERPlora Demo' },
               datetime: new Date().toLocaleString('es-ES'),
               lines: cart.map((line) => ({
                 name: line.name,
@@ -672,9 +674,9 @@
                 total: line.price * line.qty / 100,
               })),
               total: total() / 100,
-              payment: { method: selectedMethod?.name ?? 'Efectivo' },
+              taxes: [],
               currency: settings.currency || '€',
-              footer: 'Cuenta previa · Documento no fiscal',
+              footer: 'Cuenta — no es una factura. El tiquet fiscal se entrega al cobrar.',
             };
           }
 
