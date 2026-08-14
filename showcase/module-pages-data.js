@@ -16,34 +16,6 @@ export const MODULE_PAGES = [
     "file": "pages/module-appointments.html"
   },
   {
-    "id": "module-backup-backup",
-    "name": "Copia de seguridad",
-    "icon": "cloud-upload-outline",
-    "surface": "modules",
-    "section": "Copias de seguridad",
-    "moduleId": "backup",
-    "navId": "backup",
-    "component": "erp-backup-overview",
-    "source": "modules-workspace/modules/backup/ui/components/erp-backup-overview/erp-backup-overview.ts",
-    "route": "/m/backup/backup",
-    "parity": "current",
-    "file": "pages/module-backup-backup.html"
-  },
-  {
-    "id": "module-backup-settings",
-    "name": "Ajustes",
-    "icon": "settings-outline",
-    "surface": "modules",
-    "section": "Copias de seguridad",
-    "moduleId": "backup",
-    "navId": "settings",
-    "component": "erp-backup-settings",
-    "source": "modules-workspace/modules/backup/ui/components/erp-backup-settings/erp-backup-settings.ts",
-    "route": "/m/backup/settings",
-    "parity": "current",
-    "file": "pages/module-backup-settings.html"
-  },
-  {
     "id": "module-cart-checkout-carts",
     "name": "Carritos",
     "icon": "bag-check-outline",
@@ -142,6 +114,19 @@ export const MODULE_PAGES = [
     "file": "pages/module-customers-fields.html"
   },
   {
+    "id": "module-flows-automations",
+    "name": "Automatizaciones",
+    "icon": "git-branch",
+    "surface": "modules",
+    "section": "Automatizaciones",
+    "moduleId": "flows",
+    "navId": "automations",
+    "component": "erp-flows-app",
+    "source": "modules-workspace/modules/flows/ui/components/erp-flows-app/erp-flows-app.ts",
+    "route": "/m/flows/automations",
+    "parity": "source"
+  },
+  {
     "id": "module-inventory-dashboard",
     "name": "Panel",
     "icon": "stats-chart",
@@ -168,6 +153,19 @@ export const MODULE_PAGES = [
     "route": "/m/inventory/products",
     "parity": "current",
     "file": "pages/module-inventory-products.html"
+  },
+  {
+    "id": "module-inventory-movements",
+    "name": "Movimientos",
+    "icon": "swap-vertical",
+    "surface": "modules",
+    "section": "Inventario",
+    "moduleId": "inventory",
+    "navId": "movements",
+    "component": "erp-inventory-movements",
+    "source": "modules-workspace/modules/inventory/ui/components/erp-inventory-movements/erp-inventory-movements.ts",
+    "route": "/m/inventory/movements",
+    "parity": "source"
   },
   {
     "id": "module-inventory-categories",

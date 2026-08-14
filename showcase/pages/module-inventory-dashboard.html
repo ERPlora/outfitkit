@@ -18,14 +18,26 @@
       .inventory-dashboard {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 1rem;
         min-height: 100%;
       }
 
+      /* Mirrors the component grid: .cards { repeat(auto-fit, minmax(150px, 1fr)) }. */
       .inventory-kpis {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 0.75rem;
+      }
+
+      .inventory-kpis a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .inventory-without-cost {
+        display: block;
+        font-size: 0.85rem;
       }
 
       .inventory-stock-section {
@@ -44,18 +56,6 @@
         flex: 1 1 auto;
         min-height: 0;
       }
-
-      @media (max-width: 900px) {
-        .inventory-kpis {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-
-      @media (max-width: 520px) {
-        .inventory-kpis {
-          grid-template-columns: 1fr;
-        }
-      }
     </style>
   </head>
   <body>
@@ -63,42 +63,47 @@
       import { defineHubPage } from './_hub.js';
 
       // Copia auditable de modules/inventory/fixtures/inventory.products.stats.json.
+      // Contract keys = stats.sql projection (products_tracked/in_stock/out_of_stock/
+      // low_stock/without_cost, total_inventory_value in cents — ADR-0007).
       const STATS_FIXTURE = {
         "total_products": 12,
-        "active_products": 11,
-        "low_stock": 4,
-        "total_value": 318.4
+        "products_tracked": 10,
+        "products_in_stock": 7,
+        "products_out_of_stock": 3,
+        "products_low_stock": 4,
+        "products_without_cost": 2,
+        "total_inventory_value": 31840
       };
 
       // Copia auditable de modules/inventory/fixtures/inventory.products.low_stock.json.
+      // Quantities travel as 10⁶ fixed-point integers (ADR-0147); no price column.
       const LOW_STOCK_FIXTURE = [
-        { "id": "p-3", "name": "Azúcar blanca 1kg", "sku": "AZU-1000", "stock": 8, "price": 1.05 },
-        { "id": "p-6", "name": "Croissant congelado (caja)", "sku": "CRO-0050", "stock": 6, "price": 9.8 },
-        { "id": "p-10", "name": "Sirope vainilla 750ml", "sku": "SIR-0750", "stock": 9, "price": 6.3 },
-        { "id": "p-8", "name": "Bolsa take-away (100u)", "sku": "BOL-0100", "stock": 0, "price": 4.2 }
+        { "id": "p-3", "name": "Azúcar blanca 1kg", "sku": "AZU-1000", "stock": 8000000, "low_stock_threshold": 10000000 },
+        { "id": "p-6", "name": "Croissant congelado (caja)", "sku": "CRO-0050", "stock": 6000000, "low_stock_threshold": 10000000 },
+        { "id": "p-10", "name": "Sirope vainilla 750ml", "sku": "SIR-0750", "stock": 9000000, "low_stock_threshold": 12000000 },
+        { "id": "p-8", "name": "Bolsa take-away (100u)", "sku": "BOL-0100", "stock": 0, "low_stock_threshold": 5000000 }
       ];
 
-      // La demo conserva los fixtures oficiales para reflejar la UI prevista. No oculta que el
-      // contrato SQL vigente y esos fixtures históricos todavía no están alineados.
-      const INVENTORY_CONTRACT_GAPS = Object.freeze({
-        statsFields: 'fixture/component use legacy names; SQL exposes canonical widget names',
-        lowStockRows: 'fixture contains price and p-8; SQL omits price and filters inactive products',
-      });
-      void INVENTORY_CONTRACT_GAPS;
-
+      // Same boundaries as the component: formatMoney takes CENTS (ADR-0007) and
+      // formatQuantity converts the 10⁶ fixed-point integer back to a logical quantity.
       const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+      const formatMoney = (cents) => money.format(Number(cents) / 100);
+      const formatQuantity = (raw) => String(Number(raw) / 1000000);
 
       defineHubPage({
         active: '/m/inventory/dashboard',
         title: 'Inventario',
         body: `
           <main class="inventory-dashboard">
+            <!-- In the Hub the first four KPIs link to /m/inventory/products (actionable). -->
             <section class="inventory-kpis" aria-label="Resumen de inventario">
-              <ok-kpi id="inventory-total-products" label="Productos" icon="cube-outline"></ok-kpi>
-              <ok-kpi id="inventory-active-products" label="Activos" icon="checkmark-circle-outline"></ok-kpi>
-              <ok-kpi id="inventory-low-stock" label="Stock bajo" icon="warning-outline"></ok-kpi>
-              <ok-kpi id="inventory-total-value" label="Valor inventario" icon="cash-outline"></ok-kpi>
+              <a href="./module-inventory-products.html"><ok-kpi id="inventory-tracked" label="Productos seguidos" icon="cube-outline"></ok-kpi></a>
+              <a href="./module-inventory-products.html"><ok-kpi id="inventory-in-stock" label="En stock" icon="checkmark-circle-outline"></ok-kpi></a>
+              <a href="./module-inventory-products.html"><ok-kpi id="inventory-out-of-stock" label="Agotados" icon="close-circle-outline"></ok-kpi></a>
+              <a href="./module-inventory-products.html"><ok-kpi id="inventory-low-stock" label="Stock bajo" icon="warning-outline"></ok-kpi></a>
+              <ok-kpi id="inventory-value" label="Valor de existencias" icon="pricetag-outline" delta="a coste"></ok-kpi>
             </section>
+            <ion-note id="inventory-without-cost" color="warning" class="inventory-without-cost" hidden></ion-note>
 
             <section class="inventory-stock-section" aria-labelledby="inventory-low-stock-title">
               <h2 id="inventory-low-stock-title" class="inventory-section-title">Productos con stock bajo</h2>
@@ -107,26 +112,37 @@
           </main>
         `,
         setup(doc) {
-          doc.getElementById('inventory-total-products').value = String(STATS_FIXTURE.total_products);
-          doc.getElementById('inventory-active-products').value = String(STATS_FIXTURE.active_products);
-          doc.getElementById('inventory-low-stock').value = String(STATS_FIXTURE.low_stock);
-          doc.getElementById('inventory-low-stock').delta = 'Revisar existencias';
-          doc.getElementById('inventory-low-stock').trend = 'down';
-          doc.getElementById('inventory-total-value').value = money.format(STATS_FIXTURE.total_value);
+          const stats = STATS_FIXTURE;
+          doc.getElementById('inventory-tracked').value = String(stats.products_tracked);
+          doc.getElementById('inventory-in-stock').value = String(stats.products_in_stock);
+          const outOfStock = doc.getElementById('inventory-out-of-stock');
+          outOfStock.value = String(stats.products_out_of_stock);
+          outOfStock.trend = stats.products_out_of_stock > 0 ? 'down' : 'flat';
+          const lowStock = doc.getElementById('inventory-low-stock');
+          lowStock.value = String(stats.products_low_stock);
+          lowStock.trend = stats.products_low_stock > 0 ? 'down' : 'flat';
+          doc.getElementById('inventory-value').value = formatMoney(stats.total_inventory_value);
+
+          // The component surfaces partial valuation instead of hiding it.
+          const withoutCost = doc.getElementById('inventory-without-cost');
+          if (stats.products_without_cost > 0) {
+            withoutCost.textContent = `${stats.products_without_cost} producto(s) sin coste registrado: el valor mostrado es parcial`;
+            withoutCost.hidden = false;
+          }
 
           const table = doc.getElementById('inventory-low-stock-table');
           let page = 0;
 
+          // Columns = the ones low_stock.sql projects (no price: it is not selected).
           table.columns = [
             { key: 'name', header: 'Nombre' },
             { key: 'sku', header: 'SKU' },
-            { key: 'stock', header: 'Stock', align: 'right' },
-            { key: 'price', header: 'Precio', align: 'right', format: (row) => money.format(Number(row.price) || 0) },
+            { key: 'stock', header: 'Stock', align: 'right', format: (row) => formatQuantity(row.stock) },
+            { key: 'low_stock_threshold', header: 'Umbral', align: 'right', format: (row) => formatQuantity(row.low_stock_threshold) },
           ];
           table.serverSide = true;
           table.views = true;
-          table.cardTitle = (row) => String(row.name ?? '—');
-          table.cardIcon = () => 'cube-outline';
+          table.cardTitle = (row) => String(row.name ?? row.sku ?? '');
           table.pageSize = 5;
           table.pageSizeOptions = [];
           table.emptyMessage = 'Sin productos en stock bajo.';

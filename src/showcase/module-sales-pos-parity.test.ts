@@ -40,7 +40,8 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
     const page = pageSource();
 
     expect(manifest.navigation[0]).toMatchObject({ id: 'pos', label: 'Vender', component: 'erp-pos' });
-    expect(selector).toContain("this.layout = row?.pos_layout === 'desktop' ? 'desktop' : 'touch'");
+    // ADR-0146: the desktop layout was retired; erp-pos always renders the touch screen.
+    expect(selector).toContain('<erp-pos-touch></erp-pos-touch>');
     expect(page).toContain("import { defineHubPage } from './_hub.js'");
     expect(page).toContain("active: '/m/sales/pos'");
     expect(page).toContain("title: 'Vender'");
@@ -108,10 +109,16 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
     }
     expect(page).toContain("stepper.addEventListener('ok-change'");
     expect(page).toContain("search.addEventListener('ok-input'");
-    expect(touch).toContain('<ok-receipt id="prebill-doc" .data=');
+    // sales#87: the bill is handed to ok-receipt on .receipt (its real property), not .data.
+    expect(touch).toContain('<ok-receipt id="prebill-doc" .receipt=');
     expect(receiptComponent).toContain('@property({ attribute: false }) receipt?: ReceiptData');
     expect(page).toContain('receipt.receipt = buildPrebillData();');
     expect(page).not.toContain('receipt.data = buildPrebillData();');
+    // sales#78 screen↔paper parity: the pre-bill is titled like the ESC/POS paper («Cuenta»)
+    // and carries NO receipt number — the number is consumed on payment, not before.
+    expect(touch).toContain("title: t('ui.prebillTitle')");
+    expect(page).toContain("title: 'Cuenta'");
+    expect(page).not.toContain("number: 'BORRADOR'");
   });
 
   it('hace honestas las interacciones locales de categoría, carrito, tickets y cobro', () => {

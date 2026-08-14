@@ -20,7 +20,7 @@ const manifest = JSON.parse(readFileSync(new URL('module.json', moduleBase), 'ut
   queries: Record<string, { list?: { page_size: number; filters: Record<string, unknown> } }>;
   commands: Record<string, unknown>;
 };
-const seed = readFileSync(new URL('seed/install.sqlite.sql', moduleBase), 'utf8');
+const seed = readFileSync(new URL('seed/install.postgres.sql', moduleBase), 'utf8');
 const categorySchema = JSON.parse(readFileSync(new URL('schemas/category_create.json', moduleBase), 'utf8')) as {
   required: string[];
 };
@@ -136,7 +136,7 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     expect(list.page_size).toBe(50);
     expect(Object.keys(list.filters)).toEqual([
       'country_code', 'region_code', 'tax_category_key', 'rate_pct',
-      'tax_type', 'parent_id', 'is_active',
+      'tax_type', 'parent_id', 'is_active', 'operation_class', 'regime_key',
     ]);
     expect(page).toContain("sort: 'country_code'");
     expect(page).toContain("cardIcon = () => 'options-outline'");
@@ -146,7 +146,7 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
 
     expect(ruleSchema.required).toEqual(['country_code', 'tax_category_key', 'rate_pct']);
     expect(ruleSchema.properties.tax_type.enum).toEqual([
-      'vat', 'surcharge', 'sales_tax', 'withholding', 'excise', 'import_duty',
+      'vat', 'igic', 'ipsi', 'surcharge', 'sales_tax', 'withholding', 'excise', 'import_duty',
     ]);
     expect(page).toContain('<form id="taxes-rule-form" slot="create"');
     for (const field of [

@@ -63,6 +63,13 @@ describe('catálogo de páginas reales', () => {
       'errors-bootstrap',
       'errors-bootstrap-detail',
       'errors-unauthorized',
+      // Organization removed from the product (ADR-0201) and backup module retired (ADR-0154).
+      'orgs-list',
+      'orgs-create',
+      'orgs-detail',
+      'orgs-invite',
+      'module-backup-backup',
+      'module-backup-settings',
     ];
     expect(pages.filter((page) => removed.includes(page.id))).toEqual([]);
 
@@ -105,6 +112,12 @@ describe('catálogo de páginas reales', () => {
       'settings-tax-classes.html',
       'settings-scheduled-tasks.html',
       'settings-files.html',
+      'orgs-list.html',
+      'orgs-create.html',
+      'orgs-detail.html',
+      'orgs-invite.html',
+      'module-backup-backup.html',
+      'module-backup-settings.html',
     ];
     for (const file of obsoleteFiles) {
       expect(existsSync(resolve(process.cwd(), 'showcase', 'pages', file)), file).toBe(false);
@@ -140,10 +153,6 @@ describe('catálogo de páginas reales', () => {
       'marketplace-modules',
       'marketplace-plans',
       'marketplace-module-detail',
-      'orgs-list',
-      'orgs-create',
-      'orgs-detail',
-      'orgs-invite',
       'users-list',
       'users-invite',
       'hubs-dashboard',
@@ -195,8 +204,6 @@ describe('catálogo de páginas reales', () => {
       'settings-hub',
       'module-shell-hub',
       'module-appointments-appointments',
-      'module-backup-backup',
-      'module-backup-settings',
       'module-cart-checkout-carts',
       'module-cart-checkout-orders',
       'module-cash-register-cash-register',

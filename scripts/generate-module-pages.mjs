@@ -13,14 +13,6 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-appointments.html',
     parity: 'current',
   },
-  'module-backup-backup': {
-    file: 'pages/module-backup-backup.html',
-    parity: 'current',
-  },
-  'module-backup-settings': {
-    file: 'pages/module-backup-settings.html',
-    parity: 'current',
-  },
   'module-cart-checkout-carts': {
     file: 'pages/module-cart-checkout-carts.html',
     parity: 'current',

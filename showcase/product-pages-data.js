@@ -42,11 +42,7 @@ export const SAAS_PAGES = [
   page('saas', 'Marketplace', 'marketplace-plans', 'Planes', '/dashboard/marketplace/plans/', 'saas/apps/dashboard/marketplace/templates/dashboard/marketplace/pages/plans.html', 'pricetags-outline', 'pages/marketplace-plans.html', 'current'),
   page('saas', 'Marketplace', 'marketplace-module-detail', 'Detalle de módulo', '/dashboard/marketplace/modules/<slug>/', 'saas/apps/dashboard/marketplace/templates/dashboard/marketplace/pages/module_detail.html', 'cube-outline', 'pages/marketplace-module-detail.html', 'current'),
 
-  // Organizaciones y usuarios
-  page('saas', 'Organizaciones', 'orgs-list', 'Organizaciones', '/dashboard/organizations/', 'saas/apps/dashboard/organizations/templates/dashboard/organizations/pages/index.html', 'business-outline', 'pages/orgs-list.html', 'current'),
-  page('saas', 'Organizaciones', 'orgs-create', 'Crear organización', '/dashboard/organizations/create/', 'saas/apps/dashboard/organizations/templates/dashboard/organizations/pages/create.html', 'add-circle-outline', 'pages/orgs-create.html', 'current'),
-  page('saas', 'Organizaciones', 'orgs-detail', 'Detalle de organización', '/dashboard/organizations/<org_id>/', 'saas/apps/dashboard/organizations/templates/dashboard/organizations/pages/detail.html', 'business-outline', 'pages/orgs-detail.html', 'current'),
-  page('saas', 'Organizaciones', 'orgs-invite', 'Invitar a organización', '/dashboard/organizations/<org_id>/invite/', 'saas/apps/dashboard/organizations/templates/dashboard/organizations/pages/invite_member.html', 'person-add-outline', 'pages/orgs-invite.html', 'current'),
+  // Usuarios (las páginas de organización se retiraron con la propia entidad — ADR-0201)
   page('saas', 'Usuarios', 'users-list', 'Usuarios', '/dashboard/users/', 'saas/apps/dashboard/users/templates/users/pages/users_list.html', 'people-outline', 'pages/users-list.html', 'current'),
   page('saas', 'Usuarios', 'users-invite', 'Invitar usuario', '/dashboard/users/invite/', 'saas/apps/dashboard/users/templates/users/pages/invite_user.html', 'person-add-outline', 'pages/users-invite.html', 'current'),
 
