@@ -26,6 +26,55 @@ async function montar(receipt: ReceiptData): Promise<OkReceipt> {
 
 beforeEach(() => { document.body.innerHTML = ''; });
 
+// Contract of the RECEIPT-NUMBER line on papers that have no number.
+//
+// A pre-bill carries no fiscal number on purpose (the series is consumed when charging), but the
+// preview still painted «Receipt:» with nothing after it — labelling as a ticket exactly the
+// paper whose whole point is NOT being one. Without a number the label disappears and only the
+// datetime remains.
+describe('ok-receipt — number line without a number', () => {
+  it('with a number the label and the number are painted', async () => {
+    const el = await montar({ ...BASE, datetime: '14/08/2026, 09:48' });
+    const meta = el.shadowRoot!.querySelector('.meta')!;
+    expect(meta.textContent).toContain('Receipt');
+    expect(meta.textContent).toContain('T-1');
+  });
+
+  it('without a number the label is not painted and the datetime survives', async () => {
+    const { number: _omitted, ...bill } = BASE;
+    const el = await montar({ ...bill, datetime: '14/08/2026, 09:48' });
+    const meta = el.shadowRoot!.querySelector('.meta')!;
+    expect(meta.textContent, 'no «Receipt:» label on a paper with no number').not.toContain('Receipt');
+    expect(meta.textContent).toContain('14/08/2026, 09:48');
+  });
+});
+
+// Contract of the document TITLE (screen/paper parity, sales prebill).
+//
+// The ESC/POS renderer prints the document title as the FIRST line of the paper («CUENTA»,
+// `render_prebill` in crates/peripherals) precisely so a bill cannot pass for a fiscal ticket at
+// a glance. The on-screen preview must say the same thing: a waiter who checks the preview and a
+// customer who reads the paper must not see two different documents.
+describe('ok-receipt — document title', () => {
+  it('without title nothing extra is painted (fiscal receipts keep their current look)', async () => {
+    const el = await montar(BASE);
+    expect(el.shadowRoot!.querySelector('.doc-title')).toBeNull();
+  });
+
+  it('with title it is the FIRST line of the paper, before the business name', async () => {
+    const el = await montar({ ...BASE, title: 'Cuenta' });
+    const paper = el.shadowRoot!.querySelector('.paper')!;
+    const title = paper.querySelector('.doc-title')!;
+    expect(title, 'the title is painted').toBeTruthy();
+    expect(title.textContent).toContain('Cuenta');
+    const name = paper.querySelector('.biz-name')!;
+    expect(
+      title.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING,
+      'title comes before the business name, like the printed paper',
+    ).toBeTruthy();
+  });
+});
+
 describe('ok-receipt — QR promocional', () => {
   it('sin promo_qr no se pinta nada promocional', async () => {
     const el = await montar(BASE);
