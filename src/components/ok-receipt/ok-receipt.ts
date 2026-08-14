@@ -91,9 +91,13 @@ const DEFAULT_LABELS: OkReceiptLabels = {
 
 /** JSON completo del tiquet. */
 export interface ReceiptData {
+  /** Document title, FIRST line of the paper (e.g. «Cuenta» on a pre-bill). Mirrors the ESC/POS
+   *  renderer, which titles non-fiscal papers so they cannot pass for a ticket; omit on receipts. */
+  title?: string;
   business: ReceiptBusiness;
-  /** Nº de tiquet/ticket. */
-  number: string;
+  /** Receipt number. Absent on non-fiscal papers (pre-bill): the label is then not painted —
+   *  calling «Receipt» the one paper whose point is NOT being a receipt would mislabel it. */
+  number?: string;
   /** Fecha/hora ya formateada o ISO (se muestra tal cual si es string legible). */
   datetime?: string;
   cashier?: string;
@@ -141,6 +145,7 @@ export class OkReceipt extends LitElement {
       font-variant-numeric: tabular-nums;
     }
     .center { text-align: center; }
+    .doc-title { text-align: center; font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1mm; }
     .biz-logo { max-width: 60%; max-height: 22mm; margin: 0 auto 2mm; display: block; }
     .biz-name { font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
     .biz-meta { font-size: 10px; }
@@ -195,6 +200,7 @@ export class OkReceipt extends LitElement {
     if (!r) return html`<div class="paper empty">${this.t.empty}</div>`;
 
     return html`<div class="paper" part="paper">
+      ${r.title ? html`<div class="doc-title">${r.title}</div>` : nothing}
       ${this.renderHeader(r)}
       <hr class="sep" />
       ${this.renderMeta(r)}
@@ -223,7 +229,7 @@ export class OkReceipt extends LitElement {
 
   private renderMeta(r: ReceiptData) {
     return html`<div class="meta">
-        <span>${this.t.receipt}: <strong>${r.number}</strong></span>
+        ${r.number ? html`<span>${this.t.receipt}: <strong>${r.number}</strong></span>` : html`<span></span>`}
         ${r.datetime ? html`<span>${r.datetime}</span>` : nothing}
       </div>
       ${r.cashier || r.customer
