@@ -1991,7 +1991,7 @@ root.querySelector('#g-b2').thresholds = [
     id: "ok-chart",
     name: "ok-chart",
     category: "graficos",
-    desc: "Gráfico declarativo en SVG inline (línea, área o barras) autocontenido y CSP-safe: rejilla, eje de valor, etiquetas X, leyenda, series con color/punteado/atenuado y punto final con etiqueta. Props: type, .series, .labels, .axis, gridlines, height, endpoint, endpointLabel. Presentacional, sin eventos.",
+    desc: "Gráfico declarativo en SVG inline (línea, área o barras) autocontenido y CSP-safe: rejilla, eje de valor, etiquetas X, leyenda, series con color/punteado/atenuado y punto final con etiqueta. Props: type, .series, .labels, .axis, gridlines, height, endpoint, endpointLabel, min/max (fijan el eje; sin ellos autoescala). Presentacional, sin eventos.",
     importPath: "@erplora/outfitkit/ok-chart",
     example: "<div style=\"display:flex;flex-direction:column;gap:1.5rem;max-width:560px\">\n  <ok-chart id=\"c-area\" type=\"area\" height=\"180\" endpoint gridlines></ok-chart>\n  <ok-chart id=\"c-bar\" type=\"bar\" height=\"160\" gridlines></ok-chart>\n</div>",
     setup: (root, ctx) => {
@@ -2015,7 +2015,40 @@ bar.series = [
 ];
     },
     code: "const chart = document.querySelector('ok-chart');\nchart.labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];\nchart.axis = ['18 k', '12 k', '6 k', '0'];\nchart.series = [\n  { name: 'Ventas 2026', color: '#3880ff', data: [9200, 10800, 9600, 13200, 12500, 17400] },\n];\n// <ok-chart type=\"area\" height=\"180\" endpoint gridlines></ok-chart>",
-    api: [{"kind": "prop", "name": "type", "type": "'line'|'area'|'bar'", "detail": "Tipo de gráfico (def 'line')"}, {"kind": "prop", "name": ".series", "type": "OkChartSeries[]", "detail": "Series {name,color,data,dashed?,mute?}"}, {"kind": "prop", "name": ".labels", "type": "string[]", "detail": "Etiquetas del eje X (abajo)"}, {"kind": "prop", "name": ".axis", "type": "string[]", "detail": "Etiquetas del eje de valor (izquierda, arriba→abajo)"}, {"kind": "prop", "name": "gridlines", "type": "boolean", "detail": "Líneas de rejilla horizontales (def true)"}, {"kind": "prop", "name": "height", "type": "number", "detail": "Alto del SVG en px (def 200)"}, {"kind": "prop", "name": "endpoint · endpointLabel", "type": "boolean · string", "detail": "Punto + etiqueta de valor al final de la 1ª serie"}],
+    api: [{"kind": "prop", "name": "type", "type": "'line'|'area'|'bar'", "detail": "Tipo de gráfico (def 'line')"}, {"kind": "prop", "name": ".series", "type": "OkChartSeries[]", "detail": "Series {name,color,data,dashed?,mute?}"}, {"kind": "prop", "name": ".labels", "type": "string[]", "detail": "Etiquetas del eje X (abajo)"}, {"kind": "prop", "name": ".axis", "type": "string[]", "detail": "Etiquetas del eje de valor (izquierda, arriba→abajo)"}, {"kind": "prop", "name": "gridlines", "type": "boolean", "detail": "Líneas de rejilla horizontales (def true)"}, {"kind": "prop", "name": "height", "type": "number", "detail": "Alto del SVG en px (def 200)"}, {"kind": "prop", "name": "endpoint · endpointLabel", "type": "boolean · string", "detail": "Punto + etiqueta de valor al final de la 1ª serie"}, {"kind": "prop", "name": "min · max", "type": "number · number", "detail": "Fijan el eje de valor; si se omiten, autoescala al min/max de los datos"}],
+  },
+  {
+    id: "ok-resource-usage",
+    name: "ok-resource-usage",
+    category: "graficos",
+    desc: "Panel de recurso 0-100 % (RAM/CPU/disco) compartido Hub↔Cloud. Componente TONTO: recibe TODO precalculado por el servidor (.metric con known/current/points/status/message) y solo pinta — gauge ring + histórico en área (eje fijo 0..100) + banda de estado coloreada por status + CTA de upgrade opcional. known=false ⇒ estado «no medido» (nunca un 0 verde); el valor mostrado se recorta a 100 con el real en el tooltip. Props: .metric, .thresholds, .upgrade, label, unit, range-label, unreadable-label. Sin eventos.",
+    importPath: "@erplora/outfitkit/ok-resource-usage",
+    example: "<div style=\"display:flex;flex-direction:column;gap:2rem;max-width:520px\">\n  <ok-resource-usage id=\"ru-ok\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-crit\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-unknown\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n</div>",
+    setup: (root, ctx) => {
+const base = 1755200000;
+const points = (vals) => vals.map((v, i) => [base + i * 3600, v]);
+
+root.querySelector('#ru-ok').metric = {
+  known: true, current: 46,
+  points: points([38, 41, 44, 40, 43, 46]),
+  status: 'ok', message: null,
+};
+
+const crit = root.querySelector('#ru-crit');
+crit.metric = {
+  known: true, current: 91,
+  points: points([62, 70, 78, 84, 88, 91]),
+  status: 'critical', message: 'La RAM lleva 2 h por encima del 80 %',
+};
+crit.upgrade = { show: true, message: 'Ampliar plan', url: '#' };
+
+root.querySelector('#ru-unknown').metric = {
+  known: false, current: null, points: [],
+  status: 'unknown', message: null,
+};
+    },
+    code: "const panel = document.querySelector('ok-resource-usage');\n// TODO precalculado por el servidor — el componente solo pinta:\npanel.metric = {\n  known: true,\n  current: 91,\n  points: [[1755200000, 84], [1755203600, 88], [1755207200, 91]],\n  status: 'critical',\n  message: 'La RAM lleva 2 h por encima del 80 %',\n};\npanel.thresholds = { warning: 70, critical: 80 };\npanel.upgrade = { show: true, message: 'Ampliar plan', url: '/plans' };\n// <ok-resource-usage label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>",
+    api: [{"kind": "prop", "name": ".metric", "type": "{known,current,points,status,message}", "detail": "Métrica del servidor: known=false ⇒ estado «no medido» (nunca 0 verde); points = [epochSeconds, valor][]"}, {"kind": "prop", "name": ".thresholds", "type": "{warning,critical}", "detail": "Umbrales recibidos (def 70/80); solo alimentan las zonas del gauge"}, {"kind": "prop", "name": ".upgrade", "type": "{show,message,url}|null", "detail": "CTA de ampliación; el enlace solo se pinta si show=true"}, {"kind": "prop", "name": "label · range-label", "type": "string · string", "detail": "Cabecera del panel · chip del rango del histórico (ej. '3d')"}, {"kind": "prop", "name": "unit", "type": "string", "detail": "Sufijo del valor (def '%')"}, {"kind": "prop", "name": "unreadable-label", "type": "string", "detail": "Texto del estado no medido (def inglés 'Could not read it'; el consumidor pasa su traducción)"}],
   },
   {
     id: "ok-donut",

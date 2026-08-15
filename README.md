@@ -119,6 +119,7 @@ viven como recetas copiables en el showcase.
 | `ok-widget-board` | Panel de widgets configurable (activar/desactivar/reordenar), presets, persistencia `localStorage`. | `ok-change` |
 | `ok-gauge` | Medidor arc / ring / bullet animado con thresholds coloreados. | — |
 | `ok-chart` | Gráfico SVG inline (línea/área/barras) sin librerías externas. | — |
+| `ok-resource-usage` | Panel de recurso 0-100 % (gauge + histórico + banda de estado + CTA de upgrade); todo precalculado por el servidor. | — |
 | `ok-donut` | Donut/pie proporcional con leyenda opcional. | — |
 | `ok-heatmap` | Heatmap de calendario (estilo GitHub) o anual, con cuantiles e intensidad. | — |
 | `ok-funnel` | Embudo de conversión apilado con % y conteo por paso. | — |

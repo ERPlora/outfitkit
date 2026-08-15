@@ -126,6 +126,13 @@ export { OkGauge } from './components/ok-gauge/ok-gauge.js';
 export type { OkGaugeThreshold, OkGaugeType } from './components/ok-gauge/ok-gauge.js';
 export { OkChart } from './components/ok-chart/ok-chart.js';
 export type { OkChartSeries, OkChartType } from './components/ok-chart/ok-chart.js';
+export { OkResourceUsage } from './components/ok-resource-usage/ok-resource-usage.js';
+export type {
+  OkResourceMetric,
+  OkResourceStatus,
+  OkResourceThresholds,
+  OkResourceUpgrade,
+} from './components/ok-resource-usage/ok-resource-usage.js';
 export { OkDonut } from './components/ok-donut/ok-donut.js';
 export type { OkDonutSlice } from './components/ok-donut/ok-donut.js';
 export { OkHeatmap } from './components/ok-heatmap/ok-heatmap.js';

@@ -70,6 +70,7 @@ import './components/ok-hero/ok-hero.js';
 import './components/ok-pagination/ok-pagination.js';
 import './components/ok-gauge/ok-gauge.js';
 import './components/ok-chart/ok-chart.js';
+import './components/ok-resource-usage/ok-resource-usage.js';
 import './components/ok-donut/ok-donut.js';
 import './components/ok-heatmap/ok-heatmap.js';
 import './components/ok-funnel/ok-funnel.js';
