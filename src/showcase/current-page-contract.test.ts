@@ -23,4 +23,15 @@ describe('contrato de páginas con paridad actual', () => {
       expect(source, page.id).not.toContain('href="./_shell.css"');
     }
   });
+
+  it(
+    'deja que el shell Hub controle el ancho de las páginas actuales',
+    () => {
+      for (const page of currentPages) {
+        const source = readFileSync(resolve(process.cwd(), 'showcase', page.file), 'utf8');
+        expect(source, page.id).not.toMatch(/max-width\s*:\s*72rem/);
+      }
+    },
+    15_000,
+  );
 });
