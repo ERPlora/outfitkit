@@ -129,6 +129,12 @@ export class OkChart extends LitElement {
   /** Punto + etiqueta de valor al final de la primera serie (líneas). */
   @property({ type: Boolean }) endpoint = false;
 
+  /** Mínimo explícito del eje de valor; si se omite, autoescala al mínimo de los datos. */
+  @property({ type: Number }) min?: number;
+
+  /** Máximo explícito del eje de valor; si se omite, autoescala al máximo de los datos. */
+  @property({ type: Number }) max?: number;
+
   /** Texto de la etiqueta del endpoint; si se omite usa el último dato. */
   @property() endpointLabel = '';
 
@@ -155,15 +161,25 @@ export class OkChart extends LitElement {
     return this.vbHeight - p.top - p.bottom;
   }
 
-  // Mínimo/máximo global de todas las series (las barras crecen desde 0).
+  // Mínimo/máximo del eje: los props explícitos `min`/`max` mandan; sin ellos,
+  // autoescala al mínimo/máximo global de las series (las barras crecen desde 0).
   private get bounds(): { min: number; max: number } {
     const all: number[] = [];
     for (const s of this.series ?? []) for (const v of s.data ?? []) all.push(v);
-    if (!all.length) return { min: 0, max: 1 };
-    let min = Math.min(...all);
-    let max = Math.max(...all);
-    if (this.type !== 'line') min = Math.min(min, 0); // área/barras incluyen la base 0
-    if (min === max) max = min + 1; // serie plana
+    let min: number;
+    let max: number;
+    if (!all.length) {
+      min = 0;
+      max = 1;
+    } else {
+      min = Math.min(...all);
+      max = Math.max(...all);
+      if (this.type !== 'line') min = Math.min(min, 0); // área/barras incluyen la base 0
+      if (min === max) max = min + 1; // serie plana
+    }
+    if (this.min != null && Number.isFinite(this.min)) min = this.min;
+    if (this.max != null && Number.isFinite(this.max)) max = this.max;
+    if (min === max) max = min + 1; // eje explícito degenerado
     return { min, max };
   }
 
