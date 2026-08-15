@@ -91,6 +91,7 @@
     "./ok-pagination": "./dist/ok-pagination.js",
     "./ok-gauge": "./dist/ok-gauge.js",
     "./ok-chart": "./dist/ok-chart.js",
+    "./ok-resource-usage": "./dist/ok-resource-usage.js",
     "./ok-donut": "./dist/ok-donut.js",
     "./ok-heatmap": "./dist/ok-heatmap.js",
     "./ok-funnel": "./dist/ok-funnel.js",

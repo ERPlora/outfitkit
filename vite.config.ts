@@ -147,6 +147,7 @@ export default defineConfig({
         'ok-pagination': resolve(__dirname, 'src/components/ok-pagination/ok-pagination.ts'),
         'ok-gauge': resolve(__dirname, 'src/components/ok-gauge/ok-gauge.ts'),
         'ok-chart': resolve(__dirname, 'src/components/ok-chart/ok-chart.ts'),
+        'ok-resource-usage': resolve(__dirname, 'src/components/ok-resource-usage/ok-resource-usage.ts'),
         'ok-donut': resolve(__dirname, 'src/components/ok-donut/ok-donut.ts'),
         'ok-heatmap': resolve(__dirname, 'src/components/ok-heatmap/ok-heatmap.ts'),
         'ok-funnel': resolve(__dirname, 'src/components/ok-funnel/ok-funnel.ts'),
