@@ -152,7 +152,7 @@ viven como recetas copiables en el showcase.
 |---|---|---|
 | `ok-calendar` | Calendario mes/agenda con eventos como chips y presets. | `ok-date-select`, `ok-event-click`, `ok-view-change`, `ok-nav` |
 | `ok-scheduler` | Timeline de recursos/turnos (filas × franjas horarias) con eventos posicionados. | `ok-event-click`, `ok-slot-click`, `ok-nav` |
-| `ok-kanban` | Tablero Kanban con HTML5 drag&drop (sin libs), columnas y tarjetas reordenables. | `ok-card-move`, `ok-card-click` |
+| `ok-kanban` | Tablero Kanban con Pointer Events (ratón, lápiz y agarre táctil; sin libs), columnas y tarjetas reordenables. | `ok-card-move`, `ok-card-click` |
 | `ok-timeline` | Línea de tiempo vertical con estados (done/current/pending), modo alternado. | `ok-item-click` |
 
 ### Inputs (los que Ionic no trae)
