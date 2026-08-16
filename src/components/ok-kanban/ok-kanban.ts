@@ -42,10 +42,20 @@ interface DragState {
   fromColumn: string;
 }
 
+// Estado del gesto antes y después de superar el umbral que distingue toque de arrastre.
+interface PointerDragState extends DragState {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  active: boolean;
+  captureTarget: HTMLElement;
+}
+
+const DRAG_THRESHOLD_PX = 5;
+
 // ok-kanban — tablero de tareas tipo Kanban por DATOS (`columns`). Ionic no tiene este componente.
-// AUTOCONTENIDO: CSS propio en el shadow, drag & drop con la API NATIVA HTML5 (`draggable`,
-// dragstart/dragover/drop), SIN librerías ni eval (CSP-safe). Solo usa `ion-icon` para el
-// contador/handles, que registra el HOST (la app carga Ionic una vez).
+// AUTOCONTENIDO: CSS propio en el shadow, drag & drop con Pointer Events (ratón, lápiz y tacto),
+// SIN librerías ni eval (CSP-safe).
 //
 // Al soltar una tarjeta en otra columna (o en otra posición), el componente actualiza su MODELO
 // interno (`view`) y emite el evento. El consumidor puede sincronizar su estado escuchándolo.
@@ -193,6 +203,9 @@ export class OkKanban extends LitElement {
       border-radius: var(--border-radius);
       cursor: grab;
       user-select: none;
+      position: relative;
+      padding-inline-end: 3.25rem;
+      -webkit-user-drag: none;
       transition: background-color var(--ok-transition, 150ms ease),
         color var(--ok-transition, 150ms ease), border-color var(--ok-transition, 150ms ease),
         box-shadow var(--ok-transition, 150ms ease), transform 120ms ease, opacity 0.15s ease;
@@ -213,6 +226,27 @@ export class OkKanban extends LitElement {
     }
     .card.dragging {
       opacity: 0.45;
+    }
+    /* El agarre separa las dos intenciones táctiles: deslizar sobre la tarjeta conserva el scroll
+       natural del tablero; deslizar desde aquí mueve la tarjeta. Solo este target bloquea el pan
+       nativo, de modo que el kanban sigue siendo navegable cuando una columna está llena. */
+    .drag-handle {
+      position: absolute;
+      inset-block-start: 0.15rem;
+      inset-inline-end: 0.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      color: var(--color-muted);
+      font-size: 1.15rem;
+      line-height: 1;
+      cursor: grab;
+      touch-action: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
     }
     @media (prefers-reduced-motion: reduce) {
       .card:not(.dragging):hover,
@@ -281,6 +315,11 @@ export class OkKanban extends LitElement {
 
   // Referencia al último array de prop sembrado, para detectar cambios desde fuera.
   private lastColumnsRef: OkKanbanColumn[] | null = null;
+  // Candidato de Pointer Events. `drag` solo se activa después del umbral de 5 px.
+  private pointerDrag: PointerDragState | null = null;
+  // El navegador puede emitir click después de pointerup; no debe abrir la tarjeta recién movida.
+  private suppressClick = false;
+  private suppressClickTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Clona en profundidad (solo los niveles que reordenamos) la prop hacia el estado interno.
   private syncFromProp(): void {
@@ -291,66 +330,144 @@ export class OkKanban extends LitElement {
     this.lastColumnsRef = this.columns;
   }
 
-  // ---- Drag & drop nativo HTML5 ---------------------------------------------------------------
-
-  private onDragStart(e: DragEvent, fromColumn: string, cardId: string): void {
-    this.drag = { cardId, fromColumn };
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      // Algunos navegadores exigen datos para iniciar el arrastre.
-      e.dataTransfer.setData('text/plain', cardId);
-    }
-  }
+  // ---- Drag & drop con Pointer Events ---------------------------------------------------------
 
   private onDragEnd(): void {
-    // Limpia indicadores aunque el drop ocurra fuera de una columna válida.
+    // Limpia indicadores aunque el puntero termine fuera de una columna válida.
     this.drag = null;
     this.overColumn = null;
     this.overCardId = null;
     this.overAfter = false;
   }
 
-  // Mientras se arrastra sobre una columna: permite soltar y resalta la columna.
-  private onColumnDragOver(e: DragEvent, columnId: string): void {
-    if (!this.drag) return;
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-    if (this.overColumn !== columnId) this.overColumn = columnId;
-    // Soltar en zona vacía de la columna = al final.
-    this.overCardId = null;
-    this.overAfter = false;
-  }
-
-  // Mientras se arrastra sobre una tarjeta: calcula si la inserción va antes o después según
-  // la posición vertical del puntero respecto al centro de la tarjeta.
-  private onCardDragOver(e: DragEvent, columnId: string, cardId: string): void {
-    if (!this.drag) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const after = e.clientY > rect.top + rect.height / 2;
-    if (this.overColumn !== columnId) this.overColumn = columnId;
-    if (this.overCardId !== cardId || this.overAfter !== after) {
-      this.overCardId = cardId;
-      this.overAfter = after;
+  private capturePointer(target: HTMLElement, pointerId: number): void {
+    try {
+      target.setPointerCapture?.(pointerId);
+    } catch {
+      // Algunos DOM de test y WebViews antiguas exponen la API pero rechazan la captura.
     }
   }
 
-  // Suelta sobre la columna (zona vacía o tras propagación): inserta al final si no hay tarjeta diana.
-  private onColumnDrop(e: DragEvent, toColumn: string): void {
-    if (!this.drag) return;
-    e.preventDefault();
-    this.commitMove(toColumn);
+  private releasePointer(state: PointerDragState): void {
+    try {
+      if (state.captureTarget.hasPointerCapture?.(state.pointerId)) {
+        state.captureTarget.releasePointerCapture?.(state.pointerId);
+      }
+    } catch {
+      // La captura puede haberse perdido al cancelar el gesto o desmontar el componente.
+    }
   }
 
-  // Suelta sobre una tarjeta concreta: inserta antes/después de ella.
-  private onCardDrop(e: DragEvent, toColumn: string): void {
-    if (!this.drag) return;
+  private onPointerDown(
+    e: PointerEvent,
+    fromColumn: string,
+    cardId: string,
+  ): void {
+    // Solo botón principal y un gesto cada vez. Touch/pen suelen informar button=0.
+    if (this.pointerDrag || e.button !== 0) return;
+    // En tacto se arrastra desde el agarre; el resto de la tarjeta conserva el pan del tablero.
+    if (
+      e.pointerType === 'touch' &&
+      !(e.target instanceof Element && e.target.closest('.drag-handle'))
+    ) {
+      return;
+    }
+
+    const captureTarget = e.currentTarget as HTMLElement;
+    this.pointerDrag = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      captureTarget,
+      cardId,
+      fromColumn,
+    };
+    this.capturePointer(captureTarget, e.pointerId);
+  }
+
+  /** Elemento real bajo el puntero capturado, dentro del shadow root. */
+  private elementFromPoint(x: number, y: number): Element | null {
+    const root = this.renderRoot as ShadowRoot & {
+      elementFromPoint?: (clientX: number, clientY: number) => Element | null;
+    };
+    return root.elementFromPoint?.(x, y) ?? null;
+  }
+
+  /** Actualiza columna y posición de inserción a partir de las coordenadas del puntero. */
+  private updateDropTarget(e: PointerEvent): void {
+    const hit = this.elementFromPoint(e.clientX, e.clientY);
+    const column = hit?.closest<HTMLElement>('[data-column-id]') ?? null;
+    const columnId = column?.dataset.columnId;
+
+    if (!column || !columnId || !this.renderRoot.contains(column)) {
+      this.overColumn = null;
+      this.overCardId = null;
+      this.overAfter = false;
+      return;
+    }
+
+    this.overColumn = columnId;
+    const targetCard = hit?.closest<HTMLElement>('[data-card-id]') ?? null;
+    if (!targetCard || targetCard.closest('[data-column-id]') !== column) {
+      // Zona vacía de la lista/columna = insertar al final.
+      this.overCardId = null;
+      this.overAfter = false;
+      return;
+    }
+
+    const rect = targetCard.getBoundingClientRect();
+    this.overCardId = targetCard.dataset.cardId ?? null;
+    this.overAfter = e.clientY > rect.top + rect.height / 2;
+  }
+
+  private onPointerMove(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+
+    if (!state.active) {
+      const distance = Math.hypot(e.clientX - state.startX, e.clientY - state.startY);
+      if (distance < DRAG_THRESHOLD_PX) return;
+      state.active = true;
+      this.drag = { cardId: state.cardId, fromColumn: state.fromColumn };
+    }
+
     e.preventDefault();
-    e.stopPropagation();
-    this.commitMove(toColumn);
+    this.updateDropTarget(e);
+  }
+
+  private suppressNextCardClick(): void {
+    this.suppressClick = true;
+    if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
+    this.suppressClickTimer = setTimeout(() => {
+      this.suppressClick = false;
+      this.suppressClickTimer = null;
+    }, 0);
+  }
+
+  private onPointerUp(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+
+    this.releasePointer(state);
+    this.pointerDrag = null;
+
+    if (!state.active) return;
+
+    e.preventDefault();
+    this.updateDropTarget(e);
+    const toColumn = this.overColumn;
+    this.suppressNextCardClick();
+    if (toColumn) this.commitMove(toColumn);
+    else this.onDragEnd();
+  }
+
+  private onPointerCancel(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+    this.releasePointer(state);
+    this.pointerDrag = null;
+    this.onDragEnd();
   }
 
   // Aplica el movimiento en el modelo interno y emite `ok-card-move`.
@@ -413,6 +530,12 @@ export class OkKanban extends LitElement {
 
   // Click en una tarjeta (no en arrastre): emite `ok-card-click`.
   private onCardClick(card: OkKanbanCard): void {
+    if (this.suppressClick) {
+      this.suppressClick = false;
+      if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
+      this.suppressClickTimer = null;
+      return;
+    }
     this.dispatchEvent(
       new CustomEvent('ok-card-click', {
         detail: { id: card.id, card },
@@ -438,13 +561,15 @@ export class OkKanban extends LitElement {
 
     return html`<li
       class=${classes}
-      draggable="true"
-      @dragstart=${(e: DragEvent) => this.onDragStart(e, column.id, card.id)}
-      @dragend=${() => this.onDragEnd()}
-      @dragover=${(e: DragEvent) => this.onCardDragOver(e, column.id, card.id)}
-      @drop=${(e: DragEvent) => this.onCardDrop(e, column.id)}
+      data-card-id=${card.id}
+      @pointerdown=${(e: PointerEvent) => this.onPointerDown(e, column.id, card.id)}
       @click=${() => this.onCardClick(card)}
     >
+      <span
+        class="drag-handle"
+        aria-hidden="true"
+        @click=${(e: MouseEvent) => e.stopPropagation()}
+      >⠿</span>
       <div class="card-title">${card.title}</div>
       ${card.subtitle ? html`<div class="card-subtitle">${card.subtitle}</div>` : ''}
       ${card.tags?.length
@@ -461,8 +586,7 @@ export class OkKanban extends LitElement {
 
     return html`<section
       class=${`column ${over ? 'drag-over' : ''}`.trim()}
-      @dragover=${(e: DragEvent) => this.onColumnDragOver(e, column.id)}
-      @drop=${(e: DragEvent) => this.onColumnDrop(e, column.id)}
+      data-column-id=${column.id}
     >
       <header class="column-header">
         <span class="swatch" style=${headerStyle}></span>
@@ -484,9 +608,22 @@ export class OkKanban extends LitElement {
     if (this.columns !== this.lastColumnsRef) {
       this.syncFromProp();
     }
-    return html`<div class="board">
+    return html`<div
+      class="board"
+      @pointermove=${this.onPointerMove}
+      @pointerup=${this.onPointerUp}
+      @pointercancel=${this.onPointerCancel}
+    >
       ${this.view.map((column) => this.renderColumn(column))}
     </div>`;
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this.pointerDrag) this.releasePointer(this.pointerDrag);
+    this.pointerDrag = null;
+    if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
+    this.suppressClickTimer = null;
   }
 }
 
