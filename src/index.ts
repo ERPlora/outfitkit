@@ -60,7 +60,7 @@ export { OkSparkline } from './components/ok-sparkline/ok-sparkline.js';
 export { OkChat } from './components/ok-chat/ok-chat.js';
 export type { OkChatMessage } from './components/ok-chat/ok-chat.js';
 export { OkScheduler } from './components/ok-scheduler/ok-scheduler.js';
-export type { OkSchedulerResource, OkSchedulerEvent } from './components/ok-scheduler/ok-scheduler.js';
+export type { OkSchedulerResource, OkSchedulerEvent, OkSchedulerMoveDetail } from './components/ok-scheduler/ok-scheduler.js';
 export { OkMenubar } from './components/ok-menubar/ok-menubar.js';
 // `OkMenu`/`OkMenuItem` del menubar se re-exportan con alias para no chocar con la clase
 // `OkMenu` del nuevo componente ok-menu (dropdown). El menubar en sí no cambia.

@@ -151,7 +151,7 @@ viven como recetas copiables en el showcase.
 | Componente | Qué hace | Eventos clave |
 |---|---|---|
 | `ok-calendar` | Calendario mes/agenda con eventos como chips y presets. | `ok-date-select`, `ok-event-click`, `ok-view-change`, `ok-nav` |
-| `ok-scheduler` | Timeline de recursos/turnos (filas × franjas horarias) con eventos posicionados. | `ok-event-click`, `ok-slot-click`, `ok-nav` |
+| `ok-scheduler` | Timeline de recursos/turnos (filas × franjas horarias) con eventos posicionados. Con `movable`, los bloques se **arrastran** a otra hora u otro recurso (Pointer Events: ratón y dedo) y se mueven también con el teclado; el host decide si el movimiento vale y `revert()` lo deshace. | `ok-event-click`, `ok-slot-click`, `ok-nav`, `ok-event-move` |
 | `ok-kanban` | Tablero Kanban con Pointer Events (ratón, lápiz y agarre táctil; sin libs), columnas y tarjetas reordenables. | `ok-card-move`, `ok-card-click` |
 | `ok-timeline` | Línea de tiempo vertical con estados (done/current/pending), modo alternado. | `ok-item-click` |
 

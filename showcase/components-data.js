@@ -653,9 +653,9 @@ chat.addEventListener('ok-send', (e) => {
     id: 'ok-scheduler',
     name: 'ok-scheduler',
     category: 'flujo',
-    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día y celdas-slot clicables. Ionic no trae scheduler.',
+    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN (Pointer Events: ratón y dedo) a otra hora u otro recurso — el host decide si el movimiento vale. Ionic no trae scheduler.',
     importPath: "@erplora/outfitkit/ok-scheduler",
-    example: '<ok-scheduler id="sch" start-hour="8" end-hour="20" slot-minutes="60" style="display:block;height:360px;width:100%"></ok-scheduler>',
+    example: '<ok-scheduler id="sch" movable start-hour="8" end-hour="20" slot-minutes="60" snap-minutes="15" style="display:block;height:360px;width:100%"></ok-scheduler>',
     setup: (root) => {
       const sch = root.querySelector('#sch');
       const today = new Date();
@@ -671,13 +671,33 @@ chat.addEventListener('ok-send', (e) => {
         { id: 'e3', resourceId: 'r2', start: '10:30', end: '14:00', title: 'Almacén', color: 'var(--ion-color-warning)' },
         { id: 'e4', resourceId: 'r3', start: '15:00', end: '19:00', title: 'Atención cliente', color: 'var(--ion-color-tertiary)' },
       ];
+      // El HOST manda: aquí hace de servidor. Rechaza el solape (revert) y acepta el resto
+      // reescribiendo `events`, que es lo que el módulo hará con el refresco de su query.
+      sch.addEventListener('ok-event-move', (ev) => {
+        const { id, resourceId, start, end, revert } = ev.detail;
+        const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+        const clash = sch.events.some(
+          (e) => e.id !== id && e.resourceId === resourceId &&
+            mins(e.start) < mins(end) && mins(start) < mins(e.end),
+        );
+        if (clash) { revert(); return; }
+        sch.events = sch.events.map((e) => (e.id === id ? { ...e, resourceId, start, end } : e));
+      });
     },
     code: `sch.resources = [{ id: 'r1', label: 'María López', avatar? }];
 sch.events = [{ id: 'e1', resourceId: 'r1', start: '09:00', end: '11:00', title: 'Apertura', color? }];
 sch.date = '2026-06-09';   // attrs: start-hour, end-hour, slot-minutes
 sch.addEventListener('ok-event-click', (e) => …); // { id, event }
 sch.addEventListener('ok-slot-click', (e) => …);  // { resourceId, time }
-sch.addEventListener('ok-nav', (e) => …);          // { date }`,
+sch.addEventListener('ok-nav', (e) => …);          // { date }
+
+// Arrastrar una cita (movable): la rejilla pinta el destino y PREGUNTA; manda el host.
+sch.movable = true;                                // + snap-minutes="15"
+sch.addEventListener('ok-event-move', async (e) => {
+  const { id, resourceId, start, end, revert } = e.detail;
+  try { await command('appointments.appointments.reschedule', { … }); await refresh(); }
+  catch (err) { revert(); toast(err); }            // el servidor rechazó: vuelve a su sitio
+});`,
     api: [
       { kind: 'prop', name: '.resources', type: 'OkSchedulerResource[]', detail: '{id, label, avatar?}' },
       { kind: 'prop', name: '.events', type: 'OkSchedulerEvent[]', detail: "{id, resourceId, start:'HH:MM'|ISO, end, title, color?}" },
@@ -686,6 +706,9 @@ sch.addEventListener('ok-nav', (e) => …);          // { date }`,
       { kind: 'event', name: 'ok-event-click', type: '{id, event}', detail: 'Click en un bloque' },
       { kind: 'event', name: 'ok-slot-click', type: '{resourceId, time}', detail: 'Click en celda vacía (time = HH:MM)' },
       { kind: 'event', name: 'ok-nav', type: '{date}', detail: 'Cambio de día (YYYY-MM-DD)' },
+      { kind: 'prop', name: 'movable', type: 'boolean', detail: 'Activa arrastrar y mover con teclado (emite ok-event-move)' },
+      { kind: 'prop', name: 'snap-minutes', type: 'number', detail: 'Imán del movimiento en minutos (15). slot-minutes solo dibuja columnas' },
+      { kind: 'event', name: 'ok-event-move', type: '{id, resourceId, start, end, from, event, revert}', detail: 'Intento de mover un bloque. El host persiste; si el servidor lo rechaza, revert() lo devuelve a su sitio' },
     ],
   },
   {

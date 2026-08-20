@@ -48,6 +48,53 @@ const DEFAULT_LABELS: OkSchedulerLabels = {
   empty: 'No resources to display.',
 };
 
+// Where a block sits right now: its lane and its minutes-from-midnight span.
+interface Placement {
+  resourceId: string;
+  startMin: number;
+  endMin: number;
+}
+
+// The move the host is being asked to accept (also drives the optimistic paint).
+interface PendingMove extends Placement {
+  id: string;
+}
+
+// Live gesture. `active` flips only once the pointer travelled past the threshold, so a tap on a
+// block still reaches `ok-event-click` (the accessible route the module already wires).
+interface PointerDragState {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  active: boolean;
+  captureTarget: HTMLElement;
+  laneWidth: number;
+  id: string;
+  from: Placement;
+}
+
+/** Detail of `ok-event-move`. `revert()` is how the host says «the server said no». */
+export interface OkSchedulerMoveDetail {
+  /** Id of the moved event. */
+  id: string;
+  /** Resource the block was dropped on (may be the same one). */
+  resourceId: string;
+  /** New start, `HH:MM` local wall clock — same shape as `ok-slot-click`. */
+  start: string;
+  /** New end, `HH:MM`. The duration is preserved; the grid never resizes an event. */
+  end: string;
+  /** Where the block came from, so the host can build an undo. */
+  from: { resourceId: string; start: string; end: string };
+  /** The original event object, untouched. */
+  event: OkSchedulerEvent;
+  /** Puts the block back where it was. Call it when the command is rejected. */
+  revert: () => void;
+}
+
+// Mouse/pen are precise; a fingertip is not, so it gets more room before a tap becomes a drag.
+const DRAG_THRESHOLD_PX = 5;
+const TOUCH_DRAG_THRESHOLD_PX = 10;
+
 // ok-scheduler — agenda de recursos/turnos en TIMELINE, algo que Ionic NO ofrece. Por DATOS
 // (`resources` + `events`). AUTOCONTENIDO: CSS propio en el shadow, sin librerías de fechas (solo
 // `Date` nativo → CSP-safe). Usa `ion-icon`/`ion-button` internos (los registra el host).
@@ -64,6 +111,21 @@ const DEFAULT_LABELS: OkSchedulerLabels = {
 //   • `ok-event-click`  detail { id, event }
 //   • `ok-slot-click`   detail { resourceId, time }   (time = `HH:MM`)
 //   • `ok-nav`          detail { date }                (`YYYY-MM-DD`, al cambiar de día)
+//   • `ok-event-move`   detail OkSchedulerMoveDetail   (solo con `movable`)
+//
+// MOVER UN BLOQUE (`movable`): arrastrarlo por la rejilla es el gesto estándar de las agendas del
+// sector. Se implementa con POINTER EVENTS —ratón, lápiz y DEDO con el mismo código—, nunca con la
+// API HTML5 de drag & drop, que no emite un solo evento en táctil (la trampa de #55) y dejaría el
+// gesto muerto en la tablet, que es el dispositivo de primera clase del TPV.
+//
+// EL HOST DECIDE. La rejilla no da el movimiento por bueno: pinta el bloque en su destino
+// (optimista, para que el gesto no se sienta congelado) y emite `ok-event-move`. El módulo manda su
+// command; si el servidor lo rechaza —un solape, un profesional que no presta ese servicio— llama a
+// `detail.revert()` y el bloque vuelve a su sitio. Cuando el host refresca `events`, la posición
+// optimista se descarta y manda el dato del servidor.
+//
+// El arrastre es un ATAJO, no la única vía: el bloque es un botón enfocable (Enter/Espacio abre el
+// panel del módulo) y las flechas lo mueven en el tiempo (←/→) y de recurso (↑/↓).
 export class OkScheduler extends LitElement {
   static styles = css`
     :host {
@@ -273,6 +335,47 @@ export class OkScheduler extends LitElement {
     .event:active {
       transform: scale(var(--ok-press-scale, 0.97));
     }
+    /* Solo cuando el host activa movable: el bloque es una superficie de arrastre. */
+    .event.movable {
+      cursor: grab;
+      touch-action: none; /* el gesto lo gestionamos nosotros (Pointer Events) */
+    }
+    .event.dragging {
+      cursor: grabbing;
+      z-index: 5;
+      opacity: 0.92;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+      /* Deja pasar el hit-test al carril de debajo para saber sobre qué recurso está. */
+      pointer-events: none;
+      transition: none;
+    }
+    .event:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    /* Hueco de origen: dice de dónde salió el bloque mientras está en el aire. */
+    .ghost {
+      position: absolute;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      border-radius: 6px;
+      border: 2px dashed var(--border-color);
+      background: var(--hover-bg);
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Anuncio para lector de pantalla del movimiento por teclado. */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
     .event-title {
       font-size: 0.78rem;
       font-weight: 600;
@@ -341,6 +444,16 @@ export class OkScheduler extends LitElement {
   @property() locale = 'en-US';
   /** Textos humanos sobreescribibles (i18n). Default INGLÉS. */
   @property({ attribute: false }) labels: Partial<OkSchedulerLabels> = {};
+  /**
+   * Permite mover los bloques (arrastre + teclado) emitiendo `ok-event-move`.
+   * OPT-IN: sin un host que escuche y persista el movimiento, mover sería mentir.
+   */
+  @property({ type: Boolean, reflect: true }) movable = false;
+  /**
+   * Rejilla imantada del movimiento, en minutos. 15 es el intervalo de reserva estándar de una
+   * agenda; `slot-minutes` solo dibuja las columnas y suele ser mucho más grueso (una hora).
+   */
+  @property({ type: Number, attribute: 'snap-minutes' }) snapMin = 15;
 
   /** Textos efectivos: defaults INGLÉS mezclados con los del consumidor. */
   private get t(): OkSchedulerLabels {
@@ -350,6 +463,23 @@ export class OkScheduler extends LitElement {
   // Cursor de día (estado interno de navegación). Se siembra desde `date` una sola vez.
   @state() private cursor = new Date();
   private seeded = false;
+
+  // Gesto en curso: pinta el bloque bajo el dedo antes de soltar.
+  @state() private drag: (PendingMove & { from: Placement }) | null = null;
+  // Movimiento ya soltado y todavía sin confirmar por el host (pintado optimista).
+  @state() private pending: PendingMove | null = null;
+  // Texto para el lector de pantalla tras un movimiento por teclado.
+  @state() private announcement = '';
+  // Candidato de Pointer Events; `active` solo se enciende al pasar el umbral.
+  private pointerDrag: PointerDragState | null = null;
+  // El navegador emite un click después de pointerup: no debe abrir el bloque recién movido.
+  private suppressClick = false;
+  private suppressClickTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // El refresco del host manda: descarta la posición optimista en cuanto llegan eventos nuevos.
+  protected willUpdate(changed: Map<string, unknown>): void {
+    if (changed.has('events')) this.pending = null;
+  }
 
   // ── Helpers de fecha ──────────────────────────────────────────
 
@@ -420,6 +550,8 @@ export class OkScheduler extends LitElement {
   // Emite el click sobre un evento (sin propagar al slot de fondo).
   private clickEvent(ev: OkSchedulerEvent, e: Event): void {
     e.stopPropagation();
+    // Tras arrastrar, el navegador dispara un click: abriría el panel de la cita recién movida.
+    if (this.suppressClick) return;
     this.dispatchEvent(
       new CustomEvent('ok-event-click', {
         detail: { id: ev.id, event: ev },
@@ -438,6 +570,200 @@ export class OkScheduler extends LitElement {
         composed: true,
       }),
     );
+  }
+
+  // ── Mover un bloque ───────────────────────────────────────────
+
+  // Primer y último minuto pintables de la franja.
+  private get dayStartMin(): number {
+    return this.startHour * 60;
+  }
+
+  // Dónde está un bloque AHORA: el gesto en curso y el movimiento sin confirmar mandan sobre la
+  // prop, para que el bloque no vuelva a saltar a su sitio viejo entre el drop y el refresco.
+  private placement(ev: OkSchedulerEvent): Placement {
+    if (this.drag?.id === ev.id) return this.drag;
+    if (this.pending?.id === ev.id) return this.pending;
+    return {
+      resourceId: ev.resourceId,
+      startMin: this.minutesOf(ev.start),
+      endMin: this.minutesOf(ev.end),
+    };
+  }
+
+  // Imanta el inicio a la rejilla y garantiza que el bloque entero cabe en la franja visible.
+  private snapStart(startMin: number, durationMin: number): number {
+    const step = this.snapMin > 0 ? this.snapMin : 1;
+    const snapped = Math.round(startMin / step) * step;
+    const last = this.dayStartMin + this.rangeMinutes - durationMin;
+    return Math.min(Math.max(snapped, this.dayStartMin), Math.max(this.dayStartMin, last));
+  }
+
+  // Único sitio donde nace un movimiento (arrastre y teclado). Pinta optimista y pregunta al host.
+  private requestMove(ev: OkSchedulerEvent, from: Placement, to: Placement): void {
+    if (to.resourceId === from.resourceId && to.startMin === from.startMin) return;
+    const move: PendingMove = { id: ev.id, ...to };
+    this.pending = move;
+    const detail: OkSchedulerMoveDetail = {
+      id: ev.id,
+      resourceId: to.resourceId,
+      start: this.fmtTime(to.startMin),
+      end: this.fmtTime(to.endMin),
+      from: {
+        resourceId: from.resourceId,
+        start: this.fmtTime(from.startMin),
+        end: this.fmtTime(from.endMin),
+      },
+      event: ev,
+      // Rechazo del host: el bloque vuelve. Se comprueba la identidad para no deshacer el
+      // movimiento SIGUIENTE si el revert llega tarde.
+      revert: () => {
+        if (this.pending === move) this.pending = null;
+      },
+    };
+    this.dispatchEvent(
+      new CustomEvent<OkSchedulerMoveDetail>('ok-event-move', {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private capturePointer(target: HTMLElement, pointerId: number): void {
+    try {
+      target.setPointerCapture?.(pointerId);
+    } catch {
+      // Algunos DOM de test y WebViews antiguas exponen la API pero rechazan la captura.
+    }
+  }
+
+  private releasePointer(state: PointerDragState): void {
+    try {
+      if (state.captureTarget.hasPointerCapture?.(state.pointerId)) {
+        state.captureTarget.releasePointerCapture?.(state.pointerId);
+      }
+    } catch {
+      // La captura se pierde sola al cancelar el gesto o desmontar el componente.
+    }
+  }
+
+  private onEventPointerDown(e: PointerEvent, ev: OkSchedulerEvent): void {
+    if (!this.movable || this.pointerDrag || e.button !== 0) return;
+    const captureTarget = e.currentTarget as HTMLElement;
+    const lane = captureTarget.closest<HTMLElement>('.lane');
+    const laneWidth = lane?.getBoundingClientRect().width ?? 0;
+    if (laneWidth <= 0) return; // sin layout no hay aritmética posible
+    this.pointerDrag = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      captureTarget,
+      laneWidth,
+      id: ev.id,
+      from: this.placement(ev),
+    };
+    this.capturePointer(captureTarget, e.pointerId);
+  }
+
+  /** Elemento real bajo el puntero capturado, dentro del shadow root. */
+  private elementFromPoint(x: number, y: number): Element | null {
+    const root = this.renderRoot as ShadowRoot & {
+      elementFromPoint?: (clientX: number, clientY: number) => Element | null;
+    };
+    return root.elementFromPoint?.(x, y) ?? null;
+  }
+
+  // Traduce las coordenadas del puntero a «qué carril y qué hora», imantado a la rejilla.
+  private dropTarget(e: PointerEvent, state: PointerDragState): Placement {
+    const duration = state.from.endMin - state.from.startMin;
+    const deltaMin = ((e.clientX - state.startX) / state.laneWidth) * this.rangeMinutes;
+    const startMin = this.snapStart(state.from.startMin + deltaMin, duration);
+    const hit = this.elementFromPoint(e.clientX, e.clientY);
+    const lane = hit?.closest<HTMLElement>('.lane[data-resource-id]') ?? null;
+    const resourceId = lane?.dataset.resourceId ?? state.from.resourceId;
+    return { resourceId, startMin, endMin: startMin + duration };
+  }
+
+  private onPointerMove(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+
+    if (!state.active) {
+      const limit = e.pointerType === 'touch' ? TOUCH_DRAG_THRESHOLD_PX : DRAG_THRESHOLD_PX;
+      if (Math.hypot(e.clientX - state.startX, e.clientY - state.startY) < limit) return;
+      state.active = true;
+    }
+
+    e.preventDefault();
+    this.drag = { id: state.id, from: state.from, ...this.dropTarget(e, state) };
+  }
+
+  private suppressNextEventClick(): void {
+    this.suppressClick = true;
+    if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
+    this.suppressClickTimer = setTimeout(() => {
+      this.suppressClick = false;
+      this.suppressClickTimer = null;
+    }, 0);
+  }
+
+  private onPointerUp(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+    this.releasePointer(state);
+    this.pointerDrag = null;
+    if (!state.active) return;
+
+    e.preventDefault();
+    const to = this.dropTarget(e, state);
+    this.drag = null;
+    this.suppressNextEventClick();
+    const ev = this.events.find((candidate) => candidate.id === state.id);
+    if (ev) this.requestMove(ev, state.from, to);
+  }
+
+  private onPointerCancel(e: PointerEvent): void {
+    const state = this.pointerDrag;
+    if (!state || state.pointerId !== e.pointerId) return;
+    this.releasePointer(state);
+    this.pointerDrag = null;
+    this.drag = null;
+  }
+
+  // Teclado: el arrastre es un atajo, no la única vía (tables#16 hace esto mismo en el plano de
+  // sala). Enter/Espacio abre el panel del módulo; las flechas mueven.
+  private onEventKeyDown(e: KeyboardEvent, ev: OkSchedulerEvent): void {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.clickEvent(ev, e);
+      return;
+    }
+    if (!this.movable) return;
+
+    const from = this.placement(ev);
+    const duration = from.endMin - from.startMin;
+    const step = (this.snapMin > 0 ? this.snapMin : 1) * (e.shiftKey ? 4 : 1);
+    let to: Placement | null = null;
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const delta = e.key === 'ArrowRight' ? step : -step;
+      to = { ...from, startMin: this.snapStart(from.startMin + delta, duration) };
+      to.endMin = to.startMin + duration;
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const index = this.resources.findIndex((r) => r.id === from.resourceId);
+      const next = index + (e.key === 'ArrowDown' ? 1 : -1);
+      if (index === -1 || next < 0 || next >= this.resources.length) return;
+      to = { ...from, resourceId: this.resources[next].id };
+    }
+    if (!to) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    this.requestMove(ev, from, to);
+    const resource = this.resources.find((r) => r.id === to.resourceId);
+    this.announcement = `${ev.title} — ${this.fmtTime(to.startMin)} · ${resource?.label ?? ''}`;
   }
 
   // ── Etiquetas ─────────────────────────────────────────────────
@@ -495,29 +821,51 @@ export class OkScheduler extends LitElement {
       );
     }
 
-    // Bloques de evento del recurso, recortados al rango visible.
+    // Hueco de origen: mientras un bloque de ESTE carril está en el aire, se ve de dónde salió.
+    const ghost =
+      this.drag && this.drag.from.resourceId === resource.id
+        ? (() => {
+            const s = Math.max(this.drag!.from.startMin, startMin);
+            const e = Math.min(this.drag!.from.endMin, startMin + total);
+            if (e <= s) return '';
+            return html`<div
+              class="ghost"
+              style=${`left:${((s - startMin) / total) * 100}%;width:${((e - s) / total) * 100}%`}
+            ></div>`;
+          })()
+        : '';
+
+    // Bloques de evento del recurso, recortados al rango visible. El carril de un bloque es el de
+    // su posición ACTUAL (la del gesto o la del movimiento sin confirmar), no el de la prop.
     const blocks = this.events
-      .filter((ev) => ev.resourceId === resource.id)
+      .filter((ev) => this.placement(ev).resourceId === resource.id)
       .map((ev) => {
-        const s = Math.max(this.minutesOf(ev.start), startMin);
-        const e = Math.min(this.minutesOf(ev.end), startMin + total);
+        const at = this.placement(ev);
+        const s = Math.max(at.startMin, startMin);
+        const e = Math.min(at.endMin, startMin + total);
         if (e <= s) return ''; // fuera de rango o duración nula
         const left = ((s - startMin) / total) * 100;
         const width = ((e - s) / total) * 100;
+        const dragging = this.drag?.id === ev.id;
+        const time = `${this.fmtTime(at.startMin)} – ${this.fmtTime(at.endMin)}`;
         return html`<div
-          class="event"
+          class=${`event${this.movable ? ' movable' : ''}${dragging ? ' dragging' : ''}`}
+          data-event-id=${ev.id}
           style=${`left:${left}%;width:${width}%;background:${ev.color || 'var(--primary-color)'}`}
           title=${ev.title}
+          role="button"
+          tabindex="0"
+          aria-label=${`${ev.title}, ${time}, ${resource.label}`}
           @click=${(domEv: Event) => this.clickEvent(ev, domEv)}
+          @keydown=${(domEv: KeyboardEvent) => this.onEventKeyDown(domEv, ev)}
+          @pointerdown=${(domEv: PointerEvent) => this.onEventPointerDown(domEv, ev)}
         >
           <span class="event-title">${ev.title}</span>
-          <span class="event-time"
-            >${this.fmtTime(this.minutesOf(ev.start))} – ${this.fmtTime(this.minutesOf(ev.end))}</span
-          >
+          <span class="event-time">${time}</span>
         </div>`;
       });
 
-    return html`<div class="lane">${slots}${blocks}</div>`;
+    return html`<div class="lane" data-resource-id=${resource.id}>${slots}${ghost}${blocks}</div>`;
   }
 
   // Fila completa de un recurso: label sticky + lane.
@@ -565,7 +913,13 @@ export class OkScheduler extends LitElement {
         </ion-button>
       </div>
       <div class="scroll">
-        <div class="grid" style=${gridStyle}>
+        <div
+          class="grid"
+          style=${gridStyle}
+          @pointermove=${this.onPointerMove}
+          @pointerup=${this.onPointerUp}
+          @pointercancel=${this.onPointerCancel}
+        >
           <div class="head-row">
             <div class="corner"></div>
             ${this.renderTimelineHead()}
@@ -574,7 +928,16 @@ export class OkScheduler extends LitElement {
             ? this.resources.map((r) => this.renderRow(r))
             : html`<div class="empty">${this.t.empty}</div>`}
         </div>
-      </div>`;
+      </div>
+      <div class="sr-only" role="status" aria-live="polite">${this.announcement}</div>`;
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this.pointerDrag) this.releasePointer(this.pointerDrag);
+    this.pointerDrag = null;
+    if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
+    this.suppressClickTimer = null;
   }
 }
 
