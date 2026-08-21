@@ -65,8 +65,11 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-inventory-categories.html',
     parity: 'current',
   },
-  'module-kitchen-display': {
-    file: 'pages/module-kitchen-display.html',
+  // kitchen#4 convirtió «Pantalla» en el KDS de verdad (rejilla por estación, bump/recall por
+  // línea) y sacó la auditoría a «Historial». La demo que teníamos ERA la auditoría, así que se
+  // fue con su componente; `display` se queda en `source` hasta que tenga demo del KDS.
+  'module-kitchen-history': {
+    file: 'pages/module-kitchen-history.html',
     parity: 'current',
   },
   'module-kitchen-active': {
@@ -113,10 +116,6 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-printing-printing.html',
     parity: 'current',
   },
-  'module-printing-routing': {
-    file: 'pages/module-printing-routing.html',
-    parity: 'current',
-  },
   'module-sales-sales': {
     file: 'pages/module-sales-list.html',
     parity: 'current',
@@ -153,8 +152,11 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-tables-floor-plan.html',
     parity: 'current',
   },
-  'module-tables-zones': {
-    file: 'pages/module-tables-zones.html',
+  // La ruta `zones` monta `erp-tables-zones` desde tables#… ; la demo que teníamos lista MESAS,
+  // que es lo que hace `erp-tables-floor-plan` — hoy en la ruta `tables`. La demo se fue con su
+  // componente. `zones` se queda en `source` hasta que tenga la suya.
+  'module-tables-tables': {
+    file: 'pages/module-tables-tables.html',
     parity: 'current',
   },
   'module-tasks-all': {

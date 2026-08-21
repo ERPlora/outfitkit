@@ -1,8 +1,11 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import Icons from 'unplugin-icons/vite';
+import { configDefaults } from 'vitest/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+// @ts-expect-error El repartidor de suites es JavaScript: lo consumen también los scripts de CI.
+import { splitTestFiles } from './scripts/test-suites.mjs';
 
 // OutfitKit — librería de Web Components (Lit) que CONSTRUYE lo que Ionic NO tiene (tree, calendar,
 // kanban, inline-feedback, kpi, data-table rica…) sobre primitivos de Ionic. Build en "library
@@ -59,9 +62,17 @@ export default defineConfig({
     // (offline: sin registro, ion-icon intenta bajar el SVG por red y sale VACÍO). Ver base/icons.ts.
     Icons({ compiler: 'raw' }),
   ],
-  // Tests unitarios (vitest), junto al código: src/**/*.test.ts.
+  // Tests de la LIBRERÍA (vitest), junto al código: src/**/*.test.ts.
+  //
+  // Esta es la suite del gate (`npm test`) y es HERMÉTICA: solo lee ficheros de este repo. Los
+  // tests de paridad con los módulos —que leen `modules-workspace/`, otro repo— corren aparte,
+  // con `npm run test:parity` y su propio job de CI, porque sin ese checkout al lado revientan
+  // al importarse. El reparto lo deduce `scripts/test-suites.mjs` del propio fichero, no una
+  // lista a mano: así un test nuevo cae solo en su suite y ninguno se queda sin correr
+  // (outfitkit#66; `npm run verify:test-suites` comprueba que la partición sigue siendo total).
   test: {
     include: ['src/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, ...splitTestFiles(__dirname).parity],
     environment: 'node',
   },
   build: {

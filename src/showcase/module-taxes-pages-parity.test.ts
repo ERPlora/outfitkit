@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -17,7 +20,7 @@ const components = {
 };
 
 const manifest = JSON.parse(readFileSync(new URL('module.json', moduleBase), 'utf8')) as {
-  queries: Record<string, { list?: { page_size: number; filters: Record<string, unknown> } }>;
+  queries: Record<string, { list?: { page_size: number; default_sort: string; filters: Record<string, unknown> } }>;
   commands: Record<string, unknown>;
 };
 const seed = readFileSync(new URL('seed/install.postgres.sql', moduleBase), 'utf8');
@@ -86,13 +89,16 @@ describe('showcase module-taxes-categories — paridad con categories real', () 
   it('reproduce columnas, filtros, orden y alta fiscal sin acciones inventadas', () => {
     const page = pageSource('categories');
     const list = manifest.queries['taxes.categories.list'].list!;
-    for (const key of ['key', 'name', 'description', 'is_system', 'is_active']) {
+    // taxes#38: el nombre y la descripción que se PINTAN son los presentables que resuelve la
+    // query al idioma de quien pregunta, no el `name` inglés del seed (ADR-0055).
+    for (const key of ['key', 'display_name', 'display_description', 'is_system', 'is_active']) {
       expect(components.categories).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
     expect(list.page_size).toBe(50);
-    expect(Object.keys(list.filters)).toEqual(['key', 'name', 'is_system', 'is_active']);
-    expect(page).toContain("sort: 'name'");
+    expect(Object.keys(list.filters)).toEqual(['key', 'name', 'is_system', 'is_active', 'display_name']);
+    expect(list.default_sort).toBe('key');
+    expect(page).toContain("sort: 'key'");
     expect(page).toContain("searchPlaceholder = 'Buscar clave o nombre…'");
     expect(page).toContain("cardIcon = () => 'calculator-outline'");
     expect(page).not.toContain('table.actions =');

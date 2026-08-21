@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -14,7 +17,7 @@ const createSchema = JSON.parse(
     new URL('../../../modules-workspace/modules/staff/schemas/time_off_create.json', import.meta.url),
     'utf8',
   ),
-) as { properties: { leave_type: { enum: string[] } } };
+) as { required: string[]; properties: { leave_type: { enum: string[] } } };
 const statusSchema = JSON.parse(
   readFileSync(
     new URL('../../../modules-workspace/modules/staff/schemas/time_off_set_status.json', import.meta.url),
@@ -87,11 +90,23 @@ describe('showcase module-staff-time-off — paridad con el módulo real', () =>
     expect(page).not.toContain("id: 'edit'");
   });
 
-  it('no inventa un alta que el componente actual todavía no expone', () => {
+  it('reproduce el alta que staff#36 abrió, con sus campos y su payload', () => {
     const page = pageSource();
-    expect(component).not.toContain("'staff.time_off.create'");
-    expect(page).not.toContain("'staff.time_off.create'");
-    expect(page).not.toContain('slot="create"');
-    expect(page).not.toContain('addable = true');
+    // staff#36 abrió la puerta de `staff.time_off.create`: la demo la tiene que enseñar.
+    expect(component).toContain("'staff.time_off.create'");
+    expect(page).toContain("emitCommand('staff.time_off.create'");
+    expect(page).toContain('<form id="time-off-form" slot="create"');
+    expect(page).toContain('table.addable = true;');
+
+    // Los campos del alta son EXACTAMENTE los del schema (sin `notes`, que el componente no pide).
+    for (const field of ['staff_id', 'leave_type', 'start_date', 'end_date', 'is_full_day', 'start_time', 'end_time', 'reason']) {
+      expect(component).toContain(`${field}:`);
+      expect(page).toContain(`${field}:`);
+    }
+    for (const required of createSchema.required) {
+      expect(page).toContain(`${required}:`);
+    }
+    // Por horas (no día completo) el par es obligatorio y ordenado, igual que en el componente.
+    expect(page).toContain('if (!fullDay && (!startTime || !endTime || startTime >= endTime)) return;');
   });
 });

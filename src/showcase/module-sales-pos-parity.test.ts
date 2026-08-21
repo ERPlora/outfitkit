@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -40,8 +43,13 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
     const page = pageSource();
 
     expect(manifest.navigation[0]).toMatchObject({ id: 'pos', label: 'Vender', component: 'erp-pos' });
-    // ADR-0146: the desktop layout was retired; erp-pos always renders the touch screen.
-    expect(selector).toContain('<erp-pos-touch></erp-pos-touch>');
+    // ADR-0146: the desktop layout was retired; erp-pos always renders the touch screen — and
+    // nothing else. Since sales#107 it also forwards the chrome capability inwards (an attribute
+    // does not cross a shadow root on its own), so the tag is no longer bare: match the ELEMENT,
+    // not the exact string, or every attribute added inside turns this guard red for nothing.
+    expect(selector).toMatch(/<erp-pos-touch[\s\S]*?><\/erp-pos-touch>/);
+    expect(selector).not.toContain('erp-pos-desktop');
+    expect(selector).toContain('chrome=${this.chrome}');
     expect(page).toContain("import { defineHubPage } from './_hub.js'");
     expect(page).toContain("active: '/m/sales/pos'");
     expect(page).toContain("title: 'Vender'");

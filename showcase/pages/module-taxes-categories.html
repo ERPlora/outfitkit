@@ -50,14 +50,23 @@
       import { defineHubPage } from './_hub.js';
 
       // Copia auditable de las seis categorías de seed/install.sqlite.sql (ADR-0085).
+      // `display_name`/`display_description` los resuelve la propia query al idioma de quien
+      // pregunta (taxes#38, migración 005 `taxes_category_label`): el dato nace en INGLÉS
+      // (ADR-0055) y la pantalla pinta el presentable. Aquí van los de `es`, que es el idioma
+      // en el que se lee el showcase.
       const CATEGORY_FIXTURE = [
-        { "id": "taxcat-restaurant-food", "key": "restaurant.food", "name": "Restaurant — food", "description": "", "is_system": 1, "is_active": 1 },
-        { "id": "taxcat-restaurant-drink", "key": "restaurant.drink", "name": "Restaurant — drink", "description": "", "is_system": 1, "is_active": 1 },
-        { "id": "taxcat-restaurant-alcohol", "key": "restaurant.alcohol", "name": "Restaurant — alcohol", "description": "", "is_system": 1, "is_active": 1 },
-        { "id": "taxcat-restaurant-delivery", "key": "restaurant.delivery", "name": "Restaurant — delivery", "description": "", "is_system": 1, "is_active": 1 },
-        { "id": "taxcat-service-generic", "key": "service.generic", "name": "Service — generic", "description": "", "is_system": 1, "is_active": 1 },
-        { "id": "taxcat-product-generic", "key": "product.generic", "name": "Product — generic", "description": "", "is_system": 1, "is_active": 1 }
+        { "id": "taxcat-restaurant-food", "key": "restaurant.food", "name": "Restaurant — food", "description": "", "display_name": "Restauración — comida", "display_description": "", "is_system": 1, "is_active": 1 },
+        { "id": "taxcat-restaurant-drink", "key": "restaurant.drink", "name": "Restaurant — drink", "description": "", "display_name": "Restauración — bebida", "display_description": "", "is_system": 1, "is_active": 1 },
+        { "id": "taxcat-restaurant-alcohol", "key": "restaurant.alcohol", "name": "Restaurant — alcohol", "description": "", "display_name": "Restauración — alcohol", "display_description": "", "is_system": 1, "is_active": 1 },
+        { "id": "taxcat-restaurant-delivery", "key": "restaurant.delivery", "name": "Restaurant — delivery", "description": "", "display_name": "Restauración — reparto a domicilio", "display_description": "", "is_system": 1, "is_active": 1 },
+        { "id": "taxcat-service-generic", "key": "service.generic", "name": "Service — generic", "description": "", "display_name": "Servicio — general", "display_description": "", "is_system": 1, "is_active": 1 },
+        { "id": "taxcat-product-generic", "key": "product.generic", "name": "Product — generic", "description": "", "display_name": "Producto — general", "display_description": "", "is_system": 1, "is_active": 1 }
       ];
+
+      // Misma regla que `ui/lib/tax-category-name.ts` del módulo: lo que resolvió la query y,
+      // si esa lectura no lo trae, el dato crudo.
+      const displayName = (row) => String(row.display_name || row.name || row.key || '').trim();
+      const displayDescription = (row) => String(row.display_description || row.description || '').trim();
 
       let categories = CATEGORY_FIXTURE.map((row) => ({ ...row }));
       const commandLog = [];
@@ -120,7 +129,7 @@
           const state = {
             page: 0,
             pageSize: 50,
-            sort: 'name',
+            sort: 'key',
             dir: 'asc',
             search: '',
             filters: {},
@@ -128,14 +137,16 @@
 
           table.columns = [
             { key: 'key', header: 'Clave', sortable: true, filterable: true, filterType: 'text' },
-            { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+            // La columna ordena y filtra por el MISMO texto que enseña: `display_name`, no el
+            // `name` inglés del seed (taxes#38).
+            { key: 'display_name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text', format: (row) => displayName(row) },
             {
-              key: 'description',
+              key: 'display_description',
               header: 'Descripción',
               sortable: true,
               filterable: true,
               filterType: 'text',
-              format: (row) => String(row.description || '—'),
+              format: (row) => displayDescription(row) || '—',
             },
             {
               key: 'is_system',
@@ -166,13 +177,13 @@
           table.fill = true;
           table.addable = true;
           table.views = true;
-          table.cardTitle = (row) => String(row.name || row.key || '—');
+          table.cardTitle = (row) => displayName(row) || '—';
           table.cardIcon = () => 'calculator-outline';
           table.searchable = true;
           table.searchPlaceholder = 'Buscar clave o nombre…';
           table.emptyMessage = 'Sin categorías fiscales.';
           table.pageSize = 50;
-          table.sort = 'name';
+          table.sort = 'key';
           table.sortDir = 'asc';
 
           function queryPage() {
@@ -180,10 +191,10 @@
             const term = state.search.trim().toLocaleLowerCase('es');
             const filtered = categories
               .filter((row) => {
-                if (term && !`${row.key} ${row.name} ${row.description}`.toLocaleLowerCase('es').includes(term)) return false;
+                if (term && !`${row.key} ${row.name} ${row.description} ${displayName(row)}`.toLocaleLowerCase('es').includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
                   if (value == null || value === '') return true;
-                  if (key === 'name' || key === 'description') {
+                  if (key === 'display_name' || key === 'display_description') {
                     return String(row[key] || '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
                   }
                   return String(row[key] ?? '') === String(value);

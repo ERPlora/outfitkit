@@ -85,7 +85,6 @@
           "id": "g1",
           "name": "VIP",
           "description": "Clientes VIP",
-          "discount_percent": 10,
           "color": "primary",
           "sort_order": 1,
           "is_active": 1,
@@ -115,16 +114,6 @@
                   fill="outline"
                   label="Descripción"
                   label-placement="floating"
-                ></ion-input>
-                <ion-input
-                  id="customer-group-discount-percent"
-                  fill="outline"
-                  label="Descuento (%)"
-                  label-placement="floating"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
                 ></ion-input>
                 <ion-input
                   id="customer-group-color"
@@ -160,7 +149,6 @@
           const formTitle = doc.getElementById('customer-group-form-title');
           const nameInput = doc.getElementById('customer-group-name');
           const descriptionInput = doc.getElementById('customer-group-description');
-          const discountInput = doc.getElementById('customer-group-discount-percent');
           const colorInput = doc.getElementById('customer-group-color');
           const sortOrderInput = doc.getElementById('customer-group-sort-order');
           const activeInput = doc.getElementById('customer-group-is-active');
@@ -198,7 +186,6 @@
             form.reset();
             nameInput.value = '';
             descriptionInput.value = '';
-            discountInput.value = '0';
             colorInput.value = 'primary';
             sortOrderInput.value = '0';
             activeInput.checked = true;
@@ -211,7 +198,6 @@
             editing = group;
             nameInput.value = group.name;
             descriptionInput.value = group.description ?? '';
-            discountInput.value = String(group.discount_percent ?? 0);
             colorInput.value = group.color || 'primary';
             sortOrderInput.value = String(group.sort_order ?? 0);
             activeInput.checked = Boolean(group.is_active);
@@ -226,15 +212,6 @@
           table.columns = [
             { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
             { key: 'description', header: 'Descripción', sortable: true },
-            {
-              key: 'discount_percent',
-              header: 'Descuento',
-              align: 'right',
-              sortable: true,
-              filterable: true,
-              filterType: 'range',
-              format: (row) => `${Number(row.discount_percent || 0)}%`,
-            },
             { key: 'customer_count', header: 'Clientes', align: 'right', sortable: true },
             { key: 'sort_order', header: 'Orden', align: 'right', sortable: true },
           ];
@@ -255,14 +232,6 @@
           table.sort = 'name';
           table.sortDir = 'asc';
 
-          function rangeMatches(value, range) {
-            if (!range || typeof range !== 'object') return true;
-            const from = range.from === '' || range.from == null ? null : Number(range.from);
-            const to = range.to === '' || range.to == null ? null : Number(range.to);
-            const number = Number(value);
-            return (from == null || number >= from) && (to == null || number <= to);
-          }
-
           function queryPage() {
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = groups
@@ -270,7 +239,6 @@
                 if (term && !`${row.name} ${row.description} ${row.customer_count}`.toLocaleLowerCase('es').includes(term)) return false;
                 for (const [column, value] of Object.entries(filters)) {
                   if (value == null || value === '') continue;
-                  if (column === 'discount_percent' && !rangeMatches(row.discount_percent, value)) return false;
                   if (column === 'name' && !String(row.name).toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
                 }
                 return true;
@@ -355,7 +323,6 @@
             const payload = {
               name,
               description: valueOf(descriptionInput),
-              discount_percent: Math.min(100, Math.max(0, Number(discountInput.value) || 0)),
               color: valueOf(colorInput) || 'primary',
               sort_order: Math.max(0, Number.parseInt(sortOrderInput.value, 10) || 0),
             };

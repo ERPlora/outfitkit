@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -49,10 +52,14 @@ describe('showcase module-customers-groups — paridad con el módulo real', () 
     const page = pageSource();
     const fixture = page.match(/const GROUP_FIXTURE = (\[[\s\S]*?\n\s*\]);/);
 
-    for (const key of ['name', 'description', 'discount_percent', 'customer_count', 'sort_order']) {
+    for (const key of ['name', 'description', 'customer_count', 'sort_order']) {
       expect(component).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
+    // customers#17 (PR #47) retiró el descuento por grupo del contrato y de la UI porque no lo
+    // aplicaba nadie. La demo no puede resucitarlo: enseñaría un campo que el módulo ya no tiene.
+    expect(component).not.toContain('discount_percent');
+    expect(page).not.toContain('discount_percent');
     expect(page).toContain("{ id: 'edit', label: 'Editar', icon: 'create-outline' }");
     expect(page).toContain("{ id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' }");
     expect(componentTest).toContain("id: 'g1', name: 'VIP', description: 'Clientes VIP'");
@@ -62,7 +69,6 @@ describe('showcase module-customers-groups — paridad con el módulo real', () 
         id: 'g1',
         name: 'VIP',
         description: 'Clientes VIP',
-        discount_percent: 10,
         color: 'primary',
         sort_order: 1,
         is_active: 1,
