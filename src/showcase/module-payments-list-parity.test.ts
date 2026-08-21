@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -14,6 +17,13 @@ const componentTest = readFileSync(
     '../../../modules-workspace/modules/payments/ui/components/erp-payments-list/erp-payments-list.test.ts',
     import.meta.url,
   ),
+  'utf8',
+);
+// payments#20 sacó los dominios cerrados del componente a un catálogo único del módulo: la celda
+// y el filtro de una misma columna leen de ahí, así que ya no pueden decir cosas distintas. La
+// paridad sigue al dato donde vive.
+const enums = readFileSync(
+  new URL('../../../modules-workspace/modules/payments/ui/lib/enums.ts', import.meta.url),
   'utf8',
 );
 
@@ -46,8 +56,11 @@ describe('showcase module-payments-list — paridad con el módulo real', () => 
       expect(component).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
+    // El componente ya no lista los estados a mano: los pide al catálogo (`enumOptions`).
+    expect(component).toContain('enumOptions(PAYMENT_STATUS_KEY)');
+    expect(component).not.toContain("value: 'draft'");
     for (const state of ['draft', 'approved', 'sent', 'completed', 'cancelled']) {
-      expect(component).toContain(`value: '${state}'`);
+      expect(enums).toContain(`${state}: 'ui.status`);
       expect(page).toContain(`value: '${state}'`);
     }
     for (const action of ['advance', 'cancel']) {

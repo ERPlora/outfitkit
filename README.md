@@ -436,12 +436,32 @@ export const view = (cols, rows) => html`
 ## Comandos de desarrollo
 
 ```sh
+npm test             # suite de LIBRERÍA (hermética): solo lee este repo
+npm run test:parity  # suite de PARIDAD: showcase ↔ hub/, saas/ y modules-workspace/
+npm run test:all     # las dos
 npm run build        # vite (dist/*.js, outfitkit.js, theme.example.css) + tsc (dist/*.d.ts)
 npm run typecheck    # comprobación de tipos sin emitir
 npm run verify:csp   # rechaza eval / new Function en dist (CSP estricta)
 npm run dev          # vite build --watch (showcase en local)
 npm run release      # release-it a mano (NO hace falta: la CI publica al mergear, ver docs/RELEASING.md)
 ```
+
+### Las dos suites de test
+
+Los tests están partidos porque solo una mitad puede correr en un runner limpio:
+
+| Suite | Qué lee | Job de CI |
+|---|---|---|
+| **Librería** (`npm test`) | solo este repo | `quality`, en un runner **sin nada al lado** |
+| **Paridad** (`npm run test:parity`) | el código real de `hub/`, `saas/` y `modules-workspace/modules/*` | `parity`, que **clona antes** lo que compara |
+
+- Un test de paridad se **declara** con la marca `@suite parity` en su cabecera. El reparto lo hace
+  [`scripts/test-suites.mjs`](scripts/test-suites.mjs), y la lista de repos que clona CI se
+  **deduce de los propios tests** (`listParityRepos`): un test nuevo trae su clonado consigo.
+- El job `quality` corre la suite de librería **sin los repos hermanos delante**: un test que lea
+  otro repo sin la marca se cae ahí, en rojo y en el acto. Esa es la red de seguridad del reparto.
+- Si la suite de paridad **no puede** correr (falta un checkout), **falla diciendo cuál** — nunca se
+  auto-omite. Un test invisible es peor que no tener test.
 
 Publicación a npm: [`docs/RELEASING.md`](docs/RELEASING.md) (Trusted Publishing / OIDC).
 

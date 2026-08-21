@@ -114,8 +114,11 @@ describe('generate-module-pages', () => {
         name: 'Tables',
         navigation: [
           { id: 'floor_plan', label: 'Floor plan', icon: 'map-outline', component: 'erp-tables-canvas' },
-          { id: 'zones', label: 'Zones', icon: 'layers-outline', component: 'erp-tables-floor-plan' },
+          { id: 'zones', label: 'Zones', icon: 'layers-outline', component: 'erp-tables-zones' },
+          // Mismo componente que `zones` en el manifest real ya NO: `tables` es la LISTA de mesas.
+          // La entrada duplicada de abajo comprueba que un WC repetido no genera dos demos.
           { id: 'tables', label: 'Tables', icon: 'grid-outline', component: 'erp-tables-floor-plan' },
+          { id: 'tables_again', label: 'Tables again', icon: 'grid-outline', component: 'erp-tables-floor-plan' },
         ],
       },
       {
@@ -126,7 +129,7 @@ describe('generate-module-pages', () => {
           tables: { label: 'Mesas' },
         },
       },
-      ['erp-tables-canvas', 'erp-tables-floor-plan'],
+      ['erp-tables-canvas', 'erp-tables-zones', 'erp-tables-floor-plan'],
     );
     addModule(modulesDirectory, 'kitchen_orders', null, { name: 'Cocina antigua' }, ['erp-kitchen-orders-active']);
 
@@ -140,10 +143,11 @@ describe('generate-module-pages', () => {
 
     const pages = parseGeneratedModulePages(outputFile);
 
-    expect(pages).toHaveLength(3);
+    expect(pages).toHaveLength(4);
     expect(pages.map(({ component }) => component)).toEqual([
       'erp-schedules-hours',
       'erp-tables-canvas',
+      'erp-tables-zones',
       'erp-tables-floor-plan',
     ]);
     expect(pages[0]).toEqual({
@@ -165,7 +169,8 @@ describe('generate-module-pages', () => {
     expect(pages.map(({ file }) => file)).toEqual([
       'pages/module-schedules-hours.html',
       'pages/module-tables-floor-plan.html',
-      'pages/module-tables-zones.html',
+      undefined,
+      'pages/module-tables-tables.html',
     ]);
   });
 });

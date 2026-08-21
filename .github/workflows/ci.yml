@@ -1,9 +1,21 @@
 name: CI
 
-# Gate de calidad del paquete: higiene de git + build + typecheck + verify:csp.
+# Gate de calidad del paquete: higiene de git + build + typecheck + verify:csp + TESTS.
 # Corre en cada PR y en cada push a main. Si cualquiera falla, el check sale rojo
 # y la regresión (tipos rotos, wiring incompleto, eval/new Function que viola la
 # CSP estricta de Cloud/Hub) no entra a main sin avisar.
+#
+# Dos jobs, porque hay dos clases de test y solo una es hermética (outfitkit#66):
+#
+#   · `quality` — la LIBRERÍA. Runner limpio, sin nada al lado. Aquí NO existe
+#     `../modules-workspace`, y eso es a propósito: un test que lea otro repo sin
+#     declararse de paridad se cae aquí en el acto, en vez de colarse.
+#   · `parity`  — las demos del showcase contra los módulos REALES. Clona antes lo
+#     que compara. Si no puede clonarlo, FALLA: no se salta la batería.
+#
+# Antes de outfitkit#66 este workflow no llamaba a `npm test` en absoluto: 471 tests
+# escritos que CI no ejecutó nunca, y nueve ficheros meses en rojo sin que nadie se
+# enterara — en la librería de la que dependen los 25 módulos, el Hub y el Cloud.
 
 on:
   pull_request:
@@ -48,3 +60,64 @@ jobs:
 
       - name: Verify CSP (sin eval / new Function en dist)
         run: npm run verify:csp
+
+      # La suite de la librería. Runner limpio: si un test lee `../modules-workspace`
+      # sin llevar la marca `@suite parity` en su cabecera, revienta aquí (ENOENT), que
+      # es exactamente lo que queremos que pase.
+      - name: Test (suite de librería)
+        run: npm test
+
+  # ── Paridad showcase ↔ módulos reales ────────────────────────────────────────────
+  # Estos tests comparan cada demo publicada contra el Web Component del módulo, que
+  # vive en su propio repo privado. Van aparte para no meter 24 clonados en el gate
+  # rápido, pero SÍ bloquean: una demo que ya no se parece a su módulo enseña al
+  # comerciante una pantalla que no existe.
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      # La lista NO se mantiene aquí: se deduce de los propios tests
+      # (`scripts/test-suites.mjs#listParityRepos`). Un test nuevo que compare contra otro
+      # repo trae su clonado consigo; uno que se retira deja de arrastrarlo. Los tres que
+      # leen `hub/` y `saas/` salieron simulando este mismo runner limpio en local.
+      - name: Clonar los repos que compara la suite
+        env:
+          # Secreto de ORG, visible para todos los repos. GITHUB_TOKEN no vale: no da
+          # acceso a otros repos privados de la organización.
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_PAT}" ]; then
+            echo "::error::Falta el secreto GH_PAT: sin él no se pueden clonar los repos comparados."
+            echo "La suite de paridad NO se salta (outfitkit#66)."
+            exit 1
+          fi
+          # Cada línea: "<ruta relativa a la raíz del monorepo> <repo de la organización>".
+          node --input-type=module -e "
+            const { listParityRepos, parityRepoName } = await import('./scripts/test-suites.mjs');
+            for (const path of listParityRepos(process.cwd())) {
+              console.log(path, parityRepoName(path));
+            }
+          " > /tmp/parity-repos.txt
+          echo "A clonar:"; cat /tmp/parity-repos.txt
+          root="${GITHUB_WORKSPACE}/.."
+          while read -r path repo; do
+            [ -z "${path}" ] && continue
+            mkdir -p "$(dirname "${root}/${path}")"
+            git clone --depth 1 --filter=blob:none --quiet \
+              "https://x-access-token:${GH_PAT}@github.com/ERPlora/${repo}.git" "${root}/${path}"
+          done < /tmp/parity-repos.txt
+          echo "Clonados: $(wc -l < /tmp/parity-repos.txt)"
+
+      - name: Test (suite de paridad con los módulos)
+        run: npm run test:parity

@@ -234,8 +234,7 @@ export const MODULE_PAGES = [
     "component": "erp-kitchen-display",
     "source": "modules-workspace/modules/kitchen/ui/components/erp-kitchen-display/erp-kitchen-display.ts",
     "route": "/m/kitchen/display",
-    "parity": "current",
-    "file": "pages/module-kitchen-display.html"
+    "parity": "source"
   },
   {
     "id": "module-kitchen-active",
@@ -264,6 +263,33 @@ export const MODULE_PAGES = [
     "route": "/m/kitchen/stations",
     "parity": "current",
     "file": "pages/module-kitchen-stations.html"
+  },
+  {
+    "id": "module-kitchen-history",
+    "name": "Historial",
+    "icon": "time-outline",
+    "surface": "modules",
+    "section": "Cocina",
+    "moduleId": "kitchen",
+    "navId": "history",
+    "component": "erp-kitchen-history",
+    "source": "modules-workspace/modules/kitchen/ui/components/erp-kitchen-history/erp-kitchen-history.ts",
+    "route": "/m/kitchen/history",
+    "parity": "current",
+    "file": "pages/module-kitchen-history.html"
+  },
+  {
+    "id": "module-modifiers-groups",
+    "name": "Modificadores",
+    "icon": "options-outline",
+    "surface": "modules",
+    "section": "Modificadores",
+    "moduleId": "modifiers",
+    "navId": "groups",
+    "component": "erp-modifiers-groups",
+    "source": "modules-workspace/modules/modifiers/ui/components/erp-modifiers-groups/erp-modifiers-groups.ts",
+    "route": "/m/modifiers/groups",
+    "parity": "source"
   },
   {
     "id": "module-online-booking-bookings",
@@ -348,20 +374,6 @@ export const MODULE_PAGES = [
     "route": "/m/printing/printing",
     "parity": "current",
     "file": "pages/module-printing-printing.html"
-  },
-  {
-    "id": "module-printing-routing",
-    "name": "Enrutamiento",
-    "icon": "funnel",
-    "surface": "modules",
-    "section": "Impresión",
-    "moduleId": "printing",
-    "navId": "routing",
-    "component": "erp-printing-routing",
-    "source": "modules-workspace/modules/printing/ui/components/erp-printing-routing/erp-printing-routing.ts",
-    "route": "/m/printing/routing",
-    "parity": "current",
-    "file": "pages/module-printing-routing.html"
   },
   {
     "id": "module-reservations-list",
@@ -462,6 +474,32 @@ export const MODULE_PAGES = [
     "file": "pages/module-services.html"
   },
   {
+    "id": "module-services-categories",
+    "name": "Categorías",
+    "icon": "pricetags",
+    "surface": "modules",
+    "section": "Servicios",
+    "moduleId": "services",
+    "navId": "categories",
+    "component": "erp-services-categories",
+    "source": "modules-workspace/modules/services/ui/components/erp-services-categories/erp-services-categories.ts",
+    "route": "/m/services/categories",
+    "parity": "source"
+  },
+  {
+    "id": "module-services-packages",
+    "name": "Bonos y paquetes",
+    "icon": "gift",
+    "surface": "modules",
+    "section": "Servicios",
+    "moduleId": "services",
+    "navId": "packages",
+    "component": "erp-services-packages",
+    "source": "modules-workspace/modules/services/ui/components/erp-services-packages/erp-services-packages.ts",
+    "route": "/m/services/packages",
+    "parity": "source"
+  },
+  {
     "id": "module-staff-staff",
     "name": "Personal",
     "icon": "people-outline",
@@ -539,11 +577,37 @@ export const MODULE_PAGES = [
     "section": "Mesas",
     "moduleId": "tables",
     "navId": "zones",
+    "component": "erp-tables-zones",
+    "source": "modules-workspace/modules/tables/ui/components/erp-tables-zones/erp-tables-zones.ts",
+    "route": "/m/tables/zones",
+    "parity": "source"
+  },
+  {
+    "id": "module-tables-tables",
+    "name": "Mesas",
+    "icon": "grid-outline",
+    "surface": "modules",
+    "section": "Mesas",
+    "moduleId": "tables",
+    "navId": "tables",
     "component": "erp-tables-floor-plan",
     "source": "modules-workspace/modules/tables/ui/components/erp-tables-floor-plan/erp-tables-floor-plan.ts",
-    "route": "/m/tables/zones",
+    "route": "/m/tables/tables",
     "parity": "current",
-    "file": "pages/module-tables-zones.html"
+    "file": "pages/module-tables-tables.html"
+  },
+  {
+    "id": "module-tables-sessions",
+    "name": "Sesiones",
+    "icon": "time-outline",
+    "surface": "modules",
+    "section": "Mesas",
+    "moduleId": "tables",
+    "navId": "sessions",
+    "component": "erp-tables-sessions",
+    "source": "modules-workspace/modules/tables/ui/components/erp-tables-sessions/erp-tables-sessions.ts",
+    "route": "/m/tables/sessions",
+    "parity": "source"
   },
   {
     "id": "module-tasks-all",
@@ -754,5 +818,18 @@ export const MODULE_PAGES = [
     "route": "/m/whatsapp_inbox/templates",
     "parity": "current",
     "file": "pages/module-whatsapp-inbox-templates.html"
+  },
+  {
+    "id": "module-whatsapp-inbox-settings",
+    "name": "Ajustes",
+    "icon": "settings-outline",
+    "surface": "modules",
+    "section": "Bandeja de WhatsApp",
+    "moduleId": "whatsapp_inbox",
+    "navId": "settings",
+    "component": "erp-whatsapp-inbox-settings",
+    "source": "modules-workspace/modules/whatsapp_inbox/ui/components/erp-whatsapp-inbox-settings/erp-whatsapp-inbox-settings.ts",
+    "route": "/m/whatsapp_inbox/settings",
+    "parity": "source"
   }
 ];

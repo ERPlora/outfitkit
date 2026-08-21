@@ -197,7 +197,11 @@
             const row = event.detail?.row;
             const actionName = event.detail?.actionId;
             if (!row || !['fire', 'mark_ready', 'mark_served', 'cancel', 'recall'].includes(actionName)) return;
-            recordCommand('kitchen.orders.set_status', { order_id: row.id, action_name: actionName });
+            // `set_status` lleva SOLO los verbos de `change_order` (fire · mark_ready · recall).
+            // Servir y cancelar son comandos propios, cada uno con su transición (kitchen#5).
+            if (actionName === 'mark_served') recordCommand('kitchen.orders.mark_served', { order_id: row.id });
+            else if (actionName === 'cancel') recordCommand('kitchen.orders.cancel', { order_id: row.id });
+            else recordCommand('kitchen.orders.set_status', { order_id: row.id, action_name: actionName });
             const nextStatus = { fire: 'preparing', mark_ready: 'ready', mark_served: 'served', cancel: 'cancelled', recall: 'preparing' }[actionName];
             orders = orders.map((order) => order.id === row.id ? { ...order, status: nextStatus } : order);
             queryPage();

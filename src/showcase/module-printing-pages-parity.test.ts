@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +9,6 @@ const moduleBase = new URL('../../../modules-workspace/modules/printing/', impor
 
 const pages = {
   settings: new URL('module-printing-printing.html', pagesBase),
-  routing: new URL('module-printing-routing.html', pagesBase),
 };
 
 const components = {
@@ -14,32 +16,18 @@ const components = {
     new URL('ui/components/erp-printing-settings/erp-printing-settings.ts', moduleBase),
     'utf8',
   ),
-  routing: readFileSync(
-    new URL('ui/components/erp-printing-routing/erp-printing-routing.ts', moduleBase),
-    'utf8',
-  ),
 };
 
 const manifest = JSON.parse(readFileSync(new URL('module.json', moduleBase), 'utf8')) as {
-  queries: Record<string, { list?: {
-    page_size: number;
-    default_sort: string;
-    default_dir: string;
-    filters: Record<string, unknown>;
-  } }>;
+  navigation: Array<{ id: string; component: string }>;
+  queries: Record<string, unknown>;
   commands: Record<string, unknown>;
 };
 const settingsSchema = JSON.parse(
   readFileSync(new URL('schemas/settings_update.json', moduleBase), 'utf8'),
 ) as { required: string[]; properties: { paper_width: { enum: number[] } } };
-const routingSchema = JSON.parse(
-  readFileSync(new URL('schemas/routing_set.json', moduleBase), 'utf8'),
-) as { required: string[]; properties: { station: { enum: string[] } } };
 const settingsFixture = JSON.parse(
   readFileSync(new URL('fixtures/printing.settings.get.json', moduleBase), 'utf8'),
-) as Record<string, unknown>[];
-const routingFixture = JSON.parse(
-  readFileSync(new URL('fixtures/printing.routing.list.json', moduleBase), 'utf8'),
 ) as Record<string, unknown>[];
 
 function pageSource(page: keyof typeof pages): string {
@@ -110,56 +98,14 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
   });
 });
 
-describe('showcase module-printing-routing — enrutamiento real', () => {
-  it('usa Hub iOS y ok-data-table como única pieza OutfitKit', () => {
-    const page = pageSource('routing');
-    expectHubIos(page, '/m/printing/routing', 'Enrutamiento');
-    expect(page).toContain('<ok-data-table id="printing-routing-table" fill>');
-
-    const outfitTags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
-    expect(new Set(outfitTags)).toEqual(new Set(['ok-data-table']));
-  });
-
-  it('parte exactamente de las tres reglas oficiales del fixture', () => {
-    const page = pageSource('routing');
-    expect(jsonFixture(page, 'ROUTING_FIXTURE')).toEqual(routingFixture);
-    expect(page).toContain("recordQuery('printing.routing.list'");
-  });
-
-  it('reproduce las columnas, filtro y contrato server-side vigentes', () => {
-    const page = pageSource('routing');
-    const list = manifest.queries['printing.routing.list'].list!;
-    expect(list).toMatchObject({ page_size: 50, default_sort: 'category', default_dir: 'asc' });
-    expect(Object.keys(list.filters)).toEqual(['station']);
-    for (const key of ['category', 'station']) {
-      expect(components.routing).toContain(`key: '${key}'`);
-      expect(page).toContain(`key: '${key}'`);
-    }
-    for (const property of [
-      'serverSide = true', 'fill = true', 'addable = true', 'views = true',
-      'cardTitle = (row) =>', "cardIcon = () => 'print-outline'", 'searchable = true',
-      'pageSize = 50', "sort = 'category'", "sortDir = 'asc'",
-    ]) {
-      expect(page).toContain(property);
-    }
-    expect(page).toContain("filterType: 'select'");
-    expect(page).not.toContain("key: 'category', header: 'Categoría', sortable: true, filterable: true");
-    for (const event of ['pageChange', 'pageSizeChange', 'sortChange', 'searchChange', 'filterChange']) {
-      expect(page).toContain(`addEventListener('${event}'`);
-    }
-  });
-
-  it('alta y edición comparten el panel create; borrar usa el command real', () => {
-    const page = pageSource('routing');
-    expect(routingSchema.required).toEqual(['category', 'station']);
-    expect(routingSchema.properties.station.enum).toEqual(['receipt', 'kitchen', 'bar']);
-    expect(page).toContain('<form id="printing-routing-form" slot="create"');
-    expect(page).toContain("recordCommand('printing.routing.set', payload)");
-    expect(page).toContain("recordCommand('printing.routing.remove', { category: row.category })");
-    expect(page).toContain("table.open('create')");
-    expect(page).toContain('table.close()');
-    expect(page).toContain("table.actions = [");
-    expect(page).toContain("id: 'edit'");
-    expect(page).toContain("id: 'remove'");
+// La pestaña «Enrutamiento» se RETIRÓ del módulo (printing#25 → PR #27: superficie muerta
+// publicada al comerciante). Su demo del showcase se fue con ella. Este test es lo que queda
+// de la paridad: si el módulo vuelve a declarar la ruta, el showcase tiene que volver a
+// tener su demo — y aquí nos enteramos, en vez de descubrirlo con un ENOENT al importar.
+describe('showcase module-printing — el enrutamiento retirado no vuelve por la puerta de atrás', () => {
+  it('ni el módulo declara la ruta ni el showcase publica su demo', () => {
+    expect(manifest.navigation.map((entry) => entry.id)).not.toContain('routing');
+    expect(existsSync(new URL('ui/components/erp-printing-routing/erp-printing-routing.ts', moduleBase))).toBe(false);
+    expect(existsSync(new URL('module-printing-routing.html', pagesBase))).toBe(false);
   });
 });

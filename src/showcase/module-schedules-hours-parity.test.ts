@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -27,8 +30,10 @@ describe('showcase module-schedules-hours — paridad con la vista real', () => 
 
   it('mantiene las tres tablas y sus columnas reales', () => {
     const page = pageSource();
+    // schedules#8 plegó la semana: la tabla del horario pinta SIETE filas (una por día) con sus
+    // intervalos dentro — `hours` —, no una fila por intervalo con apertura/cierre/descanso.
     for (const key of [
-      'day_of_week', 'open_time', 'close_time', 'break_start',
+      'day_of_week', 'hours',
       'date', 'name', 'recurring_yearly',
       'start_date', 'end_date', 'reason', 'is_closed',
     ]) {
@@ -38,6 +43,11 @@ describe('showcase module-schedules-hours — paridad con la vista real', () => 
     for (const id of ['schedule-hours-table', 'schedule-special-table', 'schedule-overrides-table']) {
       expect(page).toContain(`<ok-data-table id="${id}" fill>`);
     }
+    // Un día se EDITA, nunca se añade: siete filas fijas y sin «+» (ni en el componente ni aquí).
+    expect(component).toContain('.pageSize=${7}');
+    expect(page).toContain('hoursTable.pageSize = 7;');
+    expect(page).not.toContain('hoursTable.addable');
+    expect(page).not.toContain("key: 'break_start'");
   });
 
   it('deja cada alta de fila dentro de su tabla y ajustes fuera', () => {

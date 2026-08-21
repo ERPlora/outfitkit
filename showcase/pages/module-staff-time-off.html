@@ -17,6 +17,9 @@
     <style>
       .time-off-page { display:flex; flex-direction:column; height:100%; min-height:0; }
       .time-off-page > ok-data-table { flex:1 1 auto; min-height:0; }
+      .time-off-form { display:flex; flex-direction:column; gap:0.7rem; }
+      .time-off-form .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
+      .time-off-form ion-button { align-self:flex-end; }
     </style>
   </head>
   <body>
@@ -43,6 +46,12 @@
           start_time: '10:00', end_time: '13:00', status: 'rejected', approved_by: null,
           approved_at: null, reason: 'Asunto personal', notes: '',
         },
+      ];
+
+      // El selector de miembro del alta se surte de staff.members.list.
+      const MEMBER_FIXTURE = [
+        { id: 'm1', full_name: 'Ana Ruiz' },
+        { id: 'm2', full_name: 'Luis Gil' },
       ];
 
       const LEAVE_TYPE_OPTIONS = [
@@ -102,7 +111,29 @@
         title: 'Ausencias',
         body: `
           <div class="time-off-page">
-            <ok-data-table id="time-off-table" fill></ok-data-table>
+            <ok-data-table id="time-off-table" fill>
+              <!-- staff#36 abrió el alta: se proyecta SIEMPRE (si solo se pintara al abrir, el
+                   «+» de la barra desplegaría un panel vacío). -->
+              <form id="time-off-form" slot="create" class="time-off-form">
+                <ion-select id="time-off-staff" fill="outline" label="Miembro" label-placement="floating">
+                  ${MEMBER_FIXTURE.map((member) => `<ion-select-option value="${member.id}">${member.full_name}</ion-select-option>`).join('')}
+                </ion-select>
+                <ion-select id="time-off-type" value="vacation" fill="outline" label="Tipo" label-placement="floating">
+                  ${LEAVE_TYPE_OPTIONS.map((option) => `<ion-select-option value="${option.value}">${option.label}</ion-select-option>`).join('')}
+                </ion-select>
+                <div class="grid2">
+                  <ion-input id="time-off-start-date" type="date" fill="outline" label="Desde" label-placement="floating"></ion-input>
+                  <ion-input id="time-off-end-date" type="date" fill="outline" label="Hasta" label-placement="floating"></ion-input>
+                </div>
+                <ion-toggle id="time-off-full-day" checked label-placement="end">Día completo</ion-toggle>
+                <div id="time-off-hours" class="grid2" hidden>
+                  <ion-input id="time-off-start-time" type="time" fill="outline" label="Desde las" label-placement="floating"></ion-input>
+                  <ion-input id="time-off-end-time" type="time" fill="outline" label="Hasta las" label-placement="floating"></ion-input>
+                </div>
+                <ion-textarea id="time-off-reason" fill="outline" auto-grow label="Motivo" label-placement="floating"></ion-textarea>
+                <ion-button id="time-off-save" type="submit" size="small">Añadir</ion-button>
+              </form>
+            </ok-data-table>
           </div>
           <ion-toast id="time-off-toast" duration="2200" position="bottom"></ion-toast>
         `,
@@ -112,6 +143,7 @@
 
           table.serverSide = true;
           table.fill = true;
+          table.addable = true;
           table.views = true;
           table.cardTitle = (row) => String(row.staff_name ?? '—');
           table.cardIcon = () => 'airplane-outline';
@@ -174,6 +206,56 @@
               detail:{ commandName, payload }, bubbles:true,
             }));
           }
+
+          const form = doc.getElementById('time-off-form');
+          const fullDayToggle = doc.getElementById('time-off-full-day');
+          const hoursBox = doc.getElementById('time-off-hours');
+          const valueOf = (id) => String(doc.getElementById(id).value ?? '').trim();
+
+          // Sin día completo aparecen las horas, como en el componente real.
+          fullDayToggle.addEventListener('ionChange', () => { hoursBox.hidden = !!fullDayToggle.checked; });
+
+          form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const staffId = valueOf('time-off-staff');
+            const startDate = valueOf('time-off-start-date');
+            const endDate = valueOf('time-off-end-date');
+            const fullDay = !!fullDayToggle.checked;
+            const startTime = valueOf('time-off-start-time');
+            const endTime = valueOf('time-off-end-time');
+            // Mismas validaciones que el componente: miembro, rango de fechas y, por horas, el par.
+            if (!staffId || !startDate || !endDate || endDate < startDate) return;
+            if (!fullDay && (!startTime || !endTime || startTime >= endTime)) return;
+
+            const payload = {
+              staff_id: staffId,
+              leave_type: valueOf('time-off-type') || 'vacation',
+              start_date: startDate,
+              end_date: endDate,
+              is_full_day: fullDay ? 1 : 0,
+              start_time: fullDay ? null : startTime,
+              end_time: fullDay ? null : endTime,
+              reason: valueOf('time-off-reason'),
+            };
+            emitCommand('staff.time_off.create', payload);
+            requests = [
+              {
+                id: `off-${requests.length + 1}`,
+                ...payload,
+                staff_name: MEMBER_FIXTURE.find((member) => member.id === staffId)?.full_name ?? '—',
+                status: 'pending', approved_by: null, approved_at: null, notes: '',
+              },
+              ...requests,
+            ];
+            form.reset();
+            hoursBox.hidden = true;
+            table.close();
+            state.page = 0;
+            toast.message = 'Ausencia solicitada.';
+            toast.color = 'success';
+            toast.isOpen = true;
+            queryPage();
+          });
 
           table.addEventListener('rowAction', (event) => {
             const { actionId, row } = event.detail ?? {};

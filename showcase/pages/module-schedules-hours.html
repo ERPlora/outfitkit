@@ -20,6 +20,8 @@
       .schedules-pane > ok-data-table { flex: 1 1 auto; min-height: 0; }
       .schedule-form { display: flex; flex-direction: column; gap: 0.7rem; }
       .schedule-form ion-button { align-self: flex-end; }
+      .schedule-intervals { display: flex; flex-direction: column; gap: 0.5rem; }
+      .schedule-interval { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: center; }
       .schedule-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; }
       .schedule-settings ion-button { justify-self: start; }
     </style>
@@ -28,13 +30,47 @@
     <script type="module">
       import { defineHubPage } from './_hub.js';
 
+      // Filas de `schedules.business_hours.list`: UNA por intervalo de apertura (schedules#8).
+      // Varias del mismo día = turno partido; `is_closed = 1` cierra el día. La tabla NO pinta
+      // estas filas: pinta los SIETE días con sus intervalos plegados (`foldWeek`).
       const HOURS_FIXTURE = [
         {
           "id": "b1",
           "day_of_week": 0,
+          "position": 0,
           "open_time": "09:00",
           "close_time": "18:00",
           "is_closed": 0,
+          "break_start": null,
+          "break_end": null
+        },
+        {
+          "id": "b2",
+          "day_of_week": 5,
+          "position": 0,
+          "open_time": "10:00",
+          "close_time": "14:00",
+          "is_closed": 0,
+          "break_start": null,
+          "break_end": null
+        },
+        {
+          "id": "b3",
+          "day_of_week": 5,
+          "position": 1,
+          "open_time": "17:00",
+          "close_time": "21:00",
+          "is_closed": 0,
+          "break_start": null,
+          "break_end": null
+        },
+        {
+          "id": "b4",
+          "day_of_week": 6,
+          "position": 0,
+          "open_time": "00:00",
+          "close_time": "00:00",
+          "is_closed": 1,
           "break_start": null,
           "break_end": null
         }
@@ -86,15 +122,15 @@
 
             <section id="schedule-pane-hours" class="schedules-pane">
               <ok-data-table id="schedule-hours-table" fill>
+                <!-- Un día se EDITA, nunca se añade: por eso la tabla no lleva «+» (schedules#8). -->
                 <form id="schedule-hours-form" slot="create" class="schedule-form">
                   <ion-select id="hours-day" value="0" fill="outline" label="Día" label-placement="floating">
                     ${DAYS.map((day, index) => `<ion-select-option value="${index}">${day}</ion-select-option>`).join('')}
                   </ion-select>
-                  <ion-input id="hours-open" value="09:00" type="time" fill="outline" label="Apertura" label-placement="floating"></ion-input>
-                  <ion-input id="hours-close" value="18:00" type="time" fill="outline" label="Cierre" label-placement="floating"></ion-input>
                   <ion-toggle id="hours-closed">Cerrado</ion-toggle>
-                  <ion-input id="hours-break-start" type="time" fill="outline" label="Inicio descanso" label-placement="floating"></ion-input>
-                  <ion-input id="hours-break-end" type="time" fill="outline" label="Fin descanso" label-placement="floating"></ion-input>
+                  <ion-toggle id="hours-all-day">Abierto 24 horas</ion-toggle>
+                  <div id="hours-intervals" class="schedule-intervals"></div>
+                  <ion-button id="hours-add-interval" type="button" size="small" fill="outline">Añadir turno</ion-button>
                   <ion-button type="submit" size="small">Guardar horario</ion-button>
                 </form>
               </ok-data-table>
@@ -144,12 +180,77 @@
           const overridesTable = doc.getElementById('schedule-overrides-table');
           const toast = doc.getElementById('schedules-toast');
           const states = {
-            hours: { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} },
             special: { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} },
             overrides: { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} },
           };
           const closedOptions = [{ value: '1', label: 'Cerrado' }, { value: '0', label: 'Abierto' }];
           const yesNoOptions = [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }];
+
+          // ── Semana plegada (schedules#8) ─────────────────────────────────────────────────
+          // Las filas de la query son INTERVALOS; la tabla pinta los siete días con los suyos
+          // dentro. Mismo pliegue que `foldWeek` del componente real.
+          function foldWeek(rows) {
+            return DAYS.map((_, day) => {
+              const mine = rows
+                .filter((row) => Number(row.day_of_week) === day)
+                .sort((left, right) => Number(left.position ?? 0) - Number(right.position ?? 0)
+                  || String(left.open_time).localeCompare(String(right.open_time)));
+              const closed = mine.some((row) => Number(row.is_closed) === 1);
+              const intervals = closed ? [] : mine.flatMap((row) => row.break_start && row.break_end
+                ? [{ open_time: row.open_time, close_time: row.break_start }, { open_time: row.break_end, close_time: row.close_time }]
+                : [{ open_time: row.open_time, close_time: row.close_time }]);
+              return { day_of_week: day, is_closed: closed ? 1 : 0, configured: mine.length ? 1 : 0, intervals };
+            });
+          }
+
+          function formatIntervals(row) {
+            if (Number(row.is_closed)) return 'Cerrado';
+            const intervals = row.intervals ?? [];
+            if (!intervals.length) return 'Sin definir';
+            if (intervals.length === 1 && intervals[0].open_time === '00:00' && intervals[0].close_time === '00:00') return 'Abierto 24 horas';
+            return intervals.map((interval) => `${interval.open_time}–${interval.close_time}`).join(' · ');
+          }
+
+          const intervalsBox = doc.getElementById('hours-intervals');
+
+          function paintIntervals(intervals) {
+            intervalsBox.replaceChildren();
+            intervals.forEach((interval) => {
+              const line = doc.createElement('div');
+              line.className = 'schedule-interval';
+              const open = doc.createElement('ion-input');
+              open.type = 'time'; open.fill = 'outline'; open.label = 'Apertura';
+              open.labelPlacement = 'floating'; open.value = interval.open_time;
+              open.dataset.role = 'open';
+              const close = doc.createElement('ion-input');
+              close.type = 'time'; close.fill = 'outline'; close.label = 'Cierre';
+              close.labelPlacement = 'floating'; close.value = interval.close_time;
+              close.dataset.role = 'close';
+              const remove = doc.createElement('ion-button');
+              remove.type = 'button'; remove.size = 'small'; remove.fill = 'clear'; remove.color = 'danger';
+              remove.textContent = 'Quitar';
+              remove.addEventListener('click', () => {
+                line.remove();
+                if (!intervalsBox.children.length) paintIntervals([{ open_time: '09:00', close_time: '18:00' }]);
+              });
+              line.append(open, close, remove);
+              intervalsBox.append(line);
+            });
+          }
+
+          function readIntervals() {
+            return [...intervalsBox.querySelectorAll('.schedule-interval')]
+              .map((line) => ({
+                open_time: String(line.querySelector('[data-role="open"]').value || ''),
+                close_time: String(line.querySelector('[data-role="close"]').value || ''),
+              }))
+              .filter((interval) => interval.open_time && interval.close_time);
+          }
+
+          paintIntervals([{ open_time: '09:00', close_time: '18:00' }]);
+          doc.getElementById('hours-add-interval').addEventListener('click', () => {
+            paintIntervals([...readIntervals(), { open_time: '', close_time: '' }]);
+          });
 
           function configureTable(table, cardIcon, state) {
             table.serverSide = true;
@@ -164,13 +265,18 @@
             table.labels = LABELS;
           }
 
-          configureTable(hoursTable, 'time-outline', states.hours);
+          // La tabla del horario NO es paginada ni buscable: son SIETE filas fijas, una por día
+          // (schedules#8 — como Google Business Profile, Square y Fresha, donde no hay «añadir día»).
+          hoursTable.fill = true;
+          hoursTable.views = true;
+          hoursTable.pageSize = 7;
+          hoursTable.labels = LABELS;
+          hoursTable.emptyMessage = 'Sin horario.';
           hoursTable.cardTitle = (row) => DAYS[row.day_of_week] ?? '—';
           hoursTable.columns = [
-            { key: 'day_of_week', header: 'Día', sortable: true, filterable: true, filterType: 'select', options: DAYS.map((day, value) => ({ value: String(value), label: day })), format: (row) => DAYS[row.day_of_week] },
-            { key: 'open_time', header: 'Apertura', sortable: true, filterable: true, filterType: 'text', format: (row) => row.is_closed ? 'Cerrado' : row.open_time },
-            { key: 'close_time', header: 'Cierre', sortable: true, filterable: true, filterType: 'text', format: (row) => row.is_closed ? '—' : row.close_time },
-            { key: 'break_start', header: 'Descanso', sortable: true, filterable: true, filterType: 'text', format: (row) => row.break_start ? `${row.break_start}–${row.break_end ?? ''}` : '—' },
+            { key: 'day_of_week', header: 'Día', format: (row) => DAYS[row.day_of_week] },
+            { key: 'hours', header: 'Horario', format: (row) => formatIntervals(row) },
+            { key: 'is_closed', header: 'Estado', format: (row) => row.is_closed ? 'Cerrado' : row.configured ? 'Abierto' : '—' },
           ];
           hoursTable.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 
@@ -211,7 +317,7 @@
             const start = state.page * state.pageSize;
             Object.assign(table, { page: state.page, pageSize: state.pageSize, sort: state.sort, sortDir: state.dir, total: filtered.length, rows: filtered.slice(start, start + state.pageSize) });
           }
-          const refreshHours = () => queryPage(hoursTable, states.hours, hours);
+          const refreshHours = () => { hoursTable.rows = foldWeek(hours); hoursTable.total = 7; };
           const refreshSpecial = () => queryPage(specialTable, states.special, specialDays);
           const refreshOverrides = () => queryPage(overridesTable, states.overrides, overrides);
           function command(name, payload, message) {
@@ -228,16 +334,24 @@
 
           doc.getElementById('schedule-hours-form').addEventListener('submit', (event) => {
             event.preventDefault();
-            const payload = {
-              day_of_week: Number(doc.getElementById('hours-day').value || 0),
-              open_time: doc.getElementById('hours-open').value || '09:00',
-              close_time: doc.getElementById('hours-close').value || '18:00',
-              is_closed: !!doc.getElementById('hours-closed').checked,
-              break_start: doc.getElementById('hours-break-start').value || null,
-              break_end: doc.getElementById('hours-break-end').value || null,
-            };
-            const current = hours.find((row) => row.day_of_week === payload.day_of_week);
-            hours = current ? hours.map((row) => row.id === current.id ? { ...row, ...payload } : row) : [...hours, { id: `h-${Date.now()}`, ...payload }];
+            const day = Number(doc.getElementById('hours-day').value || 0);
+            const closed = !!doc.getElementById('hours-closed').checked;
+            const allDay = !!doc.getElementById('hours-all-day').checked;
+            // `schemas/business_hours_set.json`: o `is_closed`, o `intervals[]` (turno partido =
+            // varios; 24 h = 00:00–00:00). El par open/close suelto es la forma legacy.
+            const intervals = closed ? [] : allDay ? [{ open_time: '00:00', close_time: '00:00' }] : readIntervals();
+            if (!closed && !intervals.length) return;
+            const payload = closed ? { day_of_week: day, is_closed: true } : { day_of_week: day, intervals };
+            hours = [
+              ...hours.filter((row) => row.day_of_week !== day),
+              ...(closed
+                ? [{ id: `h-${day}-closed`, day_of_week: day, position: 0, open_time: '00:00', close_time: '00:00', is_closed: 1, break_start: null, break_end: null }]
+                : intervals.map((interval, position) => ({
+                    id: `h-${day}-${position}`, day_of_week: day, position,
+                    open_time: interval.open_time, close_time: interval.close_time,
+                    is_closed: 0, break_start: null, break_end: null,
+                  }))),
+            ];
             command('schedules.business_hours.set', payload, 'Horario guardado');
             hoursTable.close();
             refreshHours();
@@ -245,12 +359,12 @@
           hoursTable.addEventListener('rowAction', (event) => {
             if (event.detail.actionId !== 'edit') return;
             const row = event.detail.row;
+            const intervals = (row.intervals ?? []).map((interval) => ({ ...interval }));
             doc.getElementById('hours-day').value = String(row.day_of_week);
-            doc.getElementById('hours-open').value = row.open_time;
-            doc.getElementById('hours-close').value = row.close_time;
             doc.getElementById('hours-closed').checked = !!row.is_closed;
-            doc.getElementById('hours-break-start').value = row.break_start || '';
-            doc.getElementById('hours-break-end').value = row.break_end || '';
+            doc.getElementById('hours-all-day').checked = intervals.length === 1
+              && intervals[0].open_time === '00:00' && intervals[0].close_time === '00:00';
+            paintIntervals(intervals.length ? intervals : [{ open_time: '09:00', close_time: '18:00' }]);
             hoursTable.open('create');
           });
 
@@ -309,7 +423,6 @@
             table.addEventListener('searchChange', (event) => { state.search = event.detail; state.page = 0; refresh(); });
             table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; refresh(); });
           }
-          connect(hoursTable, states.hours, refreshHours);
           connect(specialTable, states.special, refreshSpecial);
           connect(overridesTable, states.overrides, refreshOverrides);
           refreshHours();

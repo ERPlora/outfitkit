@@ -1,3 +1,6 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +9,7 @@ const moduleBase = new URL('../../../modules-workspace/modules/tables/', import.
 
 const pages = {
   floorPlan: new URL('module-tables-floor-plan.html', pageBase),
-  zones: new URL('module-tables-zones.html', pageBase),
+  tables: new URL('module-tables-tables.html', pageBase),
 };
 
 const components = {
@@ -14,7 +17,7 @@ const components = {
     new URL('ui/components/erp-tables-canvas/erp-tables-canvas.ts', moduleBase),
     'utf8',
   ),
-  zones: readFileSync(
+  tables: readFileSync(
     new URL('ui/components/erp-tables-floor-plan/erp-tables-floor-plan.ts', moduleBase),
     'utf8',
   ),
@@ -66,13 +69,17 @@ function expectIonicHubPage(source: string, route: string, title: string): void 
 
 describe('showcase tables — rutas reales del manifest', () => {
   it('refleja plano y zonas con sus componentes reales', () => {
-    expect(manifest.navigation.slice(0, 2).map(({ id, component }) => ({ id, component }))).toEqual([
+    // `erp-tables-floor-plan` —la LISTA de mesas— se movió de la ruta `zones` a la ruta `tables`,
+    // y `zones` estrenó componente propio. La demo siguió a su componente, no a la ruta.
+    expect(manifest.navigation.map(({ id, component }) => ({ id, component }))).toEqual([
       { id: 'floor_plan', component: 'erp-tables-canvas' },
-      { id: 'zones', component: 'erp-tables-floor-plan' },
+      { id: 'zones', component: 'erp-tables-zones' },
+      { id: 'tables', component: 'erp-tables-floor-plan' },
+      { id: 'sessions', component: 'erp-tables-sessions' },
     ]);
 
     expectIonicHubPage(pageSource('floorPlan'), '/m/tables/floor_plan', 'Plano de sala');
-    expectIonicHubPage(pageSource('zones'), '/m/tables/zones', 'Zonas');
+    expectIonicHubPage(pageSource('tables'), '/m/tables/tables', 'Mesas');
   });
 });
 
@@ -145,15 +152,15 @@ describe('showcase module-tables-floor-plan — editor visual real', () => {
   });
 });
 
-describe('showcase module-tables-zones — lista real de mesas', () => {
-  it('no inventa una tabla de zonas: el manifest monta erp-tables-floor-plan, que lista mesas', () => {
-    const source = pageSource('zones');
-    expect(source).toContain('<ok-data-table id="tables-zones-table" fill>');
+describe('showcase module-tables-tables — lista real de mesas', () => {
+  it('lista mesas, que es lo que hace erp-tables-floor-plan, y no una tabla de zonas', () => {
+    const source = pageSource('tables');
+    expect(source).toContain('<ok-data-table id="tables-list-table" fill>');
     const outfitTags = [...source.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
     expect(new Set(outfitTags)).toEqual(new Set(['ok-data-table']));
 
     for (const key of ['number', 'name', 'zone', 'capacity', 'status']) {
-      expect(components.zones).toContain(`key: '${key}'`);
+      expect(components.tables).toContain(`key: '${key}'`);
       expect(source).toContain(`key: '${key}'`);
     }
     expect(source).not.toContain("key: 'color'");
@@ -161,7 +168,7 @@ describe('showcase module-tables-zones — lista real de mesas', () => {
   });
 
   it('conserva el contrato rico de la tabla y el alta rápida en su panel', () => {
-    const source = pageSource('zones');
+    const source = pageSource('tables');
     for (const property of [
       'serverSide = true',
       'fill = true',
@@ -175,7 +182,7 @@ describe('showcase module-tables-zones — lista real de mesas', () => {
     ]) {
       expect(source).toContain(property);
     }
-    expect(source).toContain('<form id="tables-zone-create" slot="create"');
+    expect(source).toContain('<form id="tables-table-create" slot="create"');
     expect(source).toContain("recordQuery('tables.tables.list'");
     expect(source).toContain("recordQuery('tables.zones.list'");
     expect(source).toContain("recordCommand('tables.tables.create'");
@@ -190,7 +197,7 @@ describe('showcase module-tables-zones — lista real de mesas', () => {
   });
 
   it('usa los datos canónicos y no añade acciones que el componente no ofrece', () => {
-    const source = pageSource('zones');
+    const source = pageSource('tables');
     expect(jsonFixture(source, 'ZONE_FIXTURE')).toHaveLength(2);
     expect(jsonFixture(source, 'TABLE_FIXTURE')).toHaveLength(1);
     expect(source).not.toContain('table.actions =');

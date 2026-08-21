@@ -1,17 +1,20 @@
+// @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
+// monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
+// job `parity`, que clona antes lo que compara (outfitkit#66).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const pageBase = new URL('../../showcase/pages/', import.meta.url);
 const moduleBase = new URL('../../../modules-workspace/modules/kitchen/', import.meta.url);
-const archivedBase = new URL('../../../modules-workspace/_retirados/kitchen_orders/', import.meta.url);
 
 const pages = {
-  display: new URL('module-kitchen-display.html', pageBase),
+  history: new URL('module-kitchen-history.html', pageBase),
   active: new URL('module-kitchen-active.html', pageBase),
   stations: new URL('module-kitchen-stations.html', pageBase),
 };
 
 const components = {
+  history: readFileSync(new URL('ui/components/erp-kitchen-history/erp-kitchen-history.ts', moduleBase), 'utf8'),
   display: readFileSync(new URL('ui/components/erp-kitchen-display/erp-kitchen-display.ts', moduleBase), 'utf8'),
   active: readFileSync(
     new URL('ui/components/erp-kitchen-orders-active/erp-kitchen-orders-active.ts', moduleBase),
@@ -29,6 +32,7 @@ const stationComponentTest = readFileSync(
 );
 const manifest = JSON.parse(readFileSync(new URL('module.json', moduleBase), 'utf8')) as {
   navigation: Array<{ id: string; component: string }>;
+  settings: Record<string, string>;
   queries: Record<string, { list?: { page_size: number; default_sort: string; default_dir: string } }>;
   commands: Record<string, unknown>;
 };
@@ -82,34 +86,45 @@ function expectSharedPage(page: string, route: string, title: string, tableId: s
 
 describe('showcase kitchen — inventario canónico tras la fusión', () => {
   it('expone exactamente display, comandas y estaciones desde kitchen', () => {
+    // kitchen#4 partió la pestaña: «Pantalla» pasó a ser el KDS (rejilla por estación, bump por
+    // línea) y la auditoría salió a «Historial», que estrenó componente. La demo siguió al
+    // componente que reproducía; «Pantalla» aún no tiene demo del KDS.
     expect(manifest.navigation.map(({ id, component }) => ({ id, component }))).toEqual([
       { id: 'display', component: 'erp-kitchen-display' },
       { id: 'active', component: 'erp-kitchen-orders-active' },
       { id: 'stations', component: 'erp-kitchen-orders-stations' },
+      { id: 'history', component: 'erp-kitchen-history' },
     ]);
-    expectSharedPage(pageSource('display'), '/m/kitchen/display', 'Pantalla', 'kitchen-display-table');
+    expectSharedPage(pageSource('history'), '/m/kitchen/history', 'Historial', 'kitchen-history-table');
     expectSharedPage(pageSource('active'), '/m/kitchen/active', 'Comandas', 'kitchen-active-table');
     expectSharedPage(pageSource('stations'), '/m/kitchen/stations', 'Estaciones', 'kitchen-stations-table');
   });
 
-  it('no resucita kitchen_orders: el repo antiguo carece de manifest instalable', () => {
-    expect(existsSync(new URL('module.json', archivedBase))).toBe(false);
-    expect(existsSync(new URL('module.json.archived', archivedBase))).toBe(true);
-    expect(readFileSync(new URL('ARCHIVED.md', archivedBase), 'utf8')).toContain('fusionó en `kitchen`');
+  it('no resucita kitchen_orders: ninguna demo publicada monta sus componentes', () => {
+    // Antes esto comprobaba el estado del ARCHIVO local `modules-workspace/_retirados/`, que no
+    // es un repo ni existe fuera de la máquina de quien lo tenga: en un runner limpio la
+    // aserción no puede correr, y una batería que no puede correr no vigila nada (outfitkit#66).
+    // Lo que sí es asunto de este repo es que el showcase no publique la superficie retirada.
     for (const page of Object.values(pages)) {
       expect(page.pathname).not.toContain('kitchen-orders-');
+    }
+    expect(manifest.navigation.map(({ component }) => component)).not.toContain('erp-kitchen-orders');
+    for (const file of Object.values(pages)) {
+      expect(readFileSync(file, 'utf8')).not.toContain('kitchen_orders');
     }
   });
 });
 
-describe('showcase module-kitchen-display — actividad y ajustes reales', () => {
+describe('showcase module-kitchen-history — la auditoría real de la línea', () => {
   it('reproduce las cuatro columnas de auditoría y sus filtros cerrados', () => {
-    const page = pageSource('display');
+    const page = pageSource('history');
     for (const key of ['action', 'order_id', 'notes', 'created_at']) {
-      expect(components.display).toContain(`key: '${key}'`);
+      expect(components.history).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
-    for (const action of ['received', 'started', 'bumped', 'served', 'recalled', 'cancelled']) {
+    // El bump por línea (kitchen#4) también se audita: dos acciones más que antes.
+    for (const action of ['received', 'started', 'bumped', 'item_bumped', 'item_recalled', 'served', 'recalled', 'cancelled']) {
+      expect(components.history).toContain(`value: '${action}'`);
       expect(page).toContain(`value: '${action}'`);
     }
     expect(page).toContain("sort = 'created_at'");
@@ -123,20 +138,23 @@ describe('showcase module-kitchen-display — actividad y ajustes reales', () =>
     });
   });
 
-  it('usa controles Ionic para el snapshot completo de ajustes', () => {
-    const page = pageSource('display');
+  it('no reinventa los ajustes de cocina: los sirve el formulario genérico del shell', () => {
+    const page = pageSource('history');
+    // ADR-0082: el módulo declara `settings` en el manifest y el SHELL pinta el formulario.
+    // Ningún componente de kitchen pinta ya uno propio, así que la demo tampoco.
     expect(settingsSchema.required).toHaveLength(16);
-    for (const field of settingsSchema.required.filter((key) => key !== 'default_order_type')) {
-      expect(page).toContain(`['${field}',`);
-    }
-    expect(page).toContain('id="kitchen-setting-${key.replaceAll(\'_\', \'-\')}"');
-    expect(page).toContain('id="kitchen-setting-default-order-type"');
-    expect(page).toContain('id="kitchen-settings-toggle"');
-    expect(page).toContain('id="kitchen-settings-panel"');
-    expect(page).toContain("recordQuery('kitchen.settings.get'");
-    expect(page).toContain("recordCommand('kitchen.settings.update'");
+    expect(manifest.settings).toMatchObject({
+      schema: 'schemas/settings_update.json',
+      get: 'kitchen.settings.get',
+      set: 'kitchen.settings.update',
+    });
     expect(manifest.commands).toHaveProperty('kitchen.settings.update');
-    expect(page).not.toContain('<ok-form');
+    // Ojo: `kitchen.settings.updated` (el EVENTO que el KDS escucha) contiene esta subcadena.
+    // Lo que no puede haber es una LLAMADA al command desde un componente del módulo.
+    expect(components.history).not.toContain("command('kitchen.settings.update'");
+    expect(components.display).not.toContain("command('kitchen.settings.update'");
+    expect(page).not.toContain('kitchen-settings-panel');
+    expect(page).not.toContain("recordCommand('kitchen.settings.update'");
   });
 });
 
@@ -151,15 +169,16 @@ describe('showcase module-kitchen-active — comandas reales', () => {
     expect(createOrderSchema.properties.order_type.enum).toEqual(['dine_in', 'takeaway', 'delivery']);
     expect(createOrderSchema.properties.priority.enum).toEqual(['normal', 'rush', 'vip']);
     expect(statusSchema.required).toEqual(['order_id', 'action_name']);
-    expect(statusSchema.properties.action_name.enum).toEqual([
-      'fire',
-      'mark_ready',
-      'mark_served',
-      'cancel',
-      'recall',
-    ]);
-    for (const action of statusSchema.properties.action_name.enum) {
+    // kitchen#5: `set_status` lleva SOLO los verbos de `change_order`. Servir y cancelar salieron
+    // a comandos propios — la fila sigue ofreciendo las cinco transiciones, por tres puertas.
+    expect(statusSchema.properties.action_name.enum).toEqual(['fire', 'mark_ready', 'recall']);
+    for (const action of ['fire', 'mark_ready', 'mark_served', 'recall', 'cancel']) {
+      expect(components.active).toContain(`id: '${action}'`);
       expect(page).toContain(`id: '${action}'`);
+    }
+    for (const command of ['kitchen.orders.set_status', 'kitchen.orders.mark_served', 'kitchen.orders.cancel']) {
+      expect(manifest.commands).toHaveProperty(command);
+      expect(page).toContain(`recordCommand('${command}'`);
     }
     expect(page).toContain("cardIcon = () => 'restaurant-outline'");
     expect(page).toContain("sort = 'created_at'");
