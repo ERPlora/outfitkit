@@ -60,9 +60,13 @@ interface PendingMove extends Placement {
   id: string;
 }
 
+/** Qué está haciendo el gesto en curso: llevar el bloque a otra hora/recurso, o cambiar su fin. */
+type GestureMode = 'move' | 'resize';
+
 // Live gesture. `active` flips only once the pointer travelled past the threshold, so a tap on a
 // block still reaches `ok-event-click` (the accessible route the module already wires).
 interface PointerDragState {
+  mode: GestureMode;
   pointerId: number;
   startX: number;
   startY: number;
@@ -94,6 +98,27 @@ export interface OkSchedulerMoveDetail {
   revert: () => void;
 }
 
+/**
+ * Detail de `ok-event-resize`. Hermano de `ok-event-move`, y a PROPÓSITO otro evento: mover cambia
+ * la hora y redimensionar cambia la DURACIÓN, que en una agenda suele venir del servicio. El
+ * módulo manda un command distinto (su `reschedule` lleva `duration_minutes`, no un `end`) y
+ * necesita saber cuál de los dos gestos fue.
+ */
+export interface OkSchedulerResizeDetail {
+  /** Id del evento redimensionado. */
+  id: string;
+  /** Inicio, `HH:MM`. NO cambia al redimensionar: el asa es la del final. */
+  start: string;
+  /** Nuevo fin, `HH:MM`. */
+  end: string;
+  /** De dónde venía, para que el host pueda construir un deshacer. */
+  from: { start: string; end: string };
+  /** El objeto de evento original, intacto. */
+  event: OkSchedulerEvent;
+  /** Devuelve el bloque a su duración anterior. Llámalo si el command se rechaza. */
+  revert: () => void;
+}
+
 // El ratón es preciso: 5 px bastan para separar un click de un arrastre.
 const DRAG_THRESHOLD_PX = 5;
 // EL DEDO NO. En táctil el arrastre se ARMA manteniendo pulsado, no moviendo: el fallo mejor
@@ -122,6 +147,7 @@ const TOUCH_HOLD_TOLERANCE_PX = 10;
 //   • `ok-slot-click`   detail { resourceId, time }   (time = `HH:MM`)
 //   • `ok-nav`          detail { date }                (`YYYY-MM-DD`, al cambiar de día)
 //   • `ok-event-move`   detail OkSchedulerMoveDetail   (solo con `movable`)
+//   • `ok-event-resize` detail OkSchedulerResizeDetail (solo con `resizable`)
 //
 // MOVER UN BLOQUE (`movable`): arrastrarlo por la rejilla es el gesto estándar de las agendas del
 // sector. Se implementa con POINTER EVENTS —ratón, lápiz y DEDO con el mismo código—, nunca con la
@@ -136,6 +162,22 @@ const TOUCH_HOLD_TOLERANCE_PX = 10;
 //
 // El arrastre es un ATAJO, no la única vía: el bloque es un botón enfocable (Enter/Espacio abre el
 // panel del módulo) y las flechas lo mueven en el tiempo (←/→) y de recurso (↑/↓).
+//
+// REDIMENSIONAR (`resizable`): arrastrar el BORDE DE FIN alarga o acorta la cita. Es lo que hacen
+// Fresha, Phorest, Outlook, DaySmart, Google Calendar y Odoo Planning (Mindbody, Square y D365 no
+// lo tienen); en sus agendas el día es vertical y ese borde es el inferior — aquí el timeline es
+// HORIZONTAL, así que el mismo borde, el del final, es el derecho.
+//
+// EL ASA GANA SOBRE EL CUERPO. Las dos superficies viven en el mismo bloque y comparten el
+// `pointerdown`: sin una precedencia explícita, un gesto se come al otro. Mindbody Booker acabó
+// sacando el arrastre del cuerpo del bloque justo por esto. Aquí el asa detiene la propagación de
+// su propio `pointerdown`, así que el cuerpo nunca ve el gesto que empieza en ella, y sigue
+// moviendo en todo lo demás.
+//
+// Y en el asa NO hay pulsación mantenida: la barrera táctil del movimiento existe porque el cuerpo
+// del bloque es enorme y un scroll lo rozaba sin querer. Un asa de ~1 rem es un objetivo
+// DELIBERADO —esa es su razón de ser— y pedir 400 ms encima solo haría el gesto lento. Lo que sí
+// se exige es el umbral de 5 px, para que un toque siga siendo un toque.
 export class OkScheduler extends LitElement {
   static styles = css`
     :host {
@@ -366,9 +408,48 @@ export class OkScheduler extends LitElement {
       pointer-events: none;
       transition: none;
     }
+    .event.resizing {
+      z-index: 5;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+      transition: none;
+    }
     .event:focus-visible {
       outline: 2px solid var(--primary-color);
       outline-offset: 2px;
+    }
+    /* Asa del borde de FIN. Una franja estrecha con su propio cursor, para que se vea que ahí el
+       gesto es otro. En puntero grueso (dedo) se ensancha: 0.85 rem son ~14 px, y un dedo no
+       acierta en 14 px. No se llega a 44 px a propósito — el asa se come el bloque entero en una
+       cita de 15 min y ya no se podría ni mover ni abrir. */
+    .resize-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--resize-handle-width, 0.85rem);
+      cursor: col-resize;
+      border-top-right-radius: 6px;
+      border-bottom-right-radius: 6px;
+      background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.22));
+      touch-action: none;
+    }
+    /* La marquita del centro: sin ella el asa es invisible y nadie sabe que se puede arrastrar. */
+    .resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0.28rem;
+      width: 2px;
+      height: 0.9rem;
+      transform: translateY(-50%);
+      border-radius: 1px;
+      background: var(--primary-contrast);
+      opacity: 0.75;
+    }
+    @media (pointer: coarse) {
+      .resize-handle {
+        width: var(--resize-handle-width, 1.35rem);
+      }
     }
     /* Hueco de origen: dice de dónde salió el bloque mientras está en el aire. */
     .ghost {
@@ -467,6 +548,12 @@ export class OkScheduler extends LitElement {
    * OPT-IN: sin un host que escuche y persista el movimiento, mover sería mentir.
    */
   @property({ type: Boolean, reflect: true }) movable = false;
+  /**
+   * Permite alargar/acortar los bloques por su borde de fin (asa + teclado) emitiendo
+   * `ok-event-resize`. OPT-IN e INDEPENDIENTE de `movable`: la duración de una cita suele venir
+   * del servicio, así que hay agendas donde mover está bien y redimensionar a mano no.
+   */
+  @property({ type: Boolean, reflect: true }) resizable = false;
   /**
    * Rejilla imantada del movimiento, en minutos. 15 es el intervalo de reserva estándar de una
    * agenda; `slot-minutes` solo dibuja las columnas y suele ser mucho más grueso (una hora).
@@ -619,6 +706,40 @@ export class OkScheduler extends LitElement {
     return Math.min(Math.max(snapped, this.dayStartMin), Math.max(this.dayStartMin, last));
   }
 
+  // Imanta el FIN a la rejilla: nunca por debajo de un `snap` de duración ni más allá de la franja.
+  private snapEnd(endMin: number, startMin: number): number {
+    const step = this.snapMin > 0 ? this.snapMin : 1;
+    const snapped = Math.round(endMin / step) * step;
+    const last = this.dayStartMin + this.rangeMinutes;
+    return Math.min(Math.max(snapped, startMin + step), last);
+  }
+
+  // Único sitio donde nace un redimensionado (asa y teclado). Mismo contrato que el movimiento:
+  // se pinta optimista y MANDA EL HOST; si el servidor lo rechaza, `revert()`.
+  private requestResize(ev: OkSchedulerEvent, from: Placement, endMin: number): void {
+    if (endMin === from.endMin) return;
+    const resized: PendingMove = { id: ev.id, ...from, endMin };
+    this.pending = resized;
+    const detail: OkSchedulerResizeDetail = {
+      id: ev.id,
+      start: this.fmtTime(from.startMin),
+      end: this.fmtTime(endMin),
+      from: { start: this.fmtTime(from.startMin), end: this.fmtTime(from.endMin) },
+      event: ev,
+      // Se comprueba la identidad para no deshacer el cambio SIGUIENTE si el revert llega tarde.
+      revert: () => {
+        if (this.pending === resized) this.pending = null;
+      },
+    };
+    this.dispatchEvent(
+      new CustomEvent<OkSchedulerResizeDetail>('ok-event-resize', {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   // Único sitio donde nace un movimiento (arrastre y teclado). Pinta optimista y pregunta al host.
   private requestMove(ev: OkSchedulerEvent, from: Placement, to: Placement): void {
     if (to.resourceId === from.resourceId && to.startMin === from.startMin) return;
@@ -668,19 +789,22 @@ export class OkScheduler extends LitElement {
     }
   }
 
-  private onEventPointerDown(e: PointerEvent, ev: OkSchedulerEvent): void {
-    if (!this.movable || this.pointerDrag || e.button !== 0) return;
+  private startGesture(e: PointerEvent, ev: OkSchedulerEvent, mode: GestureMode): void {
+    if (this.pointerDrag || e.button !== 0) return;
+    if (mode === 'move' ? !this.movable : !this.resizable) return;
     const captureTarget = e.currentTarget as HTMLElement;
     const lane = captureTarget.closest<HTMLElement>('.lane');
     const laneWidth = lane?.getBoundingClientRect().width ?? 0;
     if (laneWidth <= 0) return; // sin layout no hay aritmética posible
     const state: PointerDragState = {
+      mode,
       pointerId: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
       active: false,
-      // Con ratón o lápiz el gesto ya está armado: el umbral en píxeles basta.
-      held: e.pointerType !== 'touch',
+      // Con ratón o lápiz el gesto ya está armado: el umbral en píxeles basta. En el ASA tampoco
+      // hay pulsación mantenida ni con el dedo — el asa YA es el objetivo deliberado.
+      held: mode === 'resize' || e.pointerType !== 'touch',
       holdTimer: null,
       captureTarget,
       laneWidth,
@@ -696,6 +820,17 @@ export class OkScheduler extends LitElement {
     }
     this.pointerDrag = state;
     this.capturePointer(captureTarget, e.pointerId);
+  }
+
+  private onEventPointerDown(e: PointerEvent, ev: OkSchedulerEvent): void {
+    this.startGesture(e, ev, 'move');
+  }
+
+  // El asa gana sobre el cuerpo: se para la propagación para que el `pointerdown` del bloque no
+  // llegue a ver este gesto. Sin esto los dos arrancarían con el mismo evento.
+  private onHandlePointerDown(e: PointerEvent, ev: OkSchedulerEvent): void {
+    e.stopPropagation();
+    this.startGesture(e, ev, 'resize');
   }
 
   // Suelta el candidato y apaga su temporizador (una sola puerta de salida del gesto).
@@ -714,15 +849,30 @@ export class OkScheduler extends LitElement {
     return root.elementFromPoint?.(x, y) ?? null;
   }
 
+  // Cuántos minutos ha recorrido el puntero desde que empezó el gesto.
+  private travelledMinutes(e: PointerEvent, state: PointerDragState): number {
+    return ((e.clientX - state.startX) / state.laneWidth) * this.rangeMinutes;
+  }
+
   // Traduce las coordenadas del puntero a «qué carril y qué hora», imantado a la rejilla.
   private dropTarget(e: PointerEvent, state: PointerDragState): Placement {
     const duration = state.from.endMin - state.from.startMin;
-    const deltaMin = ((e.clientX - state.startX) / state.laneWidth) * this.rangeMinutes;
-    const startMin = this.snapStart(state.from.startMin + deltaMin, duration);
+    const startMin = this.snapStart(state.from.startMin + this.travelledMinutes(e, state), duration);
     const hit = this.elementFromPoint(e.clientX, e.clientY);
     const lane = hit?.closest<HTMLElement>('.lane[data-resource-id]') ?? null;
     const resourceId = lane?.dataset.resourceId ?? state.from.resourceId;
     return { resourceId, startMin, endMin: startMin + duration };
+  }
+
+  // Redimensionar solo mueve el FIN: ni la hora de inicio ni el recurso cambian.
+  private resizeTarget(e: PointerEvent, state: PointerDragState): Placement {
+    const endMin = this.snapEnd(state.from.endMin + this.travelledMinutes(e, state), state.from.startMin);
+    return { ...state.from, endMin };
+  }
+
+  // Dónde quedaría el bloque si se soltara aquí, según el gesto en curso.
+  private gestureTarget(e: PointerEvent, state: PointerDragState): Placement {
+    return state.mode === 'resize' ? this.resizeTarget(e, state) : this.dropTarget(e, state);
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -736,13 +886,16 @@ export class OkScheduler extends LitElement {
       return;
     }
     // Ya armado: con ratón hace falta el umbral; con el dedo, la pulsación YA fue la intención.
+    // En el asa el umbral se exige SIEMPRE (también con el dedo): sin él, un toque en el asa
+    // redimensionaría, y un toque tiene que seguir siendo un toque.
     if (!state.active) {
-      if (e.pointerType !== 'touch' && travelled < DRAG_THRESHOLD_PX) return;
+      const needsThreshold = state.mode === 'resize' || e.pointerType !== 'touch';
+      if (needsThreshold && travelled < DRAG_THRESHOLD_PX) return;
       state.active = true;
     }
 
     e.preventDefault();
-    this.drag = { id: state.id, from: state.from, ...this.dropTarget(e, state) };
+    this.drag = { id: state.id, from: state.from, ...this.gestureTarget(e, state) };
   }
 
   // El scroll del navegador se corta A MANO en cuanto el gesto está armado: el bloque NO lleva
@@ -773,11 +926,13 @@ export class OkScheduler extends LitElement {
     if (!state.active) return;
 
     e.preventDefault();
-    const to = this.dropTarget(e, state);
+    const to = this.gestureTarget(e, state);
     this.drag = null;
     this.suppressNextEventClick();
     const ev = this.events.find((candidate) => candidate.id === state.id);
-    if (ev) this.requestMove(ev, state.from, to);
+    if (!ev) return;
+    if (state.mode === 'resize') this.requestResize(ev, state.from, to.endMin);
+    else this.requestMove(ev, state.from, to);
   }
 
   private onPointerCancel(e: PointerEvent): void {
@@ -795,11 +950,28 @@ export class OkScheduler extends LitElement {
       this.clickEvent(ev, e);
       return;
     }
+    const horizontal = e.key === 'ArrowRight' || e.key === 'ArrowLeft';
+    const snap = this.snapMin > 0 ? this.snapMin : 1;
+
+    // Shift+←/→ cambia la DURACIÓN. Con `resizable` apagado Shift conserva su significado de
+    // antes —un paso de movimiento más grueso—, así que a un host que no pidió redimensionar no
+    // le cambia nada (outfitkit#64 → #65).
+    if (this.resizable && horizontal && e.shiftKey) {
+      const from = this.placement(ev);
+      const endMin = this.snapEnd(from.endMin + (e.key === 'ArrowRight' ? snap : -snap), from.startMin);
+      if (endMin === from.endMin) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.requestResize(ev, from, endMin);
+      this.announcement = `${ev.title} — ${this.fmtTime(from.startMin)} · ${this.fmtTime(endMin)}`;
+      return;
+    }
+
     if (!this.movable) return;
 
     const from = this.placement(ev);
     const duration = from.endMin - from.startMin;
-    const step = (this.snapMin > 0 ? this.snapMin : 1) * (e.shiftKey ? 4 : 1);
+    const step = snap * (e.shiftKey ? 4 : 1);
     let to: Placement | null = null;
 
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -901,13 +1073,17 @@ export class OkScheduler extends LitElement {
         if (e <= s) return ''; // fuera de rango o duración nula
         const left = ((s - startMin) / total) * 100;
         const width = ((e - s) / total) * 100;
-        const dragging = this.drag?.id === ev.id;
+        const gesturing = this.drag?.id === ev.id;
+        const resizing = gesturing && this.pointerDrag?.mode === 'resize';
+        // Mientras se REDIMENSIONA el bloque no se aparta del hit-test: no hay carril que buscar
+        // debajo, y quitarle los eventos soltaría la captura del puntero a media franja.
+        const dragging = gesturing && !resizing;
         const held = this.heldId === ev.id;
         const time = `${this.fmtTime(at.startMin)} – ${this.fmtTime(at.endMin)}`;
         return html`<div
           class=${`event${this.movable ? ' movable' : ''}${held ? ' held' : ''}${
             dragging ? ' dragging' : ''
-          }`}
+          }${resizing ? ' resizing' : ''}`}
           data-event-id=${ev.id}
           style=${`left:${left}%;width:${width}%;background:${ev.color || 'var(--primary-color)'}`}
           title=${ev.title}
@@ -920,6 +1096,15 @@ export class OkScheduler extends LitElement {
         >
           <span class="event-title">${ev.title}</span>
           <span class="event-time">${time}</span>
+          ${this.resizable
+            ? html`<span
+                class="resize-handle"
+                data-resize-handle
+                aria-hidden="true"
+                @click=${(domEv: Event) => domEv.stopPropagation()}
+                @pointerdown=${(domEv: PointerEvent) => this.onHandlePointerDown(domEv, ev)}
+              ></span>`
+            : ''}
         </div>`;
       });
 

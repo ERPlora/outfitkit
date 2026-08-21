@@ -15,6 +15,7 @@ type SchedulerElement = HTMLElement & {
   resources: OkSchedulerResource[];
   events: OkSchedulerEvent[];
   movable: boolean;
+  resizable: boolean;
   snapMin: number;
   startHour: number;
   endHour: number;
@@ -51,11 +52,12 @@ function rect(left: number, width: number): DOMRect {
   } as DOMRect;
 }
 
-async function mount(movable = true): Promise<SchedulerElement> {
+async function mount(movable = true, resizable = false): Promise<SchedulerElement> {
   const element = document.createElement('ok-scheduler') as SchedulerElement;
   element.resources = RESOURCES;
   element.events = EVENTS;
   element.movable = movable;
+  element.resizable = resizable;
   document.body.appendChild(element);
   await element.updateComplete;
   // happy-dom does no layout: declare the lane geometry the hit tests rely on.
@@ -435,5 +437,239 @@ describe('ok-scheduler · keyboard is a first-class way to move', () => {
 
     expect(clicked).toHaveBeenCalledOnce();
     expect(moved).not.toHaveBeenCalled();
+  });
+});
+
+// ── Redimensionar (outfitkit#65) ────────────────────────────────────────────────────────────────
+//
+// Alargar o acortar una cita arrastrando su BORDE DE FIN es lo que hacen Fresha, Phorest, Outlook,
+// DaySmart, Google Calendar y Odoo Planning. En sus agendas el día es vertical y ese borde es el
+// inferior; aquí el timeline es HORIZONTAL, así que el mismo borde —el del final— es el derecho.
+//
+// Y es un asa DEDICADA, no el cuerpo del bloque: el asa y el arrastre conviven en el mismo
+// elemento y uno se comería al otro. Mindbody Booker llegó a sacar el arrastre del cuerpo por esto.
+// Aquí gana el asa sobre sí misma (detiene la propagación del `pointerdown`) y el cuerpo sigue
+// moviendo en todo lo demás.
+function handle(element: SchedulerElement, id: string): HTMLElement {
+  return element.shadowRoot!.querySelector(`[data-event-id="${id}"] .resize-handle`)!;
+}
+
+/** Arrastre del asa de fin de `id` por `dx` px. */
+function resize(element: SchedulerElement, id: string, dx: number): void {
+  const grip = handle(element, id);
+  const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
+  pointer(grip, 'pointerdown', 160);
+  pointer(grid, 'pointermove', 160 + dx);
+  pointer(grid, 'pointerup', 160 + dx);
+}
+
+describe('ok-scheduler · resize an event by dragging its end edge', () => {
+  it('only shows the handle when the host opted in', async () => {
+    const off = await mount(true, false);
+    expect(off.shadowRoot!.querySelector('.resize-handle')).toBeNull();
+
+    const on = await mount(true, true);
+    expect(handle(on, 'e1')).toBeTruthy();
+  });
+
+  it('lengthens the event and reports the new end, keeping the start', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    resize(element, 'e1', 60);
+    await element.updateComplete;
+
+    expect(resized).toHaveBeenCalledOnce();
+    expect(resized.mock.calls[0][0]).toMatchObject({
+      id: 'e1',
+      start: '09:00',
+      end: '11:00',
+      from: { start: '09:00', end: '10:00' },
+    });
+  });
+
+  it('shortens it too, and snaps the end to the grid', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    resize(element, 'e1', -22); // 38 min → imantado a 45
+    await element.updateComplete;
+
+    expect(resized.mock.calls[0][0]).toMatchObject({ start: '09:00', end: '09:45' });
+  });
+
+  it('never lets a block get shorter than one snap', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    resize(element, 'e1', -300);
+    await element.updateComplete;
+
+    expect(resized.mock.calls[0][0]).toMatchObject({ start: '09:00', end: '09:15' });
+  });
+
+  it('does not let the end run past the visible range', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    resize(element, 'e1', 2000);
+    await element.updateComplete;
+
+    expect(resized.mock.calls[0][0]).toMatchObject({ start: '09:00', end: '20:00' });
+  });
+
+  it('emits NOTHING when the end lands back on the same minute', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    resize(element, 'e1', 2);
+    await element.updateComplete;
+
+    expect(resized).not.toHaveBeenCalled();
+  });
+
+  it('paints the new length optimistically and `revert()` undoes it', async () => {
+    const element = await mount(true, true);
+    let detail: { revert: () => void } | null = null;
+    element.addEventListener('ok-event-resize', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+
+    resize(element, 'e1', 60);
+    await element.updateComplete;
+    const wide = block(element, 'e1').style.width;
+
+    detail!.revert();
+    await element.updateComplete;
+
+    expect(wide).not.toBe(block(element, 'e1').style.width);
+    expect(block(element, 'e1').getAttribute('aria-label')).toContain('10:00');
+  });
+
+  it('the handle wins over the body: dragging it never moves the event', async () => {
+    const element = await mount(true, true);
+    const moved = vi.fn();
+    const resized = vi.fn();
+    element.addEventListener('ok-event-move', moved);
+    element.addEventListener('ok-event-resize', resized);
+    hitTest(element, lane(element, 'r1'));
+
+    resize(element, 'e1', 60);
+    await element.updateComplete;
+
+    expect(resized).toHaveBeenCalledOnce();
+    expect(moved).not.toHaveBeenCalled();
+  });
+
+  it('and the body still moves: the two gestures live together', async () => {
+    const element = await mount(true, true);
+    const moved = vi.fn();
+    const resized = vi.fn();
+    element.addEventListener('ok-event-move', moved);
+    element.addEventListener('ok-event-resize', resized);
+
+    drag(element, 'e1', 60, lane(element, 'r1'));
+    await element.updateComplete;
+
+    expect(moved).toHaveBeenCalledOnce();
+    expect(resized).not.toHaveBeenCalled();
+  });
+
+  it('with a finger the handle needs no long press: it IS the deliberate target', async () => {
+    vi.useFakeTimers();
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+    const grip = handle(element, 'e1');
+    const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
+
+    pointer(grip, 'pointerdown', 160, 'touch');
+    pointer(grid, 'pointermove', 220, 'touch'); // sin esperar los 400 ms del movimiento
+    pointer(grid, 'pointerup', 220, 'touch');
+
+    expect(resized).toHaveBeenCalledOnce();
+    expect(resized.mock.calls[0][0]).toMatchObject({ end: '11:00' });
+  });
+
+  it('a tap on the handle resizes nothing (and still opens the event)', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', resized);
+    const grip = handle(element, 'e1');
+    const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
+
+    pointer(grip, 'pointerdown', 160);
+    pointer(grid, 'pointerup', 161);
+    await element.updateComplete;
+
+    expect(resized).not.toHaveBeenCalled();
+  });
+
+  it('does nothing at all when the host did not opt into resizing', async () => {
+    const element = await mount(true, false);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', resized);
+
+    const source = block(element, 'e1');
+    const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
+    hitTest(element, lane(element, 'r1'));
+    pointer(source, 'pointerdown', 160);
+    pointer(grid, 'pointermove', 220);
+    pointer(grid, 'pointerup', 220);
+
+    expect(resized).not.toHaveBeenCalled();
+  });
+});
+
+describe('ok-scheduler · resizing with the keyboard', () => {
+  function key(target: HTMLElement, k: string, shift = false): void {
+    target.dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, shiftKey: shift, bubbles: true, cancelable: true }),
+    );
+  }
+
+  it('Shift+Right lengthens by one snap and Shift+Left shortens it', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    key(block(element, 'e1'), 'ArrowRight', true);
+    await element.updateComplete;
+    expect(resized.mock.calls[0][0]).toMatchObject({ start: '09:00', end: '10:15' });
+
+    key(block(element, 'e1'), 'ArrowLeft', true);
+    await element.updateComplete;
+    expect(resized.mock.calls[1][0]).toMatchObject({ start: '09:00', end: '10:00' });
+  });
+
+  it('Shift+Left never goes below one snap', async () => {
+    const element = await mount(true, true);
+    const resized = vi.fn();
+    element.addEventListener('ok-event-resize', (e) => resized((e as CustomEvent).detail));
+
+    for (let i = 0; i < 10; i++) key(block(element, 'e1'), 'ArrowLeft', true);
+    await element.updateComplete;
+
+    const last = resized.mock.calls.at(-1)![0];
+    expect(last).toMatchObject({ start: '09:00', end: '09:15' });
+  });
+
+  it('without `resizable`, Shift keeps its old meaning: a coarser MOVE step', async () => {
+    const element = await mount(true, false);
+    const moved = vi.fn();
+    const resized = vi.fn();
+    element.addEventListener('ok-event-move', (e) => moved((e as CustomEvent).detail));
+    element.addEventListener('ok-event-resize', resized);
+
+    key(block(element, 'e1'), 'ArrowRight', true);
+    await element.updateComplete;
+
+    expect(resized).not.toHaveBeenCalled();
+    expect(moved.mock.calls[0][0]).toMatchObject({ start: '10:00', end: '11:00' });
   });
 });
