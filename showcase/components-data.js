@@ -97,6 +97,7 @@ const COMPONENTS = [
       dt.title = 'Pedidos';
       dt.rowKey = (r) => r.id;
       dt.selectable = true;
+      dt.rowClickable = true; // #67 — la fila abre el registro; las acciones siguen a la derecha
       dt.inlineFilters = true;
       dt.columnSelector = true; // multi-select en la toolbar para elegir columnas visibles
       dt.columns = [
@@ -137,6 +138,7 @@ const COMPONENTS = [
 dt.rows = […];
 dt.inlineFilters = true;          // filtros (select / daterange) en la toolbar
 dt.selectable = true;
+dt.rowClickable = true;           // la fila entera abre el registro → evento rowClick
 dt.views = ['table', 'cards'];
 dt.pageSizes = [5, 10, 25, 50];   // selector de filas/pág. en la toolbar
 dt.primaryAction = { label: 'Nuevo', icon: 'add' };
@@ -154,9 +156,11 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
       { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — loading muestra ion-spinner y deshabilita' },
       { kind: 'prop', name: '.views', type: 'string[]', detail: "['table','cards']" },
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
+      { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila entera abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
       { kind: 'prop', name: '.primaryAction', type: '{label, icon?}', detail: 'Botón destacado de la topbar' },
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
       { kind: 'event', name: 'rowAction · menuAction', type: '{actionId, row?}', detail: 'Acción de fila · ítem del menú «⋮»' },
+      { kind: 'event', name: 'rowClick', type: '{row}', detail: 'Fila pulsada (solo con rowClickable)' },
       { kind: 'event', name: 'primaryAction · selectionChange', type: '· {keys}', detail: 'Acción primaria · cambio de selección' },
       { kind: 'event', name: 'pageChange · sortChange · searchChange · filterChange · viewChange', type: 'varios', detail: 'Eventos de interacción' },
       { kind: 'slot', name: 'toolbar', type: '—', detail: 'Controles extra en la topbar' },

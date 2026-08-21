@@ -23,7 +23,10 @@ import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevr
 //    actual y usa `total`/`page`/`pageSize`/`sort`/`sortDir` para pager y carets. Emite
 //    `pageChange`/`sortChange`/`searchChange`/`filterChange`; el módulo re-consulta al runtime.
 //
-// Filas NO clicables (navegación vía botones de fila): se pasan `actions` y se escucha `rowAction`.
+// Navegación: por defecto se hace con los BOTONES de fila (`actions` + evento `rowAction`). Desde
+// #67 el consumidor puede además marcar la fila entera como clicable (`rowClickable`, opt-in),
+// que emite `rowClick` con la fila y se activa también con Enter/Espacio — es lo primero que
+// intenta el usuario y la salida cuando la columna de acciones queda lejos.
 //
 // ─── ORDEN DE LA TOOLBAR (convención FIJA — así hay que usarla) ────────────────────────────────
 // Los controles se colocan SIEMPRE en el mismo orden, de izquierda a derecha. El consumidor solo
@@ -390,7 +393,14 @@ export class OkDataTable extends LitElement {
     .filters-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; }
 
     /* ── Vista lista en CSS GRID (no <table>): permite ancho por columna ──────────────────── */
+    /* #67 — La barra horizontal es PERMANENTE cuando hay desbordamiento: la overlay de macOS se
+       esconde a los pocos ms y deja la tabla sin ninguna pista de que sigue a la derecha. Al
+       declarar ::-webkit-scrollbar el navegador pinta la clásica, que ocupa sitio y se ve. */
     .scroll { overflow-x: auto; }
+    .scroll::-webkit-scrollbar { height: 10px; }
+    .scroll::-webkit-scrollbar-track { background: transparent; }
+    .scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color) 25%, transparent); border-radius: 6px; }
+    .scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--color) 40%, transparent); }
     .grid { min-width: max-content; font-size: 14px; }
     .grow { display: grid; align-items: center; gap: 0.5rem; padding: 0 1rem; }
     .ghead { position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);
@@ -399,6 +409,17 @@ export class OkDataTable extends LitElement {
     .gcell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .gcell.right { justify-content: flex-end; text-align: right; }
     .gcell.center { justify-content: center; text-align: center; }
+    /* #67 — COLUMNA DE ACCIONES FIJADA. Con seis columnas o más la rejilla desborda por diseño
+       (min-width: max-content) y el botón que abre el registro se iba fuera de la pantalla: a
+       1440px quedaba a 335px del borde, sin nada que lo delatara. Se queda pegada al borde
+       derecho, como en Zendesk/Freshdesk/Shopify. Con background:inherit la hereda de la fila (que
+       por eso es opaca), así conserva hover y selección sin que se lea nada por debajo. */
+    .gcell.actions-col { position: sticky; right: 0; z-index: 1; background: inherit;
+      margin-right: -1rem; padding-right: 1rem; }
+    /* La sombra solo aparece cuando de verdad hay algo escondido a la izquierda (clase x-overflow);
+       si la tabla cabe entera no se pinta nada. */
+    .scroll.x-overflow .gcell.actions-col { box-shadow: -10px 0 10px -10px color-mix(in srgb, var(--color) 45%, transparent); }
+    .ghead .gcell.actions-col { z-index: 3; }
     .gh { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
     .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
     @media (hover: hover) {
@@ -407,13 +428,17 @@ export class OkDataTable extends LitElement {
     /* Caret de orden (3 estados, icono Ionic): neutral atenuado / activo en color primario. */
     .caret { display: inline-flex; align-items: center; margin-left: 0.25rem; flex: 0 0 auto; font-size: 13px; opacity: 0.3; }
     .caret.on { opacity: 1; color: var(--primary); }
-    .grow-data { border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
+    .grow-data { background: var(--background); border-bottom: 1px solid var(--border-color-soft); padding-top: 0.6rem; padding-bottom: 0.6rem; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
     .grow-data:last-child { border-bottom: 0; }
     @media (hover: hover) {
-      .grow-data:hover { background: var(--row-hover); }
+      .grow-data:hover { background: linear-gradient(var(--row-hover), var(--row-hover)), var(--background); }
     }
     .grow-data:active { transform: scale(0.995); }
-    .grow-data.selected { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .grow-data.selected { background: linear-gradient(color-mix(in srgb, var(--primary) 10%, transparent), color-mix(in srgb, var(--primary) 10%, transparent)), var(--background); }
+    /* #67 — Fila clicable (opt-in row-clickable): es lo primero que intenta el usuario y lo que
+       hacen Odoo, Jira SM, Shopify o Square en sus listados. */
+    .grow-data.clickable { cursor: pointer; }
+    .grow-data.clickable:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
     .selcb { display: flex; align-items: center; justify-content: center; }
     .filters-grow { padding-top: 0.4rem; padding-bottom: 0.6rem; }
     .filters-grow input, .filters-grow select { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 0.3rem 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
@@ -558,6 +583,13 @@ export class OkDataTable extends LitElement {
   /** (NUEVO, alias) Opciones del selector de "filas por página" (equivalente a `pageSizeOptions`). */
   @property({ attribute: false }) pageSizes?: number[];
 
+  /** (NUEVO, #67) Fila clicable: pulsar cualquier parte de la fila emite `rowClick` con
+   *  `{ row }`. OPT-IN — por defecto la fila sigue muda, así ningún consumidor cambia de
+   *  comportamiento al actualizar. Es lo primero que intenta el usuario (Odoo, Jira SM, Shopify,
+   *  Square abren el registro así) y la salida cuando la columna de acciones queda lejos.
+   *  La fila queda además en el orden de tabulación y se activa con Enter/Espacio. */
+  @property({ type: Boolean, attribute: 'row-clickable' }) rowClickable = false;
+
   /** (NUEVO) Selección de filas con checkbox por fila + seleccionar-todo + barra contextual. */
   @property({ type: Boolean }) selectable = false;
   /** (NUEVO) Conjunto de keys seleccionadas (controlado por el padre o interno). */
@@ -602,6 +634,9 @@ export class OkDataTable extends LitElement {
   // tarjetas (la tabla con scroll lateral es hostil en móvil). El usuario puede volver a tabla con
   // el toggle; al cruzar de vuelta el breakpoint se restaura. null = aún no se ha evaluado.
   @state() private isMobile = false;
+  // #67 — ¿la vista lista desborda a lo ancho? Solo entonces se pinta la sombra de la columna
+  // fijada: si la tabla cabe entera no hay nada escondido que anunciar.
+  @state() private xOverflow = false;
   private mq?: MediaQueryList;
   // Breakpoint (móvil) en px. Coincide con el punto donde la rejilla de tarjetas es más usable que
   // una tabla con scroll horizontal. 640px = límite habitual móvil↔tablet.
@@ -621,6 +656,8 @@ export class OkDataTable extends LitElement {
     super.connectedCallback();
     if (typeof window !== 'undefined') {
       window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
+      // #67 — al cambiar el ancho, la tabla puede pasar a caber (o dejar de caber).
+      window.addEventListener('resize', this.onWindowResize);
     }
     // #274 — escucha el breakpoint móvil para forzar tarjetas en pantallas estrechas.
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
@@ -644,10 +681,49 @@ export class OkDataTable extends LitElement {
     }
   }
 
+  /** #67 — Recalcula si la vista lista desborda a lo ancho (`scrollWidth > clientWidth`).
+   *
+   * Se mide después de renderizar, que es cuando el navegador ya conoce los anchos, y solo se
+   * escribe el estado si CAMBIA: asignarlo siempre reprogramaría un render en bucle. */
+  private measureXOverflow(): void {
+    const scroll = this.renderRoot?.querySelector?.('.scroll');
+    const overflow = !!scroll && scroll.scrollWidth > scroll.clientWidth;
+    if (this.xOverflow !== overflow) this.xOverflow = overflow;
+  }
+
+  private readonly onWindowResize = (): void => this.measureXOverflow();
+
+  // #67 — Observador del hueco de la tabla. Medir solo al renderizar NO basta: dentro de
+  // `ion-content` el contenedor no tiene ancho hasta que Ionic hidrata, bastante después, y esa
+  // primera medida (0 vs 0, «cabe») se quedaba congelada — a 1440px la tabla desbordaba 351px sin
+  // pintar la pista. Es el mismo error de tiempo que #274 con la vista de tarjetas.
+  private xObserver?: ResizeObserver;
+
+  /** Engancha el observador al contenedor de scroll del render actual (cambia entre vistas). */
+  private observeXOverflow(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    const scroll = this.renderRoot?.querySelector?.('.scroll');
+    if (!scroll) return;
+    this.xObserver ??= new ResizeObserver(() => this.measureXOverflow());
+    this.xObserver.disconnect();
+    this.xObserver.observe(scroll);
+    // El ancho del CONTENIDO también manda (columnas nuevas, textos más largos).
+    const grid = scroll.querySelector('.grid');
+    if (grid) this.xObserver.observe(grid);
+  }
+
+  protected updated(): void {
+    this.observeXOverflow();
+    this.measureXOverflow();
+  }
+
   disconnectedCallback(): void {
     if (typeof window !== 'undefined') {
       window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+      window.removeEventListener('resize', this.onWindowResize);
     }
+    this.xObserver?.disconnect();
+    this.xObserver = undefined;
     if (this.mq) {
       const handler = (this as unknown as { _mqHandler?: (e: MediaQueryListEvent | Event) => void })._mqHandler;
       if (handler) this.mq.removeEventListener('change', handler);
@@ -1542,6 +1618,14 @@ export class OkDataTable extends LitElement {
     `;
   }
 
+  /** #67 — Enter/Espacio activan la fila clicable: si se llega con el tabulador, el ratón no puede
+   *  ser el único camino. Espacio además NO debe desplazar la página. */
+  private onRowKeydown(e: KeyboardEvent, row: Record<string, unknown>): void {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    e.preventDefault();
+    this.emit('rowClick', { row });
+  }
+
   private emptyState(): unknown {
     return html`
       <div class="empty">
@@ -1560,7 +1644,7 @@ export class OkDataTable extends LitElement {
     const alignCls = (a?: string): string => (a === 'right' ? 'right' : a === 'center' ? 'center' : 'left');
 
     return html`
-      <div class="scroll">
+      <div class=${`scroll${this.xOverflow ? ' x-overflow' : ''}`}>
         <div class="grid" role="table">
           <!-- Cabecera -->
           <div class="grow ghead" role="row" style=${styleMap(tpl)}>
@@ -1586,7 +1670,7 @@ export class OkDataTable extends LitElement {
                 </div>
               `;
             })}
-            ${this.actions.length ? html`<div class="gcell gh right" role="columnheader">${this.t.actions}</div>` : nothing}
+            ${this.actions.length ? html`<div class="gcell gh right actions-col" role="columnheader">${this.t.actions}</div>` : nothing}
           </div>
 
           <!-- Filas -->
@@ -1597,14 +1681,23 @@ export class OkDataTable extends LitElement {
               const key = this.keyOf(row);
               const selected = this.selectable && this.selection.has(key);
               return html`
-                <div class=${`grow grow-data${selected ? ' selected' : ''}`} role="row" style=${styleMap(tpl)}>
+                <div
+                  class=${`grow grow-data${selected ? ' selected' : ''}${this.rowClickable ? ' clickable' : ''}`}
+                  role="row"
+                  style=${styleMap(tpl)}
+                  tabindex=${this.rowClickable ? '0' : nothing}
+                  @click=${this.rowClickable ? () => this.emit('rowClick', { row }) : nothing}
+                  @keydown=${this.rowClickable ? (e: KeyboardEvent) => this.onRowKeydown(e, row) : nothing}
+                >
                   ${this.selectable
-                    ? html`<span class="selcb"><ion-checkbox .checked=${selected} aria-label=${this.t.selectRow} @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
+                    ? html`<span class="selcb" @click=${(e: Event) => e.stopPropagation()}><ion-checkbox .checked=${selected} aria-label=${this.t.selectRow} @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
                     : nothing}
                   ${cols.map(
                     (c) => html`<div class=${`gcell ${alignCls(c.align)}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
                   )}
-                  ${this.actions.length ? html`<div class="gcell right" role="cell">${this.actionButtons(row)}</div>` : nothing}
+                  ${this.actions.length
+                    ? html`<div class="gcell right actions-col" role="cell" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row)}</div>`
+                    : nothing}
                 </div>
               `;
             },
