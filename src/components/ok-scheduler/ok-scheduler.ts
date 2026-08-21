@@ -67,6 +67,9 @@ interface PointerDragState {
   startX: number;
   startY: number;
   active: boolean;
+  /** Touch only: the hold completed, so the block is now armed for dragging. */
+  held: boolean;
+  holdTimer: ReturnType<typeof setTimeout> | null;
   captureTarget: HTMLElement;
   laneWidth: number;
   id: string;
@@ -91,9 +94,16 @@ export interface OkSchedulerMoveDetail {
   revert: () => void;
 }
 
-// Mouse/pen are precise; a fingertip is not, so it gets more room before a tap becomes a drag.
+// El ratón es preciso: 5 px bastan para separar un click de un arrastre.
 const DRAG_THRESHOLD_PX = 5;
-const TOUCH_DRAG_THRESHOLD_PX = 10;
+// EL DEDO NO. En táctil el arrastre se ARMA manteniendo pulsado, no moviendo: el fallo mejor
+// documentado de las agendas del sector es el arrastre accidental en tablet —un scroll o un toque
+// mueve la cita de una clienta, nadie se entera y no queda rastro de la hora original—, y los
+// productos que se estrellaron con él pusieron delante una pulsación mantenida (Vagaro) o un asa
+// dedicada (Mindbody Booker). Ver la tabla de mercado en outfitkit#63.
+const TOUCH_HOLD_MS = 400;
+// Si el dedo se va antes de completar la pulsación, ese gesto era un scroll: se abandona.
+const TOUCH_HOLD_TOLERANCE_PX = 10;
 
 // ok-scheduler — agenda de recursos/turnos en TIMELINE, algo que Ionic NO ofrece. Por DATOS
 // (`resources` + `events`). AUTOCONTENIDO: CSS propio en el shadow, sin librerías de fechas (solo
@@ -335,10 +345,17 @@ export class OkScheduler extends LitElement {
     .event:active {
       transform: scale(var(--ok-press-scale, 0.97));
     }
-    /* Solo cuando el host activa movable: el bloque es una superficie de arrastre. */
+    /* Solo cuando el host activa movable: el bloque es una superficie de arrastre.
+       NO se pone touch-action:none — el dedo tiene que poder hacer scroll de la rejilla desde
+       encima del bloque. El arrastre táctil se arma con la pulsación mantenida y a partir de ahí
+       el scroll se corta a mano (preventDefault del touchmove). */
     .event.movable {
       cursor: grab;
-      touch-action: none; /* el gesto lo gestionamos nosotros (Pointer Events) */
+    }
+    /* Pulsación mantenida completada: el bloque "se levanta" y avisa de que ya está cogido. */
+    .event.held {
+      transform: scale(1.03);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .event.dragging {
       cursor: grabbing;
@@ -401,7 +418,8 @@ export class OkScheduler extends LitElement {
 
     @media (prefers-reduced-motion: reduce) {
       .slot:active,
-      .event:active {
+      .event:active,
+      .event.held {
         transform: none;
       }
     }
@@ -470,7 +488,9 @@ export class OkScheduler extends LitElement {
   @state() private pending: PendingMove | null = null;
   // Texto para el lector de pantalla tras un movimiento por teclado.
   @state() private announcement = '';
-  // Candidato de Pointer Events; `active` solo se enciende al pasar el umbral.
+  // Bloque con la pulsación mantenida ya completada (táctil), para pintarlo levantado.
+  @state() private heldId: string | null = null;
+  // Candidato de Pointer Events; `active` solo se enciende al pasar el umbral (o al armarse).
   private pointerDrag: PointerDragState | null = null;
   // El navegador emite un click después de pointerup: no debe abrir el bloque recién movido.
   private suppressClick = false;
@@ -654,17 +674,36 @@ export class OkScheduler extends LitElement {
     const lane = captureTarget.closest<HTMLElement>('.lane');
     const laneWidth = lane?.getBoundingClientRect().width ?? 0;
     if (laneWidth <= 0) return; // sin layout no hay aritmética posible
-    this.pointerDrag = {
+    const state: PointerDragState = {
       pointerId: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
       active: false,
+      // Con ratón o lápiz el gesto ya está armado: el umbral en píxeles basta.
+      held: e.pointerType !== 'touch',
+      holdTimer: null,
       captureTarget,
       laneWidth,
       id: ev.id,
       from: this.placement(ev),
     };
+    if (!state.held) {
+      state.holdTimer = setTimeout(() => {
+        state.held = true;
+        state.holdTimer = null;
+        this.heldId = state.id;
+      }, TOUCH_HOLD_MS);
+    }
+    this.pointerDrag = state;
     this.capturePointer(captureTarget, e.pointerId);
+  }
+
+  // Suelta el candidato y apaga su temporizador (una sola puerta de salida del gesto).
+  private endGesture(state: PointerDragState): void {
+    if (state.holdTimer) clearTimeout(state.holdTimer);
+    this.releasePointer(state);
+    this.pointerDrag = null;
+    this.heldId = null;
   }
 
   /** Elemento real bajo el puntero capturado, dentro del shadow root. */
@@ -689,15 +728,33 @@ export class OkScheduler extends LitElement {
   private onPointerMove(e: PointerEvent): void {
     const state = this.pointerDrag;
     if (!state || state.pointerId !== e.pointerId) return;
+    const travelled = Math.hypot(e.clientX - state.startX, e.clientY - state.startY);
 
+    if (!state.held) {
+      // El dedo se movió antes de completar la pulsación: era un scroll, no un arrastre.
+      if (travelled >= TOUCH_HOLD_TOLERANCE_PX) this.endGesture(state);
+      return;
+    }
+    // Ya armado: con ratón hace falta el umbral; con el dedo, la pulsación YA fue la intención.
     if (!state.active) {
-      const limit = e.pointerType === 'touch' ? TOUCH_DRAG_THRESHOLD_PX : DRAG_THRESHOLD_PX;
-      if (Math.hypot(e.clientX - state.startX, e.clientY - state.startY) < limit) return;
+      if (e.pointerType !== 'touch' && travelled < DRAG_THRESHOLD_PX) return;
       state.active = true;
     }
 
     e.preventDefault();
     this.drag = { id: state.id, from: state.from, ...this.dropTarget(e, state) };
+  }
+
+  // El scroll del navegador se corta A MANO en cuanto el gesto está armado: el bloque NO lleva
+  // `touch-action:none`, para que un dedo que solo quiere desplazar la rejilla pueda hacerlo
+  // aunque empiece encima de una cita. Listener no pasivo (si no, preventDefault se ignora).
+  private readonly blockScrollWhileDragging = (e: TouchEvent): void => {
+    if (this.pointerDrag?.held) e.preventDefault();
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('touchmove', this.blockScrollWhileDragging, { passive: false });
   }
 
   private suppressNextEventClick(): void {
@@ -712,8 +769,7 @@ export class OkScheduler extends LitElement {
   private onPointerUp(e: PointerEvent): void {
     const state = this.pointerDrag;
     if (!state || state.pointerId !== e.pointerId) return;
-    this.releasePointer(state);
-    this.pointerDrag = null;
+    this.endGesture(state);
     if (!state.active) return;
 
     e.preventDefault();
@@ -727,8 +783,7 @@ export class OkScheduler extends LitElement {
   private onPointerCancel(e: PointerEvent): void {
     const state = this.pointerDrag;
     if (!state || state.pointerId !== e.pointerId) return;
-    this.releasePointer(state);
-    this.pointerDrag = null;
+    this.endGesture(state);
     this.drag = null;
   }
 
@@ -847,9 +902,12 @@ export class OkScheduler extends LitElement {
         const left = ((s - startMin) / total) * 100;
         const width = ((e - s) / total) * 100;
         const dragging = this.drag?.id === ev.id;
+        const held = this.heldId === ev.id;
         const time = `${this.fmtTime(at.startMin)} – ${this.fmtTime(at.endMin)}`;
         return html`<div
-          class=${`event${this.movable ? ' movable' : ''}${dragging ? ' dragging' : ''}`}
+          class=${`event${this.movable ? ' movable' : ''}${held ? ' held' : ''}${
+            dragging ? ' dragging' : ''
+          }`}
           data-event-id=${ev.id}
           style=${`left:${left}%;width:${width}%;background:${ev.color || 'var(--primary-color)'}`}
           title=${ev.title}
@@ -934,8 +992,8 @@ export class OkScheduler extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (this.pointerDrag) this.releasePointer(this.pointerDrag);
-    this.pointerDrag = null;
+    this.removeEventListener('touchmove', this.blockScrollWhileDragging);
+    if (this.pointerDrag) this.endGesture(this.pointerDrag);
     if (this.suppressClickTimer) clearTimeout(this.suppressClickTimer);
     this.suppressClickTimer = null;
   }

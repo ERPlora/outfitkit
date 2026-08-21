@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `icons.js` pulls in the `~icons/…?raw` chain that the test transform denies; mock it (the baked
 // navigation chevrons are irrelevant to the move contract fixed here).
@@ -113,6 +113,10 @@ function drag(element: SchedulerElement, id: string, dx: number, overLane: HTMLE
 
 beforeEach(() => {
   document.body.innerHTML = '';
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('ok-scheduler · move an event by dragging (Pointer Events)', () => {
@@ -232,39 +236,96 @@ describe('ok-scheduler · move an event by dragging (Pointer Events)', () => {
   });
 });
 
-describe('ok-scheduler · the finger gets more room than the mouse', () => {
-  function touchDrag(element: SchedulerElement, dx: number, overLane: HTMLElement): void {
+describe('ok-scheduler · on touch the drag needs a long press', () => {
+  /**
+   * The single most documented failure of drag & drop in appointment books is the accidental
+   * drag on a tablet: a scroll or a tap on a block moves a real client's appointment, nobody
+   * notices, and there is no record of the original time. The products that hit that wall put a
+   * hold in front of the gesture (Vagaro) or moved it onto a dedicated handle (Mindbody Booker).
+   */
+  function down(element: SchedulerElement, overLane: HTMLElement): HTMLElement {
     hitTest(element, overLane);
-    const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
     pointer(block(element, 'e1'), 'pointerdown', 100, 'touch');
-    pointer(grid, 'pointermove', 100 + dx, 'touch');
-    pointer(grid, 'pointerup', 100 + dx, 'touch');
+    return element.shadowRoot!.querySelector('.grid') as HTMLElement;
   }
 
-  it('reads a small wobble of the finger as a tap, not as a move', async () => {
+  it('does not move anything when the finger swipes straight away', async () => {
+    vi.useFakeTimers();
     const element = await mount();
     const moved = vi.fn();
-    const clicked = vi.fn();
     element.addEventListener('ok-event-move', moved);
-    element.addEventListener('ok-event-click', (e) => clicked((e as CustomEvent).detail));
 
-    // 8 px would already be a drag for a mouse; a fingertip is not that precise.
-    touchDrag(element, 8, lane(element, 'r2'));
+    const grid = down(element, lane(element, 'r2'));
+    pointer(grid, 'pointermove', 200, 'touch');
+    pointer(grid, 'pointerup', 200, 'touch');
+
+    expect(moved).not.toHaveBeenCalled();
+  });
+
+  it('moves the appointment after holding the block still', async () => {
+    vi.useFakeTimers();
+    const element = await mount();
+    const moved = vi.fn();
+    element.addEventListener('ok-event-move', (e) => moved((e as CustomEvent).detail));
+
+    const grid = down(element, lane(element, 'r1'));
+    vi.advanceTimersByTime(500);
+    pointer(grid, 'pointermove', 160, 'touch');
+    pointer(grid, 'pointerup', 160, 'touch');
+
+    expect(moved).toHaveBeenCalledOnce();
+    expect(moved.mock.calls[0][0]).toMatchObject({ resourceId: 'r1', start: '10:00' });
+  });
+
+  it('gives up the long press if the finger travels first — that gesture was a scroll', async () => {
+    vi.useFakeTimers();
+    const element = await mount();
+    const moved = vi.fn();
+    element.addEventListener('ok-event-move', moved);
+
+    const grid = down(element, lane(element, 'r2'));
+    pointer(grid, 'pointermove', 130, 'touch'); // the finger left before the hold completed
+    vi.advanceTimersByTime(500);
+    pointer(grid, 'pointermove', 200, 'touch');
+    pointer(grid, 'pointerup', 200, 'touch');
+
+    expect(moved).not.toHaveBeenCalled();
+  });
+
+  it('still opens the block on a plain tap', async () => {
+    vi.useFakeTimers();
+    const element = await mount();
+    const clicked = vi.fn();
+    const moved = vi.fn();
+    element.addEventListener('ok-event-click', (e) => clicked((e as CustomEvent).detail));
+    element.addEventListener('ok-event-move', moved);
+
+    const grid = down(element, lane(element, 'r1'));
+    pointer(grid, 'pointerup', 100, 'touch');
     block(element, 'e1').click();
 
     expect(moved).not.toHaveBeenCalled();
     expect(clicked).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }));
   });
 
-  it('moves the appointment once the finger clearly travelled', async () => {
+  it('marks the block as held so the tablet shows the gesture armed', async () => {
+    vi.useFakeTimers();
     const element = await mount();
-    const moved = vi.fn();
-    element.addEventListener('ok-event-move', (e) => moved((e as CustomEvent).detail));
-
-    touchDrag(element, 60, lane(element, 'r2'));
+    down(element, lane(element, 'r1'));
+    vi.advanceTimersByTime(500);
     await element.updateComplete;
 
-    expect(moved.mock.calls[0][0]).toMatchObject({ resourceId: 'r2', start: '10:00' });
+    expect(block(element, 'e1').classList.contains('held')).toBe(true);
+  });
+
+  it('does not make the mouse wait: it is precise enough already', async () => {
+    vi.useFakeTimers();
+    const element = await mount();
+    const moved = vi.fn();
+    element.addEventListener('ok-event-move', moved);
+
+    drag(element, 'e1', 60, lane(element, 'r1')); // mouse, no timers advanced
+    expect(moved).toHaveBeenCalledOnce();
   });
 });
 
