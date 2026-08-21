@@ -653,9 +653,9 @@ chat.addEventListener('ok-send', (e) => {
     id: 'ok-scheduler',
     name: 'ok-scheduler',
     category: 'flujo',
-    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN a otra hora u otro recurso (Pointer Events: con ratón directo; con el dedo hay que MANTENER PULSADO, para que un scroll no mueva una cita sin querer) — el host decide si el movimiento vale. Ionic no trae scheduler.',
+    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN a otra hora u otro recurso (Pointer Events: con ratón directo; con el dedo hay que MANTENER PULSADO, para que un scroll no mueva una cita sin querer) y que se ALARGAN o ACORTAN por su borde de fin (`resizable`, asa dedicada — el asa gana sobre el cuerpo, y ahí no hace falta pulsación mantenida). El host decide si el cambio vale, en los dos gestos. Ionic no trae scheduler.',
     importPath: "@erplora/outfitkit/ok-scheduler",
-    example: '<ok-scheduler id="sch" movable start-hour="8" end-hour="20" slot-minutes="60" snap-minutes="15" style="display:block;height:360px;width:100%"></ok-scheduler>',
+    example: '<ok-scheduler id="sch" movable resizable start-hour="8" end-hour="20" slot-minutes="60" snap-minutes="15" style="display:block;height:360px;width:100%"></ok-scheduler>',
     setup: (root) => {
       const sch = root.querySelector('#sch');
       const today = new Date();
@@ -673,15 +673,22 @@ chat.addEventListener('ok-send', (e) => {
       ];
       // El HOST manda: aquí hace de servidor. Rechaza el solape (revert) y acepta el resto
       // reescribiendo `events`, que es lo que el módulo hará con el refresco de su query.
+      const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+      const clashes = (id, resourceId, start, end) => sch.events.some(
+        (e) => e.id !== id && e.resourceId === resourceId &&
+          mins(e.start) < mins(end) && mins(start) < mins(e.end),
+      );
       sch.addEventListener('ok-event-move', (ev) => {
         const { id, resourceId, start, end, revert } = ev.detail;
-        const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-        const clash = sch.events.some(
-          (e) => e.id !== id && e.resourceId === resourceId &&
-            mins(e.start) < mins(end) && mins(start) < mins(e.end),
-        );
-        if (clash) { revert(); return; }
+        if (clashes(id, resourceId, start, end)) { revert(); return; }
         sch.events = sch.events.map((e) => (e.id === id ? { ...e, resourceId, start, end } : e));
+      });
+      // Redimensionar es OTRO evento a propósito: cambia la DURACIÓN, no la hora, y el módulo
+      // manda otro command. Mismo contrato: el host decide y `revert()` deshace.
+      sch.addEventListener('ok-event-resize', (ev) => {
+        const { id, start, end, event, revert } = ev.detail;
+        if (clashes(id, event.resourceId, start, end)) { revert(); return; }
+        sch.events = sch.events.map((e) => (e.id === id ? { ...e, start, end } : e));
       });
     },
     code: `sch.resources = [{ id: 'r1', label: 'María López', avatar? }];
@@ -697,7 +704,17 @@ sch.addEventListener('ok-event-move', async (e) => {
   const { id, resourceId, start, end, revert } = e.detail;
   try { await command('appointments.appointments.reschedule', { … }); await refresh(); }
   catch (err) { revert(); toast(err); }            // el servidor rechazó: vuelve a su sitio
-});`,
+});
+
+// Alargar/acortar por el borde de FIN (resizable): asa dedicada, que gana sobre el arrastre.
+// Es OTRO evento a propósito — cambia la DURACIÓN, no la hora, y el command suele ser otro.
+sch.resizable = true;
+sch.addEventListener('ok-event-resize', async (e) => {
+  const { id, start, end, from, event, revert } = e.detail;   // start NO cambia
+  try { await command('appointments.appointments.reschedule', { id, duration_minutes: … }); }
+  catch (err) { revert(); toast(err); }
+});
+// Teclado: ←/→ mueven, Shift+←/→ alargan y acortan (con resizable activo).`,
     api: [
       { kind: 'prop', name: '.resources', type: 'OkSchedulerResource[]', detail: '{id, label, avatar?}' },
       { kind: 'prop', name: '.events', type: 'OkSchedulerEvent[]', detail: "{id, resourceId, start:'HH:MM'|ISO, end, title, color?}" },
