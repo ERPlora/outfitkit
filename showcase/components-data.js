@@ -653,7 +653,7 @@ chat.addEventListener('ok-send', (e) => {
     id: 'ok-scheduler',
     name: 'ok-scheduler',
     category: 'flujo',
-    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN (Pointer Events: ratón y dedo) a otra hora u otro recurso — el host decide si el movimiento vale. Ionic no trae scheduler.',
+    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN a otra hora u otro recurso (Pointer Events: con ratón directo; con el dedo hay que MANTENER PULSADO, para que un scroll no mueva una cita sin querer) — el host decide si el movimiento vale. Ionic no trae scheduler.',
     importPath: "@erplora/outfitkit/ok-scheduler",
     example: '<ok-scheduler id="sch" movable start-hour="8" end-hour="20" slot-minutes="60" snap-minutes="15" style="display:block;height:360px;width:100%"></ok-scheduler>',
     setup: (root) => {
