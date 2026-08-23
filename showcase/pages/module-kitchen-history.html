@@ -30,9 +30,9 @@
       //
       // No hay seed de actividad: estas filas de preview respetan exactamente logs_list.sql.
       const LOG_FIXTURE = [
-        { "id": "log-1", "order_id": "order-1042", "action": "received", "station_id": "st1", "notes": "Mesa 4 · ronda 1", "created_at": "2026-07-18T20:12:00Z" },
-        { "id": "log-2", "order_id": "order-1041", "action": "bumped", "station_id": "st1", "notes": "Lista para servir", "created_at": "2026-07-18T20:09:00Z" },
-        { "id": "log-3", "order_id": "order-1040", "action": "served", "station_id": "st2", "notes": "Barra", "created_at": "2026-07-18T20:04:00Z" }
+        { "id": "log-1", "order_id": "order-1042", "order_number": "1042", "action": "received", "station_id": "st1", "notes": "Mesa 4 · ronda 1", "created_at": "2026-07-18T20:12:00Z" },
+        { "id": "log-2", "order_id": "order-1041", "order_number": "1041", "action": "bumped", "station_id": "st1", "notes": "Lista para servir", "created_at": "2026-07-18T20:09:00Z" },
+        { "id": "log-3", "order_id": "order-1040", "order_number": "1040", "action": "served", "station_id": "st2", "notes": "Barra", "created_at": "2026-07-18T20:04:00Z" }
       ];
 
       let logs = LOG_FIXTURE.map((row) => ({ ...row }));
@@ -81,13 +81,13 @@
               ],
               render: (row) => badge(ACTION_LABELS[row.action] || row.action, row.action === 'cancelled' ? 'danger' : row.action === 'served' ? 'success' : 'primary'),
             },
-            { key: 'order_id', header: 'Comanda', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'order_number', header: 'Comanda', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.order_number || row.order_id || '—') },
             { key: 'notes', header: 'Notas', sortable: true, filterable: true, filterType: 'text' },
             { key: 'created_at', header: 'Cuándo', sortable: true, filterable: true, filterType: 'daterange', format: (row) => new Date(row.created_at).toLocaleString('es-ES') },
           ];
           table.serverSide = true;
           table.views = true;
-          table.cardTitle = (row) => `#${String(row.order_id || '—')}`;
+          table.cardTitle = (row) => `#${String(row.order_number || row.order_id || '—')}`;
           table.cardIcon = () => 'restaurant-outline';
           table.searchable = true;
           table.searchPlaceholder = 'Buscar acción, comanda o notas…';
@@ -101,7 +101,7 @@
             const term = state.search.trim().toLocaleLowerCase('es');
             const filtered = logs
               .filter((row) => {
-                if (term && !`${row.action} ${row.order_id} ${row.notes}`.toLocaleLowerCase('es').includes(term)) return false;
+                if (term && !`${row.action} ${row.order_number} ${row.order_id} ${row.notes}`.toLocaleLowerCase('es').includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
                   if (value == null || value === '') return true;
                   if (typeof value === 'object') return true;

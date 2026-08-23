@@ -29,12 +29,12 @@
 
       // Estación y recuento canónicos de erp-kitchen-orders-stations.test.ts.
       const STATION_FIXTURE = [
-        { "id": "st1", "name": "Plancha", "color": "#F97316", "icon": "flame", "printer_name": "COCINA-1", "is_active": 1, "pending_count": 3 }
+        { "id": "st1", "name": "Bar", "name_es": "Barra", "color": "#F97316", "icon": "flame", "printer_name": "COCINA-1", "is_active": 1, "pending_count": 3 }
       ];
 
       let stations = STATION_FIXTURE.map((row) => ({ ...row }));
       let editingId = '';
-      const state = { page: 0, pageSize: 50, sort: 'name', dir: 'asc', search: '', filters: {} };
+      const state = { page: 0, pageSize: 50, sort: 'name_es', dir: 'asc', search: '', filters: {} };
 
       function recordQuery(name, params = {}) {
         document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
@@ -105,7 +105,7 @@
           const toast = doc.getElementById('kitchen-stations-toast');
 
           table.columns = [
-            { key: 'name', header: 'Estación', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'name_es', header: 'Estación', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.name_es || row.name || '—') },
             { key: 'printer_name', header: 'Impresora', sortable: true, filterable: true, filterType: 'text', format: (row) => row.printer_name || '—' },
             { key: 'pending_count', header: 'En curso', align: 'right', format: (row) => String(row.pending_count || 0) },
             {
@@ -123,13 +123,13 @@
           table.fill = true;
           table.addable = true;
           table.views = true;
-          table.cardTitle = (row) => String(row.name || '—');
+          table.cardTitle = (row) => String(row.name_es || row.name || '—');
           table.cardIcon = () => 'flame-outline';
           table.searchable = true;
           table.searchPlaceholder = 'Buscar estación…';
           table.emptyMessage = 'Sin estaciones.';
           table.pageSize = 50;
-          table.sort = 'name';
+          table.sort = 'name_es';
           table.sortDir = 'asc';
 
           function refreshRoutingOptions() {
@@ -144,7 +144,7 @@
             const term = state.search.trim().toLocaleLowerCase('es');
             const filtered = stations
               .filter((row) => {
-                if (term && !`${row.name} ${row.printer_name}`.toLocaleLowerCase('es').includes(term)) return false;
+                if (term && !`${row.name_es} ${row.name} ${row.printer_name}`.toLocaleLowerCase('es').includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
                   if (value == null || value === '') return true;
                   if (key === 'is_active') return String(row[key]) === String(value);
