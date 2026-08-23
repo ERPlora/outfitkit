@@ -118,13 +118,19 @@ describe('showcase kitchen — inventario canónico tras la fusión', () => {
 describe('showcase module-kitchen-history — la auditoría real de la línea', () => {
   it('reproduce las cuatro columnas de auditoría y sus filtros cerrados', () => {
     const page = pageSource('history');
-    for (const key of ['action', 'order_id', 'notes', 'created_at']) {
+    // kitchen#44: la comanda se identifica por su NÚMERO, no por el UUID — nadie casa un UUID a
+    // ojo con el tique que tiene delante. El `order_id` sigue siendo el último recurso del format.
+    for (const key of ['action', 'order_number', 'notes', 'created_at']) {
       expect(components.history).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
     // El bump por línea (kitchen#4) también se audita: dos acciones más que antes.
+    // kitchen#44 dejó UN solo mapa acción→clave de etiqueta (`ACTION_LABEL_KEY`) del que salen a la
+    // vez el desplegable del filtro y la celda, así que en el módulo la acción ya no se escribe como
+    // `value: 'x'` sino como entrada del mapa. Se busca la entrada, no la forma vieja: exigir
+    // `value:` obligaría a duplicar la lista, que es justo lo que esa issue quitó.
     for (const action of ['received', 'started', 'bumped', 'item_bumped', 'item_recalled', 'served', 'recalled', 'cancelled']) {
-      expect(components.history).toContain(`value: '${action}'`);
+      expect(components.history).toContain(`${action}: 'ui.action`);
       expect(page).toContain(`value: '${action}'`);
     }
     expect(page).toContain("sort = 'created_at'");
@@ -205,11 +211,15 @@ describe('showcase module-kitchen-active — comandas reales', () => {
 describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
   it('parte de la estación canónica de la prueba oficial', () => {
     const rows = jsonFixture(pageSource('stations'), 'STATION_FIXTURE');
-    expect(stationComponentTest).toContain("name: 'Plancha'");
+    // kitchen#45: una estación es un dato maestro TRADUCIDO — la fila trae su `name` base y su
+    // `name_es`, y la vista pinta el del idioma del hub (ADR-0378). La estación canónica de la
+    // prueba oficial del módulo es «Bar»/«Barra», no la «Plancha» de antes.
+    expect(stationComponentTest).toContain("name: 'Bar', name_es: 'Barra'");
     expect(rows).toEqual([
       {
         id: 'st1',
-        name: 'Plancha',
+        name: 'Bar',
+        name_es: 'Barra',
         color: '#F97316',
         icon: 'flame',
         printer_name: 'COCINA-1',
@@ -221,7 +231,7 @@ describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
 
   it('mantiene la tabla rellena, el alta en su panel y los filtros reales', () => {
     const page = pageSource('stations');
-    for (const key of ['name', 'printer_name', 'pending_count', 'is_active']) {
+    for (const key of ['name_es', 'printer_name', 'pending_count', 'is_active']) {
       expect(components.stations).toContain(`key: '${key}'`);
       expect(page).toContain(`key: '${key}'`);
     }
@@ -231,7 +241,7 @@ describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
     expect(page).toContain('<form id="kitchen-station-create" slot="create"');
     expect(page).toContain("options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }]");
     expect(page).toContain("cardIcon = () => 'flame-outline'");
-    expect(page).toContain("sort = 'name'");
+    expect(page).toContain("sort = 'name_es'");
     expect(page).toContain("sortDir = 'asc'");
   });
 
