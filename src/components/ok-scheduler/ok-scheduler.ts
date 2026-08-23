@@ -130,6 +130,15 @@ const TOUCH_HOLD_MS = 400;
 // Si el dedo se va antes de completar la pulsación, ese gesto era un scroll: se abandona.
 const TOUCH_HOLD_TOLERANCE_PX = 10;
 
+// Aire entre dos bloques apilados: sin él, dos colores contiguos parecen un solo bloque partido.
+const STACK_GAP_PX = 2;
+
+/** Sub-carril que ocupa un bloque dentro de su clúster de solapes, y en cuántos se partió. */
+interface StackSlot {
+  index: number;
+  count: number;
+}
+
 // ok-scheduler — agenda de recursos/turnos en TIMELINE, algo que Ionic NO ofrece. Por DATOS
 // (`resources` + `events`). AUTOCONTENIDO: CSS propio en el shadow, sin librerías de fechas (solo
 // `Date` nativo → CSP-safe). Usa `ion-icon`/`ion-button` internos (los registra el host).
@@ -193,6 +202,12 @@ export class OkScheduler extends LitElement {
       --resource-width: var(--ok-scheduler-resource-width, 11rem);
       --hour-width: var(--ok-scheduler-hour-width, 6rem);
       --row-height: var(--ok-scheduler-row-height, 3.5rem);
+      /* Alto mínimo de un sub-carril de solape. NO hay tope de citas simultáneas: se reparte
+         mientras cada bloque quepa en una línea legible y, por debajo de eso, la FILA CRECE. Es el
+         minPackSize de Bryntum y el default de Mobiscroll en timeline horizontal — el parámetro
+         correcto es el alto, no un número: una cita de 15 min partida en tres es ilegible aunque
+         «tres» suene poco. */
+      --min-stack-height: var(--ok-scheduler-min-stack-height, 1.6rem);
       --font: var(--ok-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 
       /* Por defecto ocupa el ancho del contenedor y es responsive. */
@@ -333,7 +348,11 @@ export class OkScheduler extends LitElement {
     .lane {
       position: relative;
       flex: 1 1 auto;
-      min-height: var(--row-height);
+      /* Con un solo ocupante la fila es la de siempre. En cuanto los sub-carriles no caben con su
+         alto mínimo, la fila CRECE en vez de adelgazar los bloques: aquí el timeline es horizontal,
+         así que el alto de la fila es un recurso ABIERTO —crecer una fila no le quita nada a las
+         demás— al revés que el ancho de columna de una agenda de día vertical. */
+      min-height: max(var(--row-height), calc(var(--stacks, 1) * var(--min-stack-height)));
       background: var(--background);
     }
     /* Celdas-slot clicables de fondo (para crear turnos). */
@@ -698,6 +717,79 @@ export class OkScheduler extends LitElement {
     };
   }
 
+  // ── Reparto de los solapes (side-by-side por clúster) ─────────
+  //
+  // Dos citas a la misma hora en el mismo carril NO pueden pintarse una encima de otra: en pantalla
+  // solo existiría la de arriba, justo cuando hay que ver que hay dos personas citadas
+  // (outfitkit#71). El reparto es el algoritmo clásico de las agendas —el de Google Calendar,
+  // Outlook, Fresha, Vagaro, Square—: se agrupan las citas por solape TRANSITIVO (un clúster) y el
+  // clúster se parte en tantos sub-carriles como haga falta.
+  //
+  // El detalle que hace que la agenda no se adelgace entera: cada bloque cae en el PRIMER sub-carril
+  // ya libre, así que dos citas que no se pisan entre sí lo reutilizan. Una cadena A→B→C donde A y C
+  // no se tocan ocupa DOS sub-carriles, no tres. Y un clúster no afecta a otro: la mañana llena no
+  // parte la tarde vacía.
+  //
+  // Aquí el timeline es HORIZONTAL (el eje X es el tiempo), así que lo que se reparte es el ALTO de
+  // la fila, no el ancho como en las agendas de día vertical.
+  private packLane(items: Array<{ id: string; at: Placement }>): Map<string, StackSlot> {
+    const slots = new Map<string, StackSlot>();
+    // Inicio ascendente; a igualdad, el fin MÁS TEMPRANO primero; y el id decide el último
+    // desempate para que el reparto sea ESTABLE (si no, dos citas idénticas bailarían de sub-carril
+    // en cada render). Es el orden en el que coinciden Bryntum, Google Calendar y Mobiscroll, y el
+    // que el reparto greedy necesita para ser correcto.
+    const sorted = [...items].sort(
+      (a, b) =>
+        a.at.startMin - b.at.startMin ||
+        a.at.endMin - b.at.endMin ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    );
+
+    let cluster: string[] = [];
+    // Último minuto ya pintado en cada sub-carril.
+    let laneEnds: number[] = [];
+    let clusterEnd = -Infinity;
+
+    // Un clúster se cierra cuando aparece un hueco: solo entonces se sabe en cuántos se partió, y
+    // cada uno de sus bloques comparte ese reparto (si no, dos citas del mismo solape tendrían
+    // altos distintos y no cuadrarían).
+    const closeCluster = (): void => {
+      const count = Math.max(1, laneEnds.length);
+      for (const id of cluster) slots.get(id)!.count = count;
+      cluster = [];
+      laneEnds = [];
+      clusterEnd = -Infinity;
+    };
+
+    for (const item of sorted) {
+      // Empieza cuando lo anterior ya terminó: hueco → el clúster de antes se cierra.
+      if (item.at.startMin >= clusterEnd) closeCluster();
+      // El primer sub-carril cuyo último bloque ya acabó; si están ocupados los que hay, se abre otro.
+      let index = laneEnds.findIndex((end) => end <= item.at.startMin);
+      if (index === -1) {
+        index = laneEnds.length;
+        laneEnds.push(item.at.endMin);
+      } else {
+        laneEnds[index] = item.at.endMin;
+      }
+      slots.set(item.id, { index, count: 1 });
+      cluster.push(item.id);
+      clusterEnd = Math.max(clusterEnd, item.at.endMin);
+    }
+    closeCluster();
+    return slots;
+  }
+
+  // Geometría vertical de un bloque según su sub-carril. Con un solo ocupante no se toca nada: el
+  // bloque sigue ocupando el alto entero del carril, exactamente como antes.
+  private stackStyle(slot: StackSlot): string {
+    if (slot.count <= 1) return '';
+    return (
+      `top:calc(0.25rem + (100% - 0.5rem) * ${slot.index} / ${slot.count});` +
+      `height:calc((100% - 0.5rem) / ${slot.count} - ${STACK_GAP_PX}px);bottom:auto;`
+    );
+  }
+
   // Imanta el inicio a la rejilla y garantiza que el bloque entero cabe en la franja visible.
   private snapStart(startMin: number, durationMin: number): number {
     const step = this.snapMin > 0 ? this.snapMin : 1;
@@ -1034,12 +1126,12 @@ export class OkScheduler extends LitElement {
     const count = this.slotCount;
 
     // Celdas-slot de fondo (clicables para crear turnos).
-    const slots = [];
+    const cells = [];
     for (let i = 0; i < count; i++) {
       const slotStart = startMin + i * step;
       const left = ((slotStart - startMin) / total) * 100;
       const width = (step / total) * 100;
-      slots.push(
+      cells.push(
         html`<div
           class="slot"
           style=${`left:${left}%;width:${width}%`}
@@ -1064,10 +1156,18 @@ export class OkScheduler extends LitElement {
 
     // Bloques de evento del recurso, recortados al rango visible. El carril de un bloque es el de
     // su posición ACTUAL (la del gesto o la del movimiento sin confirmar), no el de la prop.
-    const blocks = this.events
-      .filter((ev) => this.placement(ev).resourceId === resource.id)
+    const mine = this.events.filter((ev) => this.placement(ev).resourceId === resource.id);
+    // El reparto se calcula sobre la posición ACTUAL, así que al arrastrar una cita encima de otra
+    // el carril se vuelve a partir en vivo, y al soltarla fuera vuelve a juntarse.
+    const slots = this.packLane(mine.map((ev) => ({ id: ev.id, at: this.placement(ev) })));
+    // Cuántos sub-carriles llega a tener este recurso en su peor momento del día: es lo que decide
+    // cuánto CRECE la fila (ver `--min-stack-height`).
+    const stacks = Math.max(1, ...[...slots.values()].map((s) => s.count));
+
+    const blocks = mine
       .map((ev) => {
         const at = this.placement(ev);
+        const slot = slots.get(ev.id) ?? { index: 0, count: 1 };
         const s = Math.max(at.startMin, startMin);
         const e = Math.min(at.endMin, startMin + total);
         if (e <= s) return ''; // fuera de rango o duración nula
@@ -1085,7 +1185,11 @@ export class OkScheduler extends LitElement {
             dragging ? ' dragging' : ''
           }${resizing ? ' resizing' : ''}`}
           data-event-id=${ev.id}
-          style=${`left:${left}%;width:${width}%;background:${ev.color || 'var(--primary-color)'}`}
+          data-lane-index=${slot.index}
+          data-lane-count=${slot.count}
+          style=${`left:${left}%;width:${width}%;background:${
+            ev.color || 'var(--primary-color)'
+          };${this.stackStyle(slot)}`}
           title=${ev.title}
           role="button"
           tabindex="0"
@@ -1108,7 +1212,14 @@ export class OkScheduler extends LitElement {
         </div>`;
       });
 
-    return html`<div class="lane" data-resource-id=${resource.id}>${slots}${ghost}${blocks}</div>`;
+    return html`<div
+      class="lane"
+      data-resource-id=${resource.id}
+      data-stacks=${stacks}
+      style=${`--stacks:${stacks}`}
+    >
+      ${cells}${ghost}${blocks}
+    </div>`;
   }
 
   // Fila completa de un recurso: label sticky + lane.

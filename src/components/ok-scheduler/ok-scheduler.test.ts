@@ -673,3 +673,239 @@ describe('ok-scheduler · resizing with the keyboard', () => {
     expect(moved.mock.calls[0][0]).toMatchObject({ start: '10:00', end: '11:00' });
   });
 });
+
+// ── Solape: side-by-side por clúster (outfitkit#71) ─────────────────────────────────────────────
+//
+// Dos citas a la misma hora en el MISMO carril se pintaban una ENCIMA de otra: los dos bloques
+// llevaban `top:0.25rem; bottom:0.25rem`, o sea el alto entero de la fila, así que en pantalla solo
+// existía la de arriba. En una agenda ese es justo el momento en que la recepcionista necesita ver
+// que hay DOS personas citadas (appointments#77).
+//
+// El reparto es el algoritmo clásico de las agendas: se agrupan por solape transitivo (clúster) y
+// el clúster se parte en N sub-carriles; cada bloque cae en el PRIMER sub-carril libre, así que dos
+// citas que no se pisan entre sí reutilizan el mismo. Aquí el timeline es HORIZONTAL, así que el
+// reparto es del ALTO de la fila, no del ancho.
+//
+// El contrato se fija con `data-lane-index` / `data-lane-count` porque happy-dom no calcula layout:
+// la aritmética se prueba aquí y los píxeles se comprueban en navegador real (como en #64).
+
+/** Monta un scheduler con SUS eventos (el `mount` de arriba trae los suyos fijos). */
+async function mountEvents(
+  events: OkSchedulerEvent[],
+  resources: OkSchedulerResource[] = RESOURCES,
+  movable = true,
+  resizable = false,
+): Promise<SchedulerElement> {
+  const element = document.createElement('ok-scheduler') as SchedulerElement;
+  element.resources = resources;
+  element.events = events;
+  element.movable = movable;
+  element.resizable = resizable;
+  document.body.appendChild(element);
+  await element.updateComplete;
+  for (const lane of element.shadowRoot!.querySelectorAll('.lane')) {
+    (lane as HTMLElement).getBoundingClientRect = () => rect(0, LANE_WIDTH);
+  }
+  return element;
+}
+
+/** El sub-carril donde ha caído un bloque, y en cuántos se partió su clúster. */
+function stack(element: SchedulerElement, id: string): { index: number; count: number } {
+  const el = block(element, id);
+  return { index: Number(el.dataset.laneIndex), count: Number(el.dataset.laneCount) };
+}
+
+describe('ok-scheduler · two appointments at the same time sit side by side', () => {
+  it('splits the lane between two blocks that share the slot, instead of stacking them', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Luis' },
+    ]);
+
+    expect(stack(element, 'a')).toEqual({ index: 0, count: 2 });
+    expect(stack(element, 'b')).toEqual({ index: 1, count: 2 });
+  });
+
+  it('leaves a lone appointment using the whole lane', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+    ]);
+
+    expect(stack(element, 'a')).toEqual({ index: 0, count: 1 });
+  });
+
+  it('does not split anything when the two appointments merely touch end to start', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '13:00', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '13:00', end: '14:00', title: 'Luis' },
+    ]);
+
+    expect(stack(element, 'a')).toEqual({ index: 0, count: 1 });
+    expect(stack(element, 'b')).toEqual({ index: 0, count: 1 });
+  });
+
+  it('reuses the first free sub-lane, so a chain of overlaps stays two rows tall', async () => {
+    // A 10–11 pisa a B 10:30–11:30, B pisa a C 11:15–12, pero A y C no se tocan: C vuelve al 0.
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '10:00', end: '11:00', title: 'A' },
+      { id: 'b', resourceId: 'r1', start: '10:30', end: '11:30', title: 'B' },
+      { id: 'c', resourceId: 'r1', start: '11:15', end: '12:00', title: 'C' },
+    ]);
+
+    expect(stack(element, 'a')).toEqual({ index: 0, count: 2 });
+    expect(stack(element, 'b')).toEqual({ index: 1, count: 2 });
+    expect(stack(element, 'c')).toEqual({ index: 0, count: 2 });
+  });
+
+  it('keeps each cluster of the day independent: the morning does not thin out the afternoon', async () => {
+    const element = await mountEvents([
+      { id: 'm1', resourceId: 'r1', start: '09:00', end: '10:00', title: 'M1' },
+      { id: 'm2', resourceId: 'r1', start: '09:00', end: '10:00', title: 'M2' },
+      { id: 'solo', resourceId: 'r1', start: '17:00', end: '18:00', title: 'Solo' },
+    ]);
+
+    expect(stack(element, 'm1').count).toBe(2);
+    expect(stack(element, 'solo')).toEqual({ index: 0, count: 1 });
+  });
+
+  it('splits each resource on its own: a busy lane never thins out the lane below', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Luis' },
+      { id: 'other', resourceId: 'r2', start: '12:00', end: '12:30', title: 'Otra' },
+    ]);
+
+    expect(stack(element, 'a').count).toBe(2);
+    expect(stack(element, 'other')).toEqual({ index: 0, count: 1 });
+  });
+
+  it('orders the sub-lanes by start time, so the earlier appointment is on top', async () => {
+    const element = await mountEvents([
+      { id: 'late', resourceId: 'r1', start: '12:15', end: '13:00', title: 'Late' },
+      { id: 'early', resourceId: 'r1', start: '12:00', end: '13:00', title: 'Early' },
+    ]);
+
+    expect(stack(element, 'early').index).toBe(0);
+    expect(stack(element, 'late').index).toBe(1);
+  });
+
+  it('gives every block of a cluster a height, so none is painted over another', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Luis' },
+    ]);
+
+    // Se lee el ATRIBUTO `style` tal cual lo escribe Lit, no `style.top`: el CSSOM de happy-dom no
+    // sabe parsear un `calc()` anidado y devuelve cadena vacía, así que preguntarle a él mediría el
+    // parser en vez del componente. Los píxeles de verdad se comprueban en navegador real.
+    const a = block(element, 'a').getAttribute('style') ?? '';
+    const b = block(element, 'b').getAttribute('style') ?? '';
+
+    // Cada bloque arranca en un `top` distinto y ninguno ocupa ya el alto entero del carril.
+    expect(a).toContain('top:calc(0.25rem + (100% - 0.5rem) * 0 / 2)');
+    expect(b).toContain('top:calc(0.25rem + (100% - 0.5rem) * 1 / 2)');
+    expect(a).toContain('height:calc((100% - 0.5rem) / 2');
+    expect(a).not.toEqual(b);
+  });
+
+  it('grows the row instead of shrinking the blocks below a readable height', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '13:00', title: 'A' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '13:00', title: 'B' },
+      { id: 'c', resourceId: 'r1', start: '12:00', end: '13:00', title: 'C' },
+    ]);
+
+    // El carril declara en cuántos se partió; el CSS lo convierte en alto con `--min-stack-height`.
+    expect(lane(element, 'r1').dataset.stacks).toBe('3');
+    expect(lane(element, 'r1').getAttribute('style')).toContain('--stacks:3');
+    // Y el vecino tranquilo no crece por acompañarlo.
+    expect(lane(element, 'r2').dataset.stacks).toBe('1');
+  });
+
+  it('breaks a tie on the start by putting the SHORTER appointment first', async () => {
+    // Orden de consenso (Bryntum, Google Calendar, Mobiscroll): inicio asc, luego fin más temprano.
+    const element = await mountEvents([
+      { id: 'long', resourceId: 'r1', start: '12:00', end: '14:00', title: 'Long' },
+      { id: 'short', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Short' },
+    ]);
+
+    expect(stack(element, 'short').index).toBe(0);
+    expect(stack(element, 'long').index).toBe(1);
+  });
+});
+
+describe('ok-scheduler · dragging still works when two blocks share the slot', () => {
+  it('moves the block the gesture started on, not the one that used to cover it', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Luis' },
+    ]);
+    const moved = vi.fn();
+    element.addEventListener('ok-event-move', (e) => moved((e as CustomEvent).detail));
+
+    drag(element, 'b', 60, lane(element, 'r1'));
+
+    expect(moved).toHaveBeenCalledOnce();
+    expect(moved.mock.calls[0][0].id).toBe('b');
+  });
+
+  it('puts the block back in its own sub-lane when the host rejects the move', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '12:00', end: '12:30', title: 'Luis' },
+    ]);
+    let detail: { revert: () => void } | null = null;
+    element.addEventListener('ok-event-move', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+
+    drag(element, 'b', 60, lane(element, 'r1'));
+    await element.updateComplete;
+    detail!.revert();
+    await element.updateComplete;
+
+    expect(stack(element, 'b')).toEqual({ index: 1, count: 2 });
+    expect(stack(element, 'a')).toEqual({ index: 0, count: 2 });
+  });
+
+  it('re-splits the lane once a dragged block lands on top of another one', async () => {
+    const element = await mountEvents([
+      { id: 'a', resourceId: 'r1', start: '12:00', end: '13:00', title: 'Ana' },
+      { id: 'b', resourceId: 'r1', start: '16:00', end: '17:00', title: 'Luis' },
+    ]);
+    expect(stack(element, 'a').count).toBe(1);
+
+    // 16:00 → 12:00 son 240 min hacia atrás; con 1 px == 1 min, −240 px.
+    drag(element, 'b', -240, lane(element, 'r1'));
+    await element.updateComplete;
+
+    expect(stack(element, 'b').count).toBe(2);
+    expect(stack(element, 'a').count).toBe(2);
+  });
+});
+
+// ── El contrato del SCROLL horizontal (outfitkit#71 §2) ─────────────────────────────────────────
+//
+// El QA midió el timeline RECORTADO sin barra de scroll (a 834 px acababa a las 14:00) contra una
+// copia VIEJA del componente: el código lleva el scroll desde la v0.1.40. Sin un test que lo fije,
+// una copia vieja se vuelve a detectar en el salón y no en CI, que es exactamente lo que pasó.
+describe('ok-scheduler · the timeline always has a way to reach the end of the day', () => {
+  it('gives the scroller `overflow-x:auto`, so the day is never clipped without an escape', async () => {
+    const element = await mountEvents([]);
+    const css = (element.constructor as unknown as { styles: { cssText: string } }).styles.cssText;
+
+    expect(css).toMatch(/\.scroll\s*\{[^}]*overflow-x:\s*auto/);
+  });
+
+  it('sizes the grid by the HOURS on show, so it outgrows a narrow container', async () => {
+    const element = await mountEvents([]);
+    element.startHour = 8;
+    element.endHour = 20;
+    await element.updateComplete;
+
+    const grid = element.shadowRoot!.querySelector('.grid') as HTMLElement;
+    // 12 horas de franja + la columna sticky del recurso.
+    expect(grid.getAttribute('style')).toContain('12 * var(--hour-width)');
+    expect(grid.getAttribute('style')).toContain('var(--resource-width)');
+  });
+});
