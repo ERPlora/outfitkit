@@ -160,6 +160,8 @@ table.api .kind {
 .kind.prop { background: #dbeafe; color: #1e40af; }
 .kind.event { background: #fef3c7; color: #92400e; }
 .kind.slot { background: #dcfce7; color: #166534; }
+/* Variable CSS de tema (--ok-*): es API pública del componente igual que una prop. */
+.kind.css { background: #ede9fe; color: #5b21b6; }
 
 /* Callout de la guía. */
 .note {

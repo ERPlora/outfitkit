@@ -657,7 +657,7 @@ chat.addEventListener('ok-send', (e) => {
     id: 'ok-scheduler',
     name: 'ok-scheduler',
     category: 'flujo',
-    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN a otra hora u otro recurso (Pointer Events: con ratón directo; con el dedo hay que MANTENER PULSADO, para que un scroll no mueva una cita sin querer) y que se ALARGAN o ACORTAN por su borde de fin (`resizable`, asa dedicada — el asa gana sobre el cuerpo, y ahí no hace falta pulsación mantenida). El host decide si el cambio vale, en los dos gestos. Ionic no trae scheduler.',
+    desc: 'Agenda de recursos/turnos en timeline horario: una fila por recurso (empleado, sala, máquina) con sus bloques posicionados por hora. Navegación de día, celdas-slot clicables y bloques que se ARRASTRAN a otra hora u otro recurso (Pointer Events: con ratón directo; con el dedo hay que MANTENER PULSADO, para que un scroll no mueva una cita sin querer) y que se ALARGAN o ACORTAN por su borde de fin (`resizable`, asa dedicada — el asa gana sobre el cuerpo, y ahí no hace falta pulsación mantenida). El host decide si el cambio vale, en los dos gestos. Dos citas que comparten franja se reparten el ALTO de la fila en sub-carriles (side-by-side, como Google Calendar u Outlook) y la fila CRECE si hacen falta más de los que caben legibles — nunca se pinta una encima de otra. Ionic no trae scheduler.',
     importPath: "@erplora/outfitkit/ok-scheduler",
     example: '<ok-scheduler id="sch" movable resizable start-hour="8" end-hour="20" slot-minutes="60" snap-minutes="15" style="display:block;height:360px;width:100%"></ok-scheduler>',
     setup: (root) => {
@@ -674,6 +674,9 @@ chat.addEventListener('ok-send', (e) => {
         { id: 'e2', resourceId: 'r1', start: '13:00', end: '15:00', title: 'Caja', color: 'var(--ion-color-success)' },
         { id: 'e3', resourceId: 'r2', start: '10:30', end: '14:00', title: 'Almacén', color: 'var(--ion-color-warning)' },
         { id: 'e4', resourceId: 'r3', start: '15:00', end: '19:00', title: 'Atención cliente', color: 'var(--ion-color-tertiary)' },
+        // Doble reserva DELIBERADA (la que se hace desde mostrador): las dos citas comparten
+        // franja y el carril se parte en dos sub-carriles en vez de tapar una con otra.
+        { id: 'e5', resourceId: 'r2', start: '10:30', end: '12:30', title: 'Recepción', color: 'var(--ion-color-danger)' },
       ];
       // El HOST manda: aquí hace de servidor. Rechaza el solape (revert) y acepta el resto
       // reescribiendo `events`, que es lo que el módulo hará con el refresco de su query.
@@ -730,6 +733,7 @@ sch.addEventListener('ok-event-resize', async (e) => {
       { kind: 'prop', name: 'movable', type: 'boolean', detail: 'Activa arrastrar y mover con teclado (emite ok-event-move)' },
       { kind: 'prop', name: 'snap-minutes', type: 'number', detail: 'Imán del movimiento en minutos (15). slot-minutes solo dibuja columnas' },
       { kind: 'event', name: 'ok-event-move', type: '{id, resourceId, start, end, from, event, revert}', detail: 'Intento de mover un bloque. El host persiste; si el servidor lo rechaza, revert() lo devuelve a su sitio' },
+      { kind: 'css', name: '--ok-scheduler-min-stack-height', type: '1.6rem', detail: 'Alto mínimo de un sub-carril cuando dos citas comparten franja. No hay tope de citas simultáneas: por debajo de este alto, la FILA crece' },
     ],
   },
   {
