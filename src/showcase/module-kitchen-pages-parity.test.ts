@@ -125,8 +125,12 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
       expect(page).toContain(`key: '${key}'`);
     }
     // El bump por línea (kitchen#4) también se audita: dos acciones más que antes.
+    // kitchen#44 dejó UN solo mapa acción→clave de etiqueta (`ACTION_LABEL_KEY`) del que salen a la
+    // vez el desplegable del filtro y la celda, así que en el módulo la acción ya no se escribe como
+    // `value: 'x'` sino como entrada del mapa. Se busca la entrada, no la forma vieja: exigir
+    // `value:` obligaría a duplicar la lista, que es justo lo que esa issue quitó.
     for (const action of ['received', 'started', 'bumped', 'item_bumped', 'item_recalled', 'served', 'recalled', 'cancelled']) {
-      expect(components.history).toContain(`value: '${action}'`);
+      expect(components.history).toContain(`${action}: 'ui.action`);
       expect(page).toContain(`value: '${action}'`);
     }
     expect(page).toContain("sort = 'created_at'");
@@ -237,7 +241,7 @@ describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
     expect(page).toContain('<form id="kitchen-station-create" slot="create"');
     expect(page).toContain("options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }]");
     expect(page).toContain("cardIcon = () => 'flame-outline'");
-    expect(page).toContain("sort = 'name'");
+    expect(page).toContain("sort = 'name_es'");
     expect(page).toContain("sortDir = 'asc'");
   });
 
