@@ -161,7 +161,7 @@ export class OkCurrency extends LitElement {
     return html`
       <ion-input
         class="control"
-        fill="outline"
+        fill="outline" mode="md"
         inputmode="decimal"
         label=${this.label ?? ''}
         label-placement=${this.label ? 'stacked' : 'fixed'}

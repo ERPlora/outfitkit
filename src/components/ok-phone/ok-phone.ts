@@ -218,7 +218,7 @@ export class OkPhone extends LitElement {
       <div class="row">
         <ion-select
           class="country"
-          fill="outline"
+          fill="outline" mode="md"
           interface="popover"
           aria-label=${this.t.country}
           .value=${this.current.iso}
@@ -234,7 +234,7 @@ export class OkPhone extends LitElement {
           class="number"
           type="tel"
           inputmode="tel"
-          fill="outline"
+          fill="outline" mode="md"
           aria-label=${this.t.number}
           placeholder=${this.placeholder}
           .value=${this.number}

@@ -254,7 +254,7 @@ export class OkContactForm extends LitElement {
               name="name"
               label=${this.t.nameLabel}
               label-placement="stacked"
-              fill="outline"
+              fill="outline" mode="md"
               .value=${this.values.name}
               ?data-invalid=${!!this.errors.name}
               @ionInput=${this.onInput('name')}
@@ -269,7 +269,7 @@ export class OkContactForm extends LitElement {
               inputmode="email"
               label=${this.t.emailLabel}
               label-placement="stacked"
-              fill="outline"
+              fill="outline" mode="md"
               .value=${this.values.email}
               ?data-invalid=${!!this.errors.email}
               @ionInput=${this.onInput('email')}
@@ -282,7 +282,7 @@ export class OkContactForm extends LitElement {
               name="subject"
               label=${this.t.subjectLabel}
               label-placement="stacked"
-              fill="outline"
+              fill="outline" mode="md"
               .value=${this.values.subject}
               @ionInput=${this.onInput('subject')}
             ></ion-input>
@@ -293,7 +293,7 @@ export class OkContactForm extends LitElement {
               name="message"
               label=${this.t.messageLabel}
               label-placement="stacked"
-              fill="outline"
+              fill="outline" mode="md"
               auto-grow
               rows="5"
               .value=${this.values.message}
