@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import '../ok-qr/ok-qr.js';
+import { documentLocale, formatMinor } from '../ok-money/ok-money.js';
 
 // ok-invoice — Web Component PRESENTACIONAL y AISLADO de la FACTURA A4 (documento fiscal completo).
 //
@@ -136,6 +137,9 @@ export interface InvoiceData {
   total: number;
   /** Símbolo de moneda (def. '€'). */
   currency?: string;
+  /** outfitkit#81 — decimales de la moneda (EUR 2, JPY 0, KWD 3). Def. 2. Todos los importes de la
+   *  factura son enteros en unidad mínima y se cortan por aquí — nunca se dividen. */
+  decimals?: number;
   /** Método de pago (p.ej. "Transferencia", "Tarjeta"). */
   payment_method?: string;
   /** Condiciones de pago / IBAN / vencimiento textual. */
@@ -264,8 +268,10 @@ export class OkInvoice extends LitElement {
     return this.invoice?.currency ?? '€';
   }
 
+  /** outfitkit#81 — importes ENTEROS en unidad mínima (ADR-0123), cortados por `decimals` y pintados
+   *  con los separadores del idioma del documento (mismo formateador que `<ok-money>`). */
   private money(n: number | undefined): string {
-    return `${Number(n ?? 0).toFixed(2)} ${this.cur()}`;
+    return formatMinor(n, { decimals: this.invoice?.decimals ?? 2, locale: documentLocale(), currency: this.cur() });
   }
 
   render() {

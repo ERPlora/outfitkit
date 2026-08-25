@@ -1851,6 +1851,26 @@ video.addEventListener('ok-ended', () => …);`,
     ],
   },
   {
+    id: 'ok-money',
+    name: 'ok-money',
+    category: 'datos',
+    desc: 'Importe monetario TAL COMO SE VE, a partir del ENTERO en unidad mínima que guarda el sistema (1650 = 16,50 €; ADR-0123). Formatea POR CADENA (corta los dígitos por `decimals` y agrupa de tres en tres): sin /100 ni toFixed, nada puede alterar el valor. El atributo `value` conserva el entero; los separadores los decide el idioma del documento (`<html lang>`) o `locale`. Un float o un texto pinta «—».',
+    importPath: "@erplora/outfitkit/ok-money",
+    example: '<div style="display:grid;grid-template-columns:auto auto;gap:.4rem 1.5rem;font-size:15px;align-items:baseline"><span>Menú del día</span><ok-money value="1650" currency="€"></ok-money><span>Total del mes</span><ok-money value="123456789" currency="€"></ok-money><span>Devolución</span><ok-money value="-500" currency="€"></ok-money><span>Ramen (JPY)</span><ok-money value="1999" decimals="0" currency="¥" locale="ja"></ok-money><span>En inglés</span><ok-money value="123456" currency="€" locale="en"></ok-money><span>Un float (error aguas arriba)</span><ok-money value="16.5" currency="€"></ok-money></div>',
+    code: `<ok-money value="1650" currency="€"></ok-money>          <!-- 16,50 € en un documento es -->
+<ok-money value="1999" decimals="0" currency="¥"></ok-money>  <!-- 1.999 ¥ -->
+
+// Como función, para pintar dinero dentro de otra plantilla (es lo que usan ok-receipt/ok-invoice):
+import { formatMinor } from '@erplora/outfitkit/ok-money';
+formatMinor(123456, { decimals: 2, locale: 'es', currency: '€' }); // '1.234,56 €'`,
+    api: [
+      { kind: 'prop', name: 'value', type: 'string | number', detail: 'ENTERO en unidad mínima (céntimos). Nunca se reescribe. Un no-entero pinta «—»' },
+      { kind: 'prop', name: 'decimals', type: 'number', detail: 'Escala de la moneda: EUR 2 (def), JPY 0, KWD 3' },
+      { kind: 'prop', name: 'currency', type: 'string', detail: 'Símbolo o código pintado detrás («€», «EUR»). Vacío = sin moneda' },
+      { kind: 'prop', name: 'locale', type: 'string', detail: 'BCP-47 para los separadores. Def: `<html lang>`, si no `en`. Millares SIEMPRE agrupados (hub#1090)' },
+    ],
+  },
+  {
     id: 'ok-receipt',
     name: 'ok-receipt',
     category: 'multimedia',
@@ -1863,19 +1883,21 @@ video.addEventListener('ok-ended', () => …);`,
         business: { name: 'Bar Pepe', address: 'C/ Mayor 1, 28013 Madrid', tax_id: 'NIF B12345678', phone: '600 123 123' },
         number: 'A-000142', datetime: '09/06/2026 14:32', cashier: 'Ana', customer: 'Juan García',
         lines: [
-          { name: 'Café con leche', qty: 2, unit_price: 1.5, total: 3.0 },
-          { name: 'Tostada con tomate', qty: 1, unit_price: 2.2, total: 2.2, note: 'sin sal' },
-          { name: 'Zumo de naranja natural', qty: 1, unit_price: 2.8, total: 2.8 },
+          // Importes en CÉNTIMOS (enteros, ADR-0123): el componente los corta, nunca los divide.
+          { name: 'Café con leche', qty: 2, unit_price: 150, total: 300 },
+          { name: 'Tostada con tomate', qty: 1, unit_price: 220, total: 220, note: 'sin sal' },
+          { name: 'Zumo de naranja natural', qty: 1, unit_price: 280, total: 280 },
           // #77 / ADR-0396 — un MENÚ: una línea con su precio cerrado y los componentes sangrados
           // debajo, sin importe (solo el suplemento); los suplementos de la línea, después.
-          { name: 'Menú del día', qty: 1, unit_price: 16.5, total: 16.5,
+          { name: 'Menú del día', qty: 1, unit_price: 1650, total: 1650,
             components: ['Gazpacho', 'Solomillo (+3,00)', 'Cerveza', 'Flan'], modifiers: ['Al punto'] },
         ],
-        subtotal: 24.5,
-        taxes: [{ label: 'IVA 10%', base: 24.5, amount: 2.45 }],
-        total: 26.95,
-        payment: { method: 'Efectivo', paid: 30.0, change: 3.05 },
+        subtotal: 2450,
+        taxes: [{ label: 'IVA 10%', base: 2450, amount: 245 }],
+        total: 2695,
+        payment: { method: 'Efectivo', paid: 3000, change: 305 },
         currency: '€',
+        decimals: 2,
         footer: '¡Gracias por su visita!\nwww.barpepe.example',
         qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=A-000142&total=8.80',
         qr_note: 'Factura verificable en la sede electrónica de la AEAT (VeriFactu)',
@@ -1885,19 +1907,21 @@ video.addEventListener('ok-ended', () => …);`,
 el.receipt = {
   business: { name: 'Bar Pepe', tax_id: 'NIF B12345678', logo_url: '/logo.png' },
   number: 'A-000142', datetime: '09/06/2026 14:32',
+  // Importes = ENTEROS en unidad mínima (céntimos); 'decimals' fija la escala (ADR-0123)
   lines: [
-    { name: 'Café', qty: 2, unit_price: 1.5, total: 3.0 },
+    { name: 'Café', qty: 2, unit_price: 150, total: 300 },
     // Menú (ADR-0396): componentes y suplementos ya compuestos por el módulo, una sub-línea cada uno
-    { name: 'Menú del día', qty: 1, unit_price: 13.5, total: 13.5, components: ['Gazpacho', 'Solomillo (+3,00)'], modifiers: ['Al punto'] },
+    { name: 'Menú del día', qty: 1, unit_price: 1350, total: 1350, components: ['Gazpacho', 'Solomillo (+3,00)'], modifiers: ['Al punto'] },
   ],
-  subtotal: 16.5, taxes: [{ label: 'IVA 10%', base: 16.5, amount: 1.65 }], total: 18.15,
-  payment: { method: 'Efectivo', paid: 5, change: 1.7 },
+  subtotal: 1650, taxes: [{ label: 'IVA 10%', base: 1650, amount: 165 }], total: 1815, decimals: 2,
+  payment: { method: 'Efectivo', paid: 2000, change: 185 },
   qr: 'https://…', qr_note: 'VeriFactu',
 };
 container.appendChild(el);
 // Imprimir desde el contenedor padre: window.print() + @media print`,
     api: [
-      { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…)' },
+      { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…). Importes = ENTEROS en unidad mínima (céntimos), pintados con el idioma del documento; un float pinta «—»' },
+      { kind: 'prop', name: 'receipt.decimals', type: 'number', detail: 'Escala de la moneda (EUR 2 def, JPY 0). El componente corta por aquí, nunca divide' },
       { kind: 'prop', name: 'lines[].components · lines[].modifiers', type: 'string[]', detail: 'Menú (ADR-0396): componentes y suplementos, ya compuestos como etiqueta, una sub-línea sangrada cada uno, sin importe. Con listas, `note` no se pinta' },
       { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 120)' },
       { kind: 'slot', name: 'logo', type: '—', detail: 'Logo alternativo si no hay business.logo_url' },
@@ -1917,16 +1941,18 @@ container.appendChild(el);
         customer: { name: 'Cliente Ejemplo S.A.', tax_id: 'A-87654321', address: 'Av. Diagonal 100', postal_code: '08019', city: 'Barcelona', country: 'España' },
         type: 'F1 · Factura completa', number: 'F2026/0042', issue_date: '09/06/2026', due_date: '09/07/2026',
         lines: [
-          { description: 'Licencia ERPlora — plan Pro (anual)', qty: 1, unit_price: 480.0, tax_rate: 21, total: 480.0 },
-          { description: 'Módulo VeriFactu', qty: 1, unit_price: 120.0, discount_percent: 10, tax_rate: 21, total: 108.0 },
-          { description: 'Soporte prioritario (horas)', qty: 5, unit_price: 60.0, tax_rate: 21, total: 300.0 },
+          // Importes en CÉNTIMOS (enteros, ADR-0123): el componente los corta, nunca los divide.
+          { description: 'Licencia ERPlora — plan Pro (anual)', qty: 1, unit_price: 48000, tax_rate: 21, total: 48000 },
+          { description: 'Módulo VeriFactu', qty: 1, unit_price: 12000, discount_percent: 10, tax_rate: 21, total: 10800 },
+          { description: 'Soporte prioritario (horas)', qty: 5, unit_price: 6000, tax_rate: 21, total: 30000 },
         ],
-        subtotal: 888.0,
-        discount_total: 12.0,
-        taxes: [{ label: 'IVA 21%', rate: 21, base: 888.0, amount: 186.48 }],
-        tax_total: 186.48,
-        total: 1074.48,
+        subtotal: 88800,
+        discount_total: 1200,
+        taxes: [{ label: 'IVA 21%', rate: 21, base: 88800, amount: 18648 }],
+        tax_total: 18648,
+        total: 107448,
         currency: '€',
+        decimals: 2,
         payment_method: 'Transferencia bancaria',
         payment_terms: 'IBAN ES12 3456 7890 1234 5678 9012 · Vencimiento a 30 días',
         notes: 'Gracias por confiar en ERPlora.',
@@ -1940,8 +1966,9 @@ el.invoice = {
   issuer:   { name: 'ERPlora S.L.', tax_id: 'B-12345678', address: 'C/ Mayor 1', city: 'Madrid' },
   customer: { name: 'Cliente S.A.', tax_id: 'A-87654321', city: 'Barcelona' },
   type: 'F1', number: 'F2026/0042', issue_date: '09/06/2026', due_date: '09/07/2026',
-  lines: [{ description: 'Licencia Pro', qty: 1, unit_price: 480, tax_rate: 21, total: 480 }],
-  subtotal: 480, taxes: [{ label: 'IVA 21%', base: 480, amount: 100.8 }], tax_total: 100.8, total: 580.8,
+  // Importes = ENTEROS en unidad mínima (céntimos); 'decimals' fija la escala (ADR-0123)
+  lines: [{ description: 'Licencia Pro', qty: 1, unit_price: 48000, tax_rate: 21, total: 48000 }],
+  subtotal: 48000, taxes: [{ label: 'IVA 21%', base: 48000, amount: 10080 }], tax_total: 10080, total: 58080, decimals: 2,
   payment_method: 'Transferencia', payment_terms: 'IBAN ES… · 30 días',
   qr: 'https://…', qr_note: 'VeriFactu',
 };

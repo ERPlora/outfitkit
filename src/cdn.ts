@@ -41,6 +41,7 @@ import './components/ok-qr/ok-qr.js';
 import './components/ok-audio/ok-audio.js';
 import './components/ok-video/ok-video.js';
 import './components/ok-pdf/ok-pdf.js';
+import './components/ok-money/ok-money.js';
 import './components/ok-receipt/ok-receipt.js';
 import './components/ok-invoice/ok-invoice.js';
 import './components/ok-timeline/ok-timeline.js';

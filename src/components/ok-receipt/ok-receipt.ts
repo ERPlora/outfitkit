@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import '../ok-qr/ok-qr.js';
+import { documentLocale, formatMinor } from '../ok-money/ok-money.js';
 
 // ok-receipt — Web Component PRESENTACIONAL y AISLADO del tiquet/recibo de venta (POS).
 //
@@ -25,11 +26,15 @@ export interface ReceiptBusiness {
   logo_url?: string;
 }
 
-/** Una línea de venta. */
+/** Una línea de venta. Los importes son ENTEROS en unidad mínima (céntimos: 1650 = 16,50 €,
+ *  ADR-0123); la escala la fija `ReceiptData.decimals`. Un float no es dinero y se pinta «—». */
 export interface ReceiptLine {
   name: string;
+  /** Cantidad (no es dinero: puede llevar decimales). */
   qty: number;
+  /** Precio unitario, entero en unidad mínima. */
   unit_price: number;
+  /** Importe de la línea, entero en unidad mínima. */
   total: number;
   /** Nota/observación bajo la línea (opcional). NO se pinta cuando la línea trae `components` o
    *  `modifiers`: el módulo que aún duplica ahí el mismo texto no lo enseña dos veces. */
@@ -125,6 +130,9 @@ export interface ReceiptData {
   payment?: ReceiptPayment;
   /** Símbolo de moneda (def. '€'). */
   currency?: string;
+  /** outfitkit#81 — decimales de la moneda (EUR 2, JPY 0, KWD 3). Def. 2. Todos los importes del
+   *  tiquet son enteros en unidad mínima y se cortan por aquí — nunca se dividen. */
+  decimals?: number;
   /** Mensaje de pie (gracias / leyenda legal). */
   footer?: string;
   /** Payload del QR (VeriFactu / URL de verificación). Si vacío, no se pinta QR. */
@@ -213,8 +221,10 @@ export class OkReceipt extends LitElement {
     return this.receipt?.currency ?? '€';
   }
 
+  /** outfitkit#81 — el mismo formateador por cadena que `<ok-money>`: el entero se corta por
+   *  `decimals` y se pinta con los separadores del idioma del documento. Sin `/100`, sin `toFixed`. */
   private money(n: number | undefined): string {
-    return `${Number(n ?? 0).toFixed(2)} ${this.cur()}`;
+    return formatMinor(n, { decimals: this.receipt?.decimals ?? 2, locale: documentLocale(), currency: this.cur() });
   }
 
   render() {
