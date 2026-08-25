@@ -290,13 +290,37 @@ export class OkDataTable extends LitElement {
       box-shadow: none;
     }
 
-    /* Panel lateral derecho (drawer) DENTRO de la tabla: filtros / alta-edición. No empuja contenido. */
+    /* Panel lateral derecho (drawer) DENTRO de la tabla: filtros / alta-edición. Base (sin media):
+       overlay absoluto — es lo que había hasta #75 y lo que ve un navegador sin media queries. */
     .tk-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.18); z-index: 19; }
     .drawer { position: absolute; top: 0; right: 0; height: 100%; width: 340px; max-width: 88%;
       background: var(--background); border-left: 1px solid var(--border-color);
       display: flex; flex-direction: column; z-index: 20;
       animation: tk-slide-in 0.18s ease; }
     @keyframes tk-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    /* #75 — El panel EMPUJA en escritorio y es HOJA COMPLETA en móvil; nunca tapa a medias.
+       Medido en el hub (Servicios/Citas): a 1440 el overlay de 340px se pintaba ENCIMA de
+       «Duración», «Acciones» y el selector de columnas, con el 90% de la tabla vacío a la
+       izquierda; a 390 dejaba una tira de 45px de tabla (media lupa, medio «Co…») que hacía
+       parecer el formulario un pop-up mal puesto. Square Dashboard reduce la tabla con un panel
+       fijo; Fresha/Shopify/Odoo abren una hoja a pantalla completa en móvil.
+       ≥ 834px: mientras hay panel, .card pasa a rejilla de DOS columnas (tabla | panel 360px):
+       la tabla se estrecha (ya sabe hacer scroll-x, #67) y nada queda tapado. */
+    @media (min-width: 834px) {
+      .card.has-panel { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto minmax(0, 1fr) auto; }
+      .card.has-panel > .bar { grid-column: 1; grid-row: 1; }
+      .card.has-panel > .scroll, .card.has-panel > .cards-grid, .card.has-panel > .empty { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; }
+      .card.has-panel > .pager { grid-column: 1; grid-row: 3; }
+      .card.has-panel > .drawer { position: static; grid-column: 2; grid-row: 1 / -1; width: auto; max-width: none; height: auto; min-height: 0; animation: none; }
+      .card.has-panel > .tk-scrim { display: none; }
+    }
+    /* < 834px: hoja a pantalla completa con su cabecera (título + Cerrar); sin tira residual.
+       position:fixed dentro de ion-content se ancla al área de contenido (contain), que es justo el hueco
+       bajo la cabecera de la app: el usuario conserva el título de la página. */
+    @media (max-width: 833.98px) {
+      .drawer { position: fixed; inset: 0; top: var(--ok-sheet-top, 0px); width: 100%; max-width: none; height: auto; border-left: 0; z-index: 1000; }
+      .tk-scrim { display: none; }
+    }
     .drawer .dh { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
       padding: 0.6rem 0.5rem 0.6rem 1rem; border-bottom: 1px solid var(--border-color); font-size: 1rem; }
     .drawer .db { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
@@ -363,6 +387,11 @@ export class OkDataTable extends LitElement {
 
     /* Botón primario (primaryAction) */
     .primary-btn { --background: var(--primary); --color: var(--primary-contrast); }
+    /* #76 — El alta en MÓVIL: botón primario CON etiqueta y área táctil de 44px, en vez del «+»
+       icónico de 36px al final de la barra. Fresha/Square/Shopify POS ponen la acción primaria
+       de la lista como botón visible con texto (o FAB), nunca como icono anónimo. */
+    .add-btn { min-height: 44px; --border-radius: 10px; --padding-start: 0.9rem; --padding-end: 1rem; margin: 0; font-weight: 600; }
+    .add-btn ion-icon { margin-inline-end: 0.35rem; }
 
     /* Selects de la toolbar: fondo + borde visibles (como el buscador y la pastilla de fechas) para
      * que se distingan como controles en claro y oscuro (sin fondo eran invisibles en dark). */
@@ -459,6 +488,11 @@ export class OkDataTable extends LitElement {
        que Ionic no trae (cabecera en fila, filas clave-valor, barra de acciones, resalte de selección). */
     ion-card.rcard { margin: 0; } /* la rejilla aporta el gap → sin esto el margin por defecto de ion-card lo duplica */
     ion-card.rcard.selected { outline: 2px solid var(--primary); outline-offset: -2px; }
+    /* #74 — Tarjeta clicable (opt-in row-clickable): la mitad de #67 que faltaba. La vista de
+       tarjetas es la que la tabla elige SOLA en móvil, así que sin esto el registro no se podía
+       abrir desde un teléfono (medido con combos 0.1.4: 0 rowClick a 390px). */
+    ion-card.rcard.clickable { cursor: pointer; }
+    ion-card.rcard.clickable:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
     @media (prefers-reduced-motion: reduce) {
       .gh.sortable:hover, .gh.sortable:active,
       .grow-data:hover, .grow-data:active { transform: none; }
@@ -624,8 +658,9 @@ export class OkDataTable extends LitElement {
   @state() private clientFilters: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
   // Borrador del panel de filtros (se aplica con "Aplicar"; replica el modal del Hub).
   @state() private filterDraft: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
-  // Panel lateral derecho (drawer) DENTRO de la tabla: filtros o alta/edición. No empuja la tabla;
-  // funciona igual en vista lista y tarjetas. Inspirado en el Filters Tool Panel de AG Grid.
+  // Panel lateral derecho (drawer) DENTRO de la tabla: filtros o alta/edición. Funciona igual en
+  // vista lista y tarjetas. Desde #75 EMPUJA la tabla en escritorio (rejilla de dos columnas) y es
+  // hoja a pantalla completa en móvil — ver el CSS de `.card.has-panel`.
   @state() private panel: 'none' | 'filters' | 'create' = 'none';
   @state() private viewMode: 'table' | 'cards' = 'table';
   /** El usuario eligió vista a mano: a partir de ahí el arranque automático no vuelve a tocarla. */
@@ -712,9 +747,32 @@ export class OkDataTable extends LitElement {
     if (grid) this.xObserver.observe(grid);
   }
 
-  protected updated(): void {
+  protected updated(changed: Map<PropertyKey, unknown>): void {
     this.observeXOverflow();
     this.measureXOverflow();
+    if (changed.has('panel')) this.syncSheetTop();
+  }
+
+  /** #75 — Where the mobile sheet starts. `position: fixed; inset: 0` painted it from y=0 and the
+   *  app's `ion-header` (its own stacking context, above the content) covered the sheet's title and
+   *  its only Close button — measured at 390×844 in the Appointments parity page. CSS inside a
+   *  shadow root cannot know where the content area begins, so on open the table measures the
+   *  closest `ion-content` (walking through shadow hosts) and hands the offset over as a custom
+   *  property; on close it is removed. Without an `ion-content` around, the sheet keeps y=0. */
+  private syncSheetTop(): void {
+    if (this.panel === 'none') {
+      this.style.removeProperty('--ok-sheet-top');
+      return;
+    }
+    let node: Node | null = this;
+    let content: Element | null = null;
+    while (node && !content) {
+      const parent: Node | null = (node as Node).parentNode ?? ((node as Node).getRootNode?.() as ShadowRoot | undefined)?.host ?? null;
+      if (parent && parent.nodeType === Node.ELEMENT_NODE && (parent as Element).tagName === 'ION-CONTENT') content = parent as Element;
+      node = parent === node ? null : parent;
+    }
+    const top = content ? Math.max(0, Math.round(content.getBoundingClientRect().top)) : 0;
+    this.style.setProperty('--ok-sheet-top', `${top}px`);
   }
 
   disconnectedCallback(): void {
@@ -1414,7 +1472,7 @@ export class OkDataTable extends LitElement {
       !!this.primaryAction;
 
     return html`
-      <div class="card">
+      <div class=${`card${this.panel !== 'none' ? ' has-panel' : ''}`}>
         ${showTopbar
           ? html`
               <div class="bar">
@@ -1425,7 +1483,7 @@ export class OkDataTable extends LitElement {
                   ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : nothing}
                   ${this.inlineFilters ? this.renderInlineFilters() : nothing}
                   <span class="tk-spacer"></span>
-                    ${this.effColumnPicker
+                    ${this.effColumnPicker && !this.isMobile
                       ? html`
                           <ion-select
                             class="tk-cols"
@@ -1440,7 +1498,7 @@ export class OkDataTable extends LitElement {
                           </ion-select>
                         `
                       : nothing}
-                    ${this.effPageSizes.length
+                    ${this.effPageSizes.length && !this.isMobile
                       ? html`
                           <ion-select
                             class="tk-psize"
@@ -1469,10 +1527,24 @@ export class OkDataTable extends LitElement {
                         `
                       : nothing}
                     ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), this.t.exportCsv) : nothing}
-                    ${this.addable ? this.toolButton('add', this.panel === 'create', () => this.toggle('create'), this.t.add) : nothing}
+                    ${this.addable
+                      ? this.isMobile
+                        ? html`
+                            <ion-button class="primary-btn add-btn" size="small" @click=${() => this.toggle('create')}>
+                              <ion-icon slot="start" .icon=${okIcon('add')}></ion-icon>${this.t.add}
+                            </ion-button>
+                          `
+                        : this.toolButton('add', this.panel === 'create', () => this.toggle('create'), this.t.add)
+                      : nothing}
                     ${this.renderOverflowMenu()}
                     ${this.primaryAction
-                      ? html`
+                      ? this.isMobile
+                        ? html`
+                            <ion-button class="primary-btn add-btn" size="small" @click=${() => this.emit('primaryAction', {})}>
+                              <ion-icon slot="start" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon>${this.primaryAction.label}
+                            </ion-button>
+                          `
+                        : html`
                           <ion-button
                             class="primary-btn"
                             size="small"
@@ -1618,8 +1690,8 @@ export class OkDataTable extends LitElement {
     `;
   }
 
-  /** #67 — Enter/Espacio activan la fila clicable: si se llega con el tabulador, el ratón no puede
-   *  ser el único camino. Espacio además NO debe desplazar la página. */
+  /** #67 — Enter/Espacio activan la fila clicable (y, desde #74, la tarjeta): si se llega con el
+   *  tabulador, el ratón no puede ser el único camino. Espacio además NO debe desplazar la página. */
   private onRowKeydown(e: KeyboardEvent, row: Record<string, unknown>): void {
     if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
     e.preventDefault();
@@ -1720,7 +1792,13 @@ export class OkDataTable extends LitElement {
             const selected = this.selectable && this.selection.has(key);
             const icon = this.cardIcon?.(row);
             return html`
-              <ion-card class=${`rcard${selected ? ' selected' : ''}`}>
+              <ion-card
+                class=${`rcard${selected ? ' selected' : ''}${this.rowClickable ? ' clickable' : ''}`}
+                role=${this.rowClickable ? 'button' : nothing}
+                tabindex=${this.rowClickable ? '0' : nothing}
+                @click=${this.rowClickable ? () => this.emit('rowClick', { row }) : nothing}
+                @keydown=${this.rowClickable ? (e: KeyboardEvent) => this.onRowKeydown(e, row) : nothing}
+              >
                 ${hasHead
                   ? html`
                       <ion-card-header class="rcard-head">
@@ -1729,7 +1807,7 @@ export class OkDataTable extends LitElement {
                           : nothing}
                         <span class="rc-title">${this.cardTitle ? this.cardTitle(row) : nothing}</span>
                         ${this.selectable
-                          ? html`<ion-checkbox .checked=${selected} aria-label=${this.t.select} @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
+                          ? html`<ion-checkbox .checked=${selected} aria-label=${this.t.select} @click=${(e: Event) => e.stopPropagation()} @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
                           : nothing}
                       </ion-card-header>
                     `
@@ -1741,7 +1819,7 @@ export class OkDataTable extends LitElement {
                         (c) => html`<div class="rrow"><span class="rk">${c.header}</span><span class="rv">${c.render ? c.render(row) : this.cell(c, row)}</span></div>`,
                       )}
                 </ion-card-content>
-                ${this.actions.length ? html`<div class="ractions">${this.actionButtons(row)}</div>` : nothing}
+                ${this.actions.length ? html`<div class="ractions" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row)}</div>` : nothing}
               </ion-card>
             `;
           },

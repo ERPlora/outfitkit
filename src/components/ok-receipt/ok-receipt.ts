@@ -31,8 +31,16 @@ export interface ReceiptLine {
   qty: number;
   unit_price: number;
   total: number;
-  /** Nota/observación bajo la línea (opcional). */
+  /** Nota/observación bajo la línea (opcional). NO se pinta cuando la línea trae `components` o
+   *  `modifiers`: el módulo que aún duplica ahí el mismo texto no lo enseña dos veces. */
   note?: string;
+  /** outfitkit#77 / ADR-0396 — la línea ES un menú: sus componentes, ya compuestos como etiqueta por
+   *  el módulo («Solomillo (+3,00)»), se sangran UNO POR LÍNEA bajo el nombre, SIN importe (el precio
+   *  es el cerrado de la cabecera). Opcional: una línea normal no lo lleva y se pinta como siempre. */
+  components?: string[];
+  /** Los suplementos de la línea (ADR-0376), ya compuestos como etiqueta. Se sangran igual que los
+   *  componentes, DESPUÉS de ellos. Solo cuentan las cadenas: un objeto no es una etiqueta. */
+  modifiers?: string[];
 }
 
 /** Desglose de un impuesto (p.ej. IVA 21%). */
@@ -88,6 +96,14 @@ const DEFAULT_LABELS: OkReceiptLabels = {
   total: 'TOTAL',
   change: 'Change',
 };
+
+/** Las etiquetas de una lista de sub-líneas: solo cadenas no vacías. DEFENSIVO a propósito: `sales`
+ *  ≤ 2.16.10 ya adjunta `modifiers` como OBJETOS al mismo JSON que entrega a `<ok-receipt>`; el día
+ *  que el shell actualice, pintarlos como texto imprimiría «[object Object]» en cada tique. */
+function labelsOf(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  return list.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+}
 
 /** JSON completo del tiquet. */
 export interface ReceiptData {
@@ -160,6 +176,12 @@ export class OkReceipt extends LitElement {
     th.num, td.num { text-align: right; white-space: nowrap; }
     .line-name { word-break: break-word; }
     .line-note { font-size: 9px; padding-left: 2mm; opacity: .8; }
+    /* #77 — Sub-líneas del menú (componentes) y de los suplementos: una por línea, 11px y 4mm de
+       sangrado, como el papel HTML de sales. La nota (9px, una línea) era ilegible a un metro en
+       el modal de la cuenta previa y no tenía jerarquía; LS Central, WooCommerce y Maitre'D listan
+       los componentes sangrados bajo la línea del menú, sin importe. */
+    .line-sub { font-size: 11px; padding-left: 4mm; word-break: break-word; }
+    .line-sub::before { content: '› '; opacity: .6; }
     .qty-price { font-size: 9px; opacity: .85; }
     .totals { width: 100%; }
     .totals td { padding: .2mm 0; }
@@ -248,16 +270,21 @@ export class OkReceipt extends LitElement {
         <tr><th>${this.t.item}</th><th class="num">${this.t.amount}</th></tr>
       </thead>
       <tbody>
-        ${lines.map(
-          (l) => html`<tr>
+        ${lines.map((l) => {
+          const comps = labelsOf(l.components);
+          const mods = labelsOf(l.modifiers);
+          const hasSub = comps.length > 0 || mods.length > 0;
+          return html`<tr>
               <td class="line-name">
                 <div>${l.name}</div>
                 <div class="qty-price">${l.qty} × ${this.money(l.unit_price)}</div>
-                ${l.note ? html`<div class="line-note">${l.note}</div>` : nothing}
+                ${comps.map((c) => html`<div class="line-sub comp">${c}</div>`)}
+                ${mods.map((m) => html`<div class="line-sub mod">${m}</div>`)}
+                ${!hasSub && l.note ? html`<div class="line-note">${l.note}</div>` : nothing}
               </td>
               <td class="num">${this.money(l.total)}</td>
-            </tr>`,
-        )}
+            </tr>`;
+        })}
       </tbody>
     </table>`;
   }
