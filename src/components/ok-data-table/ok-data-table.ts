@@ -497,8 +497,12 @@ export class OkDataTable extends LitElement {
       .gh.sortable:hover, .gh.sortable:active,
       .grow-data:hover, .grow-data:active { transform: none; }
     }
-    /* Cabecera: ion-card-header en fila (icono + título + checkbox); se conserva su padding Ionic. */
-    ion-card-header.rcard-head { display: flex; align-items: center; gap: 0.5rem; }
+    /* Header: ion-card-header as a single row (icon + title + checkbox), keeping Ionic's padding.
+       #79 — flex-direction/flex-wrap are SPELLED OUT on purpose: in ios mode (the mode the Hub
+       shell pins, ADR-0143) Ionic's own host CSS gives ion-card-header a column direction, so a
+       rule that only sets display:flex inherits it and the three children stack on three lines.
+       Under md the same rule looked right, which is why it shipped. */
+    ion-card-header.rcard-head { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0.5rem; }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
     .rcard-head .rc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     /* Cuerpo: ion-card-content (padding Ionic por defecto) con las filas clave-valor apiladas. */
