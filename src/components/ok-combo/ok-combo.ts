@@ -281,7 +281,7 @@ export class OkCombo extends LitElement {
       <ion-input
         .label=${this.label ?? ''}
         label-placement=${this.label ? 'stacked' : 'start'}
-        fill="outline"
+        fill="outline" mode="md"
         .value=${this.displayText}
         placeholder=${this.effectivePlaceholder}
         @ionInput=${(e: Event) => this.handleInput(e)}

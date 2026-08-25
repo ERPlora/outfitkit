@@ -1242,7 +1242,7 @@ export class OkDataTable extends LitElement {
         <ion-select
           label=${col.header}
           label-placement="stacked"
-          fill="outline"
+          fill="outline" mode="md"
           ?multiple=${multi}
           interface="modal"
           .interfaceOptions=${{ cssClass: 'ok-overlay' }}
@@ -1261,9 +1261,9 @@ export class OkDataTable extends LitElement {
         <div class="fblock">
           <span class="flabel">${col.header}</span>
           <div class="frange">
-            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? this.t.from : this.t.gte}
+            <ion-input type=${t} fill="outline" mode="md" placeholder=${type === 'daterange' ? this.t.from : this.t.gte}
               @ionInput=${(e: Event) => onEdge(col, 'from', e)}></ion-input>
-            <ion-input type=${t} fill="outline" placeholder=${type === 'daterange' ? this.t.to : this.t.lte}
+            <ion-input type=${t} fill="outline" mode="md" placeholder=${type === 'daterange' ? this.t.to : this.t.lte}
               @ionInput=${(e: Event) => onEdge(col, 'to', e)}></ion-input>
           </div>
         </div>
@@ -1273,7 +1273,7 @@ export class OkDataTable extends LitElement {
     return html`
       <ion-input
         type=${inputType}
-        fill="outline"
+        fill="outline" mode="md"
         label=${col.header}
         label-placement="stacked"
         placeholder=${this.t.filterPlaceholder}
@@ -1657,8 +1657,8 @@ export class OkDataTable extends LitElement {
         <div class="fblock">
           <span class="flabel">${label}</span>
           <div class="daterange">
-            <ion-input type="date" label=${this.t.from} label-placement="stacked" fill="outline" .value=${f.from ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'from', (e as CustomEvent).detail.value ?? '')}></ion-input>
-            <ion-input type="date" label=${this.t.to} label-placement="stacked" fill="outline" .value=${f.to ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'to', (e as CustomEvent).detail.value ?? '')}></ion-input>
+            <ion-input type="date" label=${this.t.from} label-placement="stacked" fill="outline" mode="md" .value=${f.from ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'from', (e as CustomEvent).detail.value ?? '')}></ion-input>
+            <ion-input type="date" label=${this.t.to} label-placement="stacked" fill="outline" mode="md" .value=${f.to ?? ''} @ionChange=${(e: Event) => this.setFilterRange(col.key, 'to', (e as CustomEvent).detail.value ?? '')}></ion-input>
           </div>
         </div>
       `;
@@ -1674,7 +1674,7 @@ export class OkDataTable extends LitElement {
         <ion-select
           label=${label}
           label-placement="stacked"
-          fill="outline"
+          fill="outline" mode="md"
           multiple
           interface="modal"
           .interfaceOptions=${{ cssClass: 'ok-overlay' }}
