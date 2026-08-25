@@ -12,8 +12,8 @@ import type { OkReceipt, ReceiptData } from './ok-receipt.js';
 const BASE: ReceiptData = {
   business: { name: 'MI NEGOCIO' },
   number: 'T-1',
-  lines: [{ name: 'Cafe', qty: 1, unit_price: 1.8, total: 1.8 }],
-  total: 1.8,
+  lines: [{ name: 'Cafe', qty: 1, unit_price: 180, total: 180 }],
+  total: 180,
 };
 
 async function montar(receipt: ReceiptData): Promise<OkReceipt> {

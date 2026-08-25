@@ -129,6 +129,7 @@ export default defineConfig({
         'ok-audio': resolve(__dirname, 'src/components/ok-audio/ok-audio.ts'),
         'ok-video': resolve(__dirname, 'src/components/ok-video/ok-video.ts'),
         'ok-pdf': resolve(__dirname, 'src/components/ok-pdf/ok-pdf.ts'),
+        'ok-money': resolve(__dirname, 'src/components/ok-money/ok-money.ts'),
         'ok-receipt': resolve(__dirname, 'src/components/ok-receipt/ok-receipt.ts'),
         'ok-invoice': resolve(__dirname, 'src/components/ok-invoice/ok-invoice.ts'),
         'ok-timeline': resolve(__dirname, 'src/components/ok-timeline/ok-timeline.ts'),

@@ -71,6 +71,8 @@ export { OkQr } from './components/ok-qr/ok-qr.js';
 export { OkAudio } from './components/ok-audio/ok-audio.js';
 export { OkVideo } from './components/ok-video/ok-video.js';
 export { OkPdf } from './components/ok-pdf/ok-pdf.js';
+export { OkMoney, formatMinor, separatorsOf, documentLocale, NOT_AN_AMOUNT } from './components/ok-money/ok-money.js';
+export type { FormatMinorOptions } from './components/ok-money/ok-money.js';
 export { OkReceipt } from './components/ok-receipt/ok-receipt.js';
 export type {
   ReceiptData,

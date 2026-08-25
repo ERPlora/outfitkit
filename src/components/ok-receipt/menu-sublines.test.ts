@@ -18,15 +18,15 @@ import type { OkReceipt, ReceiptData } from './ok-receipt.js';
 const PLAIN: ReceiptData = {
   business: { name: 'BAR PEPE' },
   number: 'T-7',
-  lines: [{ name: 'Cafe', qty: 1, unit_price: 1.8, total: 1.8, note: 'sin sal' }],
-  total: 1.8,
+  lines: [{ name: 'Cafe', qty: 1, unit_price: 180, total: 180, note: 'sin sal' }],
+  total: 180,
 };
 
 const MENU_LINE = {
   name: 'Menú del día',
   qty: 1,
-  unit_price: 16.5,
-  total: 16.5,
+  unit_price: 1650,
+  total: 1650,
   components: ['Gazpacho', 'Solomillo (+3,00)', 'Cerveza', 'Flan'],
   modifiers: ['Al punto'],
   note: 'Gazpacho · Solomillo (+3,00) · Cerveza · Flan · Al punto',
