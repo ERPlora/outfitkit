@@ -1,4 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit';
+import type { PropertyValues } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -176,6 +177,8 @@ export interface OkDataTableLabels {
   recordSingular: string;
   /** Pager: plural "registros" (cuando count !== 1). */
   recordPlural: string;
+  /** Pie en MÓVIL: botón que trae la siguiente tanda de filas (sustituye al pager numerado). */
+  loadMore: string;
 }
 
 /** Defaults en INGLÉS. Variables con token `{n}`/`{label}`/`{from}`/`{to}`. */
@@ -214,6 +217,7 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   showing: 'Showing {from}–{to} of',
   recordSingular: 'record',
   recordPlural: 'records',
+  loadMore: 'Load more',
 };
 
 const ES_LABELS: OkDataTableLabels = {
@@ -251,6 +255,7 @@ const ES_LABELS: OkDataTableLabels = {
   showing: 'Mostrando {from}–{to} de',
   recordSingular: 'registro',
   recordPlural: 'registros',
+  loadMore: 'Cargar más',
 };
 
 export class OkDataTable extends LitElement {
@@ -497,8 +502,12 @@ export class OkDataTable extends LitElement {
       .gh.sortable:hover, .gh.sortable:active,
       .grow-data:hover, .grow-data:active { transform: none; }
     }
-    /* Cabecera: ion-card-header en fila (icono + título + checkbox); se conserva su padding Ionic. */
-    ion-card-header.rcard-head { display: flex; align-items: center; gap: 0.5rem; }
+    /* Header: ion-card-header as a single row (icon + title + checkbox), keeping Ionic's padding.
+       #79 — flex-direction/flex-wrap are SPELLED OUT on purpose: in ios mode (the mode the Hub
+       shell pins, ADR-0143) Ionic's own host CSS gives ion-card-header a column direction, so a
+       rule that only sets display:flex inherits it and the three children stack on three lines.
+       Under md the same rule looked right, which is why it shipped. */
+    ion-card-header.rcard-head { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0.5rem; }
     .rcard-head .rc-icon { display: inline-flex; color: var(--primary); }
     .rcard-head .rc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     /* Cuerpo: ion-card-content (padding Ionic por defecto) con las filas clave-valor apiladas. */
@@ -532,6 +541,11 @@ export class OkDataTable extends LitElement {
     .pager .strong { font-weight: 600; color: var(--color); }
     .psize { font: inherit; font-size: 12.5px; padding: 0.2rem 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--background); color: var(--color); }
     .pager .nav { display: flex; align-items: center; gap: 0.2rem; }
+    /* #78 — Pie en MÓVIL: un solo control «Cargar más» en lugar del pager numerado (Shopify
+       IndexTable, Fresha, Square y Material hacen lo mismo: nadie pinta botones de página en un
+       teléfono). Sin atributo fill: el sólido por defecto de Ionic es el único que pinta caja en
+       modo ios (outfitkit#82 / ADR-0143). Los 44px son el área táctil mínima. */
+    .pager .load-more { min-height: 44px; margin: 0; --padding-start: 1rem; --padding-end: 1rem; font-size: 13px; }
     .pager .nav .pp { font-weight: 600; color: var(--color); padding: 0 0.25rem; }
     /* Pager numerado: botón por página + «…» en los saltos (look del Hub). */
     .pnum { min-width: 1.75rem; height: 1.75rem; padding: 0 0.4rem; border: 1px solid transparent; border-radius: 8px; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--color); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
@@ -651,6 +665,10 @@ export class OkDataTable extends LitElement {
   @state() private q = '';
   @state() private clientPage = 0;
   @state() private clientPageSize = 0; // 0 = usa `pageSize`
+  // #78 — Mobile footer: how many rows the «Load more» button has accumulated (CLIENT mode only).
+  // 0 = untouched, which means «one page», so the default needs no special-casing anywhere. It is
+  // rows and not pages because `pageSize` can change under it (the pager's own size selector).
+  @state() private mobileShown = 0;
   // Orden en memoria (modo cliente): columna activa + dirección. Vacío = sin orden.
   @state() private clientSort = '';
   @state() private clientSortDir: 'asc' | 'desc' = 'asc';
@@ -965,6 +983,7 @@ export class OkDataTable extends LitElement {
     }
     this.clientFilters = clean;
     this.clientPage = 0;
+    this.mobileShown = 0; // #78 — a new result set starts at one page again
     this.panel = 'none';
     this.emit('filterChange', { filters: this.serializeFilters(clean) });
   }
@@ -1097,6 +1116,7 @@ export class OkDataTable extends LitElement {
     } else {
       this.q = value;
       this.clientPage = 0;
+      this.mobileShown = 0; // #78 — a new result set starts at one page again
     }
   };
 
@@ -1114,6 +1134,7 @@ export class OkDataTable extends LitElement {
       return;
     }
     // Cliente: alterna asc/desc en memoria.
+    this.mobileShown = 0; // #78 — reordering changes WHICH rows the accumulated window holds
     if (this.clientSort === col.key) {
       this.clientSortDir = this.clientSortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -1151,6 +1172,7 @@ export class OkDataTable extends LitElement {
     else next[key] = merged;
     this.clientFilters = next;
     this.clientPage = 0;
+    this.mobileShown = 0; // #78 — a new result set starts at one page again
   }
   // ion-select (select/multiselect) del panel de filtros (renderFilterControl). En servidor emite
   // `filterChange`; en cliente escribe `clientFilters` (multiselect ⇒ filtra por inclusión).
@@ -1201,11 +1223,15 @@ export class OkDataTable extends LitElement {
    *   `views` antes de insertar  → tarjetas
    *   `views` después de insertar → tabla   ← lo que hace la página
    */
-  protected willUpdate(): void {
+  protected willUpdate(changed: PropertyValues): void {
     // `willUpdate` y no `updated`: corre ANTES de renderizar, así que el cambio de vista entra en
     // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
     // tabla ancha antes de las tarjetas.
     this.applyInitialView();
+    // #78 — A fresh `rows` array is a fresh result set: the accumulated mobile window would
+    // otherwise survive a refresh and show N pages of data the user never scrolled to. Server mode
+    // never accumulates here (the parent owns the window), so it is left alone.
+    if (!this.serverSide && changed.has('rows') && this.mobileShown !== 0) this.mobileShown = 0;
   }
 
   private applyInitialView(): void {
@@ -1446,8 +1472,22 @@ export class OkDataTable extends LitElement {
       count = filtered.length;
       pages = Math.max(1, Math.ceil(filtered.length / ps));
       current = Math.min(this.clientPage, pages - 1);
-      visible = filtered.slice(current * ps, current * ps + ps);
+      // #78 — On a phone the footer accumulates instead of paging: everything from the first row
+      // up to whatever «Load more» has asked for. Desktop keeps the page window untouched.
+      visible = this.isMobile
+        ? filtered.slice(0, Math.min(this.mobileShown || ps, count))
+        : filtered.slice(current * ps, current * ps + ps);
     }
+
+    // #78 — How many rows the user has already been served, and whether there is anything left.
+    // Server mode cannot accumulate on its own (`rows` IS the page the parent handed over), so the
+    // button just asks for the next page and the parent decides whether to append or replace.
+    const served = this.serverSide ? (current + 1) * ps : Math.min(this.mobileShown || ps, count);
+    const canLoadMore = this.isMobile && served < count;
+    const loadMore = (): void => {
+      if (this.serverSide) this.emit('pageChange', current + 1);
+      else this.mobileShown = Math.min((this.mobileShown || ps) + ps, count);
+    };
 
     const goTo = (p: number): void => {
       if (this.serverSide) this.emit('pageChange', p);
@@ -1458,6 +1498,7 @@ export class OkDataTable extends LitElement {
       else {
         this.clientPageSize = n;
         this.clientPage = 0;
+        this.mobileShown = 0; // #78 — a new page size restarts the accumulated window
       }
     };
 
@@ -1580,8 +1621,8 @@ export class OkDataTable extends LitElement {
                   <span>
                     ${pages > 1
                       ? html`${this.t.showing
-                          .replace('{from}', String(current * ps + 1))
-                          .replace('{to}', String(Math.min((current + 1) * ps, count)))} `
+                          .replace('{from}', String(this.isMobile && !this.serverSide ? 1 : current * ps + 1))
+                          .replace('{to}', String(Math.min(served, count)))} `
                       : nothing}
                     <span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}
                   </span>
@@ -1593,7 +1634,11 @@ export class OkDataTable extends LitElement {
                       `
                     : nothing}
                 </div>
-                ${pages > 1
+                ${this.isMobile
+                  ? canLoadMore
+                    ? html`<ion-button class="load-more" size="small" @click=${loadMore}>${this.t.loadMore}</ion-button>`
+                    : nothing
+                  : pages > 1
                   ? html`
                       <div class="nav">
                         <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon></ion-button>
