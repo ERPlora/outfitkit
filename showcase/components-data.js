@@ -63,7 +63,7 @@ const COMPONENTS = [
     category: 'datos',
     desc: 'Tabla rica con toolbar consolidada en una línea: buscador, filtros en línea (select / rango de fechas), tamaño de página, vistas tabla/tarjetas, export/import CSV, menú «⋮» y acción primaria. Celdas a medida (avatar, badges, sparkline, total con color), orden, selección y paginación numerada. Port 1:1 del antiguo <data-table>.',
     importPath: "@erplora/outfitkit/ok-data-table",
-    example: '<ok-data-table id="dt" style="display:block" fill></ok-data-table>',
+    example: '<ok-data-table id="dt" style="display:block" fill><form slot="create" style="display:flex;flex-direction:column;gap:.75rem"><ion-input label="Cliente" label-placement="stacked" placeholder="Nombre"></ion-input><ion-input label="Canal" label-placement="stacked" placeholder="Web / App / POS"></ion-input><ion-input label="Total" label-placement="stacked" type="number" placeholder="0,00"></ion-input><ion-button size="small" style="align-self:flex-end">Guardar</ion-button></form></ok-data-table>',
     setup: (root, { h }) => {
       const eur = (n) => (n < 0 ? '−' : '') + '€' + Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2 });
       const ESTADO = { 'Pagado': 'success', 'Procesando': 'warning', 'Reembolso': 'danger', 'Pendiente envío': 'medium' };
@@ -116,7 +116,7 @@ const COMPONENTS = [
       dt.pageSize = 5;
       dt.pageSizes = [5, 10, 25, 50];
       dt.views = ['table', 'cards'];
-      dt.primaryAction = { label: 'Nuevo', icon: 'add' };
+      dt.addable = true; // #75/#76 — panel de alta: empuja en escritorio, hoja completa en móvil (botón «Añadir» ≥ 44px)
       dt.actions = [
         { id: 'view', label: 'Ver', icon: 'eye-outline' },
         { id: 'edit', label: 'Editar', icon: 'create-outline' },
@@ -141,7 +141,7 @@ dt.selectable = true;
 dt.rowClickable = true;           // la fila entera abre el registro → evento rowClick
 dt.views = ['table', 'cards'];
 dt.pageSizes = [5, 10, 25, 50];   // selector de filas/pág. en la toolbar
-dt.primaryAction = { label: 'Nuevo', icon: 'add' };
+dt.addable = true;                // «+» que abre el slot create (panel: empuja en escritorio, hoja completa en móvil)
 dt.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 dt.menuActions = [{ id: 'export', label: 'Exportar CSV', icon: 'download-outline' }];
 dt.addEventListener('rowAction', (e) => …);   // { actionId, row }
@@ -156,7 +156,8 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
       { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — loading muestra ion-spinner y deshabilita' },
       { kind: 'prop', name: '.views', type: 'string[]', detail: "['table','cards']" },
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
-      { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila entera abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
+      { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila —y la tarjeta en vista «cards»— abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
+      { kind: 'prop', name: 'addable', type: 'bool', detail: 'Botón de alta que abre el slot `create`: en ≥834px el panel EMPUJA la tabla (dos columnas); por debajo es hoja a pantalla completa. En móvil el alta es un botón «Añadir» con etiqueta (44px)' },
       { kind: 'prop', name: '.primaryAction', type: '{label, icon?}', detail: 'Botón destacado de la topbar' },
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
       { kind: 'event', name: 'rowAction · menuAction', type: '{actionId, row?}', detail: 'Acción de fila · ítem del menú «⋮»' },
@@ -1865,11 +1866,15 @@ video.addEventListener('ok-ended', () => …);`,
           { name: 'Café con leche', qty: 2, unit_price: 1.5, total: 3.0 },
           { name: 'Tostada con tomate', qty: 1, unit_price: 2.2, total: 2.2, note: 'sin sal' },
           { name: 'Zumo de naranja natural', qty: 1, unit_price: 2.8, total: 2.8 },
+          // #77 / ADR-0396 — un MENÚ: una línea con su precio cerrado y los componentes sangrados
+          // debajo, sin importe (solo el suplemento); los suplementos de la línea, después.
+          { name: 'Menú del día', qty: 1, unit_price: 16.5, total: 16.5,
+            components: ['Gazpacho', 'Solomillo (+3,00)', 'Cerveza', 'Flan'], modifiers: ['Al punto'] },
         ],
-        subtotal: 8.0,
-        taxes: [{ label: 'IVA 10%', base: 8.0, amount: 0.8 }],
-        total: 8.8,
-        payment: { method: 'Efectivo', paid: 10.0, change: 1.2 },
+        subtotal: 24.5,
+        taxes: [{ label: 'IVA 10%', base: 24.5, amount: 2.45 }],
+        total: 26.95,
+        payment: { method: 'Efectivo', paid: 30.0, change: 3.05 },
         currency: '€',
         footer: '¡Gracias por su visita!\nwww.barpepe.example',
         qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=A-000142&total=8.80',
@@ -1880,8 +1885,12 @@ video.addEventListener('ok-ended', () => …);`,
 el.receipt = {
   business: { name: 'Bar Pepe', tax_id: 'NIF B12345678', logo_url: '/logo.png' },
   number: 'A-000142', datetime: '09/06/2026 14:32',
-  lines: [{ name: 'Café', qty: 2, unit_price: 1.5, total: 3.0 }],
-  subtotal: 3.0, taxes: [{ label: 'IVA 10%', base: 3.0, amount: 0.3 }], total: 3.3,
+  lines: [
+    { name: 'Café', qty: 2, unit_price: 1.5, total: 3.0 },
+    // Menú (ADR-0396): componentes y suplementos ya compuestos por el módulo, una sub-línea cada uno
+    { name: 'Menú del día', qty: 1, unit_price: 13.5, total: 13.5, components: ['Gazpacho', 'Solomillo (+3,00)'], modifiers: ['Al punto'] },
+  ],
+  subtotal: 16.5, taxes: [{ label: 'IVA 10%', base: 16.5, amount: 1.65 }], total: 18.15,
   payment: { method: 'Efectivo', paid: 5, change: 1.7 },
   qr: 'https://…', qr_note: 'VeriFactu',
 };
@@ -1889,6 +1898,7 @@ container.appendChild(el);
 // Imprimir desde el contenedor padre: window.print() + @media print`,
     api: [
       { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…)' },
+      { kind: 'prop', name: 'lines[].components · lines[].modifiers', type: 'string[]', detail: 'Menú (ADR-0396): componentes y suplementos, ya compuestos como etiqueta, una sub-línea sangrada cada uno, sin importe. Con listas, `note` no se pinta' },
       { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 120)' },
       { kind: 'slot', name: 'logo', type: '—', detail: 'Logo alternativo si no hay business.logo_url' },
     ],
