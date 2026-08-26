@@ -74,6 +74,8 @@ export interface OkReceiptLabels {
   servedBy: string;
   /** Etiqueta del cliente. */
   customer: string;
+  /** outfitkit#87 — etiqueta de la MESA (cuenta previa de hostelería). */
+  table: string;
   /** Cabecera de columna: concepto/artículo. */
   item: string;
   /** Cabecera de columna: importe. */
@@ -94,6 +96,7 @@ const DEFAULT_LABELS: OkReceiptLabels = {
   receipt: 'Receipt',
   servedBy: 'Served by',
   customer: 'Customer',
+  table: 'Table',
   item: 'Item',
   amount: 'Amount',
   noLines: '— No lines —',
@@ -123,6 +126,10 @@ export interface ReceiptData {
   datetime?: string;
   cashier?: string;
   customer?: string;
+  /** outfitkit#87 — the TABLE/check that identifies this paper (restaurant pre-bill). Painted with its
+   *  own label, next to `customer`, never instead of it: a table may also have a customer. Square,
+   *  Toast and Lightspeed print them as separate fields; the hub's ESC/POS renderer names it too. */
+  table?: string;
   lines: ReceiptLine[];
   subtotal?: number;
   taxes?: ReceiptTax[];
@@ -264,9 +271,10 @@ export class OkReceipt extends LitElement {
         ${r.number ? html`<span>${this.t.receipt}: <strong>${r.number}</strong></span>` : html`<span></span>`}
         ${r.datetime ? html`<span>${r.datetime}</span>` : nothing}
       </div>
-      ${r.cashier || r.customer
+      ${r.cashier || r.customer || r.table
         ? html`<div class="meta">
             ${r.cashier ? html`<span>${this.t.servedBy}: ${r.cashier}</span>` : html`<span></span>`}
+            ${r.table ? html`<span>${this.t.table}: ${r.table}</span>` : nothing}
             ${r.customer ? html`<span>${this.t.customer}: ${r.customer}</span>` : nothing}
           </div>`
         : nothing}`;
