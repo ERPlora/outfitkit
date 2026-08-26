@@ -124,9 +124,17 @@ export class OkTree extends LitElement {
       align-items: center;
       justify-content: center;
       width: 32px;
-      height: 100%;
-      padding: 0;
+      /* Fills the row's cross axis. NOT height:100% -- .row only declares min-height, so its height
+         is indefinite and a percentage degrades to auto: measured at 32x16 in Chrome, SMALLER than
+         the 20x20 this had before. align-self also overrides the parent's align-items:center. */
+      align-self: stretch;
+      /* Stretch only fills the row's CONTENT box, and .row carries 0.38rem of vertical padding:
+         measured in Chrome that left the chevron at 32px inside a 44px row. These two reclaim that
+         padding -- dead space nobody else uses -- without making the row any taller. */
       margin: 0;
+      margin-block: -0.38rem;
+      padding-block: 0.38rem;
+      padding-inline: 0;
       border: 0;
       background: none;
       color: inherit;

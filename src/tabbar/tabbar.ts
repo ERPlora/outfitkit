@@ -143,6 +143,9 @@ function bindDrag(segment: HTMLElement): () => void {
 
   const onDown = (e: PointerEvent): void => {
     if (e.pointerType === 'touch') return;
+    // Primary button only. The secondary one belongs to the context menu, and dragging the strip
+    // out from under an opening menu is nobody's intention.
+    if (e.button !== 0) return;
     pointerId = e.pointerId;
     startX = e.clientX;
     startScroll = segment.scrollLeft;
@@ -152,6 +155,13 @@ function bindDrag(segment: HTMLElement): () => void {
 
   const onMove = (e: PointerEvent): void => {
     if (pointerId === null || e.pointerId !== pointerId) return;
+    // The button is STATE, and it is the only thing that tells the truth: a release outside the
+    // window never reaches the page as a pointerup, and without this the strip kept scrolling with
+    // the button already up -- stuck in grabbing, dragging on every later move.
+    if (e.buttons === 0) {
+      endDrag();
+      return;
+    }
     const delta = e.clientX - startX;
     if (!dragging) {
       if (Math.abs(delta) < DRAG_THRESHOLD_PX) return;
@@ -161,6 +171,16 @@ function bindDrag(segment: HTMLElement): () => void {
       segment.setPointerCapture?.(pointerId);
     }
     segment.scrollLeft = startScroll - delta;
+  };
+
+  /** Closes the gesture without arming the click swallow: nothing was released over a tab. */
+  const endDrag = (): void => {
+    if (dragging) {
+      if (pointerId !== null) segment.releasePointerCapture?.(pointerId);
+      segment.classList.remove(DRAGGING_CLASS);
+    }
+    pointerId = null;
+    dragging = false;
   };
 
   const onUp = (e: PointerEvent): void => {
