@@ -239,8 +239,8 @@
 
             <ok-data-table id="customers-table" fill>
               <form id="customer-create-form" slot="create" class="customer-create-form">
-                <ion-input id="customer-create-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
-                <ion-input id="customer-create-email" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
+                <ion-input id="customer-create-name" mode="md" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="customer-create-email" mode="md" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
                 <ion-button type="submit">Añadir</ion-button>
               </form>
             </ok-data-table>
@@ -285,23 +285,23 @@
             <section id="customer-edit-panel" class="customer-panel" hidden>
               <form id="customer-edit-form">
                 <div class="customer-edit-grid">
-                  <ion-input id="customer-edit-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
-                  <ion-input id="customer-edit-email" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
-                  <ion-input id="customer-edit-phone" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-tax-id" fill="outline" label="NIF" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-company" fill="outline" label="Empresa" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-address" fill="outline" label="Dirección" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-city" fill="outline" label="Ciudad" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-postal-code" fill="outline" label="Código postal" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-country" fill="outline" label="País" label-placement="floating"></ion-input>
-                  <ion-input id="customer-edit-birthday" fill="outline" label="Cumpleaños" label-placement="floating" type="date"></ion-input>
-                  <ion-input id="customer-edit-anniversary" fill="outline" label="Aniversario" label-placement="floating" type="date"></ion-input>
-                  <ion-input id="customer-edit-source" fill="outline" label="Origen" label-placement="floating"></ion-input>
-                  <ion-select id="customer-edit-stage" fill="outline" label="Etapa" label-placement="floating"></ion-select>
-                  <ion-select id="customer-edit-channel" fill="outline" label="Canal preferido" label-placement="floating"></ion-select>
-                  <ion-textarea id="customer-edit-notes" class="customer-edit-wide" fill="outline" label="Notas internas" label-placement="floating" auto-grow></ion-textarea>
-                  <ion-input id="customer-field-tint" fill="outline" label="Tinte habitual" label-placement="floating"></ion-input>
-                  <ion-select id="customer-field-skin" fill="outline" label="Tipo de piel" label-placement="floating">
+                  <ion-input id="customer-edit-name" mode="md" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                  <ion-input id="customer-edit-email" mode="md" fill="outline" label="Email" label-placement="floating" type="email"></ion-input>
+                  <ion-input id="customer-edit-phone" mode="md" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-tax-id" mode="md" fill="outline" label="NIF" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-company" mode="md" fill="outline" label="Empresa" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-address" mode="md" fill="outline" label="Dirección" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-city" mode="md" fill="outline" label="Ciudad" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-postal-code" mode="md" fill="outline" label="Código postal" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-country" mode="md" fill="outline" label="País" label-placement="floating"></ion-input>
+                  <ion-input id="customer-edit-birthday" mode="md" fill="outline" label="Cumpleaños" label-placement="floating" type="date"></ion-input>
+                  <ion-input id="customer-edit-anniversary" mode="md" fill="outline" label="Aniversario" label-placement="floating" type="date"></ion-input>
+                  <ion-input id="customer-edit-source" mode="md" fill="outline" label="Origen" label-placement="floating"></ion-input>
+                  <ion-select id="customer-edit-stage" mode="md" fill="outline" label="Etapa" label-placement="floating"></ion-select>
+                  <ion-select id="customer-edit-channel" mode="md" fill="outline" label="Canal preferido" label-placement="floating"></ion-select>
+                  <ion-textarea id="customer-edit-notes" mode="md" class="customer-edit-wide" fill="outline" label="Notas internas" label-placement="floating" auto-grow></ion-textarea>
+                  <ion-input id="customer-field-tint" mode="md" fill="outline" label="Tinte habitual" label-placement="floating"></ion-input>
+                  <ion-select id="customer-field-skin" mode="md" fill="outline" label="Tipo de piel" label-placement="floating">
                     <ion-select-option value="Seca">Seca</ion-select-option>
                     <ion-select-option value="Grasa">Grasa</ion-select-option>
                   </ion-select>
@@ -327,7 +327,7 @@
             <section class="customer-panel">
               <h3>Añadir nota</h3>
               <form id="customer-note-form">
-                <ion-textarea id="customer-note" fill="outline" label="Nota" label-placement="floating" auto-grow></ion-textarea>
+                <ion-textarea id="customer-note" mode="md" fill="outline" label="Nota" label-placement="floating" auto-grow></ion-textarea>
                 <ion-button type="submit" size="small">Añadir</ion-button>
               </form>
               <h3>Actividad</h3>

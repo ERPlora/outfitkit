@@ -14,7 +14,10 @@ describe('showcase Hub — Apps y Facturación actuales', () => {
       expect(page).not.toContain("from './_page.js'");
       expect(page).not.toContain('_shell.css');
       expect(page).not.toContain('<ok-page-header');
-      expect(page).not.toMatch(/mode=["']md["']/);
+      // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+      // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+      // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+      expect(page).not.toMatch(/mode:\s*['"]md['"]/);
 
       const config = page.indexOf('<script src="./_ionic-config.js"></script>');
       const ionic = page.indexOf('@ionic/core/dist/ionic/ionic.esm.js');

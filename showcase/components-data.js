@@ -1922,6 +1922,7 @@ container.appendChild(el);
 // Imprimir desde el contenedor padre: window.print() + @media print`,
     api: [
       { kind: 'prop', name: 'receipt', type: 'ReceiptData', detail: 'JSON del tiquet (business · lines · totales · payment · qr…). Importes = ENTEROS en unidad mínima (céntimos), pintados con el idioma del documento; un float pinta «—»' },
+      { kind: 'prop', name: 'receipt.table', type: 'string', detail: 'Mesa/comanda de la cuenta previa (#87): etiqueta propia («Table»/labels.table) junto a `customer`, nunca en su lugar' },
       { kind: 'prop', name: 'receipt.decimals', type: 'number', detail: 'Escala de la moneda (EUR 2 def, JPY 0). El componente corta por aquí, nunca divide' },
       { kind: 'prop', name: 'lines[].components · lines[].modifiers', type: 'string[]', detail: 'Menú (ADR-0396): componentes y suplementos, ya compuestos como etiqueta, una sub-línea sangrada cada uno, sin importe. Con listas, `note` no se pinta' },
       { kind: 'prop', name: 'qr-size', type: 'number', detail: 'Lado del QR en px (def 120)' },

@@ -59,7 +59,10 @@ describe('showcase module-online-booking-bookings — paridad con el módulo rea
     expect(page).toContain("title: 'Reservas'");
     expect(page).toContain('<script src="./_ionic-config.js"></script>');
     expect(page.indexOf('./_ionic-config.js')).toBeLessThan(page.indexOf('@ionic/core'));
-    expect(page).not.toMatch(/mode=["']md["']/);
+    // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+    // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+    // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+    expect(page).not.toMatch(/mode:\s*['"]md['"]/);
 
     const tags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
     expect(new Set(tags)).toEqual(new Set(['ok-data-table']));
@@ -168,7 +171,10 @@ describe('showcase module-online-booking-settings — paridad con el módulo rea
     expect(page).toContain("title: 'Ajustes'");
     expect(page).toContain('<form id="online-booking-settings-form"');
     expect(page).not.toMatch(/<\/?ok-[a-z-]+/);
-    expect(page).not.toMatch(/mode=["']md["']/);
+    // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+    // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+    // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+    expect(page).not.toMatch(/mode:\s*['"]md['"]/);
   });
 
   it('reproduce todos los campos y límites del componente y el schema', () => {

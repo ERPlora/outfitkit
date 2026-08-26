@@ -27,21 +27,21 @@
           <ion-card class="form-card">
             <ion-card-content>
               <form id="invite-user-form" class="stack">
-                <ion-input id="invite-email" label="Correo electrónico" label-placement="floating"
+                <ion-input id="invite-email" mode="md" label="Correo electrónico" label-placement="floating"
                            fill="outline" type="email" placeholder="usuario@ejemplo.com" required></ion-input>
-                <ion-select id="invite-organization" label="Organización *" label-placement="floating"
+                <ion-select id="invite-organization" mode="md" label="Organización *" label-placement="floating"
                             fill="outline" interface="popover" value="demo">
                   <ion-select-option value="demo">ERPlora Demo</ion-select-option>
                   <ion-select-option value="central">Central Barcelona</ion-select-option>
                 </ion-select>
-                <ion-select id="invite-hub" label="Hub (opcional)" label-placement="floating"
+                <ion-select id="invite-hub" mode="md" label="Hub (opcional)" label-placement="floating"
                             fill="outline" interface="popover" value="">
                   <ion-select-option value="">Todos los hubs (nivel de organización)</ion-select-option>
                   <ion-select-option value="principal">Terminal principal</ion-select-option>
                   <ion-select-option value="tienda">Tienda Centro</ion-select-option>
                 </ion-select>
                 <p class="hint">Déjalo vacío para dar acceso a todos los hubs de la organización.</p>
-                <ion-select id="invite-role" label="Rol" label-placement="floating"
+                <ion-select id="invite-role" mode="md" label="Rol" label-placement="floating"
                             fill="outline" interface="popover" value="member">
                   <ion-select-option value="member">Miembro · Acceso a hubs asignados</ion-select-option>
                   <ion-select-option value="admin">Administrador · Gestionar organización</ion-select-option>

@@ -63,7 +63,10 @@ function expectIonicHubPage(source: string, route: string, title: string): void 
   expect(source).toContain(`title: '${title}'`);
   expect(source).toContain('<script src="./_ionic-config.js"></script>');
   expect(source.indexOf('./_ionic-config.js')).toBeLessThan(source.indexOf('@ionic/core'));
-  expect(source).not.toMatch(/mode=["']md["']/);
+  // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+  // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+  // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+  expect(source).not.toMatch(/mode:\s*['"]md['"]/);
   expect(source).not.toContain("window.Ionic = { config: { mode: 'md' }");
 }
 
@@ -189,9 +192,10 @@ describe('showcase module-tables-tables — lista real de mesas', () => {
     for (const event of ['pageChange', 'pageSizeChange', 'sortChange', 'searchChange', 'filterChange']) {
       expect(source).toContain(`addEventListener('${event}'`);
     }
+    // tables#69 (2026-08-26): the list sorts NATURALLY (S1 · S2 · S10) on the computed `number_sort` column.
     expect(manifest.queries['tables.tables.list'].list).toMatchObject({
       page_size: 50,
-      default_sort: 'name',
+      default_sort: 'number_sort',
       default_dir: 'asc',
     });
   });

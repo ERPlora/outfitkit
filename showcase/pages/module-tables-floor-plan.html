@@ -87,7 +87,7 @@
         body: `
           <div class="tables-floor-plan-page">
             <div class="tables-floor-plan-actions">
-              <ion-input id="tables-new-zone-name" fill="outline" label="Zona" label-placement="floating" placeholder="Nueva zona…"></ion-input>
+              <ion-input id="tables-new-zone-name" mode="md" fill="outline" label="Zona" label-placement="floating" placeholder="Nueva zona…"></ion-input>
               <ion-button id="tables-add-zone" size="small" fill="outline">Añadir zona</ion-button>
               <ion-button id="tables-add-table" size="small">Añadir mesa</ion-button>
             </div>
@@ -115,24 +115,24 @@
             <ion-content class="ion-padding">
               <form id="tables-table-form" class="tables-floor-plan-form">
                 <div class="tables-floor-plan-form-row">
-                  <ion-input id="tables-table-number" fill="outline" label="Número" label-placement="floating" required></ion-input>
-                  <ion-input id="tables-table-capacity" fill="outline" label="Aforo" label-placement="floating" type="number" min="1"></ion-input>
+                  <ion-input id="tables-table-number" mode="md" fill="outline" label="Número" label-placement="floating" required></ion-input>
+                  <ion-input id="tables-table-capacity" mode="md" fill="outline" label="Aforo" label-placement="floating" type="number" min="1"></ion-input>
                 </div>
-                <ion-input id="tables-table-name" fill="outline" label="Nombre (opcional)" label-placement="floating"></ion-input>
+                <ion-input id="tables-table-name" mode="md" fill="outline" label="Nombre (opcional)" label-placement="floating"></ion-input>
                 <div class="tables-floor-plan-form-row">
-                  <ion-select id="tables-table-shape" fill="outline" label="Forma" label-placement="floating" interface="popover">
+                  <ion-select id="tables-table-shape" mode="md" fill="outline" label="Forma" label-placement="floating" interface="popover">
                     <ion-select-option value="square">Cuadrada</ion-select-option>
                     <ion-select-option value="round">Redonda</ion-select-option>
                     <ion-select-option value="rectangle">Rectangular</ion-select-option>
                   </ion-select>
-                  <ion-select id="tables-table-status" fill="outline" label="Estado" label-placement="floating" interface="popover">
+                  <ion-select id="tables-table-status" mode="md" fill="outline" label="Estado" label-placement="floating" interface="popover">
                     <ion-select-option value="available">Disponible</ion-select-option>
                     <ion-select-option value="occupied">Ocupada</ion-select-option>
                     <ion-select-option value="reserved">Reservada</ion-select-option>
                     <ion-select-option value="blocked">Bloqueada</ion-select-option>
                   </ion-select>
                 </div>
-                <ion-select id="tables-table-zone" fill="outline" label="Zona" label-placement="floating" interface="popover"></ion-select>
+                <ion-select id="tables-table-zone" mode="md" fill="outline" label="Zona" label-placement="floating" interface="popover"></ion-select>
                 <ion-toggle id="tables-table-active">Mesa activa</ion-toggle>
                 <div class="tables-floor-plan-modal-actions">
                   <ion-button id="tables-table-delete" type="button" color="danger" fill="outline">Borrar</ion-button>
@@ -151,10 +151,10 @@
             </ion-header>
             <ion-content class="ion-padding">
               <form id="tables-zone-form" class="tables-floor-plan-form">
-                <ion-input id="tables-zone-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
-                <ion-input id="tables-zone-description" fill="outline" label="Descripción (opcional)" label-placement="floating"></ion-input>
-                <ion-input id="tables-zone-color" fill="outline" label="Color" label-placement="floating"></ion-input>
-                <ion-input id="tables-zone-order" fill="outline" label="Orden" label-placement="floating" type="number" min="0"></ion-input>
+                <ion-input id="tables-zone-name" mode="md" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="tables-zone-description" mode="md" fill="outline" label="Descripción (opcional)" label-placement="floating"></ion-input>
+                <ion-input id="tables-zone-color" mode="md" fill="outline" label="Color" label-placement="floating"></ion-input>
+                <ion-input id="tables-zone-order" mode="md" fill="outline" label="Orden" label-placement="floating" type="number" min="0"></ion-input>
                 <ion-toggle id="tables-zone-active">Zona activa</ion-toggle>
                 <div class="tables-floor-plan-modal-actions">
                   <ion-button id="tables-zone-delete" type="button" color="danger" fill="outline">Borrar zona</ion-button>

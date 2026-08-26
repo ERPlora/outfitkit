@@ -96,9 +96,9 @@
             <ok-data-table id="invoice-settings-table" fill>
               <form id="invoice-settings-form" slot="create" class="invoice-settings-form">
                 <h3 id="invoice-settings-form-title">Crear serie</h3>
-                <ion-input id="series-code" fill="outline" label="Código" label-placement="floating"></ion-input>
-                <ion-input id="series-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
-                <ion-select id="series-type" fill="outline" label="Tipo" label-placement="floating" value="F1">
+                <ion-input id="series-code" mode="md" fill="outline" label="Código" label-placement="floating"></ion-input>
+                <ion-input id="series-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-select id="series-type" mode="md" fill="outline" label="Tipo" label-placement="floating" value="F1">
                   <ion-select-option value="F1">Factura (F1)</ion-select-option>
                   <ion-select-option value="F2">Ticket (F2)</ion-select-option>
                   <ion-select-option value="F3">Factura (F3)</ion-select-option>
@@ -108,8 +108,8 @@
                   <ion-select-option value="R4">Rectificativa (R4)</ion-select-option>
                   <ion-select-option value="R5">Rectificativa (R5)</ion-select-option>
                 </ion-select>
-                <ion-input id="series-year" type="number" fill="outline" label="Año" label-placement="floating" value="2026"></ion-input>
-                <ion-input id="series-prefix" fill="outline" label="Prefijo" label-placement="floating"></ion-input>
+                <ion-input id="series-year" mode="md" type="number" fill="outline" label="Año" label-placement="floating" value="2026"></ion-input>
+                <ion-input id="series-prefix" mode="md" fill="outline" label="Prefijo" label-placement="floating"></ion-input>
                 <ion-toggle id="series-active" checked>Activa</ion-toggle>
                 <ion-toggle id="series-default">Predeterminada</ion-toggle>
                 <div class="invoice-settings-actions">

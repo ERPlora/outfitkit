@@ -100,9 +100,9 @@
             <section id="cash-open-panel" class="cash-panel" hidden>
               <h3>Abrir sesión de caja</h3>
               <form id="cash-open-form" class="cash-form">
-                <ion-select id="cash-open-register" fill="outline" label="Cajón" label-placement="floating"></ion-select>
-                <ion-input id="cash-opening-balance" fill="outline" type="number" min="0" step="0.01" label="Fondo de apertura" label-placement="floating"></ion-input>
-                <ion-input id="cash-open-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                <ion-select id="cash-open-register" mode="md" fill="outline" label="Cajón" label-placement="floating"></ion-select>
+                <ion-input id="cash-opening-balance" mode="md" fill="outline" type="number" min="0" step="0.01" label="Fondo de apertura" label-placement="floating"></ion-input>
+                <ion-input id="cash-open-notes" mode="md" fill="outline" label="Notas" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small">Abrir sesión</ion-button>
                 <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
               </form>
@@ -111,8 +111,8 @@
             <section id="cash-close-panel" class="cash-panel" hidden>
               <h3>Cerrar sesión</h3>
               <form id="cash-close-form" class="cash-form">
-                <ion-input id="cash-closing-balance" fill="outline" type="number" min="0" step="0.01" label="Efectivo contado" label-placement="floating"></ion-input>
-                <ion-input id="cash-close-notes" fill="outline" label="Notas de cierre" label-placement="floating"></ion-input>
+                <ion-input id="cash-closing-balance" mode="md" fill="outline" type="number" min="0" step="0.01" label="Efectivo contado" label-placement="floating"></ion-input>
+                <ion-input id="cash-close-notes" mode="md" fill="outline" label="Notas de cierre" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small" color="danger">Cerrar sesión</ion-button>
                 <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
               </form>
@@ -121,12 +121,12 @@
             <section id="cash-movement-panel" class="cash-panel" hidden>
               <h3>Movimiento de caja</h3>
               <form id="cash-movement-form" class="cash-form">
-                <ion-select id="cash-movement-type" value="in" fill="outline" label="Tipo" label-placement="floating">
+                <ion-select id="cash-movement-type" mode="md" value="in" fill="outline" label="Tipo" label-placement="floating">
                   <ion-select-option value="in">Entrada</ion-select-option>
                   <ion-select-option value="out">Salida</ion-select-option>
                 </ion-select>
-                <ion-input id="cash-movement-amount" fill="outline" type="number" min="0.01" step="0.01" label="Importe" label-placement="floating"></ion-input>
-                <ion-input id="cash-movement-description" fill="outline" label="Concepto" label-placement="floating"></ion-input>
+                <ion-input id="cash-movement-amount" mode="md" fill="outline" type="number" min="0.01" step="0.01" label="Importe" label-placement="floating"></ion-input>
+                <ion-input id="cash-movement-description" mode="md" fill="outline" label="Concepto" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small">Registrar</ion-button>
                 <ion-button type="button" data-close-panel size="small" fill="outline">Cancelar</ion-button>
               </form>
@@ -135,11 +135,11 @@
             <section id="cash-count-panel" class="cash-panel" hidden>
               <h3>Arqueo de caja</h3>
               <form id="cash-count-form" class="cash-form">
-                <ion-select id="cash-count-type" value="closing" fill="outline" label="Tipo de arqueo" label-placement="floating">
+                <ion-select id="cash-count-type" mode="md" value="closing" fill="outline" label="Tipo de arqueo" label-placement="floating">
                   <ion-select-option value="opening">Apertura</ion-select-option>
                   <ion-select-option value="closing">Cierre</ion-select-option>
                 </ion-select>
-                <ion-input id="cash-count-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                <ion-input id="cash-count-notes" mode="md" fill="outline" label="Notas" label-placement="floating"></ion-input>
                 <div id="cash-bills" class="cash-denominations" aria-label="Billetes"></div>
                 <div id="cash-coins" class="cash-denominations" aria-label="Monedas"></div>
                 <p id="cash-count-total" class="cash-total">Total contado: 0,00 €</p>

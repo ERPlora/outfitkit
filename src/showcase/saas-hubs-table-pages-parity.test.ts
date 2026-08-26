@@ -15,7 +15,6 @@ describe('showcase SaaS — tablas actuales de Terminales', () => {
       expect(page).not.toContain('_shell.css');
       expect(page).not.toContain('<ok-page-header');
       expect(page).not.toMatch(/Ionic\s*=\s*\{[\s\S]*mode:\s*['"]md['"]/);
-      expect(page).not.toMatch(/\bmode=['"]md['"]/);
 
       const outfitTags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
       expect(new Set(outfitTags)).toEqual(new Set(['ok-data-table']));

@@ -231,18 +231,18 @@
               </div>
 
               <div class="ticket-actions">
-                <ion-select id="ticket-status" fill="outline" label="Cambiar estado" label-placement="floating" placeholder="Elegir…"></ion-select>
-                <ion-input id="ticket-agent" fill="outline" label="Agente" label-placement="floating" placeholder="uuid del agente…"></ion-input>
+                <ion-select id="ticket-status" mode="md" fill="outline" label="Cambiar estado" label-placement="floating" placeholder="Elegir…"></ion-select>
+                <ion-input id="ticket-agent" mode="md" fill="outline" label="Agente" label-placement="floating" placeholder="uuid del agente…"></ion-input>
                 <ion-button id="ticket-assign" size="small">Asignar</ion-button>
               </div>
 
               <div id="ticket-resolve-actions" class="ticket-actions" hidden>
-                <ion-input id="ticket-resolution-note" fill="outline" label="Nota de resolución" label-placement="floating" placeholder="Nota de resolución (opcional)…"></ion-input>
+                <ion-input id="ticket-resolution-note" mode="md" fill="outline" label="Nota de resolución" label-placement="floating" placeholder="Nota de resolución (opcional)…"></ion-input>
                 <ion-button id="ticket-resolve" size="small" color="success">Resolver</ion-button>
               </div>
 
               <div id="ticket-close-actions" class="ticket-actions" hidden>
-                <ion-select id="ticket-rating" fill="outline" label="Valoración" label-placement="floating" placeholder="(opcional)">
+                <ion-select id="ticket-rating" mode="md" fill="outline" label="Valoración" label-placement="floating" placeholder="(opcional)">
                   <ion-select-option value="1">★</ion-select-option>
                   <ion-select-option value="2">★★</ion-select-option>
                   <ion-select-option value="3">★★★</ion-select-option>
@@ -253,7 +253,7 @@
               </div>
 
               <div id="ticket-reopen-actions" class="ticket-actions" hidden>
-                <ion-input id="ticket-reopen-reason" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la reapertura…"></ion-input>
+                <ion-input id="ticket-reopen-reason" mode="md" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la reapertura…"></ion-input>
                 <ion-button id="ticket-reopen" size="small" color="warning">Reabrir</ion-button>
               </div>
 
@@ -261,7 +261,7 @@
               <div id="ticket-comments"></div>
               <p id="ticket-comments-empty" class="ticket-muted">Sin comentarios.</p>
               <form id="ticket-comment-form" class="ticket-comment-form">
-                <ion-textarea id="ticket-comment" auto-grow rows="1" fill="outline" label="Comentario" label-placement="floating" placeholder="Añadir respuesta…"></ion-textarea>
+                <ion-textarea id="ticket-comment" mode="md" auto-grow rows="1" fill="outline" label="Comentario" label-placement="floating" placeholder="Añadir respuesta…"></ion-textarea>
                 <ion-checkbox id="ticket-comment-internal" label-placement="end">Nota interna</ion-checkbox>
                 <ion-button type="submit" size="small">Comentar</ion-button>
               </form>
@@ -269,12 +269,12 @@
 
             <ok-data-table id="tickets-table" fill>
               <form id="ticket-create-form" slot="create" class="ticket-create-form">
-                <ion-input id="ticket-subject" fill="outline" label="Asunto" label-placement="floating" required></ion-input>
-                <ion-input id="ticket-customer" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
-                <ion-select id="ticket-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                <ion-input id="ticket-subject" mode="md" fill="outline" label="Asunto" label-placement="floating" required></ion-input>
+                <ion-input id="ticket-customer" mode="md" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-select id="ticket-priority" mode="md" fill="outline" label="Prioridad" label-placement="floating" value="medium">
                   ${PRIORITY_OPTIONS.map(({ value, label }) => `<ion-select-option value="${value}">${label}</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-select id="ticket-category" fill="outline" label="Categoría" label-placement="floating" value="general">
+                <ion-select id="ticket-category" mode="md" fill="outline" label="Categoría" label-placement="floating" value="general">
                   ${CATEGORY_OPTIONS.map(({ value, label }) => `<ion-select-option value="${value}">${label}</ion-select-option>`).join('')}
                 </ion-select>
                 <ion-button type="submit">Nuevo ticket</ion-button>

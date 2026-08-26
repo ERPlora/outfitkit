@@ -93,86 +93,86 @@
         body: `
           <div class="schedules-page">
             <div class="schedules-scope">
-              <ion-select id="schedule-member" fill="outline" label="Miembro" label-placement="floating">
+              <ion-select id="schedule-member" mode="md" fill="outline" label="Miembro" label-placement="floating">
                 <ion-select-option value="m1">Ana Ruiz</ion-select-option>
                 <ion-select-option value="m2">Luis Gil</ion-select-option>
               </ion-select>
             </div>
             <ok-data-table id="schedules-table" fill>
               <form id="schedule-form" slot="create" class="schedule-form">
-                <ion-input id="schedule-name" fill="outline" label="Horario" label-placement="floating" placeholder="Nombre del horario"></ion-input>
-                <ion-input id="schedule-from" fill="outline" type="date" label="Vigente desde" label-placement="floating"></ion-input>
-                <ion-input id="schedule-until" fill="outline" type="date" label="Vigente hasta" label-placement="floating"></ion-input>
+                <ion-input id="schedule-name" mode="md" fill="outline" label="Horario" label-placement="floating" placeholder="Nombre del horario"></ion-input>
+                <ion-input id="schedule-from" mode="md" fill="outline" type="date" label="Vigente desde" label-placement="floating"></ion-input>
+                <ion-input id="schedule-until" mode="md" fill="outline" type="date" label="Vigente hasta" label-placement="floating"></ion-input>
                 <ion-checkbox id="schedule-default" label-placement="end" checked>Por defecto</ion-checkbox>
                 <div class="schedule-week">
                   <div class="schedule-day" data-day="0">
                     <ion-checkbox class="day-working" label-placement="end" checked><span>Lunes</span></ion-checkbox>
                     <div class="schedule-day-fields">
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="1">
                     <ion-checkbox class="day-working" label-placement="end" checked><span>Martes</span></ion-checkbox>
                     <div class="schedule-day-fields">
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="2">
                     <ion-checkbox class="day-working" label-placement="end" checked><span>Miércoles</span></ion-checkbox>
                     <div class="schedule-day-fields">
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="3">
                     <ion-checkbox class="day-working" label-placement="end" checked><span>Jueves</span></ion-checkbox>
                     <div class="schedule-day-fields">
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="4">
                     <ion-checkbox class="day-working" label-placement="end" checked><span>Viernes</span></ion-checkbox>
                     <div class="schedule-day-fields">
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="5">
                     <ion-checkbox class="day-working" label-placement="end"><span>Sábado</span></ion-checkbox>
                     <div class="schedule-day-fields" hidden>
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                   <div class="schedule-day" data-day="6">
                     <ion-checkbox class="day-working" label-placement="end"><span>Domingo</span></ion-checkbox>
                     <div class="schedule-day-fields" hidden>
-                      <ion-input class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
-                      <ion-input class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
+                      <ion-input mode="md" class="day-start" fill="outline" type="time" label="Inicio" label-placement="floating" value="09:00"></ion-input>
+                      <ion-input mode="md" class="day-end" fill="outline" type="time" label="Fin" label-placement="floating" value="18:00"></ion-input>
                       <span class="schedule-break">Descanso opcional</span>
-                      <ion-input class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
-                      <ion-input class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-start" fill="outline" type="time" label="Inicio descanso" label-placement="floating"></ion-input>
+                      <ion-input mode="md" class="day-break-end" fill="outline" type="time" label="Fin descanso" label-placement="floating"></ion-input>
                     </div>
                   </div>
                 </div>

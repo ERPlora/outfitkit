@@ -124,7 +124,7 @@
               <ok-data-table id="schedule-hours-table" fill>
                 <!-- Un día se EDITA, nunca se añade: por eso la tabla no lleva «+» (schedules#8). -->
                 <form id="schedule-hours-form" slot="create" class="schedule-form">
-                  <ion-select id="hours-day" value="0" fill="outline" label="Día" label-placement="floating">
+                  <ion-select id="hours-day" mode="md" value="0" fill="outline" label="Día" label-placement="floating">
                     ${DAYS.map((day, index) => `<ion-select-option value="${index}">${day}</ion-select-option>`).join('')}
                   </ion-select>
                   <ion-toggle id="hours-closed">Cerrado</ion-toggle>
@@ -139,17 +139,17 @@
             <section id="schedule-pane-special_days" class="schedules-pane" hidden>
               <ok-data-table id="schedule-special-table" fill>
                 <form id="schedule-special-form" slot="create" class="schedule-form">
-                  <ion-input id="special-date" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
-                  <ion-input id="special-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                  <ion-input id="special-date" mode="md" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+                  <ion-input id="special-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
                   <ion-toggle id="special-closed" checked>Cerrado</ion-toggle>
                   <ion-button type="submit" size="small">Añadir día especial</ion-button>
                 </form>
               </ok-data-table>
               <ok-data-table id="schedule-overrides-table" fill>
                 <form id="schedule-override-form" slot="create" class="schedule-form">
-                  <ion-input id="override-start" type="date" fill="outline" label="Desde" label-placement="floating"></ion-input>
-                  <ion-input id="override-end" type="date" fill="outline" label="Hasta" label-placement="floating"></ion-input>
-                  <ion-input id="override-reason" fill="outline" label="Motivo" label-placement="floating"></ion-input>
+                  <ion-input id="override-start" mode="md" type="date" fill="outline" label="Desde" label-placement="floating"></ion-input>
+                  <ion-input id="override-end" mode="md" type="date" fill="outline" label="Hasta" label-placement="floating"></ion-input>
+                  <ion-input id="override-reason" mode="md" fill="outline" label="Motivo" label-placement="floating"></ion-input>
                   <ion-button type="submit" size="small">Añadir excepción</ion-button>
                 </form>
               </ok-data-table>
@@ -157,12 +157,12 @@
 
             <section id="schedule-pane-settings" class="schedules-pane" hidden>
               <form id="schedule-settings-form" class="schedule-settings">
-                <ion-input id="settings-timezone" value="Europe/Madrid" fill="outline" label="Zona horaria" label-placement="floating"></ion-input>
-                <ion-select id="settings-week-start" value="1" fill="outline" label="Inicio de semana" label-placement="floating">
+                <ion-input id="settings-timezone" mode="md" value="Europe/Madrid" fill="outline" label="Zona horaria" label-placement="floating"></ion-input>
+                <ion-select id="settings-week-start" mode="md" value="1" fill="outline" label="Inicio de semana" label-placement="floating">
                   <ion-select-option value="1">Lunes</ion-select-option>
                   <ion-select-option value="0">Domingo</ion-select-option>
                 </ion-select>
-                <ion-input id="settings-slot-duration" value="30" type="number" min="5" fill="outline" label="Duración de franja" label-placement="floating"></ion-input>
+                <ion-input id="settings-slot-duration" mode="md" value="30" type="number" min="5" fill="outline" label="Duración de franja" label-placement="floating"></ion-input>
                 <ion-toggle id="settings-auto-close">Cierre automático</ion-toggle>
                 <ion-button type="submit" size="small">Guardar ajustes</ion-button>
               </form>

@@ -89,11 +89,11 @@
             <p id="reservations-error" class="reservations-error" role="alert" hidden></p>
             <ok-data-table id="reservations-table" fill>
               <form id="reservation-create-form" slot="create" class="reservation-create-form">
-                <ion-input id="reservation-name" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
-                <ion-input id="reservation-phone" fill="outline" label="Teléfono" label-placement="floating" type="tel"></ion-input>
-                <ion-input id="reservation-date" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
-                <ion-input id="reservation-time" fill="outline" label="Hora" label-placement="floating" type="time" required></ion-input>
-                <ion-input id="reservation-party" fill="outline" label="Pax" label-placement="floating" type="number" min="1" value="2" required></ion-input>
+                <ion-input id="reservation-name" mode="md" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-input id="reservation-phone" mode="md" fill="outline" label="Teléfono" label-placement="floating" type="tel"></ion-input>
+                <ion-input id="reservation-date" mode="md" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
+                <ion-input id="reservation-time" mode="md" fill="outline" label="Hora" label-placement="floating" type="time" required></ion-input>
+                <ion-input id="reservation-party" mode="md" fill="outline" label="Pax" label-placement="floating" type="number" min="1" value="2" required></ion-input>
                 <ion-button id="reservation-save" type="submit">Reservar</ion-button>
               </form>
             </ok-data-table>

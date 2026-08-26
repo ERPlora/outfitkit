@@ -96,7 +96,7 @@
             <ok-data-table id="taxes-aliases-table" fill>
               <form id="taxes-alias-form" slot="create" class="taxes-form">
                 <ion-input
-                  id="tax-alias-value"
+                  id="tax-alias-value" mode="md"
                   fill="outline"
                   label="Alias"
                   label-placement="floating"
@@ -105,7 +105,7 @@
                   required
                 ></ion-input>
                 <ion-select
-                  id="tax-alias-category"
+                  id="tax-alias-category" mode="md"
                   fill="outline"
                   label="Categoría"
                   label-placement="floating"
@@ -115,7 +115,7 @@
                   ${CATEGORIES.map(([key, name]) => `<ion-select-option value="${key}">${key} · ${name}</ion-select-option>`).join('')}
                 </ion-select>
                 <ion-select
-                  id="tax-alias-source"
+                  id="tax-alias-source" mode="md"
                   fill="outline"
                   label="Origen"
                   label-placement="floating"

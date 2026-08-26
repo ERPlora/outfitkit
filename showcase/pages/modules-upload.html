@@ -30,11 +30,11 @@
                   <h2 class="developer-card-title">Información básica</h2>
                   <p class="developer-card-subtitle">Nombre, descripción y autor.</p>
                   <div class="developer-fields">
-                    <ion-input label="Nombre del módulo *" label-placement="stacked" fill="outline" placeholder="Ej.: Gestor de inventario avanzado" required></ion-input>
-                    <ion-textarea label="Descripción *" label-placement="stacked" fill="outline" rows="4" placeholder="Describe las funciones y ventajas del módulo…" required></ion-textarea>
-                    <ion-input label="Nombre del autor" label-placement="stacked" fill="outline" value="demo@erplora.com" placeholder="Tu nombre o empresa"></ion-input>
+                    <ion-input mode="md" label="Nombre del módulo *" label-placement="stacked" fill="outline" placeholder="Ej.: Gestor de inventario avanzado" required></ion-input>
+                    <ion-textarea mode="md" label="Descripción *" label-placement="stacked" fill="outline" rows="4" placeholder="Describe las funciones y ventajas del módulo…" required></ion-textarea>
+                    <ion-input mode="md" label="Nombre del autor" label-placement="stacked" fill="outline" value="demo@erplora.com" placeholder="Tu nombre o empresa"></ion-input>
                     <p class="developer-field-help">Se mostrará públicamente en la página del módulo.</p>
-                    <ion-input label="Versión" label-placement="stacked" fill="outline" value="1.0.0" placeholder="1.0.0"></ion-input>
+                    <ion-input mode="md" label="Versión" label-placement="stacked" fill="outline" value="1.0.0" placeholder="1.0.0"></ion-input>
                   </div>
                 </ion-card-content>
               </ion-card>
@@ -44,13 +44,13 @@
                   <h2 class="developer-card-title">Precios</h2>
                   <p class="developer-card-subtitle">Gratis, pago único o suscripción mensual.</p>
                   <div class="developer-fields">
-                    <ion-select id="module-type-select" label="Tipo de módulo *" label-placement="stacked" fill="outline" interface="popover" placeholder="Selecciona un tipo">
+                    <ion-select id="module-type-select" mode="md" label="Tipo de módulo *" label-placement="stacked" fill="outline" interface="popover" placeholder="Selecciona un tipo">
                       <ion-select-option value="free">Gratis</ion-select-option>
                       <ion-select-option value="one_time">Pago único</ion-select-option>
                       <ion-select-option value="subscription">Suscripción mensual</ion-select-option>
                     </ion-select>
                     <div id="price-field" hidden>
-                      <ion-input type="number" inputmode="decimal" min="0" step="0.01" label="Precio (EUR) *" label-placement="stacked" fill="outline" placeholder="9,99"></ion-input>
+                      <ion-input mode="md" type="number" inputmode="decimal" min="0" step="0.01" label="Precio (EUR) *" label-placement="stacked" fill="outline" placeholder="9,99"></ion-input>
                       <p class="developer-field-help">ERPlora aplica una comisión del 15%. Recibes el 85% del precio de venta.</p>
                     </div>
                   </div>

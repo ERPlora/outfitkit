@@ -105,12 +105,12 @@
           <div class="online-bookings-page">
             <ok-data-table id="online-bookings-table" fill>
               <form id="online-booking-form" slot="create" class="online-booking-form">
-                <ion-input id="booking-customer" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
-                <ion-input id="booking-service" fill="outline" label="Servicio" label-placement="floating" required></ion-input>
-                <ion-input id="booking-staff" fill="outline" label="Personal (opcional)" label-placement="floating"></ion-input>
-                <ion-input id="booking-date" fill="outline" type="date" label="Fecha" label-placement="floating" required></ion-input>
-                <ion-input id="booking-time" fill="outline" type="time" label="Hora" label-placement="floating" required></ion-input>
-                <ion-input id="booking-duration" fill="outline" type="number" min="5" max="480" step="5" value="30" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-input id="booking-customer" mode="md" fill="outline" label="Cliente" label-placement="floating" required></ion-input>
+                <ion-input id="booking-service" mode="md" fill="outline" label="Servicio" label-placement="floating" required></ion-input>
+                <ion-input id="booking-staff" mode="md" fill="outline" label="Personal (opcional)" label-placement="floating"></ion-input>
+                <ion-input id="booking-date" mode="md" fill="outline" type="date" label="Fecha" label-placement="floating" required></ion-input>
+                <ion-input id="booking-time" mode="md" fill="outline" type="time" label="Hora" label-placement="floating" required></ion-input>
+                <ion-input id="booking-duration" mode="md" fill="outline" type="number" min="5" max="480" step="5" value="30" label="Duración (min)" label-placement="floating"></ion-input>
                 <ion-button id="online-booking-save" type="submit" size="small">Añadir</ion-button>
               </form>
             </ok-data-table>
