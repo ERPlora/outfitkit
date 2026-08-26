@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-file-manager — widget de gestor de archivos AUTOCONTENIDO y BACKEND-AGNÓSTICO.
 // Solo RENDERIZA (árbol de carpetas + meter de espacio + breadcrumb + toolbar con búsqueda,
@@ -140,7 +141,7 @@ const DEFAULT_LABELS: OkFmLabels = {
 };
 
 export class OkFileManager extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       /* Tokens propios estilo Ionic: cadena --ok-* → --ion-* → hex. */
       --bg: var(--ok-surface, var(--ion-background-color, #ffffff));
@@ -254,6 +255,17 @@ export class OkFileManager extends LitElement {
       color: inherit;
       cursor: pointer;
       border-radius: 4px;
+      /* ok-tap-exempt: hit area widened by tapTarget below, capped to the row's own gap/padding
+         (never the blanket 44px) so it cannot swallow the folder icon/name next to it, nor bleed
+         into the tree row above or below -- rows sit flush, with no gap between them. */
+      position: relative;
+    }
+    /* Caps the hit area to what the row can actually spare: 3px into the 6px gap before the
+       folder icon (never touching it) and 7px into the row's own 7px vertical padding on each
+       side (landing exactly on the row's own edge, never the next row's). */
+    .caret.ok-tap::before {
+      width: calc(18px + 6px);
+      height: calc(18px + 14px);
     }
     .caret.leaf {
       visibility: hidden;
@@ -416,8 +428,8 @@ export class OkFileManager extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       background: none;
@@ -439,7 +451,7 @@ export class OkFileManager extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      height: 34px;
+      height: var(--ok-tap-min, 44px);
       padding: 0 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -468,7 +480,7 @@ export class OkFileManager extends LitElement {
     }
     /* Variante solo-icono: botón cuadrado, sin texto (a11y vía aria-label/title). */
     .tbtn.icon {
-      width: 34px;
+      width: var(--ok-tap-min, 44px);
       padding: 0;
       gap: 0;
       justify-content: center;
@@ -641,6 +653,17 @@ export class OkFileManager extends LitElement {
       cursor: pointer;
       border-radius: 6px;
       transition: background 0.15s ease, color 0.15s ease;
+      /* ok-tap-exempt: hit area widened by tapTarget below, capped to the 2px gap between
+         actions (.lactions/.card-actions) so up to 4 of them in a row never overlap each
+         other's hit zone -- growing to the blanket 44px here would stack them on top of
+         each other. */
+      position: relative;
+    }
+    /* Caps the hit area to exactly the row/card gap on each side: touches the neighbour
+       action's hit zone at the midpoint, never past it. */
+    .action.ok-tap::before {
+      width: calc(28px + 2px);
+      height: calc(28px + 2px);
     }
     .action:hover {
       background: var(--badge-bg);
@@ -751,7 +774,7 @@ export class OkFileManager extends LitElement {
         display: none;
       }
     }
-  `;
+  `];
 
   /** Árbol de carpetas (recursivo vía `children`). */
   @property({ attribute: false }) folders: OkFmFolder[] = [];
@@ -1051,7 +1074,7 @@ export class OkFileManager extends LitElement {
       >
         <button
           type="button"
-          class=${`caret ${hasChildren ? '' : 'leaf'} ${expanded ? 'open' : ''}`.trim()}
+          class=${`caret ok-tap ${hasChildren ? '' : 'leaf'} ${expanded ? 'open' : ''}`.trim()}
           tabindex=${hasChildren ? '0' : '-1'}
           aria-hidden=${hasChildren ? 'false' : 'true'}
           aria-label=${expanded ? 'Colapsar' : 'Expandir'}
@@ -1275,7 +1298,7 @@ export class OkFileManager extends LitElement {
     // en el botón. El `dragstart` burbujea al card, que tiene el handler que marca el origen.
     return html`<button
         type="button"
-        class="action"
+        class="action ok-tap"
         draggable="true"
         data-act="open"
         aria-label=${this.t.open}
@@ -1289,7 +1312,7 @@ export class OkFileManager extends LitElement {
       </button>
       <button
         type="button"
-        class="action"
+        class="action ok-tap"
         draggable="true"
         data-act="download"
         aria-label=${this.t.download}
@@ -1304,7 +1327,7 @@ export class OkFileManager extends LitElement {
       ${this.can('rename')
         ? html`<button
             type="button"
-            class="action"
+            class="action ok-tap"
             draggable="true"
             data-act="rename-file"
             aria-label=${this.t.rename}
@@ -1320,7 +1343,7 @@ export class OkFileManager extends LitElement {
       ${this.can('delete')
         ? html`<button
             type="button"
-            class="action danger"
+            class="action danger ok-tap"
             draggable="true"
             data-act="delete-file"
             aria-label=${this.t.delete}

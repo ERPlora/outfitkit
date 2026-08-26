@@ -14,11 +14,17 @@ vi.mock('../../base/icons.js', () => ({
   okIcon: (v?: string) => v,
 }));
 
-import './ok-app-launcher.js';
-import type { OkAppLauncher } from './ok-app-launcher.js';
+import { OkAppLauncher } from './ok-app-launcher.js';
 
 let launcher: OkAppLauncher;
 let page: HTMLElement;
+
+// Contract from the #92 touch audit: nothing interactive under 44px, see src/base/tap-target.test.ts.
+function stylesText(): string {
+  const styles = OkAppLauncher.styles;
+  const list = Array.isArray(styles) ? styles : [styles];
+  return list.map((s) => (s as { cssText: string }).cssText).join('\n');
+}
 
 function portalHost(): HTMLElement | null {
   return document.querySelector('[data-ok-app-launcher-portal]');
@@ -134,5 +140,23 @@ describe('ok-app-launcher — page lock while the sheet is open', () => {
     } finally {
       Object.defineProperty(HTMLElement.prototype, 'inert', descriptor);
     }
+  });
+});
+
+describe('ok-app-launcher — tap targets (#92)', () => {
+  it('.trigger grows to the 44px floor -- a standalone round icon button, nothing to squeeze against', () => {
+    const css = stylesText();
+    const m = /\.trigger\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.trigger rule not found').not.toBeNull();
+    expect(m![1]).toMatch(/width:\s*var\(--ok-tap-min,\s*44px\)/);
+    expect(m![1]).toMatch(/height:\s*var\(--ok-tap-min,\s*44px\)/);
+  });
+
+  it('.close-btn grows to the 44px floor -- the sheet header has room, growing it does not collide with the title', () => {
+    const css = stylesText();
+    const m = /\.close-btn\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.close-btn rule not found').not.toBeNull();
+    expect(m![1]).toMatch(/width:\s*var\(--ok-tap-min,\s*44px\)/);
+    expect(m![1]).toMatch(/height:\s*var\(--ok-tap-min,\s*44px\)/);
   });
 });

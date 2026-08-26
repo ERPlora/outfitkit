@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // Componente RGB simple (canales 0–255). Lo emite el evento `ok-change` junto al hex.
 export interface OkRgb {
@@ -138,7 +139,7 @@ const DEFAULT_LABELS: OkColorPickerLabels = {
 };
 
 export class OkColorPicker extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
       --color: var(--ok-text, var(--ion-text-color, #1c1b17));
@@ -167,8 +168,8 @@ export class OkColorPicker extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 1px solid var(--border-color);
       border-radius: 8px;
@@ -232,8 +233,10 @@ export class OkColorPicker extends LitElement {
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
       pointer-events: none;
     }
-    /* Slider de Tono: barra arcoíris horizontal con thumb arrastrable. */
+    /* Slider de Tono: barra arcoíris horizontal con thumb arrastrable. Drawing STAYS 14px thin --
+       a thicker bar would dwarf the SV square above it; only the hit area (below) grows. */
     .hue {
+      /* ok-tap-exempt: hit area widened by .hue.ok-tap::before, capped to the real vertical room */
       position: relative;
       width: 100%;
       height: 14px;
@@ -251,6 +254,12 @@ export class OkColorPicker extends LitElement {
         #f0f 83%,
         #f00 100%
       );
+    }
+    /* Caps the hit area to the actual free space above (the 0.7rem margin to .sv) and below (the
+       0.7rem margin to .hexrow), instead of the blanket 44px floor: a 44px target centered on a
+       14px bar would eat into the SV square's own drag area and into the hex input's click area. */
+    .hue.ok-tap::before {
+      height: calc(14px + 0.7rem + 0.7rem);
     }
     .hue .thumb {
       position: absolute;
@@ -306,6 +315,7 @@ export class OkColorPicker extends LitElement {
       margin-top: 0.7rem;
     }
     .presets button {
+      /* ok-tap-exempt: hit area widened by .presets button.ok-tap::before, capped to the real pitch */
       width: 20px;
       height: 20px;
       padding: 0;
@@ -316,6 +326,13 @@ export class OkColorPicker extends LitElement {
         color var(--ok-transition, 150ms ease),
         border-color var(--ok-transition, 150ms ease),
         box-shadow var(--ok-transition, 150ms ease), transform 120ms ease;
+    }
+    /* Caps the hit area to the real pitch (20px swatch + 0.3rem gap) instead of the blanket 44px
+       floor: this is a wrapping row of small presets -- a 44px target per swatch would overlap
+       every neighbour. Same fix as ok-carousel's .dot for the identical shape. */
+    .presets button.ok-tap::before {
+      width: calc(20px + 0.3rem);
+      height: calc(20px + 0.3rem);
     }
     @media (hover: hover) {
       .presets button:hover {
@@ -334,7 +351,7 @@ export class OkColorPicker extends LitElement {
         transform: none;
       }
     }
-  `;
+  `];
 
   /** Color actual en hex (#rrggbb). */
   @property({ type: String }) value = '#3880ff';
@@ -585,7 +602,7 @@ export class OkColorPicker extends LitElement {
               <span class="thumb" style=${`left:${svLeft};top:${svTop}`}></span>
             </div>
             <div
-              class="hue"
+              class="hue ok-tap"
               @pointerdown=${(e: PointerEvent) => this.onHuePointerDown(e)}
             >
               <span class="thumb" style=${`left:${hueLeft}`}></span>
@@ -610,7 +627,7 @@ export class OkColorPicker extends LitElement {
                     const active = norm !== null && norm === this.value.toLowerCase();
                     return html`<button
                       type="button"
-                      class=${active ? 'active' : ''}
+                      class=${`ok-tap ${active ? 'active' : ''}`.trim()}
                       style=${`background:${hex}`}
                       aria-label=${hex}
                       @click=${() => this.selectPreset(hex)}

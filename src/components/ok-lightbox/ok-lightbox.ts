@@ -2,6 +2,7 @@ import { LitElement, html, css, render, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconChevronBackOutline, iconChevronForwardOutline, iconCloseOutline, iconDownloadOutline, iconExpandOutline, iconPlayOutline } from '../../base/icons.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // Tipo de medio de un item del lightbox.
 export type OkLightboxItemType = 'img' | 'video';
@@ -54,7 +55,7 @@ const DEFAULT_LABELS: OkLightboxLabels = {
 //   • `ok-close`            (al cerrar)
 //   • `ok-index` detail { index }  (al cambiar de medio)
 export class OkLightbox extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       display: block;
       width: 100%;
@@ -128,8 +129,8 @@ export class OkLightbox extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       border-radius: 50%;
@@ -236,6 +237,10 @@ export class OkLightbox extends LitElement {
       overflow-y: hidden;
     }
     .thumb {
+      /* ok-tap-exempt: filmstrip thumbnail, 50x36 is the drawn size of the strip; growing it
+         would reflow the whole strip's composition. The hit area is widened by tapTarget
+         instead (its ::before below), the drawing stays put. */
+      position: relative;
       flex: none;
       width: 50px;
       height: 36px;
@@ -247,7 +252,8 @@ export class OkLightbox extends LitElement {
       background-position: center;
       cursor: pointer;
       opacity: 0.5;
-      overflow: hidden;
+      /* No overflow:hidden here: it would clip tapTarget's ::before hit-area extension along
+         with the drawing. The rounded corners are clipped on the children instead (below). */
       transition: opacity var(--ok-transition, 150ms ease);
     }
     @media (hover: hover) {
@@ -265,6 +271,7 @@ export class OkLightbox extends LitElement {
       height: 100%;
       object-fit: cover;
       display: block;
+      border-radius: inherit;
     }
     .thumb .vid {
       display: flex;
@@ -273,11 +280,13 @@ export class OkLightbox extends LitElement {
       width: 100%;
       height: 100%;
       color: var(--fg-soft);
+      border-radius: inherit;
+      overflow: hidden;
     }
     .thumb .vid ion-icon {
       font-size: 1rem;
     }
-  `;
+  `];
 
   /** Medios a mostrar. */
   @property({ attribute: false }) items: OkLightboxItem[] = [];
@@ -520,7 +529,7 @@ export class OkLightbox extends LitElement {
     const isVideo = item.type === 'video';
     return html`<button
       type="button"
-      class="thumb ${active ? 'active' : ''}"
+      class="thumb ok-tap ${active ? 'active' : ''}"
       role="tab"
       aria-selected=${active ? 'true' : 'false'}
       aria-label=${this.fileName(item)}

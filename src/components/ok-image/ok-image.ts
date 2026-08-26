@@ -242,8 +242,8 @@ export class OkImage extends LitElement {
       position: absolute;
       top: 1rem;
       right: 1rem;
-      width: 40px;
-      height: 40px;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       display: grid;
       place-items: center;
       border: none;

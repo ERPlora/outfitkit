@@ -5,6 +5,7 @@
 // estila los resultados vía el slot por defecto y las acciones vía slot="footer". Emite `ok-input`
 // al teclear y `ok-open` al abrir/cerrar. Si se le da `trigger-icon`, pinta su propio botón-trigger;
 // si no, el consumidor controla `open` (p.ej. desde una lupa externa).
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 // `icons.js` arrastra la cadena `~icons/…?raw` que el transform de test deniega; la mockeamos
@@ -81,5 +82,36 @@ describe('ok-spotlight-search', () => {
     const names = [...el.shadowRoot!.querySelectorAll('slot')].map((s) => s.getAttribute('name') || 'default');
     expect(names, 'expone slot por defecto para resultados').toContain('default');
     expect(names, 'expone slot="footer" para acciones').toContain('footer');
+  });
+});
+
+// Tap-target guard (#92): both `button.trigger` (the optional icon-only trigger, standalone) and
+// `.top .close` (the overlay's own close button, at the end of the input row) were pinned in px
+// below 44px. Option A (grow to 44px) for both: neither sits packed against another control --
+// the trigger is a lone button wherever it's placed, and `.close` is the last child of a flex row
+// whose middle is a flexible `<input>`, so a taller/wider box just grows into free space.
+// happy-dom (declared above) does not give `import.meta.url` a `file:` scheme, so this reads
+// relative to the vitest run (repo root), like every other cross-cutting source-text check.
+const RAW_SOURCE = readFileSync('src/components/ok-spotlight-search/ok-spotlight-search.ts', 'utf8');
+
+function rule(selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`${escaped}\\s*\\{([^{}]*)\\}`);
+  const m = re.exec(RAW_SOURCE);
+  if (!m) throw new Error(`rule not found: ${selector}`);
+  return m[1];
+}
+
+describe('ok-spotlight-search: tap targets reach the 44px floor (#92)', () => {
+  it('button.trigger reads width/height from --ok-tap-min', () => {
+    const body = rule('button.trigger');
+    expect(body).toMatch(/width\s*:\s*var\(--ok-tap-min,\s*44px\)/);
+    expect(body).toMatch(/height\s*:\s*var\(--ok-tap-min,\s*44px\)/);
+  });
+
+  it('.top .close reads width/height from --ok-tap-min', () => {
+    const body = rule('.top .close');
+    expect(body).toMatch(/width\s*:\s*var\(--ok-tap-min,\s*44px\)/);
+    expect(body).toMatch(/height\s*:\s*var\(--ok-tap-min,\s*44px\)/);
   });
 });

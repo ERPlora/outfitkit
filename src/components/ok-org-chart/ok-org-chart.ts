@@ -1,6 +1,7 @@
 import { LitElement, html, svg, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-org-chart — organigrama jerárquico (nodo-y-conector), distinto del ok-tree indentado.
 // Render REAL con layout calculado (tidy-tree): cada nodo recibe coordenadas x/y; los
@@ -55,7 +56,7 @@ const MIN_K = 0.2;
 const MAX_K = 2.5;
 
 export class OkOrgChart extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       display: block;
       width: 100%;
@@ -84,6 +85,11 @@ export class OkOrgChart extends LitElement {
       background: var(--bg);
       border-radius: var(--radius);
       touch-action: none; /* gestionamos pan/zoom nosotros */
+      /* Sin esto, arrastrar con el ratón selecciona el texto de los nodos en vez de mover el
+         lienzo, y en iOS la pulsación mantenida abre el menú del sistema encima (#99). */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       cursor: grab;
       box-sizing: border-box;
     }
@@ -169,6 +175,9 @@ export class OkOrgChart extends LitElement {
 
     /* Botón recoger/expandir, anclado al borde inferior del nodo con hijos. */
     .toggle {
+      /* ok-tap-exempt: hit area widened by tapTarget -- the circle must stay 22px, a bigger one reads
+         as a button glued onto the card instead of a discreet expander on its edge. It floats on the
+         node's bottom edge with nothing beside it, so the overlay cannot steal anyone's tap. */
       position: absolute;
       bottom: -11px;
       left: 50%;
@@ -258,8 +267,10 @@ export class OkOrgChart extends LitElement {
       z-index: 2;
     }
     .ctrls button {
-      width: 32px;
-      height: 32px;
+      /* Mínimo táctil entero (#92): flotan en la esquina con 6px entre ellos y nada alrededor, así
+         que crecer solo alarga la columna. En táctil son la única vía de zoom aparte del pellizco. */
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       display: grid;
       place-items: center;
       border: 1px solid var(--line);
@@ -283,7 +294,7 @@ export class OkOrgChart extends LitElement {
       color: var(--role-color);
       font-size: 13px;
     }
-  `;
+  `];;
 
   /** Nodo raíz del organigrama (con `children` recursivos). */
   @property({ attribute: false }) root: OrgNode | null = null;
@@ -439,7 +450,7 @@ export class OkOrgChart extends LitElement {
         ${childCount
           ? html`<button
               type="button"
-              class="toggle ${isCollapsed ? 'is-collapsed' : ''}"
+              class="toggle ok-tap ${isCollapsed ? 'is-collapsed' : ''}"
               title=${isCollapsed ? `Expandir (${childCount})` : 'Recoger'}
               aria-label=${isCollapsed ? `Expandir ${childCount} subordinados` : 'Recoger rama'}
               @pointerdown=${(e: Event) => e.stopPropagation()}

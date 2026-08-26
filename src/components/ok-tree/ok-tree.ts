@@ -83,6 +83,9 @@ export class OkTree extends LitElement {
       width: 100%;
       box-sizing: border-box;
       padding: 0.38rem 0.5rem;
+      /* One full touch target tall (#92): the row is the free axis, so it takes the whole minimum
+         and the chevron can fill it. */
+      min-height: var(--ok-tap-min, 44px);
       border-radius: var(--border-radius);
       cursor: default;
       user-select: none;
@@ -112,12 +115,16 @@ export class OkTree extends LitElement {
     }
     /* Botón del chevron: expande/colapsa. Reserva hueco aunque el nodo sea hoja. */
     .chevron {
+      /* ok-tap-exempt: the label sits right next to it, so the width cannot reach the full minimum
+         without stealing selections -- 32px wide by a full-row height. The row is the free axis and
+         takes the whole minimum; this one is capped by the neighbour. WCAG 2.5.8 AA asks 24x24, so
+         the constrained axis stays above AA while the free axis meets HIG/Material. */
       flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
-      height: 20px;
+      width: 32px;
+      height: 100%;
       padding: 0;
       margin: 0;
       border: 0;

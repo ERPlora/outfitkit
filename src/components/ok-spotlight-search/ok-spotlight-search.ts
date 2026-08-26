@@ -38,13 +38,13 @@ export class OkSpotlightSearch extends LitElement {
       display: contents;
     }
 
-    /* Botón-trigger opcional (icon-only). */
+    /* Botón-trigger opcional (icon-only). #92 -- 44px, sin vecino con el que solapar. */
     button.trigger {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.4rem;
-      height: 2.4rem;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       border-radius: 10px;
@@ -98,13 +98,15 @@ export class OkSpotlightSearch extends LitElement {
       font-size: 1.05rem;
     }
     .top input::placeholder { color: var(--color-muted); }
+    /* #92 -- 44px; the middle of the row is a flexible <input>, so a bigger close button just
+       grows into free space, no overlap. */
     .top .close {
       flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2rem;
-      height: 2rem;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       border-radius: 8px;

@@ -51,6 +51,10 @@
   --ion-color-step-850: #2a2d33;
 
   /* ── Tokens de diseño OutfitKit (geometría / sombras, NO-color) ── */
+  /* Mínimo táctil: ERPlora es un TPV y el dispositivo real es una pantalla táctil. 44px es donde
+     coinciden Apple HIG, Material y WCAG 2.5.8. Un producto de mostrador duro —guantes, pantalla en
+     pared— sube el token en vez de parchear componentes. */
+  --ok-tap-min: 44px;
   --ok-radius: 14px;
   --ok-radius-sm: 10px;
   --ok-radius-pill: 999px;

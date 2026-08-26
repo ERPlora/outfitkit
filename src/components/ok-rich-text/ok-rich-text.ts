@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-rich-text — editor WYSIWYG (rich text) que Ionic no trae.
 // Área contenteditable con prosa completa (h1-h4, p, listas, links, code,
@@ -27,7 +28,7 @@ interface ToolButton {
 }
 
 export class OkRichText extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       display: block;
       width: 100%;
@@ -77,10 +78,14 @@ export class OkRichText extends LitElement {
       padding: 0.25rem 0.5rem;
       background: var(--toolbar-bg);
       border-bottom: 1px solid var(--line);
-      min-height: 38px;
+      /* Tall enough that .btn's own widened hit area (below) fits inside the row without
+         bleeding into .content underneath. */
+      min-height: var(--ok-tap-min, 44px);
     }
     .select {
-      height: 26px;
+      /* Grown outright: the toolbar row already has to be var(--ok-tap-min) tall for .btn's own
+         hit area below, so this costs no extra vertical space. */
+      height: var(--ok-tap-min, 44px);
       padding: 0 0.5rem;
       background: var(--bg);
       border: 1px solid var(--line);
@@ -106,6 +111,18 @@ export class OkRichText extends LitElement {
       cursor: pointer;
       font-family: inherit;
       transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+      /* ok-tap-exempt: hit area widened by tapTarget below, capped to the toolbar's own 0.25rem
+         gap -- growing every button to the blanket 44px box would double the toolbar's height
+         and eat into the editor's own space, and a full 44px overlay here would stack on top of
+         the next button's, packed as they are. */
+      position: relative;
+    }
+    /* Caps the hit area to exactly the toolbar gap on each side: touches the neighbour button's
+       hit zone at the midpoint (never past it), same rule for the row-gap when the toolbar wraps
+       to a second line. */
+    .btn.ok-tap::before {
+      width: calc(28px + 0.25rem);
+      height: calc(28px + 0.25rem);
     }
     .btn:hover {
       background: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -122,6 +139,8 @@ export class OkRichText extends LitElement {
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 30%, transparent);
     }
     .btn svg {
+      /* ok-tap-exempt: this is the icon glyph's own drawing size, not a separate control -- the
+         click target is the parent .btn, already covered above. */
       width: 14px;
       height: 14px;
       stroke-width: 2;
@@ -257,8 +276,22 @@ export class OkRichText extends LitElement {
     :host([size='sm']) .content { font-size: 0.875rem; }
     :host([size='lg']) { --min-h: 320px; --pad: 1.25rem; }
     :host([size='lg']) .content { font-size: 1rem; }
-    :host([size='lg']) .btn { width: 32px; height: 32px; }
-    :host([size='lg']) .btn svg { width: 16px; height: 16px; }
+    :host([size='lg']) .btn {
+      /* ok-tap-exempt: same packed-toolbar reasoning as the base .btn above, just at the "lg"
+         size -- capped below to that size's own hit area, not the shared 28px one. */
+      width: 32px;
+      height: 32px;
+    }
+    :host([size='lg']) .btn.ok-tap::before {
+      width: calc(32px + 0.25rem);
+      height: calc(32px + 0.25rem);
+    }
+    :host([size='lg']) .btn svg {
+      /* ok-tap-exempt: icon glyph inside the "lg" .btn, not a separate control -- see the base
+         .btn svg above. */
+      width: 16px;
+      height: 16px;
+    }
 
     /* ── Minimal — sin toolbar/footer, edición inline ─────── */
     :host([size='minimal']) .rt {
@@ -266,7 +299,7 @@ export class OkRichText extends LitElement {
       border-radius: var(--radius-sm);
     }
     :host([size='minimal']) .content { min-height: auto; }
-  `;
+  `];
 
   /** Contenido HTML del editor. */
   @property() value = '';
@@ -436,7 +469,7 @@ export class OkRichText extends LitElement {
     return html`
       <button
         type="button"
-        class="btn"
+        class="btn ok-tap"
         aria-label=${b.label}
         title=${b.label}
         aria-pressed=${pressed ? 'true' : 'false'}
@@ -452,7 +485,7 @@ export class OkRichText extends LitElement {
     return html`
       <div class="toolbar" role="toolbar" aria-label="Formato">
         <select
-          class="select"
+          class="select ok-tap"
           aria-label="Estilo de párrafo"
           .value=${this.activeBlock === 'div' ? 'p' : this.activeBlock}
           @mousedown=${(e: Event) => e.stopPropagation()}
@@ -471,7 +504,7 @@ export class OkRichText extends LitElement {
         <span class="divider"></span>
         <button
           type="button"
-          class="btn"
+          class="btn ok-tap"
           aria-label="Código"
           title="Código"
           @mousedown=${(e: Event) => e.preventDefault()}
@@ -481,7 +514,7 @@ export class OkRichText extends LitElement {
         </button>
         <button
           type="button"
-          class="btn"
+          class="btn ok-tap"
           aria-label="Cita"
           title="Cita"
           @mousedown=${(e: Event) => e.preventDefault()}
@@ -491,7 +524,7 @@ export class OkRichText extends LitElement {
         </button>
         <button
           type="button"
-          class="btn"
+          class="btn ok-tap"
           aria-label="Enlace"
           title="Enlace"
           @mousedown=${(e: Event) => e.preventDefault()}
@@ -502,7 +535,7 @@ export class OkRichText extends LitElement {
         <span class="spacer"></span>
         <button
           type="button"
-          class="btn"
+          class="btn ok-tap"
           aria-label="Deshacer"
           title="Deshacer"
           @mousedown=${(e: Event) => e.preventDefault()}

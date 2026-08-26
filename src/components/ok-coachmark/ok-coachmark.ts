@@ -199,6 +199,10 @@ export class OkCoachmark extends LitElement {
       flex-wrap: wrap;
     }
     .dots button {
+      /* ok-tap-exempt: hit area widened by the .dots button::before overlay, capped to the pitch. The dot
+         itself must stay 6px -- a page control is 6-9px everywhere, and a fat one stops reading as
+         an indicator. */
+      position: relative;
       width: 6px;
       height: 6px;
       padding: 0;
@@ -208,7 +212,22 @@ export class OkCoachmark extends LitElement {
       cursor: pointer;
       transition: width 180ms ease, background-color 180ms ease, border-radius 180ms ease;
     }
+    /* El área táctil (#92). Va acotada al PITCH real, no a los 44px genéricos: los puntos están a
+       4px unos de otros, así que un área de 44px enterraría a los vecinos bajo el que se pinte
+       último — el dedo caería en un punto y saltaría a otro paso. A lo ancho, el punto más su hueco;
+       a lo alto, los 10px de aire que hay hasta los botones de abajo. */
+    .dots button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(6px + 4px);
+      height: 20px;
+    }
     .dots button.on {
+      /* ok-tap-exempt: same control as .dots button, same overlay -- this rule only stretches the
+         ACTIVE dot into a pill, which is the indicator, not the target. */
       width: 18px;
       border-radius: 3px;
       background: var(--brand);
