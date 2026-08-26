@@ -139,6 +139,7 @@ function bindDrag(segment: HTMLElement): () => void {
   let startScroll = 0;
   let dragging = false;
   let swallowClick = false;
+  let disarm: ReturnType<typeof setTimeout> | null = null;
 
   const onDown = (e: PointerEvent): void => {
     if (e.pointerType === 'touch') return;
@@ -165,7 +166,16 @@ function bindDrag(segment: HTMLElement): () => void {
   const onUp = (e: PointerEvent): void => {
     if (pointerId === null || e.pointerId !== pointerId) return;
     if (dragging) {
+      // Armed only for the click this gesture is about to produce. A release OUTSIDE the strip
+      // produces no click at all, and a swallow left armed would eat the next legitimate one --
+      // a keyboard Enter on a focused tab, which never goes through `pointerdown`. If the click
+      // has not arrived by the next task, it is not coming.
       swallowClick = true;
+      if (disarm !== null) clearTimeout(disarm);
+      disarm = setTimeout(() => {
+        swallowClick = false;
+        disarm = null;
+      }, 0);
       segment.releasePointerCapture?.(pointerId);
       segment.classList.remove(DRAGGING_CLASS);
     }
@@ -181,18 +191,26 @@ function bindDrag(segment: HTMLElement): () => void {
     e.preventDefault();
   };
 
+  // The press starts on the strip, but the rest of the gesture is watched on `window`, and that is
+  // not defensive coding -- it was measured. Between `pointerdown` and the 4px threshold there is no
+  // pointer capture yet (capturing that early would rob the tab of its own hover/active and of the
+  // click that selects it). A tabbar is ~48px tall, so a quick flick that drifts downwards leaves
+  // the element on its FIRST move: the strip stops receiving `pointermove`, the threshold is never
+  // crossed, and the drag dies without a trace. In Chrome, with 12 tabs in a 380px strip, that drag
+  // did not move a single pixel.
   segment.addEventListener('pointerdown', onDown);
-  segment.addEventListener('pointermove', onMove);
-  segment.addEventListener('pointerup', onUp);
-  segment.addEventListener('pointercancel', onUp);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
   segment.addEventListener('click', onClick, true);
 
   return () => {
     segment.removeEventListener('pointerdown', onDown);
-    segment.removeEventListener('pointermove', onMove);
-    segment.removeEventListener('pointerup', onUp);
-    segment.removeEventListener('pointercancel', onUp);
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
     segment.removeEventListener('click', onClick, true);
+    if (disarm !== null) clearTimeout(disarm);
     segment.classList.remove(DRAGGING_CLASS);
   };
 }
