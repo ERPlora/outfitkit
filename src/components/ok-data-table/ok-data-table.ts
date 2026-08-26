@@ -70,6 +70,10 @@ export interface DataTableColumn {
   /** (opcional) Ancho CSS de la columna en la vista lista en grid (p.ej. '8rem', '20%', 'minmax(8rem,1fr)').
    *  Si se omite, la columna ocupa `minmax(8rem,1fr)`. Sin efecto en el fallback con <table>. */
   width?: string;
+  /** Pins the column to the end (right) edge of the list view, exactly like the built-in actions
+   *  column (#67): sticky, opaque background, shadow when the grid overflows. For hosts that render
+   *  per-row actions in their own column instead of the global `actions` prop. */
+  pinned?: 'end';
 }
 
 /** Vista de presentación de las filas (lista/tarjetas). */
@@ -1776,7 +1780,7 @@ export class OkDataTable extends LitElement {
               const caretIcon = !active ? iconSwapVerticalOutline : dir === 'asc' ? iconChevronUpOutline : iconChevronDownOutline;
               return html`
                 <div
-                  class=${`gcell gh ${alignCls(c.align)}${sortable ? ' sortable' : ''}`}
+                  class=${`gcell gh ${alignCls(c.align)}${sortable ? ' sortable' : ''}${c.pinned === 'end' ? ' actions-col' : ''}`}
                   role="columnheader"
                   @click=${() => this.onHeaderClick(c)}
                 >
@@ -1810,7 +1814,7 @@ export class OkDataTable extends LitElement {
                     ? html`<span class="selcb" @click=${(e: Event) => e.stopPropagation()}><ion-checkbox .checked=${selected} aria-label=${this.t.selectRow} @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
                     : nothing}
                   ${cols.map(
-                    (c) => html`<div class=${`gcell ${alignCls(c.align)}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
+                    (c) => html`<div class=${`gcell ${alignCls(c.align)}${c.pinned === 'end' ? ' actions-col' : ''}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
                   )}
                   ${this.actions.length
                     ? html`<div class="gcell right actions-col" role="cell" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row)}</div>`
