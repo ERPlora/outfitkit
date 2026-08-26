@@ -174,6 +174,11 @@ export class OkGallery extends LitElement {
     .item:focus-within .select {
       opacity: 1;
     }
+    /* #97: a finger has no hover, so in selection mode the badge must be visible without any
+       interaction -- hover/focus-within above stays as a reinforcement, not the only way to see it. */
+    :host([selectable]) .select {
+      opacity: 1;
+    }
     .select:focus-visible {
       opacity: 1;
       outline: 2px solid var(--brand-contrast);
