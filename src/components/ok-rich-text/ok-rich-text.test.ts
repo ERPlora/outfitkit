@@ -1,8 +1,12 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OkRichText } from './ok-rich-text.js';
 import './ok-rich-text.js';
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Contract from the #92 touch audit: nothing interactive under 44px, see src/base/tap-target.test.ts.
 // ok-rich-text's toolbar packs 8+ format buttons in a row: growing every one to the blanket 44px
@@ -99,5 +103,70 @@ describe('ok-rich-text — tap targets (#92)', () => {
     expect(btns.length).toBeGreaterThan(0);
     btns.forEach((btn) => expect(btn.classList.contains('ok-tap')).toBe(true));
     el.remove();
+  });
+});
+
+// #100 — a drag-selection made with a finger (or moving iOS/Android selection handles) never
+// fires `mouseup`, so the toolbar's active-format state went stale. `selectionchange` on the
+// `document` fires for mouse, keyboard AND touch alike, which is why it replaces both the
+// `@mouseup` and `@keyup` listeners instead of sitting next to them.
+describe('ok-rich-text — selection sync follows document selectionchange (#100)', () => {
+  const DEBOUNCE_MS = 120;
+
+  afterEach(() => {
+    document.querySelectorAll('ok-rich-text').forEach((el) => el.remove());
+    vi.restoreAllMocks();
+  });
+
+  // happy-dom does not implement `document.queryCommandState`/`execCommand` at all (not even as a
+  // stub), so it cannot be used as a spy target: `refreshActiveState` -- the private method the
+  // real browser command APIs feed -- is the seam instead. Reaching a private method through a
+  // cast is a test-only move; TS privacy is compile-time, the method is a real one on the instance.
+  function spyOnRefresh(el: OkRichText) {
+    return vi.spyOn(el as unknown as { refreshActiveState(): void }, 'refreshActiveState');
+  }
+
+  it('refreshes the active-format state from a document-level selectionchange while focused', async () => {
+    const el = await mount();
+    el.shadowRoot!.querySelector('.content')!.dispatchEvent(new FocusEvent('focus'));
+    const spy = spyOnRefresh(el);
+
+    document.dispatchEvent(new Event('selectionchange'));
+    await wait(DEBOUNCE_MS + 50);
+
+    expect(spy, 'a touch/mouse drag selection with no mouseup must still refresh the toolbar').toHaveBeenCalled();
+  });
+
+  it('debounces a burst of selectionchange events into a single refresh', async () => {
+    const el = await mount();
+    el.shadowRoot!.querySelector('.content')!.dispatchEvent(new FocusEvent('focus'));
+    const spy = spyOnRefresh(el);
+
+    for (let i = 0; i < 5; i++) document.dispatchEvent(new Event('selectionchange'));
+    await wait(DEBOUNCE_MS + 50);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores selectionchange while this editor is not focused', async () => {
+    const el = await mount();
+    const spy = spyOnRefresh(el);
+
+    document.dispatchEvent(new Event('selectionchange'));
+    await wait(DEBOUNCE_MS + 50);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('removes its document listener on disconnect so a detached editor stays quiet', async () => {
+    const el = await mount();
+    el.shadowRoot!.querySelector('.content')!.dispatchEvent(new FocusEvent('focus'));
+    const spy = spyOnRefresh(el);
+    el.remove();
+
+    document.dispatchEvent(new Event('selectionchange'));
+    await wait(DEBOUNCE_MS + 50);
+
+    expect(spy, 'a removed editor must not keep refreshing off a leaked listener').not.toHaveBeenCalled();
   });
 });

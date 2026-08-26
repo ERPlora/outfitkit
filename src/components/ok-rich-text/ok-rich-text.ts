@@ -333,6 +333,9 @@ export class OkRichText extends LitElement {
   // Evita sobreescribir el DOM editable mientras el usuario teclea.
   private syncingFromInput = false;
 
+  // Temporizador del debounce de `selectionchange` (#100).
+  private selectionTimer?: ReturnType<typeof setTimeout>;
+
   // Iconos SVG inline (paths a mano, sin dependencias).
   private static readonly icons = {
     bold: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg>`,
@@ -361,6 +364,27 @@ export class OkRichText extends LitElement {
       { cmd: 'insertOrderedList', active: 'insertOrderedList', label: 'Lista numerada', icon: OkRichText.icons.ol },
     ];
   }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    // #100: `@mouseup`/`@keyup` on the editable div miss a selection dragged with a finger, or
+    // moved via the iOS/Android selection handles -- neither fires `mouseup`. `selectionchange` on
+    // `document` fires for mouse, keyboard AND touch alike, so it replaces both listeners instead
+    // of sitting next to them.
+    document.addEventListener('selectionchange', this.onDocumentSelectionChange);
+  }
+
+  disconnectedCallback(): void {
+    document.removeEventListener('selectionchange', this.onDocumentSelectionChange);
+    if (this.selectionTimer) clearTimeout(this.selectionTimer);
+    super.disconnectedCallback();
+  }
+
+  // Debounced so a drag (a stream of selectionchange events) refreshes the toolbar once, not per tick.
+  private readonly onDocumentSelectionChange = (): void => {
+    if (this.selectionTimer) clearTimeout(this.selectionTimer);
+    this.selectionTimer = setTimeout(() => this.onSelect(), 120);
+  };
 
   protected firstUpdated(): void {
     this.renderValueIntoDom();
@@ -582,8 +606,6 @@ export class OkRichText extends LitElement {
           @input=${this.onInput}
           @focus=${this.onFocus}
           @blur=${this.onBlur}
-          @keyup=${this.onSelect}
-          @mouseup=${this.onSelect}
         ></div>
         ${showFooter ? this.renderFooter() : null}
       </div>

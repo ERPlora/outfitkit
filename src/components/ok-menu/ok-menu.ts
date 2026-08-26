@@ -38,6 +38,13 @@ export type OkMenuWidth = 'sm' | 'md' | 'lg';
 /** Modo de disparo: click en el trigger, o contextmenu (click derecho) en el área. */
 export type OkMenuTrigger = 'click' | 'context';
 
+// #93 — iOS/iPadOS Safari never fires `contextmenu` on a long press (Chrome on Android does), so
+// `trigger="context"` had no way to open on the counter tablet most likely to run a POS. A touch
+// long press opens the same panel at the same coordinates; it is cancelled the moment the finger
+// travels past the tolerance (that is a scroll, not a press).
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_TOLERANCE_PX = 10;
+
 // ok-menu — menú desplegable / contextual reutilizable construido sobre primitivos propios
 // (Ionic solo para `ion-icon`, que registra el host). Soporta:
 //   • items declarativos (acción, divisor, sección, checkbox/radio con check CSS, submenú);
@@ -147,6 +154,11 @@ export class OkMenu extends LitElement {
       top: 100%;
       margin-bottom: 0;
       margin-top: 4px;
+    }
+
+    /* #93 — a long press on iOS must not layer the system's own copy/lookup menu on top of ours. */
+    .anchor.context {
+      -webkit-touch-callout: none;
     }
 
     /* Modo contextual: posicionado por coordenadas; animación pop scale+fade. */
@@ -355,6 +367,10 @@ export class OkMenu extends LitElement {
   /** id del submenú abierto (uno por nivel raíz). */
   @state() private openSub: string | null = null;
 
+  // #93 — candidato de pulsación larga táctil en curso (null cuando no hay ninguna armada).
+  private longPressTimer: number | null = null;
+  private longPressOrigin: { x: number; y: number } | null = null;
+
   private onDocPointer = (e: Event): void => {
     if (!this.open) return;
     const path = e.composedPath();
@@ -398,6 +414,7 @@ export class OkMenu extends LitElement {
     document.addEventListener('pointerdown', this.onDocPointer, true);
     document.addEventListener('keydown', this.onKeydown, true);
     this.addEventListener('contextmenu', this.onContextMenu);
+    this.addEventListener('pointerdown', this.onLongPressStart);
   }
 
   disconnectedCallback(): void {
@@ -405,16 +422,64 @@ export class OkMenu extends LitElement {
     document.removeEventListener('pointerdown', this.onDocPointer, true);
     document.removeEventListener('keydown', this.onKeydown, true);
     this.removeEventListener('contextmenu', this.onContextMenu);
+    this.removeEventListener('pointerdown', this.onLongPressStart);
+    this.cancelLongPress();
   }
 
   private onContextMenu = (e: MouseEvent): void => {
     if (this.trigger !== 'context') return;
     e.preventDefault();
-    const rect = this.getBoundingClientRect();
-    this.ctxX = e.clientX - rect.left;
-    this.ctxY = e.clientY - rect.top;
-    this.openMenu();
+    this.openAtPoint(e.clientX, e.clientY);
   };
+
+  // #93 — the touch counterpart of `onContextMenu`: iOS/iPadOS Safari never fires `contextmenu`
+  // from a long press, so this is the only door on that platform. Gated to `pointerType==='touch'`
+  // so the mouse — where right-click already opens the menu via `onContextMenu` — is left alone.
+  private onLongPressStart = (e: PointerEvent): void => {
+    if (this.trigger !== 'context' || e.pointerType !== 'touch') return;
+    this.cancelLongPress();
+    this.longPressOrigin = { x: e.clientX, y: e.clientY };
+    const { clientX, clientY } = e;
+    document.addEventListener('pointermove', this.onLongPressMove);
+    document.addEventListener('pointerup', this.cancelLongPress);
+    document.addEventListener('pointercancel', this.cancelLongPress);
+    this.longPressTimer = window.setTimeout(() => {
+      this.longPressTimer = null;
+      this.stopLongPressTracking();
+      this.openAtPoint(clientX, clientY);
+    }, LONG_PRESS_MS);
+  };
+
+  // El dedo se movió antes de completar la pulsación: era un scroll, no una pulsación larga.
+  private onLongPressMove = (e: PointerEvent): void => {
+    if (!this.longPressOrigin) return;
+    const travelled = Math.hypot(e.clientX - this.longPressOrigin.x, e.clientY - this.longPressOrigin.y);
+    if (travelled > LONG_PRESS_TOLERANCE_PX) this.cancelLongPress();
+  };
+
+  private cancelLongPress = (): void => {
+    if (this.longPressTimer != null) {
+      window.clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+    this.longPressOrigin = null;
+    this.stopLongPressTracking();
+  };
+
+  private stopLongPressTracking(): void {
+    document.removeEventListener('pointermove', this.onLongPressMove);
+    document.removeEventListener('pointerup', this.cancelLongPress);
+    document.removeEventListener('pointercancel', this.cancelLongPress);
+  }
+
+  // Punto compartido por el `contextmenu` de ratón y la pulsación larga táctil: abre el mismo
+  // panel en las mismas coordenadas, relativas al host.
+  private openAtPoint(clientX: number, clientY: number): void {
+    const rect = this.getBoundingClientRect();
+    this.ctxX = clientX - rect.left;
+    this.ctxY = clientY - rect.top;
+    this.openMenu();
+  }
 
   // Toggle del modo click: invocado desde el slot por defecto.
   private onTriggerClick = (): void => {
@@ -570,7 +635,10 @@ export class OkMenu extends LitElement {
       this.trigger === 'context' ? `--ctx-x:${this.ctxX}px;--ctx-y:${this.ctxY}px` : '';
 
     return html`
-      <span class="anchor" @click=${this.onTriggerClick}>
+      <span
+        class="anchor${this.trigger === 'context' ? ' context' : ''}"
+        @click=${this.onTriggerClick}
+      >
         <slot></slot>
       </span>
       ${this.open

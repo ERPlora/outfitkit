@@ -77,6 +77,34 @@ describe('ok-file-manager · acciones sobre ficheros', () => {
   });
 });
 
+// ── Opening a file on touch (#95) ──────────────────────────────────────
+//
+// Opening used to be `@dblclick`/Enter only, which a tablet cannot rely on (no keyboard, and
+// double-tap is usually eaten by the browser's zoom gesture before it synthesizes `dblclick`).
+// `fileActions()` already renders an explicit "open" row action wired to a plain `@click`
+// (works on touch), but in the grid view it lived inside `.card-actions`, which was only shown
+// on `:hover`/`:focus-within` — invisible and therefore untappable on a device with no hover.
+describe('ok-file-manager · abrir sin doble clic (#95)', () => {
+  it('el botón "Abrir" de fileActions() emite ok-open con un solo click (no dblclick)', async () => {
+    const el = await mount();
+    const spy = vi.fn();
+    el.addEventListener('ok-open', (e) => spy((e as CustomEvent).detail));
+
+    act(el, 'open')!.click();
+
+    expect(spy).toHaveBeenCalledWith({ id: 'facturas/a.pdf' });
+  });
+
+  it('en la vista grid, .card-actions deja de depender de :hover en dispositivos táctiles', () => {
+    // Un tablet no tiene :hover fiable: sin esto, el botón "Abrir" existe en el DOM pero es
+    // invisible (opacity:0) y nadie sabe que está ahí para tocarlo.
+    const css = stylesText();
+    const coarse = /@media \(pointer: coarse\)\s*\{([\s\S]*?)\n {4}\}\n/.exec(css);
+    expect(coarse, '@media (pointer: coarse) block not found for .card-actions').not.toBeNull();
+    expect(coarse![1]).toMatch(/\.card-actions\s*\{[^}]*opacity:\s*1/);
+  });
+});
+
 describe('ok-file-manager · acciones sobre la carpeta actual', () => {
   it('deja renombrar y borrar la carpeta en la que estás', async () => {
     const el = await mount();
@@ -280,6 +308,119 @@ describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
   });
 });
 
+// ── Move without dragging — destination picker (#96) ──────────────────
+//
+// HTML5 drag&drop never fires on touch, and `emitMove()` used to be the ONLY thing that emits
+// `ok-move` — reachable solely from the drop handlers. This adds a tap-driven "Move to…" row
+// action that opens a folder picker and emits the SAME `ok-move` {from,to} event; the drag&drop
+// path stays untouched for mouse users.
+const MOVE_FOLDERS: OkFmFolder[] = [
+  {
+    id: '',
+    label: 'media',
+    children: [
+      { id: 'facturas', label: 'facturas' },
+      { id: '_logs', label: '_logs', readOnly: true },
+    ],
+  },
+];
+
+async function mountForMove() {
+  const el = document.createElement('ok-file-manager') as HTMLElement & {
+    files: OkFmFile[];
+    folders: OkFmFolder[];
+    selected: string;
+    view: 'grid' | 'list';
+    policy?: OkFmPolicy;
+    updateComplete: Promise<unknown>;
+  };
+  el.folders = MOVE_FOLDERS;
+  el.files = FILES;
+  el.selected = 'facturas';
+  el.view = 'list';
+  document.body.appendChild(el);
+  await el.updateComplete;
+  return el;
+}
+
+/** Destination items rendered by the open "Move to…" picker. */
+function moveTargets(el: HTMLElement): HTMLElement[] {
+  return Array.from(el.shadowRoot!.querySelectorAll('[data-move-target]'));
+}
+
+describe('ok-file-manager · mover sin arrastrar — selector de destino (#96)', () => {
+  it('fileActions() ofrece una acción "Mover a…" (antes solo traía renombrar y borrar)', async () => {
+    const el = await mountForMove();
+    expect(act(el, 'move-file')).not.toBeNull();
+  });
+
+  it('tocar "Mover a…" abre un selector con las carpetas del árbol', async () => {
+    const el = await mountForMove();
+    expect(moveTargets(el)).toHaveLength(0); // cerrado hasta que se pide mover
+
+    act(el, 'move-file')!.click();
+    await el.updateComplete;
+
+    const labels = moveTargets(el).map((n) => n.textContent?.trim());
+    expect(labels).toEqual(expect.arrayContaining(['media', 'facturas']));
+  });
+
+  it('elegir un destino emite ok-move con el MISMO contrato {from,to} que el drag&drop', async () => {
+    const el = await mountForMove();
+    const moved = vi.fn();
+    el.addEventListener('ok-move', (e) => moved((e as CustomEvent).detail));
+
+    act(el, 'move-file')!.click();
+    await el.updateComplete;
+    moveTargets(el).find((n) => n.getAttribute('data-move-target') === 'facturas')!.click();
+
+    expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: 'facturas' });
+  });
+
+  it('elegir un destino cierra el selector', async () => {
+    const el = await mountForMove();
+
+    act(el, 'move-file')!.click();
+    await el.updateComplete;
+    moveTargets(el)[0].click();
+    await el.updateComplete;
+
+    expect(moveTargets(el)).toHaveLength(0);
+  });
+
+  it('una carpeta de solo lectura no se ofrece como destino', async () => {
+    const el = await mountForMove();
+
+    act(el, 'move-file')!.click();
+    await el.updateComplete;
+
+    const ids = moveTargets(el).map((n) => n.getAttribute('data-move-target'));
+    expect(ids).not.toContain('_logs');
+  });
+
+  it('"Mover a…" no depende de la política: se ofrece igual que abrir/descargar', async () => {
+    // El drag&drop tampoco la comprueba (solo mira folder.readOnly) -- el tap no le añade una
+    // puerta que el ratón no tenía.
+    const el = document.createElement('ok-file-manager') as HTMLElement & {
+      files: OkFmFile[];
+      folders: OkFmFolder[];
+      selected: string;
+      view: 'grid' | 'list';
+      policy?: OkFmPolicy;
+      updateComplete: Promise<unknown>;
+    };
+    el.folders = MOVE_FOLDERS;
+    el.files = FILES;
+    el.selected = 'facturas';
+    el.view = 'list';
+    el.policy = { upload: false, rename: false, delete: false };
+    document.body.appendChild(el);
+    await el.updateComplete;
+
+    expect(act(el, 'move-file')).not.toBeNull();
+  });
+});
+
 // ---- Tap targets (#92 touch audit) ----
 // Contract: src/base/tap-target.test.ts — nothing interactive under 44px, exemptions argued in a
 // comment. ok-file-manager mixes lone toolbar buttons (grown outright, plenty of room in the
@@ -321,7 +462,7 @@ describe('ok-file-manager — tap targets (#92)', () => {
     expect(body).toMatch(/height:\s*var\(--ok-tap-min,\s*44px\)/);
   });
 
-  it('.action keeps the 28px ghost-button drawing -- up to 4 of them share a row 2px apart', () => {
+  it('.action keeps the 28px ghost-button drawing -- up to 5 of them share a row 2px apart', () => {
     const css = stylesText();
     const m = /\.action\s*\{([^}]*)\}/.exec(css);
     expect(m, '.action rule not found').not.toBeNull();

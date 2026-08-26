@@ -111,6 +111,8 @@ export interface OkFmLabels {
   delete: string;
   /** Acción de fila: abrir. */
   open: string;
+  /** Acción de fila: mover a otra carpeta (sin arrastrar — #96). */
+  move: string;
   /** Botón de nueva carpeta. */
   newFolder: string;
   /** Acción de renombrar (ficheros y carpetas). */
@@ -133,6 +135,7 @@ const DEFAULT_LABELS: OkFmLabels = {
   download: 'Descargar',
   delete: 'Eliminar',
   open: 'Abrir',
+  move: 'Mover a…',
   newFolder: 'Nueva carpeta',
   rename: 'Renombrar',
   renameFolder: 'Renombrar carpeta',
@@ -583,6 +586,13 @@ export class OkFileManager extends LitElement {
     .card:focus-within .card-actions {
       opacity: 1;
     }
+    /* Touch/tablet has no reliable :hover -- without this the "Open" action exists in the DOM
+       but is invisible, so a tablet cannot tap it either (#95 touch audit). */
+    @media (pointer: coarse) {
+      .card-actions {
+        opacity: 1;
+      }
+    }
 
     /* ---- Vista lista: filas ---- */
     .list {
@@ -654,7 +664,7 @@ export class OkFileManager extends LitElement {
       border-radius: 6px;
       transition: background 0.15s ease, color 0.15s ease;
       /* ok-tap-exempt: hit area widened by tapTarget below, capped to the 2px gap between
-         actions (.lactions/.card-actions) so up to 4 of them in a row never overlap each
+         actions (.lactions/.card-actions) so up to 5 of them in a row never overlap each
          other's hit zone -- growing to the blanket 44px here would stack them on top of
          each other. */
       position: relative;
@@ -821,6 +831,15 @@ export class OkFileManager extends LitElement {
   // El DataTransfer no es fiable en todos los entornos, así que el drop lee este estado.
   private dragSource: { id: string; kind: 'file' | 'folder' } | null = null;
   private seeded = false;
+
+  // File the "Move to…" picker is open for (#96 — tap-driven alternative to drag&drop, which
+  // never fires on touch). `null` ⇒ picker closed. Separate from `dragSource`: that one only
+  // exists during an active pointer drag, this one survives across the async popover interaction.
+  @state() private moveTarget: OkFmFile | null = null;
+  // Event that anchors the "Move to…" ion-popover (Shadow-DOM-safe anchoring, same technique as
+  // ok-data-table's overflow menu: `.event`, not `trigger-by-id`, which cannot resolve into a
+  // shadow root).
+  private moveEv?: Event;
 
   // MIME propio para arrastrar elementos internos (ficheros/carpetas del gestor). Distingue el
   // DnD de reubicación del de subida (que arrastra ficheros del SO y viene con `files`).
@@ -1016,6 +1035,58 @@ export class OkFileManager extends LitElement {
   private emitMove(to: string): void {
     if (!this.dragSource) return;
     this.emit('ok-move', { from: this.dragSource.id, to });
+  }
+
+  // ---- Mover sin arrastrar: selector de destino (#96) ----
+  //
+  // El drag&drop nunca dispara en táctil, así que `emitMove()` (arriba) no basta: esta es la
+  // segunda vía hacia el MISMO evento `ok-move`, abierta desde una acción de fila en vez de un
+  // drop. El drag&drop tampoco comprueba `policy` (solo `folder.readOnly`), así que esta acción
+  // tampoco lo hace -- el tap no le añade al host una puerta que el ratón no tenía.
+
+  private openMovePicker(e: Event, file: OkFmFile): void {
+    this.moveEv = e;
+    this.moveTarget = file;
+  }
+
+  private closeMovePicker(): void {
+    this.moveTarget = null;
+  }
+
+  /** Emite `ok-move` con el mismo contrato `{from,to}` que el drag&drop y cierra el selector. */
+  private moveTo(to: string): void {
+    if (!this.moveTarget) return;
+    this.emit('ok-move', { from: this.moveTarget.id, to });
+    this.closeMovePicker();
+  }
+
+  // Selector de carpeta destino: reutiliza el árbol aplanado (`flatFolders`, ya usado por el
+  // <select> móvil) y descarta las de solo lectura -- el mismo filtro que `onFolderDrop`.
+  private renderMovePicker(flat: { f: OkFmFolder; d: number }[]): unknown {
+    if (!this.moveTarget) return '';
+    return html`<ion-popover
+      .isOpen=${true}
+      .event=${this.moveEv}
+      dismiss-on-select="true"
+      @didDismiss=${() => this.closeMovePicker()}
+    >
+      <ion-content>
+        <ion-list lines="none" aria-label=${this.t.move}>
+          ${flat
+            .filter(({ f }) => !f.readOnly)
+            .map(
+              ({ f, d }) => html`<ion-item
+                button
+                .detail=${false}
+                data-move-target=${f.id}
+                @click=${() => this.moveTo(f.id)}
+              >
+                <ion-label style=${`padding-left:${d * 16}px`}>${f.label}</ion-label>
+              </ion-item>`
+            )}
+        </ion-list>
+      </ion-content>
+    </ion-popover>`;
   }
 
   // Deriva la extensión: usa `ext` o la cola del nombre.
@@ -1289,6 +1360,14 @@ export class OkFileManager extends LitElement {
       <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>`;
   }
+  private get iconMove() {
+    return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 8V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1" />
+      <path d="M2 8v9a2 2 0 0 0 2 2h9" />
+      <path d="M13 13l4 4-4 4" /><path d="M21 17h-8" />
+    </svg>`;
+  }
 
   // Acciones de un archivo, reutilizadas en grid y lista. Abrir y descargar SIEMPRE se ofrecen;
   // renombrar y borrar solo si la política de la carpeta los concede.
@@ -1323,6 +1402,20 @@ export class OkFileManager extends LitElement {
         }}
       >
         ${this.iconDownload}
+      </button>
+      <button
+        type="button"
+        class="action ok-tap"
+        draggable="true"
+        data-act="move-file"
+        aria-label=${this.t.move}
+        title=${this.t.move}
+        @click=${(e: Event) => {
+          e.stopPropagation();
+          this.openMovePicker(e, file);
+        }}
+      >
+        ${this.iconMove}
       </button>
       ${this.can('rename')
         ? html`<button
@@ -1471,6 +1564,7 @@ export class OkFileManager extends LitElement {
       </section>
     </div>
 
+    ${this.renderMovePicker(flat)}
     <input type="file" multiple @change=${this.onPicked} />`;
   }
 }

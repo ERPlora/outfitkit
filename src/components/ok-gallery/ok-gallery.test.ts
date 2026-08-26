@@ -41,3 +41,21 @@ describe('ok-gallery — tap targets (#92)', () => {
     el.remove();
   });
 });
+
+// #97 — the badge nulls its opacity to 0 outside of `:hover`/`:focus-within`, which is fine for a
+// mouse pointer but leaves nothing on screen to discover on a touchscreen: there is no hover on a
+// finger. In selection mode the badge must be visible without any interaction; hover/focus stays
+// as a reinforcement, not the only way to see it.
+describe('ok-gallery — selection badge is discoverable on touch (#97)', () => {
+  it('is visible by default whenever the gallery is in selection mode, not only on hover/focus', () => {
+    const css = stylesText();
+    const m = /:host\(\[selectable\]\)\s*\.select\s*\{([^}]*)\}/.exec(css);
+    expect(m, ':host([selectable]) .select rule not found -- the badge must not depend on hover to be seen').not.toBeNull();
+    expect(m![1]).toMatch(/opacity:\s*1/);
+  });
+
+  it('hover/focus-within stays wired as a reinforcement, not removed', () => {
+    const css = stylesText();
+    expect(css).toMatch(/\.item:hover \.select,\s*\n\s*\.item:focus-within \.select\s*\{/);
+  });
+});

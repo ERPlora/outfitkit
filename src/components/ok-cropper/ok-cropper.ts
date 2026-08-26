@@ -135,6 +135,9 @@ export class OkCropper extends LitElement {
     }
 
     .handle {
+      /* ok-tap-exempt: an 8px handle is correct against the image being cropped -- a 44px square
+         would swallow most of a small crop rect. The hit area is widened by the per-corner
+         .handle.<corner>::before overlays below, which grow outward. */
       position: absolute;
       width: 8px;
       height: 8px;
@@ -163,6 +166,37 @@ export class OkCropper extends LitElement {
       cursor: nwse-resize;
     }
 
+    /* Área táctil de las esquinas (#98). NO usa el fragmento compartido tapTarget: ese centra el
+       área sobre el control, y centrada cada esquina reclamaría 22px HACIA DENTRO — en un recorte de
+       menos de ~44px las esquinas opuestas se solapan y el dedo agarra la que no era, así que el
+       recorte salta en vez de redimensionarse. Sacar una cara de una foto o un logo de una captura
+       cae justo en ese rango.
+       Por eso cada área crece HACIA FUERA, sobre el velo oscuro que no tiene nada más, y solo asoma
+       unos pocos px hacia dentro: dos esquinas opuestas no pueden encontrarse, mida lo que mida el
+       recorte. */
+    .handle::before {
+      content: '';
+      position: absolute;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
+    }
+    .handle.tl::before {
+      top: -32px;
+      left: -32px;
+    }
+    .handle.tr::before {
+      top: -32px;
+      right: -32px;
+    }
+    .handle.bl::before {
+      bottom: -32px;
+      left: -32px;
+    }
+    .handle.br::before {
+      bottom: -32px;
+      right: -32px;
+    }
+
     .toolbar {
       display: flex;
       gap: 8px;
@@ -179,7 +213,7 @@ export class OkCropper extends LitElement {
       --padding-start: 12px;
       --padding-end: 12px;
     }
-  `;
+  `;;
 
   /** URL de la imagen a recortar. */
   @property() src?: string;

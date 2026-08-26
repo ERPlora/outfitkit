@@ -314,10 +314,44 @@ export class OkHoverCard extends LitElement {
     return { ...DEFAULT_LABELS, ...this.labels };
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    // #94 — a tap outside the card closes it, mirroring the pattern `ok-menu` already uses for
+    // click-outside. Only wired to `document` while the card is actually open (see `show`/`hide`),
+    // so a touch device that never opens the card pays nothing for this listener.
+    document.addEventListener('pointerdown', this.onDocPointer);
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    document.removeEventListener('pointerdown', this.onDocPointer);
     this.clearTimers();
   }
+
+  // #94 — hover has no equivalent on a touchscreen, so the trigger never opened with a finger
+  // unless the slotted content happened to be focusable. A tap toggles the card open/closed; it
+  // does not replace hover, it is the touch counterpart of it.
+  //
+  // The listener sits on `.trigger`, which also wraps the rendered `.card` (so the panel stays
+  // inside the same inline flow as its anchor) — a tap that bubbles up from INSIDE the open card
+  // is content the user is reading/acting on (the footer buttons already handle their own click),
+  // not a toggle request, so it is ignored here.
+  private onTap = (e: Event): void => {
+    if (this.cardEl && e.composedPath().includes(this.cardEl)) return;
+    this.clearTimers();
+    this.open ? this.hide() : this.show();
+  };
+
+  // Closes on a tap outside the card. `composedPath` sees through the shadow boundary, so this
+  // also correctly ignores taps on the trigger itself and inside the open card.
+  private readonly onDocPointer = (e: Event): void => {
+    if (!this.open) return;
+    const path = e.composedPath();
+    if (!path.includes(this)) {
+      this.clearTimers();
+      this.hide();
+    }
+  };
 
   private clearTimers(): void {
     if (this.openTimer) window.clearTimeout(this.openTimer);
@@ -457,6 +491,7 @@ export class OkHoverCard extends LitElement {
         @focusin=${() => this.scheduleOpen()}
         @focusout=${() => this.scheduleClose()}
         @keydown=${this.onKeydown}
+        @click=${this.onTap}
       >
         <slot></slot>
         ${this.open
