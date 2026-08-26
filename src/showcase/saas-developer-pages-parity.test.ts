@@ -28,8 +28,10 @@ const expectDeveloperPage = (name: typeof pageNames[number], activeTab: string):
   expect(page).not.toContain('_shell.css');
   expect(page).not.toContain('ok-page-header');
   expect(page).not.toContain('ok-avatar');
-  expect(page).not.toMatch(/mode=["']md["']/);
-  expect(page).not.toContain("mode: 'md'");
+  // outfitkit#84 / ADR-0143 (enmienda 2026-08-11): the SHELL stays in ios, but the three form controls that
+  // take `fill` must declare mode="md" (Ionic only implements `fill` in md) — the SaaS page itself does
+  // (saas#1080). What this guard forbids is switching the page CONFIG to md, not the per-control attribute.
+  expect(page).not.toMatch(/mode:\s*['"]md['"]/);
   return page;
 };
 

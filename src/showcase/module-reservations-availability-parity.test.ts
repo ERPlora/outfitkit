@@ -27,7 +27,10 @@ describe('showcase reservations availability — paridad con los dos CRUD reales
     expect(page).toContain("active: '/m/reservations/availability'");
     expect(page).toContain("title: 'Disponibilidad'");
     expect(page).toContain('<script src="./_ionic-config.js"></script>');
-    expect(page).not.toMatch(/mode=["']md["']/);
+    // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+    // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+    // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+    expect(page).not.toMatch(/mode:\s*['"]md['"]/);
     expect((page.match(/<ok-data-table/g) ?? [])).toHaveLength(2);
     expect(page).not.toMatch(/<ok-data-table[^>]*\sfill(?:\s|>)/);
     const outfitTags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);

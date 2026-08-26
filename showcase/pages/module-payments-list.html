@@ -96,13 +96,13 @@
             <p id="payments-error" class="payments-error" role="alert" hidden></p>
             <ok-data-table id="payments-table" fill>
               <form id="payment-create-form" slot="create" class="payment-create-form">
-                <ion-select id="payment-method" fill="outline" label="Método" label-placement="floating" placeholder="Método…" required>
+                <ion-select id="payment-method" mode="md" fill="outline" label="Método" label-placement="floating" placeholder="Método…" required>
                   ${PAYMENT_METHODS.map((method) => `<ion-select-option value="${method.id}">${method.name}</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-input id="payment-date" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
-                <ion-input id="payment-amount" fill="outline" label="Importe" label-placement="floating" type="number" step="0.01" min="0.01" required></ion-input>
-                <ion-input id="payment-beneficiary" fill="outline" label="Beneficiario" label-placement="floating" required></ion-input>
-                <ion-input id="payment-concept" fill="outline" label="Concepto" label-placement="floating"></ion-input>
+                <ion-input id="payment-date" mode="md" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
+                <ion-input id="payment-amount" mode="md" fill="outline" label="Importe" label-placement="floating" type="number" step="0.01" min="0.01" required></ion-input>
+                <ion-input id="payment-beneficiary" mode="md" fill="outline" label="Beneficiario" label-placement="floating" required></ion-input>
+                <ion-input id="payment-concept" mode="md" fill="outline" label="Concepto" label-placement="floating"></ion-input>
                 <ion-button id="payment-save" type="submit">Nuevo pago</ion-button>
               </form>
             </ok-data-table>

@@ -47,7 +47,10 @@ function expectHubIos(page: string, route: string, title: string): void {
   expect(page).toContain(`title: '${title}'`);
   expect(page).toContain('<script src="./_ionic-config.js"></script>');
   expect(page.indexOf('./_ionic-config.js')).toBeLessThan(page.indexOf('@ionic/core'));
-  expect(page).not.toMatch(/mode=["']md["']/);
+  // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls
+  // that take `fill` MUST declare mode="md" per control (Ionic only implements `fill` in md), exactly as
+  // the hub and the SaaS do (hub#760, saas#1080). What is forbidden is switching the PAGE config to md.
+  expect(page).not.toMatch(/mode:\s*['"]md['"]/);
   expect(page).not.toContain("mode: 'md'");
 }
 

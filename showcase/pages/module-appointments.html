@@ -58,8 +58,8 @@
         body: `
           <div class="appointments-page">
             <div class="appointment-scope">
-              <ion-input id="appointment-day" value="2026-07-13" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
-              <ion-select id="appointment-status" value="" fill="outline" label="Estado" label-placement="floating">
+              <ion-input id="appointment-day" mode="md" value="2026-07-13" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+              <ion-select id="appointment-status" mode="md" value="" fill="outline" label="Estado" label-placement="floating">
                 <ion-select-option value="">Todos los estados</ion-select-option>
                 <ion-select-option value="pending">Pendiente</ion-select-option>
                 <ion-select-option value="confirmed">Confirmada</ion-select-option>
@@ -71,11 +71,11 @@
             </div>
             <ok-data-table id="appointments-table" fill>
               <form id="appointment-form" slot="create" class="appointment-form">
-                <ion-input id="appointment-customer" fill="outline" label="Cliente" label-placement="floating"></ion-input>
-                <ion-input id="appointment-phone" type="tel" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
-                <ion-input id="appointment-service" fill="outline" label="Servicio" label-placement="floating"></ion-input>
-                <ion-input id="appointment-start" type="datetime-local" fill="outline" label="Inicio" label-placement="floating"></ion-input>
-                <ion-input id="appointment-duration" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-input id="appointment-customer" mode="md" fill="outline" label="Cliente" label-placement="floating"></ion-input>
+                <ion-input id="appointment-phone" mode="md" type="tel" fill="outline" label="Teléfono" label-placement="floating"></ion-input>
+                <ion-input id="appointment-service" mode="md" fill="outline" label="Servicio" label-placement="floating"></ion-input>
+                <ion-input id="appointment-start" mode="md" type="datetime-local" fill="outline" label="Inicio" label-placement="floating"></ion-input>
+                <ion-input id="appointment-duration" mode="md" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small">Añadir cita</ion-button>
               </form>
             </ok-data-table>

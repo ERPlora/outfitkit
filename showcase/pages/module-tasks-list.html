@@ -242,11 +242,11 @@
               </div>
 
               <div class="task-detail-actions">
-                <ion-select id="task-detail-status" fill="outline" label="Estado" label-placement="floating">
+                <ion-select id="task-detail-status" mode="md" fill="outline" label="Estado" label-placement="floating">
                   ${STATUS_OPTIONS.map((option) => `<ion-select-option value="${option.value}">${option.label}</ion-select-option>`).join('')}
                 </ion-select>
                 <ion-button id="task-detail-complete" size="small" color="success">Completar</ion-button>
-                <ion-input id="task-detail-assignee-input" fill="outline" label="Asignar a" label-placement="floating" placeholder="uuid del usuario…"></ion-input>
+                <ion-input id="task-detail-assignee-input" mode="md" fill="outline" label="Asignar a" label-placement="floating" placeholder="uuid del usuario…"></ion-input>
                 <ion-button id="task-detail-assign" size="small" fill="outline">Asignar</ion-button>
                 <ion-button id="task-detail-assign-me" size="small" fill="outline">Asignármela</ion-button>
                 <ion-button id="task-detail-unassign" size="small" fill="clear">Desasignar</ion-button>
@@ -256,7 +256,7 @@
               <ul id="task-subtasks" class="task-list"></ul>
               <p id="task-subtasks-empty" class="tasks-empty">Sin subtareas.</p>
               <form id="task-subtask-form" class="task-inline-form">
-                <ion-input id="task-subtask-title" fill="outline" label="Nueva subtarea" label-placement="floating" placeholder="Nueva subtarea…"></ion-input>
+                <ion-input id="task-subtask-title" mode="md" fill="outline" label="Nueva subtarea" label-placement="floating" placeholder="Nueva subtarea…"></ion-input>
                 <ion-button type="submit" size="small">Añadir subtarea</ion-button>
               </form>
 
@@ -264,15 +264,15 @@
               <ul id="task-comments" class="task-list"></ul>
               <p id="task-comments-empty" class="tasks-empty">Sin comentarios.</p>
               <form id="task-comment-form" class="task-inline-form">
-                <ion-textarea id="task-comment" fill="outline" label="Comentar" label-placement="floating" auto-grow rows="1" placeholder="Añadir comentario…"></ion-textarea>
+                <ion-textarea id="task-comment" mode="md" fill="outline" label="Comentar" label-placement="floating" auto-grow rows="1" placeholder="Añadir comentario…"></ion-textarea>
                 <ion-button type="submit" size="small">Comentar</ion-button>
               </form>
             </section>
 
             <ok-data-table id="tasks-table" fill>
               <form id="task-create-form" slot="create" class="task-create-form">
-                <ion-input id="task-title" fill="outline" label="Título" label-placement="floating" placeholder="Nueva tarea…" required></ion-input>
-                <ion-select id="task-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                <ion-input id="task-title" mode="md" fill="outline" label="Título" label-placement="floating" placeholder="Nueva tarea…" required></ion-input>
+                <ion-select id="task-priority" mode="md" fill="outline" label="Prioridad" label-placement="floating" value="medium">
                   ${PRIORITY_OPTIONS.map((option) => `<ion-select-option value="${option.value}">${option.label}</ion-select-option>`).join('')}
                 </ion-select>
                 <ion-button type="submit" size="small">Añadir</ion-button>

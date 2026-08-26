@@ -287,7 +287,7 @@
             <section id="invoice-rectify-card" class="invoice-card invoice-screen-only" hidden>
               <h3 id="invoice-rectify-title">Rectificar factura</h3>
               <p>Se emitirá una rectificativa R1 (serie RECT) con los importes negados y la factura original quedará cancelada. Esta operación no se puede deshacer.</p>
-              <ion-textarea id="invoice-rectify-reason" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la rectificación" auto-grow></ion-textarea>
+              <ion-textarea id="invoice-rectify-reason" mode="md" fill="outline" label="Motivo" label-placement="floating" placeholder="Motivo de la rectificación" auto-grow></ion-textarea>
               <div class="invoice-actions">
                 <ion-button id="invoice-rectify-confirm" size="small" color="danger">Emitir rectificativa</ion-button>
                 <ion-button id="invoice-rectify-cancel" size="small" fill="outline" color="medium">Cancelar</ion-button>
@@ -299,14 +299,14 @@
               <ok-data-table id="invoice-table" fill>
                 <form id="invoice-create-form" slot="create" class="invoice-form">
                   <div class="invoice-form-fields">
-                    <ion-select id="invoice-series" fill="outline" label="Serie" label-placement="floating" interface="popover" value="FACT">
+                    <ion-select id="invoice-series" mode="md" fill="outline" label="Serie" label-placement="floating" interface="popover" value="FACT">
                       <ion-select-option value="FACT">FACT — Facturas</ion-select-option>
                       <ion-select-option value="TICKET">TICKET — Tickets</ion-select-option>
                     </ion-select>
-                    <ion-input id="invoice-customer" fill="outline" label="Cliente" label-placement="floating"></ion-input>
-                    <ion-input id="invoice-customer-tax-id" fill="outline" label="NIF cliente" label-placement="floating" placeholder="NIF"></ion-input>
-                    <ion-input id="invoice-address" fill="outline" label="Dirección" label-placement="floating"></ion-input>
-                    <ion-input id="invoice-notes" fill="outline" label="Notas" label-placement="floating"></ion-input>
+                    <ion-input id="invoice-customer" mode="md" fill="outline" label="Cliente" label-placement="floating"></ion-input>
+                    <ion-input id="invoice-customer-tax-id" mode="md" fill="outline" label="NIF cliente" label-placement="floating" placeholder="NIF"></ion-input>
+                    <ion-input id="invoice-address" mode="md" fill="outline" label="Dirección" label-placement="floating"></ion-input>
+                    <ion-input id="invoice-notes" mode="md" fill="outline" label="Notas" label-placement="floating"></ion-input>
                   </div>
                   <div id="invoice-create-lines"></div>
                   <div class="invoice-actions">
@@ -490,10 +490,10 @@
             line.className = 'invoice-line';
             line.dataset.line = String(index);
             line.innerHTML = `
-              <ion-input class="invoice-line-description" fill="outline" label="Descripción" label-placement="floating"></ion-input>
-              <ion-input class="invoice-line-quantity" fill="outline" label="Cant." label-placement="floating" type="number" value="1"></ion-input>
-              <ion-input class="invoice-line-price" fill="outline" label="Precio" label-placement="floating" type="number"></ion-input>
-              <ion-input class="invoice-line-tax" fill="outline" label="IVA %" label-placement="floating" type="number" value="21"></ion-input>
+              <ion-input mode="md" class="invoice-line-description" fill="outline" label="Descripción" label-placement="floating"></ion-input>
+              <ion-input mode="md" class="invoice-line-quantity" fill="outline" label="Cant." label-placement="floating" type="number" value="1"></ion-input>
+              <ion-input mode="md" class="invoice-line-price" fill="outline" label="Precio" label-placement="floating" type="number"></ion-input>
+              <ion-input mode="md" class="invoice-line-tax" fill="outline" label="IVA %" label-placement="floating" type="number" value="21"></ion-input>
               <ion-button class="invoice-line-remove" size="small" fill="clear" color="danger" type="button" aria-label="Quitar línea">✕</ion-button>`;
             line.querySelector('.invoice-line-remove').addEventListener('click', () => {
               if (createLines.children.length > 1) line.remove();

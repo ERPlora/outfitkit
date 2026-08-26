@@ -100,19 +100,19 @@
           <div class="taxes-page">
             <ok-data-table id="taxes-rules-table" fill>
               <form id="taxes-rule-form" slot="create" class="taxes-form">
-                <ion-input id="tax-rule-country" fill="outline" label="País" label-placement="floating" placeholder="ES" minlength="2" maxlength="2" required></ion-input>
-                <ion-input id="tax-rule-region" fill="outline" label="Región" label-placement="floating" placeholder="Opcional" maxlength="10"></ion-input>
-                <ion-select id="tax-rule-category" fill="outline" label="Categoría" label-placement="floating" interface="popover" required>
+                <ion-input id="tax-rule-country" mode="md" fill="outline" label="País" label-placement="floating" placeholder="ES" minlength="2" maxlength="2" required></ion-input>
+                <ion-input id="tax-rule-region" mode="md" fill="outline" label="Región" label-placement="floating" placeholder="Opcional" maxlength="10"></ion-input>
+                <ion-select id="tax-rule-category" mode="md" fill="outline" label="Categoría" label-placement="floating" interface="popover" required>
                   ${CATEGORIES.map(([key, name]) => `<ion-select-option value="${key}">${name} (${key})</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-input id="tax-rule-rate" fill="outline" label="%" label-placement="floating" type="number" min="0" step="0.01" placeholder="21" required></ion-input>
-                <ion-select id="tax-rule-type" fill="outline" label="Tipo" label-placement="floating" interface="popover" value="vat">
+                <ion-input id="tax-rule-rate" mode="md" fill="outline" label="%" label-placement="floating" type="number" min="0" step="0.01" placeholder="21" required></ion-input>
+                <ion-select id="tax-rule-type" mode="md" fill="outline" label="Tipo" label-placement="floating" interface="popover" value="vat">
                   ${TAX_TYPES.map(([value, label]) => `<ion-select-option value="${value}">${label}</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-input id="tax-rule-valid-from" fill="outline" label="Vigente desde" label-placement="floating" type="date"></ion-input>
-                <ion-input id="tax-rule-valid-to" fill="outline" label="Vigente hasta" label-placement="floating" type="date"></ion-input>
-                <ion-input id="tax-rule-parent" fill="outline" label="ID regla raíz" label-placement="floating" placeholder="Opcional"></ion-input>
-                <ion-input id="tax-rule-component-label" fill="outline" label="Etiqueta componente" label-placement="floating" placeholder="Recargo de equivalencia" maxlength="120"></ion-input>
+                <ion-input id="tax-rule-valid-from" mode="md" fill="outline" label="Vigente desde" label-placement="floating" type="date"></ion-input>
+                <ion-input id="tax-rule-valid-to" mode="md" fill="outline" label="Vigente hasta" label-placement="floating" type="date"></ion-input>
+                <ion-input id="tax-rule-parent" mode="md" fill="outline" label="ID regla raíz" label-placement="floating" placeholder="Opcional"></ion-input>
+                <ion-input id="tax-rule-component-label" mode="md" fill="outline" label="Etiqueta componente" label-placement="floating" placeholder="Recargo de equivalencia" maxlength="120"></ion-input>
                 <ion-note>
                   Para multi-impuesto, indica la regla raíz y una etiqueta para el componente.
                 </ion-note>

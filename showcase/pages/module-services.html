@@ -62,14 +62,14 @@
           <div class="services-page">
             <ok-data-table id="services-table" fill>
               <form id="services-form" slot="create" class="services-form">
-                <ion-input id="service-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
-                <ion-input id="service-price" type="number" step="0.01" fill="outline" label="Precio" label-placement="floating"></ion-input>
-                <ion-input id="service-duration" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
-                <ion-select id="service-category" fill="outline" label="Categoría" label-placement="floating">
+                <ion-input id="service-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-input id="service-price" mode="md" type="number" step="0.01" fill="outline" label="Precio" label-placement="floating"></ion-input>
+                <ion-input id="service-duration" mode="md" type="number" value="60" min="1" fill="outline" label="Duración (min)" label-placement="floating"></ion-input>
+                <ion-select id="service-category" mode="md" fill="outline" label="Categoría" label-placement="floating">
                   <ion-select-option value="">Sin categoría</ion-select-option>
                   ${CATEGORY_FIXTURE.map((category) => `<ion-select-option value="${category.id}">${category.name}</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-select id="service-tax-category" fill="outline" label="Categoría fiscal" label-placement="floating">
+                <ion-select id="service-tax-category" mode="md" fill="outline" label="Categoría fiscal" label-placement="floating">
                   <ion-select-option value="">Por defecto</ion-select-option>
                   ${TAX_CATEGORY_FIXTURE.map((category) => `<ion-select-option value="${category.key}">${category.name} (${category.key})</ion-select-option>`).join('')}
                 </ion-select>

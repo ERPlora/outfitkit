@@ -53,9 +53,9 @@
               <ion-card-header><ion-card-title id="kitchen-station-edit-title">Editar estación</ion-card-title></ion-card-header>
               <ion-card-content>
                 <form id="kitchen-station-edit-form" class="kitchen-station-panel-form">
-                  <ion-input id="kitchen-station-edit-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
-                  <ion-input id="kitchen-station-edit-color" fill="outline" label="Color" label-placement="floating" placeholder="#F97316"></ion-input>
-                  <ion-input id="kitchen-station-edit-printer" fill="outline" label="Impresora" label-placement="floating"></ion-input>
+                  <ion-input id="kitchen-station-edit-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                  <ion-input id="kitchen-station-edit-color" mode="md" fill="outline" label="Color" label-placement="floating" placeholder="#F97316"></ion-input>
+                  <ion-input id="kitchen-station-edit-printer" mode="md" fill="outline" label="Impresora" label-placement="floating"></ion-input>
                   <ion-toggle id="kitchen-station-edit-active">Activa</ion-toggle>
                   <ion-button type="submit" size="small">Guardar</ion-button>
                   <ion-button id="kitchen-station-edit-cancel" type="button" size="small" fill="outline">Cancelar</ion-button>
@@ -67,9 +67,9 @@
               <ion-card-header><ion-card-title>Enrutado producto/categoría → estación</ion-card-title></ion-card-header>
               <ion-card-content>
                 <form id="kitchen-routing-form" class="kitchen-station-panel-form">
-                  <ion-select id="kitchen-routing-station" fill="outline" label="Estación" label-placement="floating"></ion-select>
-                  <ion-input id="kitchen-routing-product" fill="outline" label="ID de producto" label-placement="floating" placeholder="Opcional"></ion-input>
-                  <ion-input id="kitchen-routing-category" fill="outline" label="ID de categoría" label-placement="floating" placeholder="Opcional"></ion-input>
+                  <ion-select id="kitchen-routing-station" mode="md" fill="outline" label="Estación" label-placement="floating"></ion-select>
+                  <ion-input id="kitchen-routing-product" mode="md" fill="outline" label="ID de producto" label-placement="floating" placeholder="Opcional"></ion-input>
+                  <ion-input id="kitchen-routing-category" mode="md" fill="outline" label="ID de categoría" label-placement="floating" placeholder="Opcional"></ion-input>
                   <ion-button type="submit" size="small">Guardar enrutado</ion-button>
                 </form>
               </ion-card-content>
@@ -77,8 +77,8 @@
 
             <ok-data-table id="kitchen-stations-table" fill>
               <form id="kitchen-station-create" slot="create" class="kitchen-station-create">
-                <ion-input id="kitchen-station-name" fill="outline" label="Nombre" label-placement="floating" placeholder="p. ej. Plancha" required></ion-input>
-                <ion-input id="kitchen-station-printer" fill="outline" label="Impresora" label-placement="floating" placeholder="Opcional"></ion-input>
+                <ion-input id="kitchen-station-name" mode="md" fill="outline" label="Nombre" label-placement="floating" placeholder="p. ej. Plancha" required></ion-input>
+                <ion-input id="kitchen-station-printer" mode="md" fill="outline" label="Impresora" label-placement="floating" placeholder="Opcional"></ion-input>
                 <ion-button type="submit">Añadir</ion-button>
               </form>
             </ok-data-table>

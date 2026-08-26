@@ -123,15 +123,15 @@
             <p id="sla-feedback" class="sla-feedback" role="alert" hidden></p>
             <ok-data-table id="sla-table" fill>
               <form id="sla-create-form" slot="create" class="sla-create-form">
-                <ion-input id="sla-name" fill="outline" label="Nombre" label-placement="floating" placeholder="Nombre"></ion-input>
-                <ion-select id="sla-priority" fill="outline" label="Prioridad" label-placement="floating" value="medium">
+                <ion-input id="sla-name" mode="md" fill="outline" label="Nombre" label-placement="floating" placeholder="Nombre"></ion-input>
+                <ion-select id="sla-priority" mode="md" fill="outline" label="Prioridad" label-placement="floating" value="medium">
                   <ion-select-option value="low">Baja</ion-select-option>
                   <ion-select-option value="medium">Media</ion-select-option>
                   <ion-select-option value="high">Alta</ion-select-option>
                   <ion-select-option value="urgent">Urgente</ion-select-option>
                 </ion-select>
-                <ion-input id="sla-response" type="number" min="1" fill="outline" label="Respuesta (h)" label-placement="floating" value="24"></ion-input>
-                <ion-input id="sla-resolution" type="number" min="1" fill="outline" label="Resolución (h)" label-placement="floating" value="72"></ion-input>
+                <ion-input id="sla-response" mode="md" type="number" min="1" fill="outline" label="Respuesta (h)" label-placement="floating" value="24"></ion-input>
+                <ion-input id="sla-resolution" mode="md" type="number" min="1" fill="outline" label="Resolución (h)" label-placement="floating" value="72"></ion-input>
                 <ion-button type="submit">Añadir SLA</ion-button>
               </form>
             </ok-data-table>

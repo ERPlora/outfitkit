@@ -59,12 +59,12 @@
             <h3>Franjas horarias</h3>
             <ok-data-table id="reservations-slots">
               <form id="reservations-slot-form" slot="create" class="availability-form">
-                <ion-select id="slot-day" value="0" fill="outline" label="Día" label-placement="floating">
+                <ion-select id="slot-day" mode="md" value="0" fill="outline" label="Día" label-placement="floating">
                   ${DAYS.map((day, index) => `<ion-select-option value="${index}">${day}</ion-select-option>`).join('')}
                 </ion-select>
-                <ion-input id="slot-start" type="time" fill="outline" label="Inicio" label-placement="floating"></ion-input>
-                <ion-input id="slot-end" type="time" fill="outline" label="Fin" label-placement="floating"></ion-input>
-                <ion-input id="slot-max" type="number" value="10" min="1" fill="outline" label="Máximo de reservas" label-placement="floating"></ion-input>
+                <ion-input id="slot-start" mode="md" type="time" fill="outline" label="Inicio" label-placement="floating"></ion-input>
+                <ion-input id="slot-end" mode="md" type="time" fill="outline" label="Fin" label-placement="floating"></ion-input>
+                <ion-input id="slot-max" mode="md" type="number" value="10" min="1" fill="outline" label="Máximo de reservas" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small">Añadir franja</ion-button>
               </form>
             </ok-data-table>
@@ -72,8 +72,8 @@
             <h3>Fechas bloqueadas</h3>
             <ok-data-table id="reservations-blocked">
               <form id="reservations-blocked-form" slot="create" class="availability-form">
-                <ion-input id="blocked-date" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
-                <ion-input id="blocked-reason" fill="outline" label="Motivo" label-placement="floating"></ion-input>
+                <ion-input id="blocked-date" mode="md" type="date" fill="outline" label="Fecha" label-placement="floating"></ion-input>
+                <ion-input id="blocked-reason" mode="md" fill="outline" label="Motivo" label-placement="floating"></ion-input>
                 <ion-button type="submit" size="small">Bloquear fecha</ion-button>
               </form>
             </ok-data-table>

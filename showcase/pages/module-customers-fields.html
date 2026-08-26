@@ -140,8 +140,8 @@
             <ok-data-table id="fields-table" fill>
               <form id="field-form" slot="create" class="field-form">
                 <h3 id="field-form-title" hidden></h3>
-                <ion-input id="field-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
-                <ion-select id="field-type" fill="outline" label="Tipo" label-placement="floating" value="text">
+                <ion-input id="field-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-select id="field-type" mode="md" fill="outline" label="Tipo" label-placement="floating" value="text">
                   <ion-select-option value="text">Texto</ion-select-option>
                   <ion-select-option value="number">Número</ion-select-option>
                   <ion-select-option value="date">Fecha</ion-select-option>
@@ -149,8 +149,8 @@
                   <ion-select-option value="select">Selección</ion-select-option>
                   <ion-select-option value="textarea">Texto largo</ion-select-option>
                 </ion-select>
-                <ion-input id="field-options" fill="outline" label="Opciones (separadas por comas)" label-placement="floating" hidden></ion-input>
-                <ion-input id="field-order" type="number" min="0" fill="outline" label="Orden" label-placement="floating" value="0"></ion-input>
+                <ion-input id="field-options" mode="md" fill="outline" label="Opciones (separadas por comas)" label-placement="floating" hidden></ion-input>
+                <ion-input id="field-order" mode="md" type="number" min="0" fill="outline" label="Orden" label-placement="floating" value="0"></ion-input>
                 <ion-checkbox id="field-required">Obligatorio</ion-checkbox>
                 <ion-checkbox id="field-active" checked hidden>Activo</ion-checkbox>
                 <ion-button type="submit" size="small">Guardar</ion-button>

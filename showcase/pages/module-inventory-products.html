@@ -287,10 +287,10 @@
             <p id="inventory-products-error" class="inventory-error" hidden></p>
             <ok-data-table id="inventory-products-table" fill>
               <form id="inventory-product-form" slot="create" class="inventory-product-form">
-                <ion-input id="product-name" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
-                <ion-input id="product-sku" fill="outline" label="SKU" label-placement="floating" required></ion-input>
-                <ion-input id="product-price" fill="outline" label="Precio" label-placement="floating" type="number" step="0.01"></ion-input>
-                <ion-select id="product-tax-category" fill="outline" label="Tipo de IVA / Impuesto" label-placement="floating" value="">
+                <ion-input id="product-name" mode="md" fill="outline" label="Nombre" label-placement="floating" required></ion-input>
+                <ion-input id="product-sku" mode="md" fill="outline" label="SKU" label-placement="floating" required></ion-input>
+                <ion-input id="product-price" mode="md" fill="outline" label="Precio" label-placement="floating" type="number" step="0.01"></ion-input>
+                <ion-select id="product-tax-category" mode="md" fill="outline" label="Tipo de IVA / Impuesto" label-placement="floating" value="">
                   <ion-select-option value="">— (por defecto)</ion-select-option>
                 </ion-select>
                 <ion-button id="product-save" type="submit">Guardar</ion-button>
@@ -346,13 +346,13 @@
                   <ion-segment-button value="skip"><ion-label>Omitir</ion-label></ion-segment-button>
                 </ion-segment>
                 <div id="inventory-import-pick" class="inventory-import-fields">
-                  <ion-select fill="outline" label="Categoría" label-placement="floating" value="">
+                  <ion-select mode="md" fill="outline" label="Categoría" label-placement="floating" value="">
                     <ion-select-option value="">— (por defecto)</ion-select-option>
                   </ion-select>
                 </div>
                 <div id="inventory-import-create" class="inventory-import-fields" hidden>
-                  <ion-input id="inventory-import-key" fill="outline" label="Clave" label-placement="floating" placeholder="restaurant.food"></ion-input>
-                  <ion-input id="inventory-import-name" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                  <ion-input id="inventory-import-key" mode="md" fill="outline" label="Clave" label-placement="floating" placeholder="restaurant.food"></ion-input>
+                  <ion-input id="inventory-import-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
                 </div>
               </div>
               <ion-button id="inventory-import-confirm" expand="block">Confirmar e importar</ion-button>

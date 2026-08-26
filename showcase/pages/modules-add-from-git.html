@@ -61,36 +61,36 @@
                 <form class="developer-fields">
                   <div class="developer-fields two-col">
                     <div>
-                      <ion-input type="url" label="URL del repositorio *" label-placement="stacked" fill="outline" placeholder="https://github.com/usuario/nombre-modulo" required></ion-input>
+                      <ion-input mode="md" type="url" label="URL del repositorio *" label-placement="stacked" fill="outline" placeholder="https://github.com/usuario/nombre-modulo" required></ion-input>
                       <p class="developer-field-help">Compatible con repositorios de GitHub, GitLab y Bitbucket.</p>
                     </div>
-                    <ion-input type="text" label="Rama" label-placement="stacked" fill="outline" value="main" placeholder="main"></ion-input>
+                    <ion-input mode="md" type="text" label="Rama" label-placement="stacked" fill="outline" value="main" placeholder="main"></ion-input>
                   </div>
 
-                  <ion-select label="Sector" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona sectores">
+                  <ion-select mode="md" label="Sector" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona sectores">
                     <ion-select-option value="retail">Comercio</ion-select-option>
                     <ion-select-option value="hospitality">Hostelería</ion-select-option>
                     <ion-select-option value="services">Servicios</ion-select-option>
                   </ion-select>
 
-                  <ion-select label="Unidad funcional" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona unidades funcionales">
+                  <ion-select mode="md" label="Unidad funcional" label-placement="stacked" fill="outline" interface="popover" multiple placeholder="Selecciona unidades funcionales">
                     <ion-select-option value="operations">Operaciones</ion-select-option>
                     <ion-select-option value="finance">Finanzas</ion-select-option>
                     <ion-select-option value="compliance">Cumplimiento</ion-select-option>
                   </ion-select>
 
                   <div class="developer-fields two-col">
-                    <ion-select id="module-type-select" label="Tipo de módulo" label-placement="stacked" fill="outline" interface="popover" value="free">
+                    <ion-select id="module-type-select" mode="md" label="Tipo de módulo" label-placement="stacked" fill="outline" interface="popover" value="free">
                       <ion-select-option value="free">Gratis</ion-select-option>
                       <ion-select-option value="one_time">Pago único</ion-select-option>
                       <ion-select-option value="subscription">Suscripción mensual</ion-select-option>
                     </ion-select>
                     <div data-price-field="one_time" hidden>
-                      <ion-input type="number" label="Precio (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="9,99"></ion-input>
+                      <ion-input mode="md" type="number" label="Precio (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="9,99"></ion-input>
                       <p class="developer-field-help">Recibes el 85% del precio de venta.</p>
                     </div>
                     <div data-price-field="subscription" hidden>
-                      <ion-input type="number" label="Precio mensual (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="4,99"></ion-input>
+                      <ion-input mode="md" type="number" label="Precio mensual (EUR)" label-placement="stacked" fill="outline" min="0" step="0.01" placeholder="4,99"></ion-input>
                       <p class="developer-field-help">Recibes el 85% del precio mensual.</p>
                     </div>
                   </div>
