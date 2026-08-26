@@ -24,6 +24,10 @@ const HINT_PX = 28;
 const HINT_VUELTA_MS = 420;
 /** Clase que activa el CSS de `tabbar.css`. La pone `bindTabbar`, no el consumidor. */
 const CLASE = 'ok-tabbar';
+/** Marca puesta mientras se arrastra, para que el CSS cambie el cursor y corte la selección. */
+const DRAGGING_CLASS = 'ok-tabbar-dragging';
+/** How far the pointer must travel before it counts as a drag and not as a shaky click. */
+const DRAG_THRESHOLD_PX = 4;
 
 /**
  * Calcula qué bordes esconden pestañas, para pintar el degradado SOLO donde hay más.
@@ -116,6 +120,83 @@ export function hintScroll(segment: HTMLElement | null): void {
  *
  * `hint: false` desactiva la pista de movimiento (el degradado se mantiene).
  */
+/**
+ * Press-and-drag to scroll the strip, for POINTING DEVICES ONLY.
+ *
+ * Why it is needed: `overflow-x:auto` gives a finger a native pan (with momentum and rubber-banding),
+ * but no browser turns a mouse drag into `scrollLeft` -- that has always been the page's job. On the
+ * POS the only hook was the wheel, so on a desktop the category strip looked stuck.
+ *
+ * Why `touch` is excluded: the finger ALREADY works, and reimplementing native kinetic scrolling in
+ * JS comes out worse than what the browser ships. A pen keeps the drag: it has no native pan.
+ *
+ * The click after a drag is swallowed. Without that, releasing the drag on top of another tab
+ * selects it -- and on the hub's bottom tab bar (the other consumer) it would navigate away.
+ */
+function bindDrag(segment: HTMLElement): () => void {
+  let pointerId: number | null = null;
+  let startX = 0;
+  let startScroll = 0;
+  let dragging = false;
+  let swallowClick = false;
+
+  const onDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') return;
+    pointerId = e.pointerId;
+    startX = e.clientX;
+    startScroll = segment.scrollLeft;
+    dragging = false;
+    swallowClick = false;
+  };
+
+  const onMove = (e: PointerEvent): void => {
+    if (pointerId === null || e.pointerId !== pointerId) return;
+    const delta = e.clientX - startX;
+    if (!dragging) {
+      if (Math.abs(delta) < DRAG_THRESHOLD_PX) return;
+      dragging = true;
+      segment.classList.add(DRAGGING_CLASS);
+      // Captured only AFTER the threshold: capturing earlier would steal the tab's own hover/active.
+      segment.setPointerCapture?.(pointerId);
+    }
+    segment.scrollLeft = startScroll - delta;
+  };
+
+  const onUp = (e: PointerEvent): void => {
+    if (pointerId === null || e.pointerId !== pointerId) return;
+    if (dragging) {
+      swallowClick = true;
+      segment.releasePointerCapture?.(pointerId);
+      segment.classList.remove(DRAGGING_CLASS);
+    }
+    pointerId = null;
+    dragging = false;
+  };
+
+  // Capture phase: the tab is a DESCENDANT, so this runs before its own handler and can stop it.
+  const onClick = (e: MouseEvent): void => {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  segment.addEventListener('pointerdown', onDown);
+  segment.addEventListener('pointermove', onMove);
+  segment.addEventListener('pointerup', onUp);
+  segment.addEventListener('pointercancel', onUp);
+  segment.addEventListener('click', onClick, true);
+
+  return () => {
+    segment.removeEventListener('pointerdown', onDown);
+    segment.removeEventListener('pointermove', onMove);
+    segment.removeEventListener('pointerup', onUp);
+    segment.removeEventListener('pointercancel', onUp);
+    segment.removeEventListener('click', onClick, true);
+    segment.classList.remove(DRAGGING_CLASS);
+  };
+}
+
 export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean } = {}): () => void {
   if (!segment) return () => {};
 
@@ -124,6 +205,8 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
   sync();
 
   segment.addEventListener('scroll', sync, { passive: true });
+
+  const desatarArrastre = bindDrag(segment);
 
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
   ro?.observe(segment);
@@ -144,6 +227,7 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   return () => {
     segment.removeEventListener('scroll', sync);
+    desatarArrastre();
     ro?.disconnect();
     mo?.disconnect();
     if (pista) clearTimeout(pista);
