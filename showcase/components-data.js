@@ -147,7 +147,7 @@ dt.menuActions = [{ id: 'export', label: 'Exportar CSV', icon: 'download-outline
 dt.addEventListener('rowAction', (e) => …);   // { actionId, row }
 dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
     api: [
-      { kind: 'prop', name: '.columns', type: 'DataTableColumn[]', detail: '{key, header, format?, align?, sortable?, filterable?, filterType?, options?, render?, hidden?, width?}' },
+      { kind: 'prop', name: '.columns', type: 'DataTableColumn[]', detail: '{key, header, format?, align?, sortable?, filterable?, filterType?, options?, render?, hidden?, width?, pinned?}' },
       { kind: 'prop', name: '.rows', type: 'object[]', detail: 'Filas a mostrar' },
       { kind: 'prop', name: '.searchKeys', type: 'string[]', detail: 'Campos sobre los que busca el searchbar' },
       { kind: 'prop', name: 'inlineFilters', type: 'bool', detail: 'Filtros (select / daterange) en la toolbar en vez del drawer' },
