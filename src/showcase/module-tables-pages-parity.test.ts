@@ -192,9 +192,10 @@ describe('showcase module-tables-tables — lista real de mesas', () => {
     for (const event of ['pageChange', 'pageSizeChange', 'sortChange', 'searchChange', 'filterChange']) {
       expect(source).toContain(`addEventListener('${event}'`);
     }
+    // tables#69 (2026-08-26): the list sorts NATURALLY (S1 · S2 · S10) on the computed `number_sort` column.
     expect(manifest.queries['tables.tables.list'].list).toMatchObject({
       page_size: 50,
-      default_sort: 'name',
+      default_sort: 'number_sort',
       default_dir: 'asc',
     });
   });
