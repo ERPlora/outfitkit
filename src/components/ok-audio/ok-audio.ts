@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconVolumeHighOutline, iconVolumeLowOutline, iconVolumeMuteOutline, okIcon } from '../../base/icons.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-audio — reproductor de audio con controles PROPIOS sobre un `<audio>` nativo (sin libs).
 // AUTOCONTENIDO: CSS propio en el shadow; sólo usa `ion-button`/`ion-icon` (los registra el host).
@@ -37,7 +38,7 @@ const DEFAULT_LABELS: OkAudioLabels = {
 };
 
 export class OkAudio extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
       --color: var(--ok-text, var(--ion-text-color, #1c1b17));
@@ -87,8 +88,10 @@ export class OkAudio extends LitElement {
     .play ion-icon {
       font-size: 1.4rem;
     }
-    /* Barra de progreso clicable: ocupa el espacio flexible disponible. */
+    /* Barra de progreso clicable: ocupa el espacio flexible disponible. Drawing stays 6px thin --
+       growing it to 44px would turn a slim seek bar into a churro; only the hit area grows. */
     .progress {
+      /* ok-tap-exempt: hit area widened by tapTarget (no neighbour of the same shape to overlap) */
       position: relative;
       flex: 1 1 auto;
       min-width: 0;
@@ -140,7 +143,7 @@ export class OkAudio extends LitElement {
         display: none;
       }
     }
-  `;
+  `];
 
   /** URL del audio a reproducir. */
   @property() src = '';
@@ -283,7 +286,7 @@ export class OkAudio extends LitElement {
             ></ion-icon>
           </ion-button>
 
-          <div class="progress" @click=${this.seek}>
+          <div class="progress ok-tap" @click=${this.seek}>
             <div class="fill" style=${`width:${pct}%`}></div>
             <div class="knob" style=${`left:${pct}%`}></div>
           </div>

@@ -231,9 +231,11 @@ export class OkHoverCard extends LitElement {
       gap: 6px;
       margin-top: 10px;
     }
+    /* #92 — height at 44px (var floor); the two buttons share the footer width via flex:1, so a
+       taller box just makes the footer taller, no overlap. */
     .action {
       flex: 1;
-      height: 28px;
+      height: var(--ok-tap-min, 44px);
       display: inline-flex;
       align-items: center;
       justify-content: center;

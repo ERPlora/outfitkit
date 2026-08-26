@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-carousel — carrusel de slides con transición por `transform`.
 // AUTOCONTENIDO: CSS propio en el shadow (sin Ionic salvo `ion-button`/`ion-icon` para las flechas,
@@ -30,7 +31,7 @@ const DEFAULT_LABELS: OkCarouselLabels = {
 };
 
 export class OkCarousel extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
       --bg: var(--ok-surface, var(--ion-background-color, #ffffff));
@@ -125,6 +126,11 @@ export class OkCarousel extends LitElement {
       margin-top: 0.6rem;
     }
     .dot {
+      /* ok-tap-exempt: 9px is the correct page-indicator size (Apple HIG/Material) and stays put.
+         The hit area is widened by tapTarget, but capped below (.dot.ok-tap::before) to the real
+         pitch between dots -- with several dots 8px apart in a row, the generic 44px floor would
+         make every hit area overlap its neighbours. */
+      position: relative;
       width: 9px;
       height: 9px;
       padding: 0;
@@ -135,6 +141,12 @@ export class OkCarousel extends LitElement {
       transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease),
         border-color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease),
         transform 120ms ease;
+    }
+    /* Caps tapTarget's hit area to the dots' own pitch (dot + gap) so adjacent hit areas touch
+       without overlapping, instead of each reaching for the generic 44px floor. */
+    .dot.ok-tap::before {
+      width: calc(9px + 0.5rem);
+      height: calc(9px + 0.5rem);
     }
     .dot.active {
       background: var(--dot-active);
@@ -162,7 +174,7 @@ export class OkCarousel extends LitElement {
         height: 34px;
       }
     }
-  `;
+  `];
 
   /** Slides aportados por datos (texto/HTML). Si está vacío, se usa el `<slot>`. */
   @property({ attribute: false }) slides: string[] = [];
@@ -351,7 +363,7 @@ export class OkCarousel extends LitElement {
             ${Array.from({ length: n }).map(
               (_, i) => html`<button
                 type="button"
-                class=${`dot ${i === this.index ? 'active' : ''}`.trim()}
+                class=${`dot ok-tap ${i === this.index ? 'active' : ''}`.trim()}
                 role="tab"
                 aria-selected=${i === this.index ? 'true' : 'false'}
                 aria-label=${this.t.goToSlide.replace('{n}', String(i + 1))}

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // Una imagen del grid. La aporta el consumidor vía la prop `.images`.
 export interface OkGalleryImage {
@@ -30,7 +31,7 @@ export interface OkGalleryImage {
 //   • `ok-select` detail { id, index, selected: Array<string|number> }
 //   • `ok-open`   detail { id, index, image }
 export class OkGallery extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       display: block;
       width: 100%;
@@ -144,6 +145,9 @@ export class OkGallery extends LitElement {
 
     /* Badge circular de selección arriba-derecha. */
     .select {
+      /* ok-tap-exempt: a 44px checkmark badge would dominate the corner of a thumbnail (grid
+         items can be as small as --min-size, default 160px); the hit area is widened by
+         tapTarget instead, the drawn badge stays 22px. */
       position: absolute;
       top: 8px;
       right: 8px;
@@ -201,7 +205,7 @@ export class OkGallery extends LitElement {
         transform: none;
       }
     }
-  `;
+  `];
 
   /** Imágenes del grid (declarativas). */
   @property({ attribute: false }) images: OkGalleryImage[] = [];
@@ -284,7 +288,7 @@ export class OkGallery extends LitElement {
                 : null}
               ${this.selectable
                 ? html`<span
-                    class="select"
+                    class="select ok-tap"
                     role="checkbox"
                     aria-checked="${String(sel)}"
                     aria-label="Seleccionar"

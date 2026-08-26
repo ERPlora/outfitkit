@@ -199,8 +199,8 @@ export class OkNotificationCenter extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      height: 34px;
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       background: none;

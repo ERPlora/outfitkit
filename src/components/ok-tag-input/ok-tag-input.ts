@@ -93,6 +93,10 @@ export class OkTagInput extends LitElement {
       white-space: nowrap;
     }
     .chip .remove {
+      /* ok-tap-exempt: hit area widened by the .chip .remove::before overlay, capped at the AA
+         target. It cannot grow: the button lives inside a pill, so a 44px box would inflate every
+         chip and turn a compact tag row into three lines. */
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -110,6 +114,19 @@ export class OkTagInput extends LitElement {
         border-color var(--ok-transition, 150ms ease),
         box-shadow var(--ok-transition, 150ms ease), transform 120ms ease,
         opacity var(--ok-transition, 150ms ease);
+    }
+
+    /* Área táctil (#92): 24px, el objetivo de WCAG 2.5.8 AA, que es lo máximo que este control puede
+       tomar sin que la pastilla crezca a su alrededor. Los 44px genéricos se meterían además en el
+       botón de quitar de la chip vecina. */
+    .chip .remove::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
     }
     @media (hover: hover) {
       .chip .remove:hover {

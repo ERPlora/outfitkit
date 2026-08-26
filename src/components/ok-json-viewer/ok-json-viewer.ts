@@ -93,6 +93,11 @@ export class OkJsonViewer extends LitElement {
       gap: 4px;
       white-space: pre;
       border-radius: 4px;
+      /* WCAG 2.5.8 AA floor (#92). It does NOT take the 44px of HIG/Material on purpose: a JSON
+         inspector is a dense read-only tool -- at 44px a third of the document fits on screen -- and
+         every viewer on the market keeps its rows tight. The pressable thing is this row, not the
+         caret. */
+      min-height: 24px;
     }
     .row.has-children {
       cursor: pointer;
@@ -115,7 +120,6 @@ export class OkJsonViewer extends LitElement {
       border: 0;
       background: none;
       color: var(--ink-muted);
-      cursor: pointer;
       border-radius: 3px;
       transition: transform 0.18s ease, color 0.15s ease;
     }

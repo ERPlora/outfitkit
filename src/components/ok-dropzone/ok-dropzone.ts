@@ -159,8 +159,11 @@ export class OkDropzone extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
-      height: 26px;
+      /* Toca el mínimo táctil entero (#92): va solo al final de la fila, con 0.5rem de aire antes,
+         así que crecer solo hace la fila un poco más alta — y en táctil ese botón es como se
+         deshace un fichero metido por error. */
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       padding: 0;
       border: 0;
       background: none;

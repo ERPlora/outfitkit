@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconExpandOutline, okIcon } from '../../base/icons.js';
+import { tapTarget } from '../../base/tap-target.js';
 
 // ok-video — reproductor de vídeo con controles PROPIOS sobre un `<video>` nativo (sin libs).
 // AUTOCONTENIDO: CSS propio en el shadow; sólo usa `ion-button`/`ion-icon` (los registra el host).
@@ -41,7 +42,7 @@ const DEFAULT_LABELS: OkVideoLabels = {
 };
 
 export class OkVideo extends LitElement {
-  static styles = css`
+  static styles = [tapTarget, css`
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
       --color: var(--ok-text, var(--ion-text-color, #1c1b17));
@@ -125,7 +126,10 @@ export class OkVideo extends LitElement {
       margin: 0;
       flex: 0 0 auto;
     }
+    /* Drawing stays 6px thin -- growing it to 44px would turn a slim seek bar into a churro; only
+       the hit area (below) grows. */
     .progress {
+      /* ok-tap-exempt: hit area widened by tapTarget (no neighbour of the same shape to overlap) */
       position: relative;
       flex: 1 1 auto;
       min-width: 0;
@@ -173,7 +177,7 @@ export class OkVideo extends LitElement {
         display: none;
       }
     }
-  `;
+  `];
 
   /** URL del vídeo a reproducir. */
   @property() src = '';
@@ -330,7 +334,7 @@ export class OkVideo extends LitElement {
             <ion-icon slot="icon-only" .icon=${okIcon(this.playing ? 'pause' : 'play')}></ion-icon>
           </ion-button>
 
-          <div class="progress" @click=${this.seek}>
+          <div class="progress ok-tap" @click=${this.seek}>
             <div class="fill" style=${`width:${pct}%`}></div>
             <div class="knob" style=${`left:${pct}%`}></div>
           </div>

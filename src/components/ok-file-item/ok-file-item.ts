@@ -134,8 +134,10 @@ export class OkFileItem extends LitElement {
 
     /* Botón fantasma de quitar/cancelar. */
     .remove {
-      width: 28px;
-      height: 28px;
+      /* Grown outright: it is the lone trailing button in the row's own auto-sized grid column,
+         nothing else to preserve. */
+      width: var(--ok-tap-min, 44px);
+      height: var(--ok-tap-min, 44px);
       border-radius: var(--radius-sm);
       background: transparent;
       border: none;

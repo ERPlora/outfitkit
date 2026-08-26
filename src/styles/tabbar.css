@@ -33,6 +33,22 @@
 
   overflow-x: auto;
   scrollbar-width: none;
+
+  /* Arrastrar para desplazar (`bindTabbar`). Solo lo cablea el JS para punteros: el dedo ya pancea
+     nativo. `grab` es la única pista de que se puede arrastrar — sin ella, con ratón la tira parece
+     movible solo por la rueda, que es justo como se leía en el TPV. */
+  cursor: grab;
+}
+
+/* Mientras dura el arrastre. `user-select` es la mitad que de verdad importa: sin ella el ratón
+   selecciona los labels en vez de mover la tira, y se lee como que el control está roto.
+   `scroll-behavior:auto` desarma el `smooth` que el consumidor pueda tener puesto — con smooth, la
+   tira persigue al puntero con retardo en vez de ir pegada a él. */
+.ok-tabbar-dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+  scroll-behavior: auto;
 }
 
 .ok-tabbar::-webkit-scrollbar {

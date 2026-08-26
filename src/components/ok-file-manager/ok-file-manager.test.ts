@@ -17,6 +17,7 @@ vi.mock('../../base/icons.js', () => ({
 }));
 
 import './ok-file-manager';
+import { OkFileManager } from './ok-file-manager';
 import type { OkFmFile, OkFmFolder, OkFmPolicy } from './ok-file-manager';
 
 const FILES: OkFmFile[] = [
@@ -276,5 +277,99 @@ describe('ok-file-manager · arrastrar para reubicar (ok-move)', () => {
     openBtn.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
 
     expect(moved).toHaveBeenCalledWith({ from: 'facturas/a.pdf', to: 'facturas' });
+  });
+});
+
+// ---- Tap targets (#92 touch audit) ----
+// Contract: src/base/tap-target.test.ts — nothing interactive under 44px, exemptions argued in a
+// comment. ok-file-manager mixes lone toolbar buttons (grown outright, plenty of room in the
+// toolbar) with packed row/tree controls (hit area capped to the real neighbour spacing so up to
+// 4 actions 2px apart, or a caret glued to the folder name, never overlap).
+function stylesText(): string {
+  const styles = OkFileManager.styles;
+  const list = Array.isArray(styles) ? styles : [styles];
+  return list.map((s) => (s as { cssText: string }).cssText).join('\n');
+}
+
+describe('ok-file-manager — tap targets (#92)', () => {
+  it('the shared tapTarget hit-area fragment is part of the component styles', () => {
+    const css = stylesText();
+    expect(css).toMatch(/::before/);
+    expect(css).toMatch(/max\(100%,\s*var\(--ok-tap-min/);
+  });
+
+  it('.tbtn grows to the 44px floor -- a lone toolbar button, nothing to preserve', () => {
+    const css = stylesText();
+    const m = /\.tbtn\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.tbtn rule not found').not.toBeNull();
+    expect(m![1]).toMatch(/height:\s*var\(--ok-tap-min,\s*44px\)/);
+  });
+
+  it('.tbtn.icon stays square at the grown size', () => {
+    const css = stylesText();
+    const m = /\.tbtn\.icon\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.tbtn.icon rule not found').not.toBeNull();
+    expect(m![1]).toMatch(/width:\s*var\(--ok-tap-min,\s*44px\)/);
+  });
+
+  it('.view-btn grows to the 44px floor -- the view toggle has room to spare', () => {
+    const css = stylesText();
+    const m = /\.view-btn\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.view-btn rule not found').not.toBeNull();
+    const body = m![1];
+    expect(body).toMatch(/width:\s*var\(--ok-tap-min,\s*44px\)/);
+    expect(body).toMatch(/height:\s*var\(--ok-tap-min,\s*44px\)/);
+  });
+
+  it('.action keeps the 28px ghost-button drawing -- up to 4 of them share a row 2px apart', () => {
+    const css = stylesText();
+    const m = /\.action\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.action rule not found').not.toBeNull();
+    const body = m![1];
+    expect(body).toMatch(/width:\s*28px/);
+    expect(body).toMatch(/height:\s*28px/);
+    expect(body, 'must carry an argued exemption, not a silent shrink').toMatch(
+      /ok-tap-exempt\s*:\s*\S/,
+    );
+  });
+
+  it('caps the .action hit area to the real row/card gap (2px) so neighbours never overlap', () => {
+    const css = stylesText();
+    const m = /\.action\.ok-tap::before\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.action.ok-tap::before override not found').not.toBeNull();
+    const body = m![1];
+    expect(body).toMatch(/width:\s*calc\(28px \+ 2px\)/);
+    expect(body).toMatch(/height:\s*calc\(28px \+ 2px\)/);
+  });
+
+  it('.caret keeps the 18px chevron drawing -- widening it would eat the row click zone', () => {
+    const css = stylesText();
+    const m = /\.caret\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.caret rule not found').not.toBeNull();
+    const body = m![1];
+    expect(body).toMatch(/width:\s*18px/);
+    expect(body).toMatch(/height:\s*18px/);
+    expect(body, 'must carry an argued exemption, not a silent shrink').toMatch(
+      /ok-tap-exempt\s*:\s*\S/,
+    );
+  });
+
+  it("caps the .caret hit area to the row's own gap/padding, never the folder name or a neighbour row", () => {
+    const css = stylesText();
+    const m = /\.caret\.ok-tap::before\s*\{([^}]*)\}/.exec(css);
+    expect(m, '.caret.ok-tap::before override not found').not.toBeNull();
+    const body = m![1];
+    // 6px = the .trow gap before the folder icon; 14px = 2 * the .trow vertical padding (7px),
+    // landing exactly on the row's own edge, never a neighbour row's.
+    expect(body).toMatch(/width:\s*calc\(18px \+ 6px\)/);
+    expect(body).toMatch(/height:\s*calc\(18px \+ 14px\)/);
+  });
+
+  it('renders the folder caret and the file actions with the ok-tap marker', async () => {
+    const el = await mount();
+    const caret = el.shadowRoot!.querySelector('.caret');
+    expect(caret?.classList.contains('ok-tap')).toBe(true);
+    const openBtn = act(el, 'open');
+    expect(openBtn?.classList.contains('ok-tap')).toBe(true);
   });
 });

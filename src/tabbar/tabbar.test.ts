@@ -172,3 +172,97 @@ describe('bindTabbar', () => {
     expect(() => bindTabbar(null)()).not.toThrow();
   });
 });
+
+// POINTER DRAG (the POS symptom): the category strip moved with the wheel but not by pressing and
+// dragging. With a FINGER the browser already pans on its own -- `scrollable` disables Ionic's
+// internal segment gesture and leaves `overflow-x:auto` -- but no browser turns a MOUSE drag into
+// `scrollLeft`: that is always wired in JS, and here it never was.
+//
+// So the contract has two halves that contradict each other on purpose: hijack the mouse gesture,
+// never touch the finger's. Emulating native touch scrolling (momentum, rubber-banding) in JS comes
+// out worse than the one the browser already ships.
+describe('bindTabbar - drag to scroll', () => {
+  function down(seg: HTMLElement, x: number, pointerType = 'mouse'): void {
+    seg.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, pointerType, clientX: x, bubbles: true }));
+  }
+  function move(seg: HTMLElement, x: number, pointerType = 'mouse'): void {
+    seg.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType, clientX: x, bubbles: true }));
+  }
+  function up(seg: HTMLElement, x: number, pointerType = 'mouse'): void {
+    seg.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType, clientX: x, bubbles: true }));
+  }
+
+  it('with a MOUSE, dragging left scrolls the strip to the right', () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    seg.scrollLeft = 100;
+
+    down(seg, 300);
+    move(seg, 220); // pointer travels 80px left -> the content advances 80px
+
+    expect(seg.scrollLeft).toBe(180);
+  });
+
+  it('with a FINGER it leaves `scrollLeft` alone: native scrolling already does it, with momentum', () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    seg.scrollLeft = 100;
+
+    down(seg, 300, 'touch');
+    move(seg, 220, 'touch');
+
+    expect(seg.scrollLeft).toBe(100);
+  });
+
+  it('a wobble under the threshold moves nothing: tapping a tab is still tapping it', () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    seg.scrollLeft = 100;
+
+    down(seg, 300);
+    move(seg, 298); // 2px is an unsteady click, not a drag
+
+    expect(seg.scrollLeft).toBe(100);
+  });
+
+  it('after a real drag the following `click` does NOT reach the tab underneath', () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    const tab = seg.children[3] as HTMLElement;
+    let selected = false;
+    tab.addEventListener('click', () => { selected = true; });
+
+    down(seg, 300);
+    move(seg, 220);
+    up(seg, 220);
+    tab.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(selected, 'releasing a drag over a tab must not navigate to it').toBe(false);
+  });
+
+  it('a clean click still goes through: the drag must not steal the plain tap', () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    const tab = seg.children[3] as HTMLElement;
+    let selected = false;
+    tab.addEventListener('click', () => { selected = true; });
+
+    down(seg, 300);
+    up(seg, 300);
+    tab.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(selected).toBe(true);
+  });
+
+  it('the cleanup unhooks the drag too', () => {
+    const seg = segmentCon(6, 0, 382);
+    const cleanup = bindTabbar(seg, { hint: false });
+    cleanup();
+    seg.scrollLeft = 100;
+
+    down(seg, 300);
+    move(seg, 220);
+
+    expect(seg.scrollLeft).toBe(100);
+  });
+});
