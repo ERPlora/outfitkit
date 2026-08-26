@@ -317,8 +317,8 @@ export class OkHoverCard extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     // #94 — a tap outside the card closes it, mirroring the pattern `ok-menu` already uses for
-    // click-outside. Only wired to `document` while the card is actually open (see `show`/`hide`),
-    // so a touch device that never opens the card pays nothing for this listener.
+    // click-outside. It stays on `document` for as long as the element is connected: one listener
+    // that returns immediately unless the card is open, removed in `disconnectedCallback`.
     document.addEventListener('pointerdown', this.onDocPointer);
   }
 

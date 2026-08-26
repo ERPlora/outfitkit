@@ -122,6 +122,22 @@ describe('tapTarget: the shared hit-area fragment', () => {
     expect(css, 'it grows to the minimum only when the control is smaller').toMatch(/max\(100%,\s*var\(--ok-tap-min/);
   });
 
+  // Measured in Chrome, and it is how ok-color-picker shipped broken: `position:absolute` resolves
+  // against the nearest POSITIONED ancestor, so a host that forgets `position:relative` sends its
+  // hit area somewhere else entirely. The 10 preset swatches landed stacked in the middle of the
+  // panel, on top of the saturation square -- a click there set the colour to #000000.
+  //
+  // Leaving that to each component to remember is not a contract, it is a trap. The fragment
+  // positions the host itself; a component that genuinely needs another value declares it in its own
+  // rule, which comes later in `static styles` and wins.
+  it('positions the HOST, so the overlay cannot land on an ancestor', async () => {
+    const { tapTarget } = await import('./tap-target');
+    const noComments = tapTarget.cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+    const host = (noComments.match(/\.ok-tap(?!::)[^{]*\{[^}]*\}/g) ?? []).join('\n');
+    expect(host, 'the fragment must style .ok-tap itself, not only its ::before').not.toBe('');
+    expect(host).toMatch(/position\s*:\s*relative/);
+  });
+
   it('reads the minimum from the theme token, with 44px as the built-in floor', async () => {
     const { tapTarget } = await import('./tap-target');
     expect(tapTarget.cssText).toMatch(/var\(--ok-tap-min,\s*44px\)/);
@@ -137,6 +153,41 @@ describe('tapTarget: the shared hit-area fragment', () => {
 // nearest POSITIONED ancestor, so a `.dot::before` whose `.dot` is still `static` anchors to some
 // grandparent and the touch zone ends up somewhere else on screen -- invisible, so nothing catches it
 // by eye. This is the check that makes the sweep trustworthy instead of merely green.
+// The other blind spot that shipped a defect: `toPx()` returns null for a percentage, so the guard
+// waved through `.chevron { height: 100% }` -- and a percentage height needs a DEFINITE parent
+// height. The row only had `min-height`, so it degraded to auto and the chevron came out 32x16 in
+// Chrome, SMALLER than the 20x20 it had before the campaign. The guard called that a pass.
+//
+// A percentage height on an interactive control cannot be verified from the stylesheet alone, so it
+// is not allowed to pass silently: either it is written in a unit that can be checked, or it carries
+// an argued exemption like any other.
+describe('a size that cannot be verified is not a size', () => {
+  function percentHeights(source: string): string[] {
+    const found: string[] = [];
+    for (const rule of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const selector = rule[1].trim().split('\n').pop()!.trim();
+      const body = rule[2];
+      if (/ok-tap-exempt\s*:\s*[A-Za-z0-9]/.test(body)) continue;
+      const clean = body.replace(/\/\*[\s\S]*?\*\//g, '');
+      if (!/cursor\s*:\s*pointer/.test(clean) && !/(^|\s)(button|\.btn)\b/.test(selector)) continue;
+      if (/(?:^|;|\s)height\s*:\s*\d+(\.\d+)?%/.test(clean)) found.push(selector);
+    }
+    return found;
+  }
+
+  it('the check sees a percentage height on an interactive control', () => {
+    expect(percentHeights('.chevron { height: 100%; cursor: pointer; }')).toEqual(['.chevron']);
+    expect(percentHeights('.chevron { /* ok-tap-exempt: measured, parent has a definite height */ height: 100%; cursor: pointer; }')).toEqual([]);
+  });
+
+  it('no component sizes an interactive control with an unverifiable percentage height', () => {
+    const all = everyComponent().flatMap(({ component, source }) =>
+      percentHeights(source).map((selector) => `${component}: ${selector}`)
+    );
+    expect(all, `percentage heights that cannot be verified:\n${all.join('\n')}`).toEqual([]);
+  });
+});
+
 describe('every hit-area overlay lands on its own control', () => {
   /** `X::before { position: absolute }` requires `X { position: relative|absolute|fixed|sticky }`. */
   function orphanOverlays(source: string): string[] {

@@ -24,6 +24,18 @@ import { css } from 'lit';
  * rough counter -- gloves, a wall-mounted screen -- raises the token instead of patching components.
  */
 export const tapTarget = css`
+  /* The host positions itself. Leaving this to each component was not a contract but a trap: an
+     absolutely positioned overlay resolves against the nearest POSITIONED ancestor, so a host that
+     forgot position:relative sent its hit area somewhere else entirely -- ok-color-picker shipped
+     with its 10 preset swatches stacked in the middle of the panel, over the saturation square,
+     where a click set the colour to #000000.
+     A component that genuinely needs another value declares it in its own rule, which comes later in
+     static styles and wins. */
+  .ok-tap,
+  [data-ok-tap] {
+    position: relative;
+  }
+
   .ok-tap::before,
   [data-ok-tap]::before {
     content: '';
