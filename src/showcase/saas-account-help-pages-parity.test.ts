@@ -32,13 +32,10 @@ describe('showcase SaaS — cuenta, ajustes y ayuda actuales', () => {
     expect(source).toContain('<ion-toggle');
   });
 
-  it('dispositivos conserva descargas, lista, revocar y aviso', () => {
-    const source = read('settings-devices.html');
-    expectDashboard(source, '/dashboard/settings/');
-    expect(source).toContain('Descargar aplicaciones');
-    expect(source).toContain('Revocar');
-    expect(source).toContain('<ok-inline-feedback');
-  });
+  // 🪦 `settings-devices` se retiró con la migración a `allauth.mfa` (#105): la app
+  // `trusted_devices` del SaaS se borró entera y confiar en un dispositivo pasó a ser una etapa del
+  // login, no una página de ajustes. El guardia de que la demo no vuelva vive en
+  // `page-catalog.test.ts` (`obsoleteFiles`).
 
   it('centro de ayuda conserva guías y acceso al soporte', () => {
     const source = read('settings-help.html');

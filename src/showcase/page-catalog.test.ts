@@ -70,6 +70,10 @@ describe('catálogo de páginas reales', () => {
       'orgs-invite',
       'module-backup-backup',
       'module-backup-settings',
+      // #105 — The optional-second-factor migration (allauth.mfa) dropped the `trusted_devices`
+      // app along with `templates/two_factor/`: trusting a device is now a stage of the allauth
+      // login, not a settings page, so there is nothing to point at.
+      'settings-devices',
     ];
     expect(pages.filter((page) => removed.includes(page.id))).toEqual([]);
 
@@ -118,6 +122,7 @@ describe('catálogo de páginas reales', () => {
       'orgs-invite.html',
       'module-backup-backup.html',
       'module-backup-settings.html',
+      'settings-devices.html',
     ];
     for (const file of obsoleteFiles) {
       expect(existsSync(resolve(process.cwd(), 'showcase', 'pages', file)), file).toBe(false);
@@ -128,10 +133,22 @@ describe('catálogo de páginas reales', () => {
     expect(pages.find((page) => page.id === 'auth-login-saas')).toMatchObject({
       surface: 'saas',
       route: '/account/login/',
-      source: 'saas/templates/two_factor/core/login.html',
+      // El segundo factor del SaaS pasó a `allauth.mfa` (ADR de segundo factor opcional): el login
+      // unificado vive en `templates/account/login.html` y `templates/two_factor/` se borró entero.
+      // Este valor estaba clavado al fichero viejo, así que el test blindaba una ruta muerta (#105).
+      source: 'saas/templates/account/login.html',
       file: 'pages/auth-login-saas.html',
       parity: 'current',
     });
+  });
+
+  // #105 — Guardia permanente: `templates/two_factor/` (django-two-factor-auth) ya no existe en el
+  // SaaS. El contrato de paridad ya comprueba que cada `source` exista, pero solo con los checkouts
+  // hermanos delante; esta comprobación es hermética y corre en el gate, así que caza la recaída
+  // aunque el job de paridad no llegue a ejecutarse.
+  it('no enlaza el stack de segundo factor RETIRADO (templates/two_factor/)', () => {
+    const dead = pages.filter((page) => page.source.includes('templates/two_factor/'));
+    expect(dead.map((page) => `${page.id} → ${page.source}`)).toEqual([]);
   });
 
   it('publica únicamente las páginas ya reconstruidas desde producto', () => {
@@ -168,7 +185,6 @@ describe('catálogo de páginas reales', () => {
       'hubs-files',
       'profile-saas',
       'settings-preferences',
-      'settings-devices',
       'settings-help',
       'help-support',
       'help-document',
