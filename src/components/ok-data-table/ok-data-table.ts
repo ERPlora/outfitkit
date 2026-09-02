@@ -613,6 +613,26 @@ export class OkDataTable extends LitElement {
   @property({ type: String }) sort?: string;
   /** (server) Dirección del orden activo. */
   @property({ attribute: 'sort-dir' }) sortDir: 'asc' | 'desc' = 'asc';
+  /** (server, #106) Valor VISIBLE de cada filtro de columna, por `col.key`. Es lo que gobierna qué
+   *  enseñan los controles de filtro en modo servidor: sin esto la tabla no puede abrirse ya
+   *  filtrada (un módulo que acota la lista desde una query string o un enlace no tenía forma de
+   *  decírselo) y la pantalla enseñaba menos filas SIN decir por qué.
+   *
+   *  La forma del valor es la MISMA que emite `filterChange`, para que el consumidor devuelva lo
+   *  que recibe sin traducir nada:
+   *  - `select` / `text` / `number` / `date` → escalar (`'active'`, `42`, `'2026-01-31'`)
+   *  - `multiselect` → array de valores (`['food', 'drink']`)
+   *  - `range` / `daterange` → `{ from, to }` (cualquiera de los dos puede faltar)
+   *  Vacío (`''`, `[]`, `{}`, `null`) = ese filtro no está puesto.
+   *
+   *  La tabla mantiene además un ESPEJO OPTIMISTA: al emitir `filterChange` pinta ya lo elegido,
+   *  así que el control refleja al usuario aunque el consumidor tarde en devolver la propiedad (o
+   *  no la use). Asignar un objeto NUEVO vuelve a sembrar el espejo; mutar el mismo objeto in-place
+   *  no (Lit compara por identidad), lo cual es justo lo que se quiere: la interacción manda hasta
+   *  que el consumidor decida lo contrario.
+   *
+   *  En modo cliente se IGNORA: ahí el estado visible lo lleva la tabla en memoria. */
+  @property({ attribute: false }) filterValues: Record<string, unknown> = {};
 
   // ── NUEVO (todo opcional, retrocompatible) ────────────────────────────────────────────────
   /** (NUEVO) Título de la cabecera (a la izquierda, junto al contador de registros).
@@ -682,6 +702,9 @@ export class OkDataTable extends LitElement {
   @state() private clientFilters: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
   // Borrador del panel de filtros (se aplica con "Aplicar"; replica el modal del Hub).
   @state() private filterDraft: Record<string, { values?: Set<string>; from?: string; to?: string }> = {};
+  // #106 — Espejo del estado de filtro VISIBLE en modo servidor. Se siembra de `filterValues` y se
+  // adelanta a cada `filterChange` para que el control refleje al usuario sin esperar al consumidor.
+  @state() private serverFilters: Record<string, unknown> = {};
   // Panel lateral derecho (drawer) DENTRO de la tabla: filtros o alta/edición. Funciona igual en
   // vista lista y tarjetas. Desde #75 EMPUJA la tabla en escritorio (rejilla de dos columnas) y es
   // hoja a pantalla completa en móvil — ver el CSS de `.card.has-panel`.
@@ -1031,11 +1054,60 @@ export class OkDataTable extends LitElement {
     return this.filterColumns.length > 0;
   }
 
-  /** Nº de filtros activos (modo cliente) → badge del botón Filtros. */
+  /** Nº de filtros activos → badge del botón Filtros. En servidor cuenta `filterValues` (#106): sin
+   *  esto el embudo no daba NINGUNA señal de que la lista venía acotada. */
   private get activeFilterCount(): number {
+    if (this.serverSide) {
+      return Object.keys(this.serverFilters).filter((k) => this.serverFilterState(k) !== undefined).length;
+    }
     return Object.values(this.clientFilters).filter(
       (f) => (f.values && f.values.size > 0) || f.from || f.to,
     ).length;
+  }
+
+  // ── Estado de filtro VISIBLE (#106) ──────────────────────────────────────────────────────────
+  /** Traduce un valor de `filterValues` (la forma que emite `filterChange`) a la forma interna que
+   *  usan los `render*Filter`. `undefined` = ese filtro no está puesto. */
+  private serverFilterState(key: string): { values?: Set<string>; from?: string; to?: string } | undefined {
+    const raw = this.serverFilters[key];
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    if (Array.isArray(raw)) {
+      const values = raw.filter((v) => v !== null && v !== undefined && v !== '').map((v) => String(v));
+      return values.length ? { values: new Set(values) } : undefined;
+    }
+    if (typeof raw === 'object') {
+      const range = raw as { from?: unknown; to?: unknown };
+      const from = range.from === null || range.from === undefined || range.from === '' ? undefined : String(range.from);
+      const to = range.to === null || range.to === undefined || range.to === '' ? undefined : String(range.to);
+      return from !== undefined || to !== undefined ? { from, to } : undefined;
+    }
+    return { values: new Set([String(raw)]) };
+  }
+
+  /** Estado de filtro efectivo de una columna: servidor → `filterValues`/espejo; cliente → memoria. */
+  private filterStateOf(key: string): { values?: Set<string>; from?: string; to?: string } | undefined {
+    return this.serverSide ? this.serverFilterState(key) : this.clientFilters[key];
+  }
+
+  /** Fija (o borra) el valor visible de un filtro en el espejo de servidor. */
+  private setServerFilter(key: string, value: unknown): void {
+    const next = { ...this.serverFilters };
+    const empty =
+      value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+    if (empty) delete next[key];
+    else next[key] = value;
+    this.serverFilters = next;
+  }
+
+  /** Fija UN extremo de un rango en el espejo. Los dos extremos viajan en eventos SEPARADOS
+   *  (`{from}` y luego `{to}`), así que aquí se MEZCLA: reemplazar borraría el otro extremo. */
+  private setServerRangeEdge(key: string, edge: 'from' | 'to', value: string | number): void {
+    const prev = this.serverFilters[key];
+    const base: Record<string, unknown> =
+      prev && typeof prev === 'object' && !Array.isArray(prev) ? { ...(prev as Record<string, unknown>) } : {};
+    base[edge] = value;
+    const alive = (v: unknown): boolean => v !== undefined && v !== null && v !== '';
+    this.setServerFilter(key, alive(base.from) || alive(base.to) ? base : undefined);
   }
 
   /** Valor crudo de una columna para ordenar/filtrar (usa format si lo hay, si no row[key]). */
@@ -1151,6 +1223,7 @@ export class OkDataTable extends LitElement {
 
   private onFilterInput(col: DataTableColumn, ev: Event): void {
     const value = (ev.target as HTMLInputElement | HTMLSelectElement).value ?? '';
+    this.setServerFilter(col.key, value);
     this.emit('filterChange', { col: col.key, value });
   }
 
@@ -1158,12 +1231,14 @@ export class OkDataTable extends LitElement {
     const raw = (ev.target as HTMLInputElement).value ?? '';
     // Rango numérico: emite Number para que el runtime compare con el tipo real (`>=`/`<=`).
     const v = raw === '' ? '' : Number(raw);
+    this.setServerRangeEdge(col.key, edge, v);
     this.emit('filterChange', { col: col.key, value: { [edge]: v } });
   }
 
   private onDateRangeInput(col: DataTableColumn, edge: 'from' | 'to', ev: Event): void {
     // Rango de fechas: emite el string ISO (YYYY-MM-DD); el runtime compara texto (cronológico).
     const v = (ev.target as HTMLInputElement).value ?? '';
+    this.setServerRangeEdge(col.key, edge, v);
     this.emit('filterChange', { col: col.key, value: { [edge]: v } });
   }
 
@@ -1184,7 +1259,9 @@ export class OkDataTable extends LitElement {
   // `filterChange`; en cliente escribe `clientFilters` (multiselect ⇒ filtra por inclusión).
   private onFilterSelect(col: DataTableColumn, value: unknown, multi: boolean): void {
     if (this.serverSide) {
-      this.emit('filterChange', { col: col.key, value: value ?? (multi ? [] : '') });
+      const next = value ?? (multi ? [] : '');
+      this.setServerFilter(col.key, next);
+      this.emit('filterChange', { col: col.key, value: next });
       return;
     }
     if (multi) {
@@ -1198,6 +1275,7 @@ export class OkDataTable extends LitElement {
   private onInlineRange(col: DataTableColumn, edge: 'from' | 'to', ev: Event): void {
     const v = (ev.target as HTMLInputElement).value ?? '';
     if (this.serverSide) {
+      this.setServerRangeEdge(col.key, edge, v);
       this.emit('filterChange', { col: col.key, value: { [edge]: v } });
       return;
     }
@@ -1234,6 +1312,10 @@ export class OkDataTable extends LitElement {
     // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
     // tabla ancha antes de las tarjetas.
     this.applyInitialView();
+    // #106 — A new `filterValues` object is the consumer stating the visible filter state; it
+    // reseeds the mirror. An in-place mutation does not reach here (Lit compares by identity) and
+    // must not: while the consumer keeps the same object, the user's own picks own the control.
+    if (changed.has('filterValues')) this.serverFilters = { ...(this.filterValues ?? {}) };
     // #78 — A fresh `rows` array is a fresh result set: the accumulated mobile window would
     // otherwise survive a refresh and show N pages of data the user never scrolled to. Server mode
     // never accumulates here (the parent owns the window), so it is left alone.
@@ -1267,9 +1349,13 @@ export class OkDataTable extends LitElement {
   private renderFilterControl(col: DataTableColumn): unknown {
     if (!col.filterable) return nothing;
     const type = col.filterType ?? 'text';
+    // #106 — `.value` en TODOS los controles: sin él el panel no enseñaba nada de lo que hubiera
+    // puesto (ni sembrado por el consumidor, ni elegido por el usuario un segundo antes).
+    const f = this.filterStateOf(col.key);
     if (type === 'select' || type === 'multiselect') {
       const multi = type === 'multiselect';
       const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
+      const current = this.selectValue(f, multi);
       return html`
         <ion-select
           label=${col.header}
@@ -1279,6 +1365,7 @@ export class OkDataTable extends LitElement {
           interface="modal"
           .interfaceOptions=${{ cssClass: 'ok-overlay' }}
           placeholder=${this.t.select}
+          .value=${current}
           @ionChange=${(e: CustomEvent) => this.onFilterSelect(col, (e.detail as { value: unknown }).value, multi)}
         >
           ${multi ? nothing : html`<ion-select-option value="">${this.t.select}</ion-select-option>`}
@@ -1294,8 +1381,10 @@ export class OkDataTable extends LitElement {
           <span class="flabel">${col.header}</span>
           <div class="frange">
             <ion-input type=${t} fill="outline" mode="md" placeholder=${type === 'daterange' ? this.t.from : this.t.gte}
+              .value=${f?.from ?? ''}
               @ionInput=${(e: Event) => onEdge(col, 'from', e)}></ion-input>
             <ion-input type=${t} fill="outline" mode="md" placeholder=${type === 'daterange' ? this.t.to : this.t.lte}
+              .value=${f?.to ?? ''}
               @ionInput=${(e: Event) => onEdge(col, 'to', e)}></ion-input>
           </div>
         </div>
@@ -1309,9 +1398,21 @@ export class OkDataTable extends LitElement {
         label=${col.header}
         label-placement="stacked"
         placeholder=${this.t.filterPlaceholder}
+        .value=${this.selectValue(f, false)}
         @ionInput=${(e: Event) => this.onFilterInput(col, e)}
       ></ion-input>
     `;
+  }
+
+  /** Valor para un control de un solo valor (`ion-select`/`ion-input`) o multi (`ion-select
+   *  multiple`) a partir del estado de filtro interno. '' / [] = sin filtro. */
+  private selectValue(
+    f: { values?: Set<string>; from?: string; to?: string } | undefined,
+    multi: boolean,
+  ): string | string[] {
+    const values = [...(f?.values ?? new Set<string>())];
+    if (multi) return values;
+    return values.length ? values[0] : '';
   }
 
   // Controles de filtro COMPACTOS para la toolbar (modo `inlineFilters`). Solo select y rango de
@@ -1327,15 +1428,13 @@ export class OkDataTable extends LitElement {
   }
   private renderInlineFilter(col: DataTableColumn): unknown {
     const type = col.filterType ?? 'text';
-    const f = this.clientFilters[col.key];
+    // #106 — en servidor el estado visible sale de `filterValues` (+ espejo optimista); en cliente,
+    // de la memoria de la tabla. Antes SIEMPRE era `clientFilters`, que en servidor nunca se escribe.
+    const f = this.filterStateOf(col.key);
     if (type === 'select' || type === 'multiselect') {
       const multi = type === 'multiselect';
       const opts = col.options ?? this.distinctValues(col).map((v) => ({ value: v, label: v }));
-      const current = multi
-        ? [...(f?.values ?? new Set<string>())]
-        : f?.values && f.values.size
-          ? [...f.values][0]
-          : '';
+      const current = this.selectValue(f, multi);
       return html`
         <ion-select
           class="tk-filter"
@@ -1566,7 +1665,7 @@ export class OkDataTable extends LitElement {
                           </span>
                         `
                       : nothing}
-                    ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), this.t.filters, this.serverSide ? undefined : this.activeFilterCount) : nothing}
+                    ${this.hasFilterRow && !this.inlineFilters ? this.toolButton('funnel-outline', this.panel === 'filters' || this.activeFilterCount > 0, () => this.toggle('filters'), this.t.filters, this.activeFilterCount) : nothing}
                     ${this.effImport
                       ? html`
                           ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), this.t.importCsv)}
