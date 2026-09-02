@@ -259,14 +259,28 @@ export class OkAppLauncher extends LitElement {
     .app .box ion-icon {
       font-size: 1.7rem;
     }
+    /* #104 — El nombre ENVUELVE en dos líneas antes de recortarse. En una sola línea, un hub con
+       los 25 módulos dejaba 6 nombres en tres letras y un «…» («Reservas o…» al lado de
+       «Reservas»), que es lo mismo que no poner nombre. Dos líneas es lo que hacen el lanzador de
+       Google Workspace, Odoo Apps y Launchpad.
+       word-break/overflow-wrap en normal, explícitos a propósito: el corte tiene que caer en el
+       límite de PALABRA. Partir por cualquier carácter deja «Automatizacio / nes», que se lee peor
+       que el truncado que veníamos a arreglar. Lo que no cabe ni en dos líneas se recorta con «…»,
+       y para eso la baldosa lleva title + aria-label con el nombre entero (ver renderApp). */
     .app .label {
       font-size: 0.78rem;
       line-height: 1.2;
       color: var(--color-muted);
       max-width: 100%;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: normal;
+      word-break: normal;
+      hyphens: none;
     }
     .empty {
       padding: 1.5rem 0.75rem;
@@ -467,11 +481,18 @@ export class OkAppLauncher extends LitElement {
   private renderApp(app: OkLauncherApp): unknown {
     const boxStyle = app.color ? `--app-color:${app.color}` : '';
     const icon = app.icon ?? 'apps-outline';
+    // #104 — `title` + `aria-label` con el nombre ENTERO: la etiqueta se recorta por CSS cuando no
+    // cabe ni en dos líneas, y sin esto la baldosa quedaba en tres letras y un «…» («Reservas o…»
+    // al lado de «Reservas»). `aria-label` no es redundante con el texto: garantiza que el nombre
+    // accesible sea el completo, que es lo que oye un lector de pantalla y lo que ve el teclado —
+    // el tooltip nativo solo aparece al pasar el ratón.
     return html`<button
       type="button"
       class="app"
       style=${boxStyle}
       role="menuitem"
+      title=${app.label}
+      aria-label=${app.label}
       @click=${() => this.selectApp(app)}
     >
       <span class="box">
