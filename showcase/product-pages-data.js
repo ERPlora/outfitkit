@@ -20,10 +20,14 @@ const page = (surface, section, id, name, route, source, icon, file, parity = 'p
 
 export const SAAS_PAGES = [
   // Autenticación
-  page('saas', 'Autenticación', 'auth-login-saas', 'Iniciar sesión', '/account/login/', 'saas/templates/two_factor/core/login.html', 'log-in-outline', 'pages/auth-login-saas.html', 'current'),
-  page('saas', 'Autenticación', 'auth-2fa-setup', 'Configurar 2FA', '/account/two_factor/setup/', 'saas/templates/two_factor/core/setup.html', 'shield-checkmark-outline', 'pages/auth-2fa-setup.html', 'current'),
-  page('saas', 'Autenticación', 'auth-2fa-profile', 'Perfil 2FA', '/account/two_factor/', 'saas/templates/two_factor/profile/profile.html', 'shield-outline', 'pages/auth-2fa-profile.html', 'current'),
-  page('saas', 'Autenticación', 'auth-2fa-disable', 'Desactivar 2FA', '/account/two_factor/disable/', 'saas/templates/two_factor/profile/disable.html', 'shield-half-outline', 'pages/auth-2fa-disable.html', 'current'),
+  // El segundo factor del SaaS pasó de `django-two-factor-auth` a `allauth.mfa` (ADR de segundo
+  // factor opcional): `templates/two_factor/` se borró ENTERO y el login unificado vive en
+  // `templates/account/login.html`. Las cuatro entradas apuntaban al stack retirado — rutas y
+  // fuentes que ya no existen (#105). Las de MFA cuelgan del include de allauth en `accounts/`.
+  page('saas', 'Autenticación', 'auth-login-saas', 'Iniciar sesión', '/account/login/', 'saas/templates/account/login.html', 'log-in-outline', 'pages/auth-login-saas.html', 'current'),
+  page('saas', 'Autenticación', 'auth-2fa-setup', 'Configurar 2FA', '/accounts/2fa/totp/activate/', 'saas/templates/mfa/totp/activate_form.html', 'shield-checkmark-outline', 'pages/auth-2fa-setup.html', 'current'),
+  page('saas', 'Autenticación', 'auth-2fa-profile', 'Perfil 2FA', '/accounts/2fa/', 'saas/templates/mfa/index.html', 'shield-outline', 'pages/auth-2fa-profile.html', 'current'),
+  page('saas', 'Autenticación', 'auth-2fa-disable', 'Desactivar 2FA', '/accounts/2fa/totp/deactivate/', 'saas/templates/mfa/totp/deactivate_form.html', 'shield-half-outline', 'pages/auth-2fa-disable.html', 'current'),
   page('saas', 'Autenticación', 'auth-change-password', 'Cambiar contraseña', '/dashboard/profile/change-password/', 'saas/apps/dashboard/profile/templates/dashboard/profile/pages/change_password.html', 'key-outline', 'pages/auth-change-password.html', 'current'),
   page('saas', 'Autenticación', 'auth-sessions', 'Sesiones activas', '/dashboard/profile/sessions/', 'saas/apps/dashboard/profile/templates/dashboard/profile/pages/sessions.html', 'desktop-outline', 'pages/auth-sessions.html', 'current'),
   page('saas', 'Autenticación', 'auth-delete-account', 'Eliminar cuenta', '/dashboard/profile/delete/', 'saas/apps/dashboard/profile/templates/dashboard/profile/pages/delete_confirm.html', 'trash-outline', 'pages/auth-delete-account.html', 'current'),
@@ -62,7 +66,10 @@ export const SAAS_PAGES = [
   // Perfil, ajustes y ayuda
   page('saas', 'Cuenta', 'profile-saas', 'Perfil', '/dashboard/profile/', 'saas/apps/dashboard/profile/templates/dashboard/profile/pages/index.html', 'person-circle-outline', 'pages/profile-saas.html', 'current'),
   page('saas', 'Cuenta', 'settings-preferences', 'Preferencias', '/dashboard/settings/', 'saas/apps/dashboard/settings/templates/dashboard/settings/pages/index.html', 'options-outline', 'pages/settings-preferences.html', 'current'),
-  page('saas', 'Cuenta', 'settings-devices', 'Dispositivos de confianza', '/dashboard/settings/trusted-devices/', 'saas/apps/dashboard/settings/templates/dashboard/settings/pages/trusted_devices.html', 'phone-portrait-outline', 'pages/settings-devices.html', 'current'),
+  // 🪦 `settings-devices` («Dispositivos de confianza», /dashboard/settings/trusted-devices/): la
+  // MISMA migración a `allauth.mfa` retiró la app `trusted_devices` entera —tabla dropeada en la
+  // migración 0009 y la ruta borrada— y el «confiar en este dispositivo» pasó a ser una etapa del
+  // login de allauth, no una página de ajustes. No hay página equivalente que enlazar (#105).
   page('saas', 'Ayuda', 'settings-help', 'Centro de ayuda', '/dashboard/help/', 'saas/apps/dashboard/help/templates/dashboard/help/pages/index.html', 'help-circle-outline', 'pages/settings-help.html', 'current'),
   page('saas', 'Ayuda', 'help-support', 'Soporte', '/dashboard/help/support/', 'saas/apps/dashboard/help/templates/dashboard/help/pages/support.html', 'chatbubble-ellipses-outline', 'pages/help-support.html', 'current'),
   page('saas', 'Ayuda', 'help-document', 'Documento de ayuda', '/dashboard/help/doc/<doc_id>/', 'saas/apps/dashboard/help/templates/dashboard/help/pages/doc.html', 'document-text-outline', 'pages/help-document.html', 'current'),

@@ -151,7 +151,22 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
     const page = pageSource('history');
     // ADR-0082: el módulo declara `settings` en el manifest y el SHELL pinta el formulario.
     // Ningún componente de kitchen pinta ya uno propio, así que la demo tampoco.
-    expect(settingsSchema.required).toHaveLength(16);
+    //
+    // Los mandos, POR NOMBRE y no por cuenta. Eran 16 hasta ERPlora/kitchen#73 (que cierra
+    // kitchen#48): diez no movían nada y se retiraron del formulario —sus COLUMNAS sobreviven con
+    // su DEFAULT, porque dropear una necesita una migración `kind: contract` que ningún módulo
+    // puede publicar— y dos se cablearon de verdad (`sound_enabled` → el timbre de ticket nuevo,
+    // `default_order_type` → el tipo por defecto de la comanda). Se fijan los nombres y no la
+    // longitud a propósito: `expected 16, got 6` no dice CUÁL cambió, que es justo lo que hay que
+    // saber para actualizar el espejo.
+    expect(settingsSchema.required).toEqual([
+      'show_timer',
+      'warning_time_minutes',
+      'critical_time_minutes',
+      'color_coding_enabled',
+      'sound_enabled',
+      'default_order_type',
+    ]);
     expect(manifest.settings).toMatchObject({
       schema: 'schemas/settings_update.json',
       get: 'kitchen.settings.get',
