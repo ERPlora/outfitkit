@@ -159,12 +159,17 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
     // `default_order_type` → el tipo por defecto de la comanda). Se fijan los nombres y no la
     // longitud a propósito: `expected 16, got 6` no dice CUÁL cambió, que es justo lo que hay que
     // saber para actualizar el espejo.
+    // …y kitchen#75 (mismo día) añadió tres que SÍ mueven algo: volumen y tono del timbre
+    // (kitchen#72) y la impresión del pase al bump (kitchen#70, nace apagada a propósito).
     expect(settingsSchema.required).toEqual([
       'show_timer',
       'warning_time_minutes',
       'critical_time_minutes',
       'color_coding_enabled',
       'sound_enabled',
+      'sound_volume',
+      'sound_tone',
+      'auto_print_tickets',
       'default_order_type',
     ]);
     expect(manifest.settings).toMatchObject({
