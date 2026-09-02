@@ -145,7 +145,17 @@ dt.addable = true;                // «+» que abre el slot create (panel: empuj
 dt.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 dt.menuActions = [{ id: 'export', label: 'Exportar CSV', icon: 'download-outline' }];
 dt.addEventListener('rowAction', (e) => …);   // { actionId, row }
-dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
+dt.addEventListener('menuAction', (e) => …);  // { actionId }
+
+// Modo SERVIDOR: la tabla no filtra en memoria, solo emite. \`filterValues\` es lo que
+// gobierna qué ENSEÑAN los controles de filtro (#106) — sin él la tabla no puede abrirse
+// ya filtrada ni refleja lo que el usuario elige.
+dt.serverSide = true;
+dt.filterValues = { estado: 'Pendiente' };         // abre la tabla YA filtrada
+dt.addEventListener('filterChange', (e) => {       // { col, value }
+  ctrl.setFilter(e.detail.col, e.detail.value);    // el módulo re-consulta al runtime
+  dt.filterValues = { ...ctrl.state.filters };     // objeto NUEVO = vuelve a sembrar
+});`,
     api: [
       { kind: 'prop', name: '.columns', type: 'DataTableColumn[]', detail: '{key, header, format?, align?, sortable?, filterable?, filterType?, options?, render?, hidden?, width?, pinned?}' },
       { kind: 'prop', name: '.rows', type: 'object[]', detail: 'Filas a mostrar' },
@@ -165,6 +175,8 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }`,
       { kind: 'event', name: 'primaryAction · selectionChange', type: '· {keys}', detail: 'Acción primaria · cambio de selección' },
       { kind: 'prop', name: 'pageSize (móvil)', type: 'number', detail: 'Bajo 640px el pie NO pinta el pager numerado: pone «Cargar más» (44px) y el contador «N registros». En cliente cada pulsación SUMA otra tanda de pageSize filas (se reinicia al cambiar búsqueda, filtros, orden, tamaño de página o .rows); en serverSide emite pageChange con la página siguiente y el padre decide si acumula. #78' },
       { kind: 'event', name: 'pageChange · sortChange · searchChange · filterChange · viewChange', type: 'varios', detail: 'Eventos de interacción. pageChange lleva el índice de página (0-based) como detail — también el que emite «Cargar más» en móvil con serverSide' },
+      { kind: 'prop', name: 'serverSide · total · page · sort · sortDir', type: 'bool · number · number · string · asc|desc', detail: 'Modo servidor: la tabla NO filtra, ordena ni pagina en memoria — solo emite y pinta la página que le den. El padre controla total/page/sort/sortDir' },
+      { kind: 'prop', name: '.filterValues', type: 'Record<string, unknown>', detail: 'Estado VISIBLE de los filtros de columna en serverSide, por col.key. Misma forma que emite filterChange: escalar (select/text/number/date), array (multiselect) o {from,to} (range/daterange); vacío = sin filtro. Sirve para abrir la tabla YA filtrada (query string, enlace desde otra pantalla) y hace que el embudo enseñe su contador. La tabla adelanta lo que el usuario elige, así que el control refleja la interacción aunque el padre tarde en devolver la prop; asignar un objeto NUEVO vuelve a sembrarla (mutarlo in-place, no). En modo cliente se ignora. #106' },
       { kind: 'slot', name: 'toolbar', type: '—', detail: 'Controles extra en la topbar' },
     ],
   },
