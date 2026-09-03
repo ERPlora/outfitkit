@@ -99,7 +99,12 @@ describe('showcase module-taxes-categories — paridad con categories real', () 
       expect(page).toContain(`key: '${key}'`);
     }
     expect(list.page_size).toBe(50);
-    expect(Object.keys(list.filters)).toEqual(['key', 'name', 'is_system', 'is_active', 'display_name']);
+    // taxes#44 (ERPlora/taxes#49, 03/09): la columna de descripción se pintaba `filterable` +
+    // `sortable` y el manifest no la declaraba, así que la caja mentía EN SILENCIO —el runtime
+    // descarta un `f_*` no declarado sin 422—. `display_description` es ya un filtro real.
+    expect(Object.keys(list.filters)).toEqual([
+      'key', 'name', 'is_system', 'is_active', 'display_name', 'display_description',
+    ]);
     expect(list.default_sort).toBe('key');
     expect(page).toContain("sort: 'key'");
     expect(page).toContain("searchPlaceholder = 'Buscar clave o nombre…'");

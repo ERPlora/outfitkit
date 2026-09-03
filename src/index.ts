@@ -17,6 +17,8 @@ export { OkDataTable } from './components/ok-data-table/ok-data-table.js';
 export type {
   DataTableColumn,
   DataTableAction,
+  DataTableActionLabel,
+  DataTableMenuAction,
   DataTableView,
   DataTablePrimaryAction,
   DataTableRowKey,
