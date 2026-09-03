@@ -79,15 +79,28 @@ export interface DataTableColumn {
 /** Vista de presentación de las filas (lista/tarjetas). */
 export type DataTableView = 'table' | 'cards';
 
-export interface DataTableAction {
-  /** Id que se emite en `rowAction`. */
+/** Etiqueta de una acción de FILA: texto fijo, o una función que lo calcula CON la fila
+ *  (p.ej. «Devolver el resto (70,00 €)»). La forma `string` sigue siendo válida. */
+export type DataTableActionLabel = string | ((row: Record<string, unknown>) => string);
+
+/** Acción del menú overflow («⋮») de la barra: NO tiene fila, así que su `label` es un `string`.
+ *  Es la base de `DataTableAction`, que sí la tiene y por eso admite la forma función. */
+export interface DataTableMenuAction {
+  /** Id que se emite en `menuAction`. */
   id: string;
-  /** Texto del botón (o aria-label si solo hay icono). */
+  /** Texto del ítem del menú. */
   label: string;
   /** Nombre de un ion-icon opcional. */
   icon?: string;
-  /** Color Ionic del botón (p.ej. 'danger', 'primary'). */
+  /** Color Ionic (p.ej. 'danger', 'primary'). */
   color?: string;
+}
+
+export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
+  /** Texto del botón (o aria-label si solo hay icono). Acepta una función `(row) => string` para
+   *  que la etiqueta lleve un dato de la fila; se resuelve TAMBIÉN como nombre accesible
+   *  (`aria-label`/`title`), que en una acción icon-only es lo único que la nombra. */
+  label: DataTableActionLabel;
   /** (opcional, por fila) Si devuelve `true` para una fila, el botón de esa acción se renderiza
    *  deshabilitado (`?disabled` + `aria-disabled="true"`). */
   disabled?: (row: Record<string, unknown>) => boolean;
@@ -678,7 +691,7 @@ export class OkDataTable extends LitElement {
    *  Emite `filterChange` igual que el drawer. */
   @property({ type: Boolean }) inlineFilters = false;
   /** (NUEVO) Acciones del menú overflow (botón «⋮»). Emite `menuAction` con `{ actionId }`. */
-  @property({ attribute: false }) menuActions: DataTableAction[] = [];
+  @property({ attribute: false }) menuActions: DataTableMenuAction[] = [];
 
   /** (NUEVO) Cabecera de la tarjeta: título (string/HTML). Si se omite, no hay cabecera de título. */
   @property({ attribute: false }) cardTitle?: (row: Record<string, unknown>) => unknown;
@@ -1501,6 +1514,8 @@ export class OkDataTable extends LitElement {
             // Acción en curso → spinner y no re-clicable; deshabilitada → botón inerte.
             const loading = a.loading?.(row) === true;
             const disabled = loading || a.disabled?.(row) === true;
+            // La etiqueta puede depender de la fila (#110); es además el nombre accesible.
+            const label = typeof a.label === 'function' ? a.label(row) : a.label;
             return html`
             <ion-button
               size="small"
@@ -1508,13 +1523,13 @@ export class OkDataTable extends LitElement {
               color=${a.color ?? 'medium'}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
-              aria-label=${a.label}
-              title=${a.label}
+              aria-label=${label}
+              title=${label}
               @click=${() => this.emit('rowAction', { actionId: a.id, row })}
             >
               ${loading
                 ? html`<ion-spinner slot="icon-only" name="dots"></ion-spinner>`
-                : a.icon ? html`<ion-icon slot="icon-only" .icon=${okIcon(a.icon)}></ion-icon>` : a.label}
+                : a.icon ? html`<ion-icon slot="icon-only" .icon=${okIcon(a.icon)}></ion-icon>` : label}
             </ion-button>
           `;
           },
