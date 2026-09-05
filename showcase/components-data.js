@@ -165,7 +165,7 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: 'inlineFilters', type: 'bool', detail: 'Filtros (select / daterange) en la toolbar en vez del drawer' },
       { kind: 'prop', name: '.menuActions', type: 'DataTableMenuAction[]', detail: 'Menú overflow «⋮» → emite menuAction (no hay fila: `label` es siempre string)' },
       { kind: 'prop', name: '.pageSizes · pageSize', type: 'number[] · number', detail: 'Selector de filas/pág. en la toolbar · filas por página' },
-      { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — `label` acepta string o (row)=>string (también como aria-label/title); loading muestra ion-spinner y deshabilita' },
+      { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — `label` acepta string o (row)=>string (también como aria-label/title); loading muestra ion-spinner y deshabilita. Si los botones NO caben en el ancho disponible (tablet estrecha, tablas de muchas columnas) se pliegan solos en un menú «⋮» por fila con las mismas acciones, etiquetas, colores y estados: no hay nada que configurar (#122)' },
       { kind: 'prop', name: '.views', type: 'string[]', detail: "['table','cards']" },
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
       { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila —y la tarjeta en vista «cards»— abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },

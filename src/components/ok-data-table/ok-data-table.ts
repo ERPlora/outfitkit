@@ -111,6 +111,53 @@ export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
   loading?: (row: Record<string, unknown>) => boolean;
 }
 
+/** Entrada de `decideRowActionsFit`: lo que se mide del hueco donde vive la tabla. */
+export interface RowActionsFitInput {
+  /** Ancho visible del contenedor con scroll (`.scroll` → `clientWidth`). */
+  containerWidth: number;
+  /** Ancho que la rejilla necesita ahora mismo (`scrollWidth`: su mínimo cuando desborda). */
+  contentWidth: number;
+  /** ¿Están las acciones de fila plegadas en el menú «⋮» ahora mismo? */
+  collapsed: boolean;
+  /** Ancho de contenedor con el que se tomó la decisión vigente (`-1` = todavía ninguna). */
+  decidedAtWidth: number;
+}
+
+/** Salida de `decideRowActionsFit`. */
+export interface RowActionsFitDecision {
+  collapsed: boolean;
+  decidedAtWidth: number;
+}
+
+/**
+ * #122 — ¿caben los botones de acción de la fila, o toca plegarlos en el menú «⋮»?
+ *
+ * Se decide MIDIENDO, no por un breakpoint fijo: cuántas columnas lleva la tabla y cuánto ocupan
+ * sus botones sólo se sabe en pantalla. Medido en Chromium con las seis columnas de la lista de
+ * reservas, la rejilla necesita 796 px con los cuatro botones fuera y 652 px con el «⋮», así que
+ * entre 640 y 795 px la columna fijada se comía el «Estado» — la queja de #120 un tamaño más abajo.
+ *
+ * La función es PURA a propósito: es la única parte que se puede probar sin un navegador (happy-dom
+ * no maqueta, así que ahí todo mide 0), y es donde vive la garantía de que esto no oscila.
+ *
+ * El bucle que hay que evitar: plegar estrecha la rejilla → el ResizeObserver dispara → si se
+ * volviera a juzgar, cabría, se desplegaría, ensancharía y vuelta a empezar. Lo corta
+ * `decidedAtWidth`: mientras el HUECO no cambie de tamaño, el estado se mueve una sola vez
+ * (desplegado → plegado). Cuando el hueco sí cambia, se vuelve a juzgar SIEMPRE con los botones
+ * fuera, que es el estado que hay que medir para saber si caben.
+ */
+export function decideRowActionsFit(input: RowActionsFitInput): RowActionsFitDecision {
+  const { containerWidth, contentWidth, collapsed, decidedAtWidth } = input;
+  // Sin ancho no hay medida: dentro de `ion-content` el hueco vale 0 hasta que Ionic hidrata, y
+  // juzgar ahí plegaría todas las tablas al entrar (el mismo error de tiempo que #67 y #274).
+  if (!(containerWidth > 0)) return { collapsed, decidedAtWidth };
+  // El hueco cambió de tamaño (rotación, resize, panel lateral): se juzga de cero, con los botones
+  // fuera. La siguiente medida ya dirá si caben.
+  if (containerWidth !== decidedAtWidth) return { collapsed: false, decidedAtWidth: containerWidth };
+  if (!collapsed && contentWidth > containerWidth) return { collapsed: true, decidedAtWidth };
+  return { collapsed, decidedAtWidth };
+}
+
 /** Acción primaria de la topbar (botón destacado). Emite el evento `primaryAction`. */
 export interface DataTablePrimaryAction {
   /** Texto / aria-label del botón. */
@@ -560,6 +607,17 @@ export class OkDataTable extends LitElement {
     .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
 
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+    /* #121 - The buttons NEVER shrink. Their track is pinned to the width measured here
+       (the scrollWidth of .actions); if they could shrink, a narrow track would shrink the
+       measurement, which would shrink the track again. flex: 0 0 auto is what makes the
+       measurement a property of the CONTENT instead of a property of the current layout. */
+    .actions ion-button { flex: 0 0 auto; }
+    /* #122 - Header of the actions column while the buttons are folded into the menu. "ACCIONES"
+       measures 62.83px and the folded track is 44px: painted, it spills out of its own cell and
+       over "Estado" - the very thing the issue is about. The column keeps its name for assistive
+       tech and paints nothing. */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+      clip-path: inset(50%); white-space: nowrap; border: 0; }
     /* Las acciones de fila son icon-only y de tamaño small en escritorio. En tablet/móvil se
      * amplía el host completo (no solo el icono) para que el área táctil alcance 44×44 px. */
     @media (pointer: coarse), (max-width: 834px) {
@@ -759,6 +817,17 @@ export class OkDataTable extends LitElement {
   // #67 — ¿la vista lista desborda a lo ancho? Solo entonces se pinta la sombra de la columna
   // fijada: si la tabla cabe entera no hay nada escondido que anunciar.
   @state() private xOverflow = false;
+  // #121 — Ancho MEDIDO de los botones de acción de la fila, en px. Es la pista que la cabecera y
+  // las filas comparten: mientras vale 0 (todavía sin medir) la plantilla cae en `max-content`.
+  @state() private actionsTrackPx = 0;
+  // #122 — ¿acciones de fila plegadas en el menú «⋮»? Lo decide `decideRowActionsFit` midiendo.
+  @state() private rowActionsCollapsed = false;
+  /** Ancho de contenedor con el que se tomó la decisión de plegado vigente (`-1` = ninguna). */
+  private fitDecidedAtWidth = -1;
+  // Menú «⋮» de UNA fila: un solo ion-popover para toda la tabla, con la fila en curso.
+  @state() private rowMenuOpen = false;
+  private rowMenuEv?: Event;
+  private rowMenuRow?: Record<string, unknown>;
   private mq?: MediaQueryList;
   // Breakpoint (móvil) en px. Coincide con el punto donde la rejilla de tarjetas es más usable que
   // una tabla con scroll horizontal. 640px = límite habitual móvil↔tablet.
@@ -813,7 +882,42 @@ export class OkDataTable extends LitElement {
     if (this.xOverflow !== overflow) this.xOverflow = overflow;
   }
 
-  private readonly onWindowResize = (): void => this.measureXOverflow();
+  /** #121 — Ancho natural de los botones de acción de una fila, para clavar su pista en px.
+   *
+   * Se lee del `scrollWidth` de `.actions`, que es el ancho de SU CONTENIDO: como los botones
+   * llevan `flex: 0 0 auto` nunca se encogen, así que la medida no depende de lo ancha que sea la
+   * pista en ese momento. Eso es lo que la hace estable: clavar la pista al ancho natural no
+   * cambia el ancho natural, así que la siguiente medida sale igual y no hay bucle. */
+  private measureActionsTrack(): void {
+    if (!this.actions.length) {
+      if (this.actionsTrackPx !== 0) this.actionsTrackPx = 0;
+      return;
+    }
+    const el = this.renderRoot?.querySelector?.('.grow-data .gcell.actions-col .actions');
+    const width = el ? Math.ceil(el.scrollWidth) : 0;
+    // 0 = todavía sin maquetar (o vista tarjetas): se deja `max-content` y se vuelve a medir.
+    if (width > 0 && width !== this.actionsTrackPx) this.actionsTrackPx = width;
+  }
+
+  /** #122 — Decide si los botones de acción de la fila caben o se pliegan en el menú «⋮».
+   *  El criterio y la garantía de que no oscila viven en `decideRowActionsFit`. */
+  private measureRowActionsFit(): void {
+    const scroll = this.renderRoot?.querySelector?.('.scroll');
+    if (!scroll) return;
+    const next = decideRowActionsFit({
+      containerWidth: scroll.clientWidth,
+      contentWidth: scroll.scrollWidth,
+      collapsed: this.rowActionsCollapsed,
+      decidedAtWidth: this.fitDecidedAtWidth,
+    });
+    this.fitDecidedAtWidth = next.decidedAtWidth;
+    if (this.rowActionsCollapsed !== next.collapsed) this.rowActionsCollapsed = next.collapsed;
+  }
+
+  private readonly onWindowResize = (): void => {
+    this.measureXOverflow();
+    this.measureRowActionsFit();
+  };
 
   // #67 — Observador del hueco de la tabla. Medir solo al renderizar NO basta: dentro de
   // `ion-content` el contenedor no tiene ancho hasta que Ionic hidrata, bastante después, y esa
@@ -826,7 +930,11 @@ export class OkDataTable extends LitElement {
     if (typeof ResizeObserver === 'undefined') return;
     const scroll = this.renderRoot?.querySelector?.('.scroll');
     if (!scroll) return;
-    this.xObserver ??= new ResizeObserver(() => this.measureXOverflow());
+    this.xObserver ??= new ResizeObserver(() => {
+      this.measureXOverflow();
+      this.measureActionsTrack();
+      this.measureRowActionsFit();
+    });
     this.xObserver.disconnect();
     this.xObserver.observe(scroll);
     // El ancho del CONTENIDO también manda (columnas nuevas, textos más largos).
@@ -837,6 +945,13 @@ export class OkDataTable extends LitElement {
   protected updated(changed: Map<PropertyKey, unknown>): void {
     this.observeXOverflow();
     this.measureXOverflow();
+    // #122 — Cambiar las columnas o las acciones cambia lo que la tabla necesita: la decisión de
+    // plegado vigente ya no vale y hay que volver a juzgarla con los botones fuera.
+    if (changed.has('columns') || changed.has('actions') || changed.has('hiddenKeys') || changed.has('selectable')) {
+      this.fitDecidedAtWidth = -1;
+    }
+    this.measureActionsTrack();
+    this.measureRowActionsFit();
     if (changed.has('panel')) this.syncSheetTop();
   }
 
@@ -1334,6 +1449,56 @@ export class OkDataTable extends LitElement {
     this.menuOpen = true;
   }
 
+  /** #122 — Abre el menú «⋮» de UNA fila. Un solo popover para toda la tabla (uno por fila serían
+   *  tantos como filas), anclado por evento porque `trigger` no resuelve dentro de Shadow DOM. */
+  private openRowMenu(ev: Event, row: Record<string, unknown>): void {
+    ev.stopPropagation();
+    this.rowMenuEv = ev;
+    this.rowMenuRow = row;
+    this.rowMenuOpen = true;
+  }
+
+  /** #122 — Las mismas acciones de la fila, como lista. Respeta `disabled`/`loading` por fila: una
+   *  acción que no se puede pulsar en su botón tampoco se puede pulsar aquí. */
+  private renderRowMenu(): unknown {
+    const row = this.rowMenuRow;
+    if (!this.actions.length || !row) return nothing;
+    return html`
+      <ion-popover
+        class="row-menu"
+        .isOpen=${this.rowMenuOpen}
+        .event=${this.rowMenuEv}
+        dismiss-on-select="true"
+        @didDismiss=${() => (this.rowMenuOpen = false)}
+      >
+        <ion-content>
+          <ion-list lines="none">
+            ${this.actions.map((a) => {
+              const disabled = a.loading?.(row) === true || a.disabled?.(row) === true;
+              const label = typeof a.label === 'function' ? a.label(row) : a.label;
+              return html`
+                <ion-item
+                  button
+                  ?disabled=${disabled}
+                  aria-disabled=${disabled ? 'true' : nothing}
+                  .detail=${false}
+                  @click=${() => {
+                    if (disabled) return;
+                    this.rowMenuOpen = false;
+                    this.emit('rowAction', { actionId: a.id, row });
+                  }}
+                >
+                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} color=${a.color ?? nothing}></ion-icon>` : nothing}
+                  <ion-label color=${a.color ?? nothing}>${label}</ion-label>
+                </ion-item>
+              `;
+            })}
+          </ion-list>
+        </ion-content>
+      </ion-popover>
+    `;
+  }
+
   // Aplica la vista inicial declarada (`default-view`) una sola vez, tras el primer render. Es la
   // forma robusta de arrancar en tarjetas sin depender de fijar `viewMode` por referencia (que
   // falla si la tabla monta detrás de un `v-if`/loading y el ref aún es null).
@@ -1550,8 +1715,30 @@ export class OkDataTable extends LitElement {
   }
 
   // Botones de acción de una fila (compartido por vista tabla y tarjetas).
-  private actionButtons(row: Record<string, unknown>): unknown {
+  // `collapsible` = la vista lista, la única que puede quedarse sin ancho (#122). Las tarjetas
+  // tienen su propia fila de acciones a lo ancho de la tarjeta y ahí siempre caben.
+  private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
+    // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
+    // Shopify, Business Central o Salesforce en pantallas estrechas. Baja el mínimo de la tabla
+    // de 796px a 652px, que es lo que quita la columna fijada de encima del «Estado».
+    if (collapsible && this.rowActionsCollapsed) {
+      return html`
+        <div class="actions">
+          <ion-button
+            size="small"
+            fill="clear"
+            color="medium"
+            aria-label=${this.t.moreActions}
+            title=${this.t.moreActions}
+            aria-haspopup="menu"
+            @click=${(e: Event) => this.openRowMenu(e, row)}
+          >
+            <ion-icon slot="icon-only" .icon=${okIcon(iconEllipsisVertical)}></ion-icon>
+          </ion-button>
+        </div>
+      `;
+    }
     return html`
       <div class="actions">
         ${this.actions.map(
@@ -1604,12 +1791,16 @@ export class OkDataTable extends LitElement {
       // (128x6 + 188 for actions + gaps = 1036px against 834) and the pinned column ended up on
       // top of the data. With 5.5rem they fit (796px) and `1fr` stretches them to 94px each.
       ...this.visibleColumns.map((c) => c.width ?? 'minmax(5.5rem,1fr)'),
-      // #120 - `max-content`, not `auto`: `.gcell` declares `min-width: 0`, so the minimum
-      // contribution of the actions cell is zero and an `auto` track COLLAPSES as soon as the grid
-      // settles at its minimum (12 columns at 834px -> a 16px track for 92px of buttons, which
-      // spilled out of their cell and painted over the neighbouring column). `max-content` always
-      // reserves the width of its buttons, which is what keeps the opaque background under them.
-      this.actions.length ? 'max-content' : null,
+      // #121 - a LENGTH, not `max-content`. The header and every row are separate grids that
+      // share this string, and a content-sized track is not a length: each grid resolves it
+      // against ITS OWN content - the word "ACCIONES" (62.83px) in the header, four buttons
+      // (188px) in the row. The leftover the `1fr` columns share then differed between the two,
+      // and the header slid right, up to 125px by the last column (measured at 834px).
+      // `actionsTrackPx` is the width of the buttons MEASURED on screen, so it also keeps #120's
+      // contract: the track never shrinks under its content (an `auto` track collapsed to 16px
+      // and the buttons spilled over the neighbouring column). Until the first measurement lands
+      // - one frame - `max-content` reserves the same room it always did.
+      this.actions.length ? (this.actionsTrackPx > 0 ? `${this.actionsTrackPx}px` : 'max-content') : null,
     ].filter(Boolean).join(' ');
   }
 
@@ -1955,7 +2146,13 @@ export class OkDataTable extends LitElement {
                 </div>
               `;
             })}
-            ${this.actions.length ? html`<div class="gcell gh right actions-col" role="columnheader">${this.t.actions}</div>` : nothing}
+            ${this.actions.length
+              ? html`<div class="gcell gh right actions-col" role="columnheader">
+                  ${this.rowActionsCollapsed
+                    ? html`<span class="sr-only">${this.t.actions}</span>`
+                    : html`<span>${this.t.actions}</span>`}
+                </div>`
+              : nothing}
           </div>
 
           <!-- Filas -->
@@ -1981,7 +2178,7 @@ export class OkDataTable extends LitElement {
                     (c) => html`<div class=${`gcell ${alignCls(c.align)}${c.pinned === 'end' ? ' actions-col' : ''}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
                   )}
                   ${this.actions.length
-                    ? html`<div class="gcell right actions-col" role="cell" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row)}</div>`
+                    ? html`<div class="gcell right actions-col" role="cell" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row, true)}</div>`
                     : nothing}
                 </div>
               `;
@@ -1989,6 +2186,7 @@ export class OkDataTable extends LitElement {
           )}
         </div>
       </div>
+      ${this.renderRowMenu()}
     `;
   }
 

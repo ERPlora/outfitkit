@@ -69,6 +69,23 @@ const GAP = 8; // .grow { gap: 0.5rem }
 const ACTIONS_TRACK = 188; // 4 buttons x 44px (touch minimum, #92) + 3 gaps x 4px
 const ROOT_FONT_SIZE = 16;
 
+/** happy-dom has no layout, so `scrollWidth` is 0 everywhere and the component can never measure
+ *  its own buttons. The bench number is fed in through the only element it reads (#121). */
+function stubActionsWidth(px: number): () => void {
+  const proto = window.Element.prototype as unknown as Record<string, unknown>;
+  const original = Object.getOwnPropertyDescriptor(proto, 'scrollWidth');
+  Object.defineProperty(proto, 'scrollWidth', {
+    configurable: true,
+    get(this: Element) {
+      return this.classList?.contains('actions') ? px : 0;
+    },
+  });
+  return () => {
+    if (original) Object.defineProperty(proto, 'scrollWidth', original);
+    else delete proto.scrollWidth;
+  };
+}
+
 async function mount(): Promise<Table> {
   const table = document.createElement('ok-data-table') as unknown as Table;
   table.rows = [{ id: '1', date: '5/9/2026', time: '21:00', guest_name: 'Familia Pérez', guest_phone: '600 111 222', party_size: 4, status: 'Pendiente' }];
@@ -76,6 +93,8 @@ async function mount(): Promise<Table> {
   table.rowKey = 'id';
   table.actions = ACTIONS;
   document.body.appendChild(table);
+  await table.updateComplete;
+  // #121 — measuring the buttons pins their track, which schedules one more render.
   await table.updateComplete;
   return table;
 }
@@ -155,9 +174,30 @@ describe('ok-data-table: the list fits the counter tablet without covering data 
     // measured 92px, so they spilled out of their own cell and painted OVER the text of the
     // neighbouring column, with no opaque background underneath. The track has to reserve the
     // width of its buttons.
+    //
+    // #121 AMENDED what that track is. `max-content` reserved the buttons all right, but it is
+    // not a LENGTH: the header and the rows are separate grids and each resolved it against its
+    // own content (62.83px for the word "ACCIONES", 188px for the buttons), so the headers slid
+    // off their columns. The track is now the width MEASURED on the buttons, in px - which
+    // reserves exactly the same room and resolves the same in both grids. `max-content` survives
+    // only as the fallback for the frame before the first measurement (and for a table that has
+    // never been laid out, which is every table under happy-dom).
     expect(actionsTrack, 'the actions column must declare its track').toBeTruthy();
     expect(actionsTrack, 'an `auto` track collapses to 0 when the grid settles at its minimum').not.toBe('auto');
-    expect(actionsTrack, 'the actions track must reserve the width of its content').toBe('max-content');
+    expect(actionsTrack, 'unmeasured, the track still has to reserve the width of its content').toBe('max-content');
+
+    const restore = stubActionsWidth(ACTIONS_TRACK);
+    try {
+      const measured = await mount();
+      const measuredTrack = ((measured.shadowRoot?.querySelector('.ghead') as HTMLElement | null)?.style
+        .gridTemplateColumns ?? '')
+        .trim()
+        .split(/\s+(?![^(]*\))/)
+        .pop();
+      expect(measuredTrack, 'once measured, the track is the width of the buttons in px').toBe(`${ACTIONS_TRACK}px`);
+    } finally {
+      restore();
+    }
   });
 
   it('the pinned column header is OPAQUE: one column is never read through another', () => {
