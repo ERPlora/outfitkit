@@ -18,7 +18,6 @@ const root = resolve(import.meta.dirname, '../..');
  * hole stops growing while the backlog is worked off.
  */
 const PENDING_DECLARATION = [
-  'module-invoice-settings.html',
   'module-reservations-availability.html',
   'module-schedules-hours.html',
 ];
