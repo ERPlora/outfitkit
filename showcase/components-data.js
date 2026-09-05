@@ -116,7 +116,7 @@ const COMPONENTS = [
       dt.pageSize = 5;
       dt.pageSizes = [5, 10, 25, 50];
       dt.views = ['table', 'cards'];
-      dt.addable = true; // #75/#76 — panel de alta: empuja en escritorio, hoja completa en móvil (botón «Añadir» ≥ 44px)
+      dt.addable = true; // #75/#76/#113 — botón «Añadir» rotulado en los dos viewports (36px en escritorio, ≥ 44px táctiles en móvil); el panel empuja en escritorio y es hoja completa en móvil
       dt.actions = [
         { id: 'view', label: 'Ver', icon: 'eye-outline' },
         { id: 'edit', label: 'Editar', icon: 'create-outline' },
@@ -141,7 +141,7 @@ dt.selectable = true;
 dt.rowClickable = true;           // la fila entera abre el registro → evento rowClick
 dt.views = ['table', 'cards'];
 dt.pageSizes = [5, 10, 25, 50];   // selector de filas/pág. en la toolbar
-dt.addable = true;                // «+» que abre el slot create (panel: empuja en escritorio, hoja completa en móvil)
+dt.addable = true;                // botón «Añadir» rotulado que abre el slot create (panel: empuja en escritorio, hoja completa en móvil)
 dt.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 dt.menuActions = [{ id: 'export', label: 'Exportar CSV', icon: 'download-outline' }];
 dt.addEventListener('rowAction', (e) => …);   // { actionId, row }
@@ -151,6 +151,7 @@ dt.addEventListener('menuAction', (e) => …);  // { actionId }
 // gobierna qué ENSEÑAN los controles de filtro (#106) — sin él la tabla no puede abrirse
 // ya filtrada ni refleja lo que el usuario elige.
 dt.serverSide = true;
+dt.search = 'García';                              // #112 — el buscador PINTA lo que el módulo diga (vaciarlo = '')
 dt.filterValues = { estado: 'Pendiente' };         // abre la tabla YA filtrada
 dt.addEventListener('filterChange', (e) => {       // { col, value }
   ctrl.setFilter(e.detail.col, e.detail.value);    // el módulo re-consulta al runtime
@@ -160,6 +161,7 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: '.columns', type: 'DataTableColumn[]', detail: '{key, header, format?, align?, sortable?, filterable?, filterType?, options?, render?, hidden?, width?, pinned?}' },
       { kind: 'prop', name: '.rows', type: 'object[]', detail: 'Filas a mostrar' },
       { kind: 'prop', name: '.searchKeys', type: 'string[]', detail: 'Campos sobre los que busca el searchbar' },
+      { kind: 'prop', name: '.search', type: 'string | undefined', detail: 'Texto del buscador impuesto DESDE FUERA (la misma cadena que emite searchChange). Quien es dueño de la consulta —el módulo, en serverSide— puede escribirla, no solo leerla: «limpiar la búsqueda» desde el módulo vacía la caja con la lista. Opcional: `undefined` = «no controlo esto» y la tabla se comporta como siempre (nadie pisa lo que el usuario teclea); asignarla NO emite searchChange. En cliente además filtra y vuelve a la primera página. #112' },
       { kind: 'prop', name: 'inlineFilters', type: 'bool', detail: 'Filtros (select / daterange) en la toolbar en vez del drawer' },
       { kind: 'prop', name: '.menuActions', type: 'DataTableMenuAction[]', detail: 'Menú overflow «⋮» → emite menuAction (no hay fila: `label` es siempre string)' },
       { kind: 'prop', name: '.pageSizes · pageSize', type: 'number[] · number', detail: 'Selector de filas/pág. en la toolbar · filas por página' },
@@ -167,8 +169,8 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: '.views', type: 'string[]', detail: "['table','cards']" },
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
       { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila —y la tarjeta en vista «cards»— abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
-      { kind: 'prop', name: 'addable', type: 'bool', detail: 'Botón de alta que abre el slot `create`: en ≥834px el panel EMPUJA la tabla (dos columnas); por debajo es hoja a pantalla completa. En móvil el alta es un botón «Añadir» con etiqueta (44px)' },
-      { kind: 'prop', name: '.primaryAction', type: '{label, icon?}', detail: 'Botón destacado de la topbar' },
+      { kind: 'prop', name: 'addable', type: 'bool', detail: 'Botón de alta que abre el slot `create`: en ≥834px el panel EMPUJA la tabla (dos columnas); por debajo es hoja a pantalla completa. Es un botón «Añadir» rotulado y relleno en los DOS viewports (#113): 36px alineado con la barra en escritorio, ≥44px táctiles en móvil' },
+      { kind: 'prop', name: '.primaryAction', type: '{label, icon?}', detail: 'Botón destacado de la topbar, rotulado y relleno también en escritorio (#113); emite primaryAction' },
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
       { kind: 'event', name: 'rowAction · menuAction', type: '{actionId, row?}', detail: 'Acción de fila · ítem del menú «⋮»' },
       { kind: 'event', name: 'rowClick', type: '{row}', detail: 'Fila pulsada (solo con rowClickable)' },
