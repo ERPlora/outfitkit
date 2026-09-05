@@ -210,6 +210,7 @@
           ];
 
           function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'customers.fields.list', params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = fields.filter((field) => {
               if (search && !`${field.name} ${typeLabel(field.field_type)}`.toLocaleLowerCase('es').includes(search)) return false;

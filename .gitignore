@@ -7,3 +7,8 @@ dist/
 .vite/
 *.tsbuildinfo
 .playwright-mcp/
+# npm's lockfile is NOT versioned: the repo's is `pnpm-lock.yaml`, and `publish.yml` installs with
+# `--no-package-lock` so release-it never trips over a dirty working dir. Anyone running
+# `npm install` here (CI falls back to it) gets one — ignoring it keeps it out of the next commit,
+# which is how it slipped into the outfitkit#118 branch.
+package-lock.json

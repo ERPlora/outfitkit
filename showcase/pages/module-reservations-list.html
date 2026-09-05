@@ -168,6 +168,8 @@
           }
 
           function queryPage() {
+            const state = { page, pageSize, sort, dir: sortDir, search, filters };
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'reservations.reservations.list', params: { ...state } } }));
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = reservations.filter((reservation) => {
               const searchable = `${reservation.guest_name} ${reservation.guest_phone} ${reservation.guest_email} ${reservation.date}`.toLocaleLowerCase('es');

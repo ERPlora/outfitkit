@@ -440,6 +440,8 @@
           }
 
           function queryPage() {
+            const state = { page, pageSize, sort, dir: sortDir, search, filters };
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'customers.list', params: { ...state } } }));
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = customers.filter((row) => {
               if (term && !`${row.name} ${row.email} ${row.phone} ${row.tax_id} ${row.company_name}`.toLocaleLowerCase('es').includes(term)) return false;

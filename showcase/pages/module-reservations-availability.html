@@ -133,7 +133,10 @@
             },
           ];
 
-          function queryPage(table, state, rows, searchFields) {
+          // Each table says WHICH module list it reproduces, so its filter boxes can be checked
+          // against the real manifest (outfitkit#116). The name travels with the table it drives.
+          function queryPage(table, state, rows, searchFields, queryName) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: queryName, params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = rows.filter((row) => {
               if (search && !searchFields.map((key) => row[key] ?? '').join(' ').toLocaleLowerCase('es').includes(search)) return false;
@@ -162,8 +165,8 @@
             table.rows = filtered.slice(start, start + state.pageSize);
           }
 
-          const refreshSlots = () => queryPage(slotsTable, slotState, slots, ['start_time', 'end_time']);
-          const refreshBlocked = () => queryPage(blockedTable, blockedState, blockedDates, ['date', 'reason']);
+          const refreshSlots = () => queryPage(slotsTable, slotState, slots, ['start_time', 'end_time'], 'reservations.timeslots.list');
+          const refreshBlocked = () => queryPage(blockedTable, blockedState, blockedDates, ['date', 'reason'], 'reservations.blocked_dates.list');
           function recordCommand(command, payload, message) {
             console.info('[showcase command]', command, payload);
             toast.message = message;

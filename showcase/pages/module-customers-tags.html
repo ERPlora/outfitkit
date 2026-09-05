@@ -162,6 +162,8 @@
           }
 
           function queryPage() {
+            const state = { page, pageSize, sort, dir: sortDir, search, filters };
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'customers.tags.list', params: { ...state } } }));
             const normalizedSearch = search.trim().toLocaleLowerCase('es');
             let filtered = tags.filter((tag) => {
               if (normalizedSearch && !tag.name.toLocaleLowerCase('es').includes(normalizedSearch)) return false;

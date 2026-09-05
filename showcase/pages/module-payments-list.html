@@ -210,6 +210,8 @@
           }
 
           function queryPage() {
+            const state = { page, pageSize, sort, dir: sortDir, search, filters };
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'payments.payments.list', params: { ...state } } }));
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = payments.filter((payment) => {
               if (term && !`${payment.reference} ${payment.beneficiary_name} ${payment.supplier_invoice_ref}`.toLocaleLowerCase('es').includes(term)) return false;

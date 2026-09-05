@@ -167,6 +167,16 @@
           ];
           table.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 
+          // The list behind this table (outfitkit#116). The real screen asks for the whole series
+          // list once and lets ok-data-table filter in the browser (erp-invoice-settings), so the
+          // parameters are empty: what the sweep needs is the NAME of the list these filter boxes
+          // stand for, to check them against the filters the module declares.
+          function loadSeries() {
+            const state = {};
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'invoice.series.list', params: { ...state } } }));
+            table.rows = series;
+          }
+
           function emitCommand(commandName, payload) {
             doc.dispatchEvent(new CustomEvent('erplora:demo-command', {
               detail:{ commandName, payload }, bubbles:true,
@@ -248,7 +258,7 @@
               emitCommand('invoice.series.create', payload);
               toast.message = 'Serie creada.';
             }
-            table.rows = series;
+            loadSeries();
             resetForm();
             table.close();
             toast.color = 'success';
@@ -256,7 +266,7 @@
           });
           toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
 
-          table.rows = series;
+          loadSeries();
           resetForm();
         },
       });
