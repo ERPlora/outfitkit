@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // @ts-expect-error Untyped JavaScript, like the rest of the repo scripts.
-import { listDemoPages, readDemoFilterContract } from '../../scripts/showcase-filter-parity.mjs';
+import { attributeFilterColumns, listDemoPages, readDemoFilterContract } from '../../scripts/showcase-filter-parity.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -30,7 +30,6 @@ const PENDING_DECLARATION = [
   'module-invoice-list.html',
   'module-invoice-settings.html',
   'module-payments-list.html',
-  'module-pricing-lists.html',
   'module-reservations-availability.html',
   'module-reservations-list.html',
   'module-reservations-waitlist.html',
@@ -49,12 +48,16 @@ const PENDING_DECLARATION = [
   'module-whatsapp-inbox-templates.html',
 ];
 
-/** Demos painting filter boxes with no query bound to the table state. */
+/** Demos painting filter boxes that no module query answers for. */
 function demosWithoutDeclaredQuery(): string[] {
   return (listDemoPages(root) as string[]).filter((page) => {
     const source = readFileSync(resolve(root, 'showcase/pages', page), 'utf8');
-    const { queries, filterableColumns } = readDemoFilterContract(source);
-    return filterableColumns.length > 0 && queries.length !== 1;
+    const contract = readDemoFilterContract(source);
+    if (!contract.filterableColumns.length) return false;
+    // The same attribution the cross-repo sweep uses, so the fast gate and the parity job never
+    // disagree about which demos are covered.
+    const { ambiguous, unattributed } = attributeFilterColumns(contract);
+    return ambiguous.length > 0 || unattributed.length > 0;
   });
 }
 
@@ -65,7 +68,8 @@ describe('a demo says which query its filter boxes talk to (outfitkit#116)', () 
     expect(
       demosWithoutDeclaredQuery(),
       'a demo painting `filterable: true` must call its list query with the table state '
-      + '(`{ ...state }`); otherwise nothing can check that the module accepts that filter. '
+      + '(`{ ...state }`), or hand the query to whatever wires that table when the page has '
+      + 'several; otherwise nothing can check that the module accepts that filter. '
       + 'This list may only SHRINK: remove the page you just declared, never add one.',
     ).toEqual(PENDING_DECLARATION);
   });

@@ -96,7 +96,7 @@ describe('a demo audited against the real module manifest', () => {
         { key: 'is_active', filterable: true },`,
     });
 
-    const findings = auditDemo({ page: 'module-taxes-categories.html', source, manifest }) as Finding[];
+    const findings = auditDemo({ page: 'module-taxes-categories.html', source, loadManifest: () => manifest }) as Finding[];
 
     expect(findings.map((finding) => finding.code)).toEqual(['filter_not_declared']);
     expect(findings[0].detail).toContain('is_active');
@@ -110,7 +110,7 @@ describe('a demo audited against the real module manifest', () => {
         { key: 'is_active', sortable: true },`,
     });
 
-    expect(auditDemo({ page: 'module-taxes-categories.html', source, manifest })).toEqual([]);
+    expect(auditDemo({ page: 'module-taxes-categories.html', source, loadManifest: () => manifest })).toEqual([]);
   });
 
   it('reports a query the module no longer serves as a list', () => {
@@ -119,7 +119,7 @@ describe('a demo audited against the real module manifest', () => {
       columns: `        { key: 'key', filterable: true },`,
     });
 
-    const findings = auditDemo({ page: 'module-taxes-rules.html', source, manifest }) as Finding[];
+    const findings = auditDemo({ page: 'module-taxes-rules.html', source, loadManifest: () => manifest }) as Finding[];
 
     expect(findings.map((finding) => finding.code)).toEqual(['query_without_list_block']);
   });
@@ -133,7 +133,7 @@ describe('a demo audited against the real module manifest', () => {
       columns: `        { key: 'key', filterable: true },`,
     });
 
-    const findings = auditDemo({ page: 'module-taxes-pages.html', source, manifest }) as Finding[];
+    const findings = auditDemo({ page: 'module-taxes-pages.html', source, loadManifest: () => manifest }) as Finding[];
 
     expect(findings.map((finding) => finding.code)).toEqual(['ambiguous_table_query']);
   });
@@ -141,7 +141,7 @@ describe('a demo audited against the real module manifest', () => {
   it('reports a filterable flag that belongs to no column', () => {
     const source = demoPage({ columns: `        { filterable: true },` });
 
-    const findings = auditDemo({ page: 'module-orphan.html', source, manifest: null }) as Finding[];
+    const findings = auditDemo({ page: 'module-orphan.html', source, loadManifest: () => null }) as Finding[];
 
     expect(findings.map((finding) => finding.code)).toEqual(['filterable_without_column_key']);
   });
@@ -152,7 +152,7 @@ describe('a demo audited against the real module manifest', () => {
       columns: `        { key: 'key', filterable: true },`,
     });
 
-    const findings = auditDemo({ page: 'module-taxes-categories.html', source, manifest: null }) as Finding[];
+    const findings = auditDemo({ page: 'module-taxes-categories.html', source, loadManifest: () => null }) as Finding[];
 
     expect(findings.map((finding) => finding.code)).toEqual(['module_checkout_missing']);
   });
@@ -163,7 +163,7 @@ describe('a demo audited against the real module manifest', () => {
       queries: `        recordQuery('printing.settings.get', { ...state });`,
     });
 
-    expect(auditDemo({ page: 'module-printing-printing.html', source, manifest: null })).toEqual([]);
+    expect(auditDemo({ page: 'module-printing-printing.html', source, loadManifest: () => null })).toEqual([]);
   });
 });
 
@@ -224,10 +224,99 @@ describe('the coverage the sweep reports', () => {
       const audit = auditShowcaseFilters({ pagesDirectory: pages, modulesDirectory: modules });
 
       expect(audit.findings).toEqual([]);
-      expect(audit.mapped).toEqual([{ page: 'module-foo-list.html', query: 'foo.entries.list' }]);
+      expect(audit.mapped).toEqual([{ page: 'module-foo-list.html', queries: ['foo.entries.list'] }]);
       expect(audit.unmapped).toEqual(['module-foo-orphan.html']);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * Three demos publish SEVERAL tables on one screen, each backed by its own list query
+ * (`module-pricing-lists`, `module-reservations-availability`, `module-schedules-hours`). Reading
+ * the page as one table would compare the columns of one against the filters of the other, so the
+ * pairing is read per table: the columns a table receives, and the query named on the line that
+ * wires THAT table to its data.
+ */
+describe('a demo with several tables, each backed by its own query', () => {
+  const twoTables = `<script type="module">
+      listsTable.columns = [
+        { key: 'code', filterable: true },
+        { key: 'currency', filterable: true },
+      ];
+      rulesTable.columns = [
+        { key: 'rule_type', filterable: true },
+      ];
+      createController(listsTable, priceLists, 'pricing.price_lists.list');
+      createController(rulesTable, pricingRules, 'pricing.rules.list');
+    </script>`;
+
+  const pricing = {
+    queries: {
+      'pricing.price_lists.list': { list: { filters: { code: {}, currency: {} } } },
+      'pricing.rules.list': { list: { filters: { rule_type: {} } } },
+    },
+  };
+
+  it('reads the columns of each table apart, with the query that wires it', () => {
+    const { tables } = readDemoFilterContract(twoTables) as {
+      tables: { element: string; queries: string[]; filterableColumns: string[] }[];
+    };
+
+    expect(tables).toEqual([
+      { element: 'listsTable', queries: ['pricing.price_lists.list'], filterableColumns: ['code', 'currency'] },
+      { element: 'rulesTable', queries: ['pricing.rules.list'], filterableColumns: ['rule_type'] },
+    ]);
+  });
+
+  it('stays silent when each table only filters by what ITS query declares', () => {
+    expect(auditDemo({
+      page: 'module-pricing-lists.html',
+      source: twoTables,
+      loadManifest: () => pricing,
+    })).toEqual([]);
+  });
+
+  // The pairing earns its keep here: `rule_type` IS a filter of the page — of the other table.
+  // Auditing the page as one would let it through.
+  it('reports a filter box against the query of ITS OWN table, not of the neighbour', () => {
+    const source = twoTables.replace("{ key: 'code', filterable: true },", "{ key: 'rule_type', filterable: true },");
+
+    const findings = auditDemo({
+      page: 'module-pricing-lists.html',
+      source,
+      loadManifest: () => pricing,
+    }) as Finding[];
+
+    expect(findings.map((finding) => finding.code)).toEqual(['filter_not_declared']);
+    expect(findings[0].detail).toContain('pricing.price_lists.list');
+  });
+
+  // Each table names its own module, so the checkout is looked up per query, not once per page.
+  it('asks for the checkout of the module behind the table that is missing it', () => {
+    const findings = auditDemo({
+      page: 'module-pricing-lists.html',
+      source: twoTables,
+      loadManifest: (moduleId: string) => (moduleId === 'pricing' ? null : pricing),
+    }) as Finding[];
+
+    expect(findings.map((finding) => finding.code)).toEqual(['module_checkout_missing', 'module_checkout_missing']);
+  });
+
+  it('still refuses to guess when a table with filter boxes names no query at all', () => {
+    const source = twoTables.replace("createController(rulesTable, pricingRules, 'pricing.rules.list');", '')
+      + `<script type="module">
+        recordQuery('pricing.price_lists.list', { ...state });
+        recordQuery('pricing.rules.list', { ...state });
+      </script>`;
+
+    const findings = auditDemo({
+      page: 'module-pricing-lists.html',
+      source,
+      loadManifest: () => pricing,
+    }) as Finding[];
+
+    expect(findings.map((finding) => finding.code)).toEqual(['ambiguous_table_query']);
   });
 });

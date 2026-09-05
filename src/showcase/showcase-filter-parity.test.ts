@@ -26,7 +26,7 @@ const MAPPED_DEMOS = 14;
 const audit = auditShowcaseFilters({
   pagesDirectory: resolve(root, 'showcase/pages'),
   modulesDirectory: resolve(root, '../modules-workspace/modules'),
-}) as { findings: Finding[]; mapped: { page: string; query: string }[]; unmapped: string[] };
+}) as { findings: Finding[]; mapped: { page: string; queries: string[] }[]; unmapped: string[] };
 
 describe('showcase filters ↔ real module manifests (outfitkit#116)', () => {
   // outfitkit#38 and outfitkit#114 were both this: a demo offering a filter the module had dropped.
@@ -44,8 +44,9 @@ describe('showcase filters ↔ real module manifests (outfitkit#116)', () => {
     );
 
     expect(audit.mapped.length).toBeGreaterThanOrEqual(MAPPED_DEMOS);
-    for (const { page, query } of audit.mapped) {
-      expect(query, page).toMatch(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/);
+    for (const { page, queries } of audit.mapped) {
+      expect(queries.length, page).toBeGreaterThan(0);
+      for (const query of queries) expect(query, page).toMatch(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/);
     }
   });
 });
