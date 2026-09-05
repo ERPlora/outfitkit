@@ -105,6 +105,7 @@
           }
 
           function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'staff.roles.list', params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = roles.filter((role) => {
               if (search && !`${role.name} ${role.description}`.toLocaleLowerCase('es').includes(search)) return false;

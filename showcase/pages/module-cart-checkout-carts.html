@@ -196,6 +196,7 @@
           }
 
           function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'cart_checkout.carts.list', params: { ...state } } }));
             const term = state.search.trim().toLocaleLowerCase('es');
             const filtered = carts
               .filter((cart) => {

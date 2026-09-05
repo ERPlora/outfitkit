@@ -173,6 +173,7 @@
           ];
 
           function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'staff.time_off.list', params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = requests.filter((request) => {
               if (search && !request.staff_name.toLocaleLowerCase('es').includes(search)) return false;

@@ -168,32 +168,22 @@
               render: (row) => badge(row.status === 'active' ? 'Activo' : 'Inactivo', row.status === 'active' ? 'success' : 'medium'),
             },
             {
+              // No filter box: the rate does not travel in `staff.members.list`, so the real
+              // screen sorts by it and filters by everything else (erp-staff-members).
               key: 'hourly_rate', header: 'Tarifa/hora', align: 'right', sortable: true,
-              filterable: true, filterType: 'range',
               format: (row) => Number(row.hourly_rate).toFixed(2),
             },
           ];
           table.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
 
-          function matchesRange(value, filter) {
-            if (filter == null || filter === '') return true;
-            if (typeof filter !== 'object') return String(value).includes(String(filter));
-            const numeric = Number(value);
-            const min = filter.min ?? filter.from;
-            const max = filter.max ?? filter.to;
-            return (min == null || min === '' || numeric >= Number(min))
-              && (max == null || max === '' || numeric <= Number(max));
-          }
-
           function queryPage() {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'staff.members.list', params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = members.filter((member) => {
               if (search && !`${member.full_name} ${member.email} ${member.phone}`.toLocaleLowerCase('es').includes(search)) return false;
               for (const [key, value] of Object.entries(state.filters)) {
                 if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) continue;
-                if (key === 'hourly_rate') {
-                  if (!matchesRange(member[key], value)) return false;
-                } else if (Array.isArray(value)) {
+                if (Array.isArray(value)) {
                   if (!value.map(String).includes(String(member[key]))) return false;
                 } else if (String(member[key]).toLocaleLowerCase('es') !== String(value).toLocaleLowerCase('es')) {
                   return false;

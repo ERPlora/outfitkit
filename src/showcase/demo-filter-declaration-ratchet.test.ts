@@ -18,10 +18,6 @@ const root = resolve(import.meta.dirname, '../..');
  * hole stops growing while the backlog is worked off.
  */
 const PENDING_DECLARATION = [
-  'module-cart-checkout-carts.html',
-  'module-cart-checkout-orders.html',
-  'module-cash-register.html',
-  'module-customers-fields.html',
   'module-customers-groups.html',
   'module-customers-list.html',
   'module-customers-tags.html',
@@ -35,14 +31,9 @@ const PENDING_DECLARATION = [
   'module-reservations-waitlist.html',
   'module-sales-list.html',
   'module-schedules-hours.html',
-  'module-services.html',
-  'module-staff-members.html',
-  'module-staff-roles.html',
-  'module-staff-time-off.html',
   'module-tasks-list.html',
   'module-tasks-projects.html',
   'module-tickets-list.html',
-  'module-tickets-sla.html',
   'module-whatsapp-inbox-inbox.html',
   'module-whatsapp-inbox-requests.html',
   'module-whatsapp-inbox-templates.html',
