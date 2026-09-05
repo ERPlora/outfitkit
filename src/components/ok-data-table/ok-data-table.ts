@@ -111,49 +111,57 @@ export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
   loading?: (row: Record<string, unknown>) => boolean;
 }
 
-/** Entrada de `decideRowActionsFit`: lo que se mide del hueco donde vive la tabla. */
+/** Input of `decideRowActionsFit`: what gets measured of the hole the table lives in. */
 export interface RowActionsFitInput {
-  /** Ancho visible del contenedor con scroll (`.scroll` → `clientWidth`). */
+  /** Visible width of the scrolling container (`.scroll` -> `clientWidth`). */
   containerWidth: number;
-  /** Ancho que la rejilla necesita ahora mismo (`scrollWidth`: su mínimo cuando desborda). */
+  /** Width the grid needs right now (`scrollWidth`: its minimum when it overflows). */
   contentWidth: number;
-  /** ¿Están las acciones de fila plegadas en el menú «⋮» ahora mismo? */
+  /** Are the row actions folded into the "..." menu right now? */
   collapsed: boolean;
-  /** Ancho de contenedor con el que se tomó la decisión vigente (`-1` = todavía ninguna). */
+  /** Container width the current decision was taken at (`-1` = none yet). */
   decidedAtWidth: number;
 }
 
-/** Salida de `decideRowActionsFit`. */
+/** Output of `decideRowActionsFit`. */
 export interface RowActionsFitDecision {
   collapsed: boolean;
   decidedAtWidth: number;
 }
 
 /**
- * #122 — ¿caben los botones de acción de la fila, o toca plegarlos en el menú «⋮»?
+ * #122 - Do the row action buttons fit, or do they fold into the "..." menu?
  *
- * Se decide MIDIENDO, no por un breakpoint fijo: cuántas columnas lleva la tabla y cuánto ocupan
- * sus botones sólo se sabe en pantalla. Medido en Chromium con las seis columnas de la lista de
- * reservas, la rejilla necesita 796 px con los cuatro botones fuera y 652 px con el «⋮», así que
- * entre 640 y 795 px la columna fijada se comía el «Estado» — la queja de #120 un tamaño más abajo.
+ * Decided by MEASURING, not by a fixed breakpoint: how many columns the table carries and how much
+ * its buttons take is only known on screen. Measured in Chromium with the six columns of the
+ * bookings list, the grid needs 796px with the four buttons out and 652px with the "..." button,
+ * so between 640 and 795px the pinned column ate the "Estado" - the #120 complaint one size down.
  *
- * La función es PURA a propósito: es la única parte que se puede probar sin un navegador (happy-dom
- * no maqueta, así que ahí todo mide 0), y es donde vive la garantía de que esto no oscila.
+ * The function is PURE on purpose: it is the only part that can be tested without a browser
+ * (happy-dom lays nothing out, so everything measures 0 there), and it is where the guarantee
+ * that this does not oscillate lives.
  *
- * El bucle que hay que evitar: plegar estrecha la rejilla → el ResizeObserver dispara → si se
- * volviera a juzgar, cabría, se desplegaría, ensancharía y vuelta a empezar. Lo corta
- * `decidedAtWidth`: mientras el HUECO no cambie de tamaño, el estado se mueve una sola vez
- * (desplegado → plegado). Cuando el hueco sí cambia, se vuelve a juzgar SIEMPRE con los botones
- * fuera, que es el estado que hay que medir para saber si caben.
+ * The loop to avoid: folding narrows the grid -> the ResizeObserver fires -> judged again, it
+ * would fit, unfold, widen, and start over. `decidedAtWidth` cuts it: while the HOLE keeps its
+ * size, the state moves once at most (out -> folded).
+ *
+ * When the hole changes size (rotation, resize, side panel, or the first real width) it is judged
+ * from scratch with the buttons out - and in ONE pass when they already are: `contentWidth` is
+ * then the very measurement taken with the buttons out. Waiting for "the next measurement" is not
+ * an option: if nothing else changes (a hole born at 0px that receives its width with the table
+ * already measured), nobody schedules it, and the buttons stay on top of the data until a window
+ * `resize` happens to come by. Folded, the buttons come out first - that render IS the next
+ * measurement - and the following pass judges them.
  */
 export function decideRowActionsFit(input: RowActionsFitInput): RowActionsFitDecision {
   const { containerWidth, contentWidth, collapsed, decidedAtWidth } = input;
-  // Sin ancho no hay medida: dentro de `ion-content` el hueco vale 0 hasta que Ionic hidrata, y
-  // juzgar ahí plegaría todas las tablas al entrar (el mismo error de tiempo que #67 y #274).
+  // No width, no measurement: inside `ion-content` the hole is 0 wide until Ionic hydrates, and
+  // judging there would fold every table on the way in (the same timing bug as #67 and #274).
   if (!(containerWidth > 0)) return { collapsed, decidedAtWidth };
-  // El hueco cambió de tamaño (rotación, resize, panel lateral): se juzga de cero, con los botones
-  // fuera. La siguiente medida ya dirá si caben.
-  if (containerWidth !== decidedAtWidth) return { collapsed: false, decidedAtWidth: containerWidth };
+  if (containerWidth !== decidedAtWidth) {
+    if (collapsed) return { collapsed: false, decidedAtWidth: containerWidth };
+    return { collapsed: contentWidth > containerWidth, decidedAtWidth: containerWidth };
+  }
   if (!collapsed && contentWidth > containerWidth) return { collapsed: true, decidedAtWidth };
   return { collapsed, decidedAtWidth };
 }

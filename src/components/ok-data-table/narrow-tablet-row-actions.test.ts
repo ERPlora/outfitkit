@@ -190,6 +190,38 @@ describe('ok-data-table: on a narrow tablet the row actions do not eat a column 
     expect(settle(1024, { collapsed: narrow.collapsed, decidedAtWidth: narrow.decidedAtWidth }).collapsed).toBe(false);
   });
 
+  it('a hole that gets its width while the buttons are already OUT is decided in ONE measurement', () => {
+    // Measured in Chromium over the built bundle: a table fully rendered in a 0px-wide hole (what
+    // `ion-content` is before Ionic hydrates) that then receives 700px kept its four buttons out,
+    // needed 748px in a 700px hole and left the pinned column on top of "Pendiente" until a window
+    // `resize` happened to come by. Why: at 0px the overflow flag was ALREADY true (748 > 0) and the
+    // buttons' track ALREADY measured, so when the width landed the ResizeObserver fired once,
+    // the decision reset itself "with the buttons out" and nothing else changed - no re-render, no
+    // second measurement, nobody to take the decision the reset was waiting for.
+    // With the buttons already out, `contentWidth` IS the measurement taken with the buttons out:
+    // the decision does not need a second pass, so it must not wait for one.
+    expect(decideRowActionsFit({ containerWidth: 700, contentWidth: 748, collapsed: false, decidedAtWidth: -1 })).toEqual({
+      collapsed: true,
+      decidedAtWidth: 700,
+    });
+    // Same when the hole changes size later (a side panel opening) with the buttons out.
+    expect(decideRowActionsFit({ containerWidth: 700, contentWidth: 796, collapsed: false, decidedAtWidth: 900 })).toEqual({
+      collapsed: true,
+      decidedAtWidth: 700,
+    });
+    // And a hole where they fit keeps them out, in one pass too.
+    expect(decideRowActionsFit({ containerWidth: 834, contentWidth: 834, collapsed: false, decidedAtWidth: -1 })).toEqual({
+      collapsed: false,
+      decidedAtWidth: 834,
+    });
+    // Collapsed, the hole changing size still goes through the two-step path: the buttons come
+    // out first (that render IS the second measurement), and the next pass judges them.
+    expect(decideRowActionsFit({ containerWidth: 700, contentWidth: 700, collapsed: true, decidedAtWidth: 640 })).toEqual({
+      collapsed: false,
+      decidedAtWidth: 700,
+    });
+  });
+
   it('an unmeasured table (no layout yet) keeps the buttons out', () => {
     // Inside `ion-content` the hole has no width until Ionic hydrates. Judging on 0x0 would
     // collapse every table on the way in - the same timing bug as #67 and #274.
