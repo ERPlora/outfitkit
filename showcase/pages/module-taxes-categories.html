@@ -161,15 +161,12 @@
               format: (row) => Number(row.is_system) ? '🔒 Sistema' : 'Propia',
             },
             {
+              // «Activa» se ORDENA pero no se FILTRA: `taxes.categories.list` no declara el
+              // filtro (ERPlora/taxes#53), y una caja que el servidor descarta en silencio es
+              // justo la pantalla que esta demo no debe enseñar.
               key: 'is_active',
               header: 'Activa',
               sortable: true,
-              filterable: true,
-              filterType: 'select',
-              options: [
-                { value: '1', label: 'Sí' },
-                { value: '0', label: 'No' },
-              ],
               format: (row) => Number(row.is_active) ? 'Sí' : 'No',
             },
           ];

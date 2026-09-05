@@ -102,8 +102,11 @@ describe('showcase module-taxes-categories — paridad con categories real', () 
     // taxes#44 (ERPlora/taxes#49, 03/09): la columna de descripción se pintaba `filterable` +
     // `sortable` y el manifest no la declaraba, así que la caja mentía EN SILENCIO —el runtime
     // descarta un `f_*` no declarado sin 422—. `display_description` es ya un filtro real.
+    // Y por el MISMO motivo `is_active` dejó de serlo en ERPlora/taxes#53: aquí no queda caja
+    // «Activa», solo la columna ordenable. Esta lista es el espejo del manifest a propósito —
+    // cuando el módulo cambia sus filtros, este test manda a revisar la demo.
     expect(Object.keys(list.filters)).toEqual([
-      'key', 'name', 'is_system', 'is_active', 'display_name', 'display_description',
+      'key', 'name', 'is_system', 'display_name', 'display_description',
     ]);
     expect(list.default_sort).toBe('key');
     expect(page).toContain("sort: 'key'");
@@ -148,9 +151,13 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
       expect(page).toContain(`key: '${key}'`);
     }
     expect(list.page_size).toBe(50);
+    // `is_active` va AL FINAL: taxes#53 lo quitó de las tres listas por mentiroso y taxes#52
+    // (PR ERPlora/taxes#56) lo devolvió SOLO aquí —una regla desactivada se puede volver a ver y
+    // recuperar—, así que reentró por la cola. En reglas es un filtro REAL; en categorías y
+    // alias no existe.
     expect(Object.keys(list.filters)).toEqual([
       'country_code', 'region_code', 'tax_category_key', 'rate_pct',
-      'tax_type', 'parent_id', 'is_active', 'operation_class', 'regime_key',
+      'tax_type', 'parent_id', 'operation_class', 'regime_key', 'is_active',
     ]);
     expect(page).toContain("sort: 'country_code'");
     expect(page).toContain("cardIcon = () => 'options-outline'");
@@ -198,7 +205,8 @@ describe('showcase module-taxes-aliases — paridad con aliases real', () => {
       expect(page).toContain(`key: '${key}'`);
     }
     expect(list.page_size).toBe(50);
-    expect(Object.keys(list.filters)).toEqual(['alias', 'tax_category_key', 'source', 'is_active']);
+    // Sin `is_active`: ERPlora/taxes#53. La columna sigue, la caja de filtro no.
+    expect(Object.keys(list.filters)).toEqual(['alias', 'tax_category_key', 'source']);
     expect(page).toContain("sort: 'alias'");
     expect(page).toContain("cardIcon = () => 'link-outline'");
     expect(page).not.toContain('table.actions =');

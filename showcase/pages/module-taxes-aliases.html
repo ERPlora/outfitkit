@@ -169,12 +169,11 @@
               format: (row) => row.source === 'shipped' ? 'De fábrica' : 'Aprendido',
             },
             {
+              // «Activa» se ORDENA pero no se FILTRA: `taxes.aliases.list` no declara el filtro
+              // (ERPlora/taxes#53). Ver la nota de la demo de categorías.
               key: 'is_active',
               header: 'Activa',
               sortable: true,
-              filterable: true,
-              filterType: 'select',
-              options: [{ value: '1', label: 'Sí' }, { value: '0', label: 'No' }],
               format: (row) => Number(row.is_active) ? 'Sí' : 'No',
             },
           ];
