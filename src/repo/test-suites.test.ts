@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // The suite splitter stays in JavaScript: vitest configs and CI scripts consume it, and those run
@@ -96,6 +97,32 @@ describe('repos the parity suite needs', () => {
     expect(repos).toContain('saas');
     // `_retirados/` is a LOCAL archive, not a repo: it must never reach the clone list.
     expect(repos.some((path) => path.includes('_retirados'))).toBe(false);
+  });
+
+  // The generic filter sweep (outfitkit#116) names no module in its own source: it reads whichever
+  // the DEMOS declare. Without deriving from them too, a demo naming a module no dedicated test
+  // compares against would reach CI with nothing to compare to — and no list to fix it in.
+  it('include the modules the showcase demos declare, not only those a test names', () => {
+    const root = mkdtempSync(join(tmpdir(), 'outfitkit-parity-repos-'));
+    try {
+      mkdirSync(join(root, 'src'), { recursive: true });
+      mkdirSync(join(root, 'showcase', 'pages'), { recursive: true });
+      writeFileSync(
+        join(root, 'src', 'demo.test.ts'),
+        `// ${PARITY_MARKER} — compares against the real module\nimport { it } from 'vitest';\n`,
+      );
+      writeFileSync(
+        join(root, 'showcase', 'pages', 'module-foo-list.html'),
+        `<script type="module">
+          table.columns = [{ key: 'code', filterable: true }];
+          recordQuery('foo.entries.list', { ...state });
+        </script>`,
+      );
+
+      expect(listParityRepos(root)).toEqual(['modules-workspace/modules/foo']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('every path knows which organisation repo it comes from', () => {

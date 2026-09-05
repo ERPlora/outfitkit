@@ -25,6 +25,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
+import { listDemoQueryModules } from './showcase-filter-parity.mjs';
+
 /** Header marker that sends a file to the parity suite. */
 export const PARITY_MARKER = '@suite parity';
 
@@ -51,6 +53,10 @@ export function isParityTest(source) {
  * (`../../../<this>`), so the clone step can reproduce them verbatim.
  *
  * Only `modules-workspace/modules/`: `_retirados/` is a LOCAL archive, not a repo.
+ *
+ * The generic filter sweep (outfitkit#116) names no module in its own source — it reads whichever
+ * the DEMOS declare — so the demos are a second source of derivation. Same principle: a demo
+ * declaring its module query brings its clone along, without a list anyone has to remember.
  */
 export function listParityRepos(root) {
   const found = new Set();
@@ -63,6 +69,7 @@ export function listParityRepos(root) {
       found.add(id);
     }
   }
+  for (const id of listDemoQueryModules(root)) found.add(`modules-workspace/modules/${id}`);
   return [...found].sort();
 }
 
