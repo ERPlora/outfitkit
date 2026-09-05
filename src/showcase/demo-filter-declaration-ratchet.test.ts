@@ -11,16 +11,13 @@ const root = resolve(import.meta.dirname, '../..');
 /**
  * Demos that paint filter boxes without saying which module query is behind them (outfitkit#116).
  *
- * A demo is checked against the real module only if it binds a query to its table state; these
- * never call one, so there is nothing to compare their filter boxes against and the cross-repo
- * sweep cannot see them. Declaring them all is a separate sweep (outfitkit#118) — until then this
- * list is a RATCHET: it may only shrink. A demo added today brings its declaration with it, so the
- * hole stops growing while the backlog is worked off.
+ * A demo is checked against the real module only if it binds a query to its table state; one that
+ * never calls a query leaves its filter boxes with nothing to compare against, invisible to the
+ * cross-repo sweep. The backlog of 29 such demos was worked off in outfitkit#118 and the list is
+ * now EMPTY: it stays here as a ratchet so the hole cannot re-open — a demo added tomorrow brings
+ * its declaration with it, and this array is never the place to park one that does not.
  */
-const PENDING_DECLARATION = [
-  'module-reservations-availability.html',
-  'module-schedules-hours.html',
-];
+const PENDING_DECLARATION: string[] = [];
 
 /** Demos painting filter boxes that no module query answers for. */
 function demosWithoutDeclaredQuery(): string[] {

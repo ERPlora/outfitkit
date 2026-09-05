@@ -300,7 +300,10 @@
           ];
           overridesTable.actions = [{ id: 'delete', label: 'Eliminar', icon: 'trash-outline', color: 'danger' }];
 
-          function queryPage(table, state, rows) {
+          // Each table says WHICH module list it reproduces, so its filter boxes can be checked
+          // against the real manifest (outfitkit#116). The name travels with the table it drives.
+          function queryPage(table, state, rows, queryName) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: queryName, params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = rows.filter((row) => {
               if (search && !Object.values(row).join(' ').toLocaleLowerCase('es').includes(search)) return false;
@@ -318,8 +321,8 @@
             Object.assign(table, { page: state.page, pageSize: state.pageSize, sort: state.sort, sortDir: state.dir, total: filtered.length, rows: filtered.slice(start, start + state.pageSize) });
           }
           const refreshHours = () => { hoursTable.rows = foldWeek(hours); hoursTable.total = 7; };
-          const refreshSpecial = () => queryPage(specialTable, states.special, specialDays);
-          const refreshOverrides = () => queryPage(overridesTable, states.overrides, overrides);
+          const refreshSpecial = () => queryPage(specialTable, states.special, specialDays, 'schedules.special_days.list');
+          const refreshOverrides = () => queryPage(overridesTable, states.overrides, overrides, 'schedules.overrides.list');
           function command(name, payload, message) {
             console.info('[showcase command]', name, payload);
             toast.message = message;

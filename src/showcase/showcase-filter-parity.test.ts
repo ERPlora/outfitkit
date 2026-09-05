@@ -15,13 +15,13 @@ const root = resolve(import.meta.dirname, '../..');
 /**
  * How many demos this sweep can compare TODAY.
  *
- * Only the demos that bind a list query to their table state can be checked against the module at
- * all, and that is 14 of the 52 published — a number that must never be read as "all of them". The
- * floor is here so a demo cannot quietly stop declaring its query and shrink the coverage in
- * silence; the ones still owing a declaration are held by the ratchet of the fast gate
- * (`demo-filter-declaration-ratchet.test.ts`) and swept in outfitkit#118.
+ * Only the demos that PAINT filter boxes have anything to compare, and all 43 of them now declare
+ * the module query behind those boxes (outfitkit#118); the other 9 of the 52 published paint no
+ * filter at all, so the number must still never be read as "all the demos". The floor is here so a
+ * demo cannot quietly stop declaring its query and shrink the coverage in silence — the fast gate
+ * holds the other end with `demo-filter-declaration-ratchet.test.ts`.
  */
-const MAPPED_DEMOS = 14;
+const MAPPED_DEMOS = 43;
 
 const audit = auditShowcaseFilters({
   pagesDirectory: resolve(root, 'showcase/pages'),
@@ -40,7 +40,7 @@ describe('showcase filters ↔ real module manifests (outfitkit#116)', () => {
     const total = audit.mapped.length + audit.unmapped.length;
     console.info(
       `[filter-parity] ${audit.mapped.length} demos mapped against their module query; `
-      + `${audit.unmapped.length} paint filters without declaring one (outfitkit#118) — of ${total} with filter boxes`,
+      + `${audit.unmapped.length} paint filters without declaring one — of ${total} with filter boxes`,
     );
 
     expect(audit.mapped.length).toBeGreaterThanOrEqual(MAPPED_DEMOS);
