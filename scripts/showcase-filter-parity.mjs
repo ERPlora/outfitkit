@@ -155,8 +155,8 @@ export function listDemoQueryModules(root) {
  * Sweeps every demo of the showcase against the real modules.
  *
  * Returns the findings AND the coverage, because the coverage is smaller than it looks: only the
- * demos that bind a query can be checked at all, and a number read as "all of them" would turn this
- * guard into the reassurance it exists to replace.
+ * demos that paint filter boxes AND bind a query can be checked at all, and a number read as "all
+ * of them" would turn this guard into the reassurance it exists to replace.
  */
 export function auditShowcaseFilters({ pagesDirectory, modulesDirectory }) {
   const manifests = new Map();
@@ -175,8 +175,12 @@ export function auditShowcaseFilters({ pagesDirectory, modulesDirectory }) {
     const source = readFileSync(resolve(pagesDirectory, page), 'utf8');
     const { queries, filterableColumns } = readDemoFilterContract(source);
     const [query] = queries;
-    if (queries.length === 1) mapped.push({ page, query });
-    else if (filterableColumns.length) unmapped.push(page);
+    // Coverage counts only the demos that have something to check: filter boxes. A demo that binds
+    // a query but paints none would inflate the number the parity test prints and the floor it holds.
+    if (filterableColumns.length) {
+      if (queries.length === 1) mapped.push({ page, query });
+      else unmapped.push(page);
+    }
     findings.push(...auditDemo({
       page,
       source,

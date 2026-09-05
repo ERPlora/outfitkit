@@ -1,9 +1,13 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 // The sweep stays in JavaScript: the CI clone step and the vitest configs consume it uncompiled,
 // exactly like `test-suites.mjs`.
 // @ts-expect-error Untyped JavaScript, like the rest of the repo scripts.
-import { auditDemo, listDemoQueryModules, readDemoFilterContract } from '../../scripts/showcase-filter-parity.mjs';
+import { auditDemo, auditShowcaseFilters, listDemoQueryModules, readDemoFilterContract } from '../../scripts/showcase-filter-parity.mjs';
 
 type Finding = { page: string; code: string; detail: string };
 
@@ -173,5 +177,57 @@ describe('the modules the sweep needs cloned', () => {
     expect(new Set(modules).size).toBe(modules.length);
     for (const id of ['taxes', 'kitchen', 'verifactu']) expect(modules).toContain(id);
     for (const id of modules) expect(id, id).toMatch(/^[a-z][a-z0-9_]*$/);
+  });
+});
+
+describe('the window that ties the table state to its query', () => {
+  // The real pages fill their selects BEFORE binding the table, so a lookup's name sits above the
+  // list's `{ ...state }` in the file. The window is short on purpose: the state is read as the
+  // parameters of the query it follows, never of one further up. Widening it would hand the
+  // table state to the lookup and lose the list.
+  it('ignores a lookup called with fixed parameters even when it comes BEFORE the list', () => {
+    const source = demoPage({
+      queries: `        const zones = await recordQuery('tables.zones.list', { sort: 'sort_order', dir: 'asc' });
+        zoneSelect.options = zones.rows.map((zone) => ({ value: zone.id, label: zone.name }));
+        const page = await recordQuery('tables.tables.list', { ...state });`,
+    });
+
+    expect(readDemoFilterContract(source).queries).toEqual(['tables.tables.list']);
+  });
+});
+
+describe('the coverage the sweep reports', () => {
+  // A demo that binds a query but paints no filter box has nothing to check. Counting it as
+  // "mapped" would inflate the coverage the parity test prints and the floor it holds.
+  it('counts as mapped only the demos that paint filter boxes AND bind one query', () => {
+    const root = mkdtempSync(join(tmpdir(), 'outfitkit-filter-coverage-'));
+    try {
+      const pages = join(root, 'pages');
+      const modules = join(root, 'modules');
+      mkdirSync(pages, { recursive: true });
+      mkdirSync(join(modules, 'foo'), { recursive: true });
+      writeFileSync(join(modules, 'foo', 'module.json'), JSON.stringify({
+        queries: { 'foo.entries.list': { list: { filters: { code: {} } } }, 'foo.settings.get': {} },
+      }));
+      writeFileSync(join(pages, 'module-foo-list.html'), demoPage({
+        queries: `        recordQuery('foo.entries.list', { ...state });`,
+        columns: `        { key: 'code', filterable: true },`,
+      }));
+      writeFileSync(join(pages, 'module-foo-settings.html'), demoPage({
+        queries: `        recordQuery('foo.settings.get', { ...state });`,
+        columns: `        { key: 'code', sortable: true },`,
+      }));
+      writeFileSync(join(pages, 'module-foo-orphan.html'), demoPage({
+        columns: `        { key: 'code', filterable: true },`,
+      }));
+
+      const audit = auditShowcaseFilters({ pagesDirectory: pages, modulesDirectory: modules });
+
+      expect(audit.findings).toEqual([]);
+      expect(audit.mapped).toEqual([{ page: 'module-foo-list.html', query: 'foo.entries.list' }]);
+      expect(audit.unmapped).toEqual(['module-foo-orphan.html']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
