@@ -68,7 +68,8 @@ export interface DataTableColumn {
   /** Oculta la columna por defecto (el usuario la reactiva en el selector de columnas). */
   hidden?: boolean;
   /** (opcional) Ancho CSS de la columna en la vista lista en grid (p.ej. '8rem', '20%', 'minmax(8rem,1fr)').
-   *  Si se omite, la columna ocupa `minmax(8rem,1fr)`. Sin efecto en el fallback con <table>. */
+   *  When omitted the column takes `minmax(5.5rem,1fr)` (#120): 88px is the readable floor and
+   *  `1fr` shares out the leftover space. No effect on the <table> fallback. */
   width?: string;
   /** Pins the column to the end (right) edge of the list view, exactly like the built-in actions
    *  column (#67): sticky, opaque background, shadow when the grid overflows. For hosts that render
@@ -457,7 +458,14 @@ export class OkDataTable extends LitElement {
     .scroll::-webkit-scrollbar-track { background: transparent; }
     .scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color) 25%, transparent); border-radius: 6px; }
     .scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--color) 40%, transparent); }
-    .grid { min-width: max-content; font-size: 14px; }
+    /* #120 - The grid floor is the SUM OF THE COLUMN MINIMUMS (min-content), not its maximum
+       size. With max-content the grid sizes itself to what the widest column asks for and, in
+       doing so, every 1fr track ends up as wide AS THAT ONE: at 834px each column measured
+       148.86px for content asking between 10px (a "4") and 100px ("Familia Perez"). The table
+       always overflowed and the pinned actions column sat on top of Pax and Estado. With
+       min-content the grid fits its container as long as the minimums fit, and 1fr shares out the
+       leftover space; horizontal scroll shows up only when not even the minimums fit. */
+    .grid { min-width: min-content; font-size: 14px; }
     .grow { display: grid; align-items: center; gap: 0.5rem; padding: 0 1rem; }
     .ghead { position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);
       background: var(--header-background); padding-top: 0.55rem; padding-bottom: 0.55rem; }
@@ -465,17 +473,24 @@ export class OkDataTable extends LitElement {
     .gcell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .gcell.right { justify-content: flex-end; text-align: right; }
     .gcell.center { justify-content: center; text-align: center; }
-    /* #67 — COLUMNA DE ACCIONES FIJADA. Con seis columnas o más la rejilla desborda por diseño
-       (min-width: max-content) y el botón que abre el registro se iba fuera de la pantalla: a
-       1440px quedaba a 335px del borde, sin nada que lo delatara. Se queda pegada al borde
-       derecho, como en Zendesk/Freshdesk/Shopify. Con background:inherit la hereda de la fila (que
-       por eso es opaca), así conserva hover y selección sin que se lea nada por debajo. */
+    /* #67 - PINNED ACTIONS COLUMN. When the grid overflows (since #120 only when not even the
+       column minimums fit; before that it happened with six columns and room to spare) the button
+       that opens the record went off screen: at 1440px it sat 335px past the edge with nothing to
+       give it away. It stays stuck to the right edge, like Zendesk/Freshdesk/Shopify. With
+       background:inherit it takes the row background (which is opaque for this very reason), so it
+       keeps hover and selection without anything showing through. */
     .gcell.actions-col { position: sticky; right: 0; z-index: 1; background: inherit;
       margin-right: -1rem; padding-right: 1rem; }
     /* La sombra solo aparece cuando de verdad hay algo escondido a la izquierda (clase x-overflow);
        si la tabla cabe entera no se pinta nada. */
     .scroll.x-overflow .gcell.actions-col { box-shadow: -10px 0 10px -10px color-mix(in srgb, var(--color) 45%, transparent); }
-    .ghead .gcell.actions-col { z-index: 3; }
+    /* #120 - The pinned header has to be OPAQUE. background:inherit took --header-background,
+       which is a 4% alpha TINT (measured rgba(24,24,27,0.04)): when the grid overflows the
+       "Acciones" header went see-through and "PAX" and "ESTADO" could be read through it - the
+       "PAXCIONESTAD" of the issue. It now sits on the opaque table background with the tint laid
+       back on top, the same way .grow-data:hover does. */
+    .ghead .gcell.actions-col { z-index: 3;
+      background: linear-gradient(var(--header-background), var(--header-background)), var(--background); }
     .gh { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
     .gh.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: background-color var(--ok-transition, 150ms ease), color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease), transform 120ms ease; }
     @media (hover: hover) {
@@ -1583,8 +1598,18 @@ export class OkDataTable extends LitElement {
   private gridTemplate(): string {
     return [
       this.selectable ? '2.75rem' : null,
-      ...this.visibleColumns.map((c) => c.width ?? 'minmax(8rem,1fr)'),
-      this.actions.length ? 'auto' : null,
+      // #120 - 5.5rem (88px) is the narrowest a data column can be and stay readable: ~11
+      // characters at 14px, plus the ellipsis `.gcell > span` already applies. With the previous
+      // floor (8rem = 128px) the six columns of a bookings list did not fit the counter tablet
+      // (128x6 + 188 for actions + gaps = 1036px against 834) and the pinned column ended up on
+      // top of the data. With 5.5rem they fit (796px) and `1fr` stretches them to 94px each.
+      ...this.visibleColumns.map((c) => c.width ?? 'minmax(5.5rem,1fr)'),
+      // #120 - `max-content`, not `auto`: `.gcell` declares `min-width: 0`, so the minimum
+      // contribution of the actions cell is zero and an `auto` track COLLAPSES as soon as the grid
+      // settles at its minimum (12 columns at 834px -> a 16px track for 92px of buttons, which
+      // spilled out of their cell and painted over the neighbouring column). `max-content` always
+      // reserves the width of its buttons, which is what keeps the opaque background under them.
+      this.actions.length ? 'max-content' : null,
     ].filter(Boolean).join(' ');
   }
 
