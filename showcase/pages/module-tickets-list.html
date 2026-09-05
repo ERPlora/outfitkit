@@ -386,6 +386,8 @@
           table.emptyMessage = 'Sin tickets.';
 
           function queryPage() {
+            const state = { page, pageSize, sort, dir: sortDir, search, filters };
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'tickets.tickets.list', params: { ...state } } }));
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = tickets.filter((ticket) => {
               if (term && !`${ticket.ticket_number} ${ticket.subject} ${ticket.description} ${ticket.customer_name} ${ticket.customer_email} ${ticket.customer_phone}`.toLocaleLowerCase('es').includes(term)) return false;

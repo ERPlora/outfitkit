@@ -18,25 +18,9 @@ const root = resolve(import.meta.dirname, '../..');
  * hole stops growing while the backlog is worked off.
  */
 const PENDING_DECLARATION = [
-  'module-customers-groups.html',
-  'module-customers-list.html',
-  'module-customers-tags.html',
-  'module-inventory-categories.html',
-  'module-inventory-products.html',
-  'module-invoice-list.html',
   'module-invoice-settings.html',
-  'module-payments-list.html',
   'module-reservations-availability.html',
-  'module-reservations-list.html',
-  'module-reservations-waitlist.html',
-  'module-sales-list.html',
   'module-schedules-hours.html',
-  'module-tasks-list.html',
-  'module-tasks-projects.html',
-  'module-tickets-list.html',
-  'module-whatsapp-inbox-inbox.html',
-  'module-whatsapp-inbox-requests.html',
-  'module-whatsapp-inbox-templates.html',
 ];
 
 /** Demos painting filter boxes that no module query answers for. */
