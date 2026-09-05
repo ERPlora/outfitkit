@@ -411,8 +411,13 @@ export class OkDataTable extends LitElement {
     .primary-btn { --background: var(--primary); --color: var(--primary-contrast); }
     /* #76 — El alta en MÓVIL: botón primario CON etiqueta y área táctil de 44px, en vez del «+»
        icónico de 36px al final de la barra. Fresha/Square/Shopify POS ponen la acción primaria
-       de la lista como botón visible con texto (o FAB), nunca como icono anónimo. */
-    .add-btn { min-height: 44px; --border-radius: 10px; --padding-start: 0.9rem; --padding-end: 1rem; margin: 0; font-weight: 600; }
+       de la lista como botón visible con texto (o FAB), nunca como icono anónimo.
+       #113 — Y en ESCRITORIO igual: Odoo («New»), Business Central, Shopify («Add product»),
+       WooCommerce, Lightspeed y Fresha rotulan y rellenan la acción principal de un listado; NN/g
+       reserva el botón sin rótulo para lo universal (buscar, cerrar). Aquí solo cambia la ALTURA:
+       36px para alinear con .toolbtn y el buscador, y los 44px táctiles vuelven abajo con el
+       resto de objetivos de puntero grueso. */
+    .add-btn { min-height: 36px; --border-radius: 10px; --padding-start: 0.9rem; --padding-end: 1rem; margin: 0; font-weight: 600; }
     .add-btn ion-icon { margin-inline-end: 0.35rem; }
 
     /* Selects de la toolbar: fondo + borde visibles (como el buscador y la pastilla de fechas) para
@@ -545,6 +550,7 @@ export class OkDataTable extends LitElement {
     @media (pointer: coarse), (max-width: 834px) {
       .actions ion-button { min-width: 44px; min-height: 44px; margin: 0; }
       .toolbtn { width: 44px; height: 44px; }
+      .add-btn { min-height: 44px; }
       .pager .nav ion-button { min-width: 44px; min-height: 44px; margin: 0; }
     }
     /* Spinner de acción en curso (loading): contenido dentro del ion-button small (Ionic lo fija
@@ -622,6 +628,12 @@ export class OkDataTable extends LitElement {
   @property({ type: Number }) page = 0;
   /** (server) Muestra el buscador aunque no haya `searchKeys` (búsqueda server-side). */
   @property({ type: Boolean }) searchable = false;
+  /** #112 — Texto del buscador impuesto DESDE FUERA (misma cadena que la tabla emite en
+   *  `searchChange`). Quien es dueño de la consulta —el módulo, en `serverSide`— tiene que poder
+   *  escribirla, no solo leerla: sin esto, «limpiar la búsqueda» vaciaba la lista y dejaba el texto
+   *  escrito en la caja, y la pantalla se contradecía a sí misma. No es obligatoria: si no se pasa
+   *  (`undefined`), la tabla se comporta como siempre y nadie le pisa lo que el usuario teclea. */
+  @property({ type: String }) search?: string;
   /** (server) Columna de orden activa. */
   @property({ type: String }) sort?: string;
   /** (server) Dirección del orden activo. */
@@ -1203,6 +1215,12 @@ export class OkDataTable extends LitElement {
   private onSearch = (ev: Event): void => {
     const value = (ev.target as HTMLInputElement).value ?? '';
     if (this.serverSide) {
+      // #112 — El espejo NO es cosmético: el buscador es ahora un control controlado (`.value=q`),
+      // y Lit solo reescribe el DOM cuando el valor ENLAZADO cambia. Si `q` se quedara en '' aquí,
+      // un `search=''` del módulo tras teclear «García» no sería ningún cambio para Lit y la caja
+      // conservaría el texto — justo el fallo que arregla esta issue. `q` no filtra nada en modo
+      // servidor (`clientFiltered` solo se lee en la rama cliente de `render`).
+      this.q = value;
       this.emit('searchChange', value);
     } else {
       this.q = value;
@@ -1329,6 +1347,18 @@ export class OkDataTable extends LitElement {
     // reseeds the mirror. An in-place mutation does not reach here (Lit compares by identity) and
     // must not: while the consumer keeps the same object, the user's own picks own the control.
     if (changed.has('filterValues')) this.serverFilters = { ...(this.filterValues ?? {}) };
+    // #112 — Mismo contrato que `filterValues`, para el buscador: una asignación de `search` es el
+    // consumidor declarando qué consulta está viendo la persona, y reasigna el espejo. `undefined`
+    // NO es «vacía la caja», es «no controlo esto»: la tabla sigue siendo dueña de lo tecleado.
+    if (changed.has('search') && this.search !== undefined) {
+      this.q = this.search;
+      // Modo cliente: un texto nuevo es un conjunto de resultados nuevo — misma reacción que al
+      // teclear. En servidor la ventana la gobierna el padre y no se toca (igual que en `rows`).
+      if (!this.serverSide) {
+        this.clientPage = 0;
+        this.mobileShown = 0;
+      }
+    }
     // #78 — A fresh `rows` array is a fresh result set: the accumulated mobile window would
     // otherwise survive a refresh and show N pages of data the user never scrolled to. Server mode
     // never accumulates here (the parent owns the window), so it is left alone.
@@ -1622,9 +1652,11 @@ export class OkDataTable extends LitElement {
       }
     };
 
-    const searchbar = this.serverSide
-      ? html`<ion-searchbar class="ion-no-border" placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`
-      : html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
+    // #112 — Una sola forma para los dos modos: el buscador SIEMPRE pinta `q`. Antes la rama
+    // servidor se dibujaba sin `.value`, así que era un control no controlado y el módulo no tenía
+    // camino de vuelta para imponerle un texto (ni para vaciarlo). `q` lo escriben el teclado y la
+    // propiedad `search`, así que enlazarlo no le quita nada al usuario.
+    const searchbar = html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
 
     const selCount = this.selection.size;
     const showTopbar =
@@ -1688,31 +1720,22 @@ export class OkDataTable extends LitElement {
                         `
                       : nothing}
                     ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), this.t.exportCsv) : nothing}
+                    <!-- #113 — Mismo botón en los dos viewports: la acción principal de la pantalla
+                         se lee, no se adivina. En escritorio era un «+» de 36px idéntico a los
+                         iconos de vista/filtrar/exportar, y era el último de cuatro. -->
                     ${this.addable
-                      ? this.isMobile
-                        ? html`
-                            <ion-button class="primary-btn add-btn" size="small" @click=${() => this.toggle('create')}>
-                              <ion-icon slot="start" .icon=${okIcon('add')}></ion-icon>${this.t.add}
-                            </ion-button>
-                          `
-                        : this.toolButton('add', this.panel === 'create', () => this.toggle('create'), this.t.add)
+                      ? html`
+                          <ion-button class="primary-btn add-btn" size="small" @click=${() => this.toggle('create')}>
+                            <ion-icon slot="start" .icon=${okIcon('add')}></ion-icon>${this.t.add}
+                          </ion-button>
+                        `
                       : nothing}
                     ${this.renderOverflowMenu()}
                     ${this.primaryAction
-                      ? this.isMobile
-                        ? html`
-                            <ion-button class="primary-btn add-btn" size="small" @click=${() => this.emit('primaryAction', {})}>
-                              <ion-icon slot="start" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon>${this.primaryAction.label}
-                            </ion-button>
-                          `
-                        : html`
-                          <ion-button
-                            class="primary-btn"
-                            size="small"
-                            title=${this.primaryAction.label}
-                            aria-label=${this.primaryAction.label}
-                            @click=${() => this.emit('primaryAction', {})}
-                          ><ion-icon slot="icon-only" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon></ion-button>
+                      ? html`
+                          <ion-button class="primary-btn add-btn" size="small" @click=${() => this.emit('primaryAction', {})}>
+                            <ion-icon slot="start" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon>${this.primaryAction.label}
+                          </ion-button>
                         `
                       : nothing}
                     <!-- El módulo proyecta aquí acciones globales adicionales. -->
