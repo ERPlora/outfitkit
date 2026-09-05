@@ -128,13 +128,18 @@ describe('ok-data-table: la barra en móvil es de móvil (#76)', () => {
     expect(btn?.classList.contains('add-btn'), 'la acción primaria no comparte el área táctil de 44px').toBe(true);
   });
 
-  it('en escritorio NADA cambia: columnas, filas por página y el «+» icónico siguen', async () => {
+  // Este test decía «en escritorio NADA cambia» y exigía el «+» icónico (`.toolbtn[aria-label=Add]`)
+  // NEGANDO el botón rotulado en escritorio. Eso no era un contrato del componente: era el LÍMITE DE
+  // ALCANCE de #76, que solo se metió con la barra de móvil. #113 deroga ese límite a propósito —
+  // Odoo, Business Central, Shopify, WooCommerce, Lightspeed y Fresha rotulan la acción principal
+  // también en escritorio— así que las dos aserciones del alta se han invertido y viven ahora en
+  // `desktop-primary-action.test.ts`. Lo que #76 SÍ decidió (los controles de escritorio no bajan a
+  // móvil) sigue aquí, que es lo que este test protege.
+  it('en escritorio siguen sus controles propios: columnas y filas por página', async () => {
     viewport(false);
     const table = await mount();
     const bar = table.shadowRoot?.querySelector('.bar-main');
     expect(bar?.querySelector('.tk-cols'), 'escritorio pierde el selector de columnas').toBeTruthy();
     expect(bar?.querySelector('.tk-psize'), 'escritorio pierde el selector de filas por página').toBeTruthy();
-    expect(bar?.querySelector('.toolbtn[aria-label="Add"]'), 'escritorio pierde el «+»').toBeTruthy();
-    expect(bar?.querySelector('.add-btn'), 'escritorio gana un botón que no pedía').toBeNull();
   });
 });
