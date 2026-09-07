@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · WhatsApp Inbox · Plan</title>
+    <script type="importmap">{ "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }</script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      /* Fiel a ModulePlanPanel.vue: fluido, sin tope de ancho (hub#1605). */
+      .plan-panel { display: flex; flex-direction: column; gap: 1rem; }
+      .status-line { margin: 0; }
+      .opacity-70 { opacity: 0.7; }
+      .module-tabs { width: min(100%, 34rem); margin: 0 auto; }
+
+      /* Control del showcase, NO del producto: en el Hub el estado lo trae
+         `cloudModuleSubscription()`. Aquí se elige para poder ver los seis. */
+      .demo-switch {
+        display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        margin-bottom: 1rem; padding-bottom: 0.75rem;
+        border-bottom: 1px dashed var(--ion-color-step-200, #d7d8da);
+      }
+      .demo-switch small { opacity: 0.6; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      /* Pestaña «Plan» de un módulo de pago — hub/apps/web/src/components/ModulePlanPanel.vue.
+       *
+       * La pestaña la INYECTA el shell (`PLAN_TAB_ID = '__plan__'`, ModuleView.vue) para todo
+       * módulo cuyo manifest declara `billing`; no sale de `navigation[]`, así que el generador
+       * de páginas de módulo no la produce y esta página se cura a mano.
+       *
+       * El Hub NO vende: los CTA de compra se retiraron con hub#479 (empaquetado como app, Play y
+       * Store lo leen como steering). «Gestionar plan» aterriza en la CUENTA del cliente, con el
+       * hub en la ruta (hub#1608 → ERPlora/saas#1901); contratar ocurre en erplora.com.
+       *
+       * Datos: los cuatro tiers de modules-workspace/modules/whatsapp_inbox/module.json.
+       */
+
+      // Estado del plan → tono, icono, píldora, frase y EN QUÉ TIER estás.
+      //
+      // Un módulo que declara un tier a 0 € (WhatsApp Free) es instalable SIN compra y corre en
+      // modo gratuito, con su cuota aplicada en el proxy — ADR-0032, `_has_free_tier()` en
+      // saas/apps/public/modules/entitlement.py. De ahí dos consecuencias que el panel de hoy no
+      // recoge y esta página sí:
+      //   · el estado POR DEFECTO no es el de «aún no tienes nada»: es el gratuito, por el que
+      //     entra todo el mundo;
+      //   · no hay periodo de prueba: la prueba sin tarjeta es para los módulos SIN tier gratuito.
+      // Y caducar no deja al cliente fuera: lo devuelve al gratuito.
+      //
+      // La regla completa, dicha por Ioan el 2026-09-07: un módulo de pago lleva UNA de las dos, y
+      // solo una — o plan gratuito, o 15 días de prueba. Hoy TODOS nuestros módulos traen plan
+      // gratuito, pero eso no está garantizado para los que vengan: el que no lo traiga se vende
+      // con la prueba, y para ESE módulo el estado de prueba sí es suyo. Esta página muestra el
+      // caso con plan gratuito, que es el de WhatsApp Inbox. Guardia: ERPlora/module-toolkit#228.
+      const STATES = {
+        free: {
+          tone: 'success', icon: 'checkmark-circle-outline', label: 'Activo', tier: 0,
+          line: 'Estás en WhatsApp Free, el plan con el que entra todo el mundo.',
+        },
+        active: {
+          tone: 'success', icon: 'checkmark-circle-outline', label: 'Activo', tier: 1,
+          line: 'Se renueva el 07 oct 2026',
+        },
+        past_due: {
+          tone: 'warning', icon: 'alert-circle-outline', label: 'Pago pendiente', tier: 1,
+          line: 'Hay un pago pendiente en tu suscripción.',
+        },
+        canceled: {
+          tone: 'warning', icon: 'alert-circle-outline', label: 'Cancelado', tier: 1,
+          line: 'Se cancela el 30 sept 2026. Después vuelves a WhatsApp Free.',
+        },
+        expired: {
+          tone: 'danger', icon: 'close-circle-outline', label: 'Caducado', tier: 0,
+          line: 'Tu suscripción ha caducado. Sigues en WhatsApp Free.',
+        },
+      };
+
+      // `tierFeatures()` del panel: la cuota de cada tier y, si es medido, el sobrecoste.
+      // La cuota se lee en español: la clave del manifest (`conversations_per_month`) es del autor
+      // del módulo, no una cadena de UI, así que la unidad se traduce en vez de sustituir los `_`.
+      const TIERS = [
+        { name: 'WhatsApp Free', price: 'Gratis', period: '', features: ['Incluye 30 conversaciones al mes'] },
+        { name: 'WhatsApp Starter', price: '14,99 €', period: '/mes', features: ['Incluye 200 conversaciones al mes'] },
+        { name: 'WhatsApp Business', price: '59,99 €', period: '/mes', features: ['Incluye 800 conversaciones al mes'] },
+        {
+          name: 'WhatsApp Flex', price: '19,99 €', period: '/mes',
+          features: ['Incluye 270 conversaciones al mes', '0,08 € por unidad extra'],
+        },
+      ];
+
+      const tierCol = (tier, index) => `
+        <ion-col size="12" size-md="6" size-lg="3">
+          <ok-pricing-card
+            data-tier="${index}"
+            name="${tier.name}"
+            price="${tier.price}"
+            period="${tier.period}"
+          ></ok-pricing-card>
+        </ion-col>`;
+
+      defineHubPage({
+        active: '/apps',
+        title: 'WhatsApp Inbox',
+        body: `
+          <div class="demo-switch">
+            <ion-select
+              id="demo-state"
+              label="Estado"
+              label-placement="start"
+              interface="popover"
+              value="free"
+              aria-label="Estado del plan"
+            >
+              <ion-select-option value="free">Gratis (por defecto)</ion-select-option>
+              <ion-select-option value="active">Activo</ion-select-option>
+              <ion-select-option value="past_due">Pago pendiente</ion-select-option>
+              <ion-select-option value="canceled">Cancelado</ion-select-option>
+              <ion-select-option value="expired">Caducado</ion-select-option>
+            </ion-select>
+            <small>Control del showcase: en el Hub lo resuelve la suscripción del Cloud.</small>
+          </div>
+
+          <div class="plan-panel">
+            <ok-inline-feedback id="plan-status" tone="success" icon="checkmark-circle-outline" heading="Tu plan">
+              <ok-status-pill id="plan-pill" tone="success" label="Activo" size="sm"></ok-status-pill>
+              <p class="status-line" id="plan-line">Estás en WhatsApp Free, el plan con el que entra todo el mundo.</p>
+              <p class="status-line opacity-70">Los planes de este módulo se gestionan desde tu cuenta de ERPlora, en erplora.com.</p>
+
+              <ion-button slot="actions" size="small" data-testid="module-manage-plan">
+                <ion-icon slot="start" name="open-outline"></ion-icon>
+                Gestionar plan
+              </ion-button>
+              <ion-button slot="actions" size="small" fill="outline" data-testid="module-check-purchase">
+                <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                Ya lo he contratado — comprobar
+              </ion-button>
+            </ok-inline-feedback>
+
+            <ion-grid class="ion-no-padding">
+              <ion-row>${TIERS.map(tierCol).join('')}</ion-row>
+            </ion-grid>
+          </div>
+
+          <ion-toast id="plan-toast" duration="3000"></ion-toast>`,
+        footer: `
+          <ion-footer class="ion-no-border">
+            <ion-toolbar>
+              <ion-segment id="module-tabs" class="module-tabs" value="__plan__">
+                <ion-segment-button value="inbox">
+                  <ion-icon name="chatbubbles-outline"></ion-icon><ion-label>Bandeja</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="requests">
+                  <ion-icon name="git-pull-request-outline"></ion-icon><ion-label>Solicitudes</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="templates">
+                  <ion-icon name="documents-outline"></ion-icon><ion-label>Plantillas</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="__plan__">
+                  <ion-icon name="pricetag-outline"></ion-icon><ion-label>Plan</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+            </ion-toolbar>
+          </ion-footer>`,
+        setup(doc) {
+          // Las features viajan como PROPIEDAD (array), nunca como atributo.
+          doc.querySelectorAll('ok-pricing-card').forEach((card) => {
+            card.features = TIERS[Number(card.dataset.tier)].features;
+          });
+
+          const feedback = doc.getElementById('plan-status');
+          const pill = doc.getElementById('plan-pill');
+          const line = doc.getElementById('plan-line');
+
+          const cards = [...doc.querySelectorAll('ok-pricing-card')];
+
+          const paint = (key) => {
+            const state = STATES[key] ?? STATES.free;
+            feedback.tone = state.tone;
+            feedback.icon = state.icon;
+            pill.tone = state.tone;
+            pill.label = state.label;
+            line.textContent = state.line;
+
+            // La tarjeta del plan que tienes va marcada — `featured` + `badge` de ok-pricing-card,
+            // que ya existían y el panel no usaba. Es lo que hacen Shopify, Odoo y Square: el plan
+            // actual se señala en su tarjeta, no solo en un texto suelto.
+            cards.forEach((card, index) => {
+              card.featured = index === state.tier;
+              card.badge = index === state.tier ? 'Tu plan' : '';
+            });
+          };
+
+          paint('free');
+          doc.getElementById('demo-state').addEventListener('ionChange', (event) => {
+            paint(event.detail.value);
+          });
+
+          // Los dos botones, con el efecto que tienen en el Hub: uno abre la cuenta en el
+          // navegador (`openExternal`), el otro vuelve a consultar y avisa por toast.
+          const toast = doc.getElementById('plan-toast');
+          const notify = (message, color) => {
+            toast.message = message;
+            toast.color = color;
+            toast.isOpen = true;
+          };
+          doc.querySelector('[data-testid="module-manage-plan"]').addEventListener('click', () => {
+            notify('Abre erplora.com/dashboard/hubs/<hub_id>/modules/whatsapp_inbox/plan/', 'primary');
+          });
+          doc.querySelector('[data-testid="module-check-purchase"]').addEventListener('click', () => {
+            notify('Confirmado. Tu plan se ha actualizado.', 'success');
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

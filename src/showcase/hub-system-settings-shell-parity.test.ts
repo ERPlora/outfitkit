@@ -51,6 +51,9 @@ describe('showcase Hub — sistema, ajustes y shell actuales', () => {
     expect(source).toContain('id="module-outlet"');
     expect(source).toContain('<ok-data-table id="module-demo-table"');
     expect(source).toContain('id="module-tabs"');
-    for (const tab of ['sales', 'settings', 'plan']) expect(source).toContain(`value="${tab}"`);
+    for (const tab of ['sales', 'settings']) expect(source).toContain(`value="${tab}"`);
+    // La pestaña «Plan» solo la inyecta el shell para módulos con `billing`, que «Ventas» no
+    // tiene: su demo vive en module-plan-hub.html, contra ModulePlanPanel.vue.
+    expect(source).not.toContain('value="plan"');
   });
 });
