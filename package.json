@@ -143,6 +143,7 @@
     "build": "vite build && vite build --config vite.config.cdn.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "generate:module-pages": "node scripts/generate-module-pages.mjs",
+    "catalog": "node scripts/generate-component-catalog.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:parity": "vitest run --config vitest.parity.config.ts",
