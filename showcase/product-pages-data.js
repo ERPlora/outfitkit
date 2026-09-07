@@ -61,6 +61,10 @@ export const SAAS_PAGES = [
   page('saas', 'Hubs', 'hubs-qr', 'Acceso QR', '/dashboard/hubs/<hub_id>/qr/', 'saas/apps/dashboard/hubs/main/templates/hubs/pages/hub_qr.html', 'qr-code-outline', 'pages/hubs-qr.html', 'current'),
   page('saas', 'Hubs', 'hubs-domain', 'Dominio del hub', '/dashboard/hubs/<hub_id>/domain/', 'saas/apps/dashboard/hubs/main/templates/hubs/pages/domain_config.html', 'globe-outline', 'pages/hubs-domain.html', 'current'),
   page('saas', 'Hubs', 'hubs-change-plan', 'Cambiar plan', '/dashboard/hubs/<hub_id>/change-plan/', 'saas/apps/dashboard/hubs/main/templates/hubs/pages/change_plan.html', 'pricetags-outline', 'pages/hubs-change-plan.html', 'current'),
+  // El plan de UN MÓDULO para ESTE hub, en la cuenta (saas#1901): el destino al que el Hub SÍ
+  // puede enlazar desde su pestaña «Plan» (hub#1608). Comparte vista y plantilla con la ficha
+  // del catálogo, pero aquí el hub lo impone la RUTA.
+  page('saas', 'Hubs', 'hubs-module-plan', 'Plan de un módulo', '/dashboard/hubs/<hub_id>/modules/<slug>/plan/', 'saas/apps/dashboard/marketplace/templates/dashboard/marketplace/partials/module_detail_content.html', 'pricetag-outline', 'pages/hubs-module-plan.html', 'pending'),
   page('saas', 'Hubs', 'hubs-files', 'Archivos del hub', '/dashboard/hubs/files/<hub_id>/', 'saas/apps/dashboard/hubs/files/templates/hubs/files/pages/browser.html', 'folder-open-outline', 'pages/hubs-files.html', 'current'),
 
   // Perfil, ajustes y ayuda
@@ -111,4 +115,8 @@ export const HUB_PAGES = [
   page('hub', 'Cuenta', 'api-docs-hub', 'Documentación de la API', '/api-docs', 'hub/apps/web/src/views/ApiDocsPage.vue', 'code-slash-outline', 'pages/api-docs-hub.html', 'current'),
   page('hub', 'Cuenta', 'settings-hub', 'Ajustes', '/settings', 'hub/apps/web/src/views/SettingsPage.vue', 'settings-outline', 'pages/settings-hub.html', 'current'),
   page('hub', 'Módulos', 'module-shell-hub', 'Shell de módulo', '/m/:moduleId/:navId?', 'hub/apps/web/src/views/ModuleView.vue', 'extension-puzzle-outline', 'pages/module-shell-hub.html', 'current'),
+  // La pestaña «Plan» no sale de `navigation[]`: la inyecta el shell para todo módulo que declara
+  // `billing` (`PLAN_TAB_ID = '__plan__'`), así que el generador de páginas de módulo no la ve y
+  // hay que curarla aquí. Hoy la tienen dos módulos: whatsapp_inbox y flows.
+  page('hub', 'Módulos', 'module-plan-hub', 'Plan de un módulo', '/m/whatsapp_inbox/__plan__', 'hub/apps/web/src/components/ModulePlanPanel.vue', 'pricetag-outline', 'pages/module-plan-hub.html', 'current'),
 ];

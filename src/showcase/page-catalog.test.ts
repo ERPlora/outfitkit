@@ -219,6 +219,7 @@ describe('catálogo de páginas reales', () => {
       'api-docs-hub',
       'settings-hub',
       'module-shell-hub',
+      'module-plan-hub',
       'module-appointments-appointments',
       'module-cart-checkout-carts',
       'module-cart-checkout-orders',

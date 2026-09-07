@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERPlora · Plan de WhatsApp Inbox en Main Hub</title>
+
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/iconify-icon/dist/iconify-icon.min.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+
+    <style>
+      .plan-stack { display: flex; flex-direction: column; gap: 1rem; }
+      .plan-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+      .plan-eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
+      .plan-head h1 { margin: 0.25rem 0 0; font-size: 1.5rem; }
+      .plan-head p { margin: 0.25rem 0 0; opacity: 0.7; }
+      .plan-hub { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.75rem; opacity: 0.75; font-size: 0.875rem; }
+      .plan-state { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; }
+      .plan-state small { opacity: 0.65; }
+      .manage-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+      .manage-row p { margin: 0.25rem 0 0; opacity: 0.65; font-size: 0.875rem; max-width: 46ch; }
+      .manage-form { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; margin-top: 0.75rem; }
+      .permission-note { margin: 0; opacity: 0.6; font-size: 0.8125rem; }
+      .plan-section-title { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 600; }
+
+      /* Control del showcase, NO del producto: la página real conoce su estado por la compra. */
+      .demo-switch {
+        display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        margin-bottom: 1rem; padding-bottom: 0.75rem;
+        border-bottom: 1px dashed var(--ion-color-step-200, #d7d8da);
+      }
+      .demo-switch small { opacity: 0.6; }
+      ion-button iconify-icon[slot='start'] { margin-inline-end: 0.4rem; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineSaasDashboardPage } from './_saas-dashboard.js';
+
+      /* Plan de UN módulo para ESTE hub, en el área de cuenta —
+       * `/dashboard/hubs/<hub_id>/modules/<slug>/plan/` (saas#1901), vista `hub_module_plan`.
+       *
+       * Es el destino al que el Hub SÍ puede enlazar desde su pestaña «Plan» (hub#1608): la cuenta
+       * del cliente, con el hub en la ruta, en vez de la superficie promocional que su guardia
+       * anti-steering le prohíbe nombrar (hub#479). Aquí es donde ocurre la VENTA, ligada a un hub;
+       * el Hub solo mira.
+       *
+       * Dos cosas que esta página hace distinto de la otra ruta que comparte plantilla con ella:
+       *
+       *  · **el hub no se elige, lo impone la URL.** Ofrecer el selector aquí devuelve al cliente,
+       *    con un `hx-get`, justo a la ficha promocional de la que veníamos huyendo.
+       *  · **la rejilla de planes no se calcula.** La plantilla real compone la clase de Tailwind en
+       *    tiempo de render y Tailwind solo genera las que encuentra escritas: con 5 tiers la clase
+       *    no existe y los planes se apilan en una columna. `ion-grid` no depende de eso.
+       *
+       * Las dos están abiertas contra el SaaS: ERPlora/saas#1925 (el selector) y
+       * ERPlora/saas#1924 (la rejilla calculada).
+       */
+
+      const TIERS = [
+        { slug: 'free', name: 'WhatsApp Free', price: 'Gratis', period: '', features: ['Incluye 30 conversaciones al mes'] },
+        { slug: 'starter', name: 'WhatsApp Starter', price: '14,99 €', period: '/mes', features: ['Incluye 200 conversaciones al mes'] },
+        { slug: 'business', name: 'WhatsApp Business', price: '59,99 €', period: '/mes', features: ['Incluye 800 conversaciones al mes'] },
+        {
+          slug: 'flex', name: 'WhatsApp Flex', price: '19,99 €', period: '/mes',
+          features: ['Incluye 270 conversaciones al mes', '0,08 € por unidad extra'],
+        },
+      ];
+
+      // Los dos estados que cambian lo que la página OFRECE, no solo lo que dice: sin suscripción se
+      // puede contratar; con una activa, lo que hay es gestionarla (reasignar, cancelar).
+      const STATES = {
+        none: {
+          tone: 'neutral', label: 'Sin suscripción de pago', current: 'free',
+          hint: 'Estás en WhatsApp Free en este hub.', canSubscribe: true, canManage: false,
+        },
+        active: {
+          tone: 'success', label: 'Activo', current: 'starter',
+          hint: 'Se renueva el 07 oct 2026', canSubscribe: false, canManage: true,
+        },
+      };
+
+      const tierCol = (tier, index) => `
+        <ion-col size="12" size-md="6" size-lg="3">
+          <ok-pricing-card data-tier="${index}" name="${tier.name}" price="${tier.price}" period="${tier.period}">
+            <ion-button slot="cta" data-subscribe="${tier.slug}" expand="block" hidden>
+              <iconify-icon slot="start" icon="lucide:shopping-cart" width="16" height="16"></iconify-icon>
+              Suscribirse
+            </ion-button>
+          </ok-pricing-card>
+        </ion-col>`;
+
+      defineSaasDashboardPage({
+        active: '/dashboard/hubs/',
+        title: 'WhatsApp Inbox',
+        body: `
+          <div class="demo-switch">
+            <ion-select id="demo-state" label="Estado" label-placement="start" interface="popover" value="none" aria-label="Estado de la suscripción">
+              <ion-select-option value="none">Sin suscripción de pago</ion-select-option>
+              <ion-select-option value="active">Suscripción activa</ion-select-option>
+            </ion-select>
+            <small>Control del showcase: la página real lo sabe por la compra del hub.</small>
+          </div>
+
+          <div class="plan-stack">
+            <ion-card class="ion-no-margin">
+              <ion-card-content>
+                <div class="plan-head">
+                  <div>
+                    <div class="plan-eyebrow">Módulo</div>
+                    <h1>WhatsApp Inbox</h1>
+                    <p>Bandeja compartida de WhatsApp para atender conversaciones desde tu hub.</p>
+                    <div class="plan-hub">
+                      <iconify-icon icon="lucide:server" width="16" height="16"></iconify-icon>
+                      <span>Main Hub</span>
+                    </div>
+                  </div>
+                  <div class="plan-state">
+                    <ok-status-pill id="plan-pill" tone="neutral" label="Sin suscripción de pago" size="sm"></ok-status-pill>
+                    <small id="plan-hint">Estás en WhatsApp Free en este hub.</small>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <section>
+              <h2 class="plan-section-title">Planes</h2>
+              <ion-grid class="ion-no-padding">
+                <ion-row>${TIERS.map(tierCol).join('')}</ion-row>
+              </ion-grid>
+              <p class="permission-note" id="permission-note" hidden>
+                Solo el propietario o un administrador del hub pueden contratar módulos para este hub.
+              </p>
+            </section>
+
+            <ion-card class="ion-no-margin" id="reassign-card" hidden>
+              <ion-card-content>
+                <div class="manage-row">
+                  <div>
+                    <strong>Reasignar a otro hub</strong>
+                    <p>Mueve esta suscripción a otro hub que gestiones. Tiene efecto inmediato; el hub actual conserva sus datos locales pero pierde el acceso al módulo.</p>
+                    <div class="manage-form">
+                      <ion-select mode="md" fill="outline" label="Hub de destino" label-placement="floating" interface="popover" aria-label="Hub de destino">
+                        <ion-select-option value="second-hub">Second Hub</ion-select-option>
+                        <ion-select-option value="third-hub">Third Hub</ion-select-option>
+                      </ion-select>
+                      <ion-button fill="outline" id="reassign-btn">
+                        <iconify-icon slot="start" icon="lucide:arrow-left-right" width="16" height="16"></iconify-icon>
+                        Reasignar suscripción
+                      </ion-button>
+                    </div>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card class="ion-no-margin" id="cancel-card" hidden>
+              <ion-card-content>
+                <div class="manage-row">
+                  <div>
+                    <strong>Cancelar suscripción</strong>
+                    <p>El módulo sigue activo hasta el final del periodo de facturación. Para cambiar de plan, cancela primero y vuelve a contratar.</p>
+                  </div>
+                  <ion-button color="danger" fill="outline" id="cancel-btn">
+                    <iconify-icon slot="start" icon="lucide:x-circle" width="16" height="16"></iconify-icon>
+                    Cancelar suscripción
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </div>
+
+          <ion-modal id="checkout-modal" backdrop-dismiss="false">
+            <div class="ion-page">
+              <ion-header class="ion-no-border">
+                <ion-toolbar>
+                  <ion-title>Checkout</ion-title>
+                  <ion-buttons slot="end">
+                    <ion-button id="checkout-close" fill="clear" aria-label="Cerrar">
+                      <iconify-icon slot="icon-only" icon="lucide:x" width="18" height="18"></iconify-icon>
+                    </ion-button>
+                  </ion-buttons>
+                </ion-toolbar>
+              </ion-header>
+              <ion-content class="ion-padding">
+                <p id="checkout-summary">Preparando la suscripción…</p>
+                <ion-spinner name="crescent"></ion-spinner>
+              </ion-content>
+            </div>
+          </ion-modal>
+
+          <ion-toast id="plan-toast" duration="2600"></ion-toast>`,
+        footer: '',
+        setup(doc) {
+          const cards = [...doc.querySelectorAll('ok-pricing-card')];
+          cards.forEach((card) => { card.features = TIERS[Number(card.dataset.tier)].features; });
+
+          const pill = doc.getElementById('plan-pill');
+          const hint = doc.getElementById('plan-hint');
+          const note = doc.getElementById('permission-note');
+          const reassign = doc.getElementById('reassign-card');
+          const cancel = doc.getElementById('cancel-card');
+
+          const paint = (key) => {
+            const state = STATES[key] ?? STATES.none;
+            pill.tone = state.tone;
+            pill.label = state.label;
+            hint.textContent = state.hint;
+
+            cards.forEach((card, index) => {
+              const tier = TIERS[index];
+              const isCurrent = tier.slug === state.current;
+              card.featured = isCurrent;
+              card.badge = isCurrent ? 'Tu plan' : '';
+              // Contratar solo se ofrece en los planes de pago y solo cuando no hay una activa:
+              // para cambiar de plan hay que cancelar primero, como dice la tarjeta de abajo.
+              const cta = card.querySelector('[data-subscribe]');
+              cta.hidden = isCurrent || !state.canSubscribe || tier.price === 'Gratis';
+            });
+
+            note.hidden = !state.canSubscribe;
+            reassign.hidden = !state.canManage;
+            cancel.hidden = !state.canManage;
+          };
+
+          paint('none');
+          doc.getElementById('demo-state').addEventListener('ionChange', (event) => paint(event.detail.value));
+
+          // El checkout NUNCA saca al cliente de la página: Stripe Embedded dentro de un ion-modal.
+          const modal = doc.getElementById('checkout-modal');
+          const summary = doc.getElementById('checkout-summary');
+          doc.querySelectorAll('[data-subscribe]').forEach((button) => {
+            button.addEventListener('click', () => {
+              const tier = TIERS.find((t) => t.slug === button.dataset.subscribe);
+              summary.textContent = `WhatsApp Inbox · ${tier.name} para Main Hub`;
+              modal.isOpen = true;
+            });
+          });
+          doc.getElementById('checkout-close').addEventListener('click', () => { modal.isOpen = false; });
+
+          const toast = doc.getElementById('plan-toast');
+          const notify = (message, color) => { toast.message = message; toast.color = color; toast.isOpen = true; };
+          doc.getElementById('reassign-btn').addEventListener('click', () => {
+            notify('Suscripción reasignada. El hub anterior pierde el acceso en su próximo check-in; sus datos locales no se tocan.', 'success');
+          });
+          doc.getElementById('cancel-btn').addEventListener('click', () => {
+            notify('La suscripción se cancelará al final del periodo de facturación.', 'medium');
+          });
+        },
+      });
+    </script>
+  </body>
+</html>
