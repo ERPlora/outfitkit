@@ -1732,9 +1732,17 @@ export class OkDataTable extends LitElement {
     `;
   }
 
-  // Botones de acción de una fila (compartido por vista tabla y tarjetas).
-  // `collapsible` = la vista lista, la única que puede quedarse sin ancho (#122). Las tarjetas
-  // tienen su propia fila de acciones a lo ancho de la tarjeta y ahí siempre caben.
+  // Row action buttons, shared by the table and the card views.
+  //
+  // `collapsible` = the LIST view, the only one that folds its buttons into a "⋮" menu when the
+  // columns leave it no width (#122). The CARD view does not fold; it WRAPS instead, see
+  // `.ractions .actions` in the stylesheet.
+  //
+  // This comment used to claim that a card's actions "always fit across the card". They do not,
+  // and nobody had measured it (#132 / ERPlora/appointments#154): with the eight actions an
+  // appointment carries, the row asks for 380px and the card gives 379px at 411dp, 237px at 768px
+  // and 272px at 1440px — so the first button hung off the card at ALL THREE widths, not just on
+  // a phone. If you add a view that lays these buttons out, MEASURE it.
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
     // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
