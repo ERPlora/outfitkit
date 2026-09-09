@@ -1,7 +1,7 @@
 // @suite parity — compara esta demo del showcase contra el código REAL de otro repo del
 // monorepo (`hub/`, `saas/` o `modules-workspace/`). No corre en el gate hermético: va en el
 // job `parity`, que clona antes lo que compara (outfitkit#66).
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const root = new URL('../../../', import.meta.url);
@@ -31,15 +31,6 @@ const cases = [
     file: 'module-whatsapp-inbox-requests.html',
     source: 'ui/components/erp-whatsapp-inbox-requests/erp-whatsapp-inbox-requests.ts',
   },
-  {
-    id: 'module-whatsapp-inbox-templates',
-    navId: 'templates',
-    route: '/m/whatsapp_inbox/templates',
-    title: 'Plantillas de WhatsApp',
-    component: 'erp-whatsapp-inbox-templates',
-    file: 'module-whatsapp-inbox-templates.html',
-    source: 'ui/components/erp-whatsapp-inbox-templates/erp-whatsapp-inbox-templates.ts',
-  },
 ] as const;
 
 function pageSource(file: string): string {
@@ -56,7 +47,12 @@ describe('showcase · páginas reales de whatsapp_inbox', () => {
     expect(generatedCatalog).toContain(`"id": "${id}"`);
     expect(generatedCatalog).toContain(`"source": "modules-workspace/modules/whatsapp_inbox/${source}"`);
     expect(generatedCatalog).toContain(`"route": "${route}"`);
-    expect(manifest.navigation).toContainEqual(expect.objectContaining({ id: navId, component }));
+    expect(
+      manifest.navigation,
+      `modules-workspace/modules/whatsapp_inbox/module.json → navigation[] ya no declara ` +
+        `{ id: '${navId}', component: '${component}' }: la demo ${id} del showcase enseña una ` +
+        'pantalla que el módulo ya no tiene',
+    ).toContainEqual(expect.objectContaining({ id: navId, component }));
     expect(implementation).toContain(`define('${component}'`);
     expect(page).toContain(`active: '${route}'`);
   });
@@ -126,39 +122,33 @@ describe('showcase · páginas reales de whatsapp_inbox', () => {
     expect(page).not.toContain('whatsapp_inbox.requests.delete');
   });
 
-  it('mantiene el alta de plantillas dentro del panel create de ok-data-table', () => {
-    const page = pageSource('module-whatsapp-inbox-templates.html');
-    const component = readFileSync(new URL(cases[2].source, moduleRoot), 'utf8');
-    const componentTest = readFileSync(
-      new URL('ui/components/erp-whatsapp-inbox-templates/erp-whatsapp-inbox-templates.test.ts', moduleRoot),
-      'utf8',
-    );
+  /*
+   * La guardia que deja esta incidencia (outfitkit#134).
+   *
+   * `templates` desapareció de `navigation[]` del módulo y su demo siguió publicada: el showcase
+   * —el escaparate de cómo debe verse una pantalla del Hub— enseñaba una pantalla que ya no
+   * existe, y el aviso llegó como un `expected undefined to be …` en la CI de una PR ajena.
+   *
+   * Se comprueba en los DOS sentidos, porque retirar una demo son dos gestos y el segundo se
+   * olvida: quitar el caso de esta lista y BORRAR su fichero de `showcase/pages/`. Un fichero
+   * huérfano sigue publicado en GitHub Pages aunque nadie lo enlace desde el catálogo.
+   */
+  it('no publica una demo de una pantalla que el módulo ya no tiene', () => {
+    const navigable = manifest.navigation.map((entry) => entry.id);
+    for (const { id, navId } of cases) {
+      expect(
+        navigable,
+        `modules-workspace/modules/whatsapp_inbox/module.json → navigation[] ya no declara ` +
+          `'${navId}': retira la demo ${id} del showcase en vez de dejarla mintiendo`,
+      ).toContain(navId);
+    }
 
-    expect(page).toContain('<ok-data-table id="whatsapp-templates-table" fill>');
-    for (const key of ['name', 'language', 'category', 'meta_status', 'is_active']) {
-      expect(component).toContain(`key: '${key}'`);
-      expect(page).toContain(`key: '${key}'`);
-    }
-    for (const property of [
-      'serverSide = true',
-      'fill = true',
-      'addable = true',
-      'views = true',
-      'cardTitle = (row) =>',
-      "cardIcon = () => 'document-text-outline'",
-      "searchPlaceholder = 'Buscar nombre o categoría…'",
-      "sort = 'created_at'",
-      "sortDir = 'desc'",
-    ]) {
-      expect(page).toContain(property);
-    }
-    expect(page).toContain('<form id="whatsapp-template-form" slot="create"');
-    expect(page).toMatch(/<ion-input\s+id="whatsapp-template-name"/);
-    expect(page).toMatch(/<ion-select\s+id="whatsapp-template-category"/);
-    expect(page).toMatch(/<ion-textarea\s+id="whatsapp-template-body"/);
-    expect(page).toContain("emitCommand('whatsapp_inbox.templates.create'");
-    expect(componentTest).toContain("name: 'recordatorio_cita'");
-    expect(page).toContain('"name": "recordatorio_cita"');
+    const published = readdirSync(new URL('pages/', showcaseRoot))
+      .filter((file) => file.startsWith('module-whatsapp-inbox-') && file.endsWith('.html'))
+      .sort();
+    expect(published, 'demos de whatsapp_inbox publicadas sin caso que las compare').toEqual(
+      cases.map(({ file }) => file).sort(),
+    );
   });
 
   it.each(cases)('simula el controlador server-side completo en $id', ({ file }) => {
