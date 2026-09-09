@@ -224,19 +224,27 @@ describe('showcase Hub — pestaña «Plan» de un módulo de pago', () => {
     // de esto se escribe a mano — el nombre, el importe y el periodo se COMPONEN como los compone
     // el panel (`priceLabel()`, `periodLabel()`), que es lo único que hace de esto una paridad.
     expect(tiers, moved('module.json → billing.tiers[]')).toHaveLength(4);
+
+    // Las tres se leen JUNTAS, por tarjeta. Comprobarlas por separado con `toContain` no vale
+    // aquí: los cuatro tiers valen `0`, así que los cuatro pintan `price: 'Gratis'` y `period: ''`
+    // — un `toContain` de esos literales lo cumple CUALQUIER otra tarjeta, y la demo podría volver
+    // a anunciar «19,99 €/mes» en un tier sin que nada se enterase. Medido con un mutante el
+    // 10/09: cambiar el precio de un solo tier dejaba la paridad en verde (outfitkit#134).
+    const painted = [...page.matchAll(/\{\s*name: '([^']*)',\s*price: '([^']*)',\s*period: '([^']*)'/g)]
+      .map(([, name, price, period]) => ({ name, price, period }));
+
+    // Ni una tarjeta de más ni de menos, y en el orden del manifest: el panel las recorre con un
+    // `v-for` sobre `billing.tiers[]`, así que reordenarlas también es enseñar otra pantalla.
+    expect(painted.map((card) => card.name), moved('module.json → billing.tiers[].name')).toEqual(
+      tiers.map((tier) => tier.name),
+    );
+
     for (const tier of tiers) {
-      expect(page, moved(`module.json → billing.tiers[${tier.slug}].name`)).toContain(
-        `name: '${tier.name}'`,
-      );
-      expect(page, moved(`module.json → billing.tiers[${tier.slug}].price`)).toContain(
-        `price: '${priceLabel(tier)}'`,
-      );
-      expect(page, moved(`module.json → billing.tiers[${tier.slug}].interval`)).toContain(
-        `period: '${periodLabel(tier)}'`,
-      );
+      const card = painted.find((entry) => entry.name === tier.name);
+      expect(card, moved(`module.json → billing.tiers[${tier.slug}].name`)).toBeDefined();
+      expect(card?.price, moved(`module.json → billing.tiers[${tier.slug}].price`)).toBe(priceLabel(tier));
+      expect(card?.period, moved(`module.json → billing.tiers[${tier.slug}].interval`)).toBe(periodLabel(tier));
     }
-    // Ni una tarjeta de más: cuatro tiers, cuatro tarjetas.
-    expect(page.match(/name: '/g)).toHaveLength(tiers.length);
 
     // El sobrecoste del medido, la otra línea que compone `tierFeatures()`. Hoy ningún tier de
     // WhatsApp Inbox es medido, así que la demo tampoco puede anunciarlo.

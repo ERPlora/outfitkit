@@ -58,6 +58,19 @@ export const MODULE_PAGES = [
     "file": "pages/module-cash-register.html"
   },
   {
+    "id": "module-combos-menus",
+    "name": "Menús",
+    "icon": "restaurant-outline",
+    "surface": "modules",
+    "section": "Menús y combos",
+    "moduleId": "combos",
+    "navId": "menus",
+    "component": "erp-combos-menus",
+    "source": "modules-workspace/modules/combos/ui/components/erp-combos-menus/erp-combos-menus.ts",
+    "route": "/m/combos/menus",
+    "parity": "source"
+  },
+  {
     "id": "module-customers-customers",
     "name": "Clientes",
     "icon": "people-outline",
@@ -446,6 +459,32 @@ export const MODULE_PAGES = [
     "file": "pages/module-sales-list.html"
   },
   {
+    "id": "module-sales-quick-notes",
+    "name": "Notas rápidas",
+    "icon": "chatbubble-ellipses-outline",
+    "surface": "modules",
+    "section": "Ventas / TPV",
+    "moduleId": "sales",
+    "navId": "quick_notes",
+    "component": "erp-pos-quick-notes",
+    "source": "modules-workspace/modules/sales/ui/components/erp-pos-quick-notes/erp-pos-quick-notes.ts",
+    "route": "/m/sales/quick_notes",
+    "parity": "source"
+  },
+  {
+    "id": "module-sales-departments",
+    "name": "Departamentos",
+    "icon": "grid-outline",
+    "surface": "modules",
+    "section": "Ventas / TPV",
+    "moduleId": "sales",
+    "navId": "departments",
+    "component": "erp-pos-departments",
+    "source": "modules-workspace/modules/sales/ui/components/erp-pos-departments/erp-pos-departments.ts",
+    "route": "/m/sales/departments",
+    "parity": "source"
+  },
+  {
     "id": "module-schedules-hours",
     "name": "Horario",
     "icon": "time-outline",
@@ -804,20 +843,6 @@ export const MODULE_PAGES = [
     "route": "/m/whatsapp_inbox/requests",
     "parity": "current",
     "file": "pages/module-whatsapp-inbox-requests.html"
-  },
-  {
-    "id": "module-whatsapp-inbox-templates",
-    "name": "Plantillas",
-    "icon": "document-text-outline",
-    "surface": "modules",
-    "section": "Bandeja de WhatsApp",
-    "moduleId": "whatsapp_inbox",
-    "navId": "templates",
-    "component": "erp-whatsapp-inbox-templates",
-    "source": "modules-workspace/modules/whatsapp_inbox/ui/components/erp-whatsapp-inbox-templates/erp-whatsapp-inbox-templates.ts",
-    "route": "/m/whatsapp_inbox/templates",
-    "parity": "current",
-    "file": "pages/module-whatsapp-inbox-templates.html"
   },
   {
     "id": "module-whatsapp-inbox-settings",

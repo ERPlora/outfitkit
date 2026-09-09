@@ -74,6 +74,9 @@ describe('catálogo de páginas reales', () => {
       // app along with `templates/two_factor/`: trusting a device is now a stage of the allauth
       // login, not a settings page, so there is nothing to point at.
       'settings-devices',
+      // #134 — `whatsapp_inbox` dropped its templates screen: `navigation[]` no longer declares
+      // it, so the showcase cannot keep publishing a demo of a page the module does not have.
+      'module-whatsapp-inbox-templates',
     ];
     expect(pages.filter((page) => removed.includes(page.id))).toEqual([]);
 
@@ -123,6 +126,7 @@ describe('catálogo de páginas reales', () => {
       'module-backup-backup.html',
       'module-backup-settings.html',
       'settings-devices.html',
+      'module-whatsapp-inbox-templates.html',
     ];
     for (const file of obsoleteFiles) {
       expect(existsSync(resolve(process.cwd(), 'showcase', 'pages', file)), file).toBe(false);
@@ -270,7 +274,6 @@ describe('catálogo de páginas reales', () => {
       'module-verifactu-settings',
       'module-whatsapp-inbox-inbox',
       'module-whatsapp-inbox-requests',
-      'module-whatsapp-inbox-templates',
     ];
     expect(pages.filter((page) => page.parity === 'current').map((page) => page.id)).toEqual(currentIds);
   });
