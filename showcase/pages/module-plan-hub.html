@@ -17,9 +17,11 @@
       .status-line { margin: 0; }
       .opacity-70 { opacity: 0.7; }
       .module-tabs { width: min(100%, 34rem); margin: 0 auto; }
+      /* Hueco para el badge «Tu plan», que `ok-pricing-card` dibuja FUERA de su tarjeta. */
+      .tier-col { padding-top: 0.8rem; }
 
       /* Control del showcase, NO del producto: en el Hub el estado lo trae
-         `cloudModuleSubscription()`. Aquí se elige para poder ver los seis. */
+         `cloudModuleSubscription()`. Aquí se elige para poder ver los cinco. */
       .demo-switch {
         display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
         margin-bottom: 1rem; padding-bottom: 0.75rem;
@@ -47,58 +49,63 @@
 
       // Estado del plan → tono, icono, píldora, frase y EN QUÉ TIER estás.
       //
-      // Un módulo que declara un tier a 0 € (WhatsApp Free) es instalable SIN compra y corre en
-      // modo gratuito, con su cuota aplicada en el proxy — ADR-0032, `_has_free_tier()` en
-      // saas/apps/public/modules/entitlement.py. De ahí dos consecuencias que el panel de hoy no
-      // recoge y esta página sí:
-      //   · el estado POR DEFECTO no es el de «aún no tienes nada»: es el gratuito, por el que
-      //     entra todo el mundo;
+      // Un módulo que declara un tier a 0 € es instalable SIN compra y corre en modo gratuito, con
+      // su cuota aplicada en el proxy — ADR-0032, `_has_free_tier()` en
+      // saas/apps/public/modules/entitlement.py. De ahí dos consecuencias:
+      //   · el estado POR DEFECTO no es «aún no tienes nada»: es el gratuito, por el que entra
+      //     todo el mundo (`displayStatus` remapea `none`/`trialing` sobre el gratuito, hub#1652);
       //   · no hay periodo de prueba: la prueba sin tarjeta es para los módulos SIN tier gratuito.
-      // Y caducar no deja al cliente fuera: lo devuelve al gratuito.
       //
-      // La regla completa, dicha por Ioan el 2026-09-07: un módulo de pago lleva UNA de las dos, y
-      // solo una — o plan gratuito, o 15 días de prueba. Hoy TODOS nuestros módulos traen plan
-      // gratuito, pero eso no está garantizado para los que vengan: el que no lo traiga se vende
-      // con la prueba, y para ESE módulo el estado de prueba sí es suyo. Esta página muestra el
-      // caso con plan gratuito, que es el de WhatsApp Inbox. Guardia: ERPlora/module-toolkit#228.
+      // Los cuatro estados de pago de abajo los pinta el panel, que es GENÉRICO: sirve a cualquier
+      // módulo que declare `billing`. Para los premium PROPIOS ya no llegan —ADR-0474 retiró la
+      // compra suelta y el nivel viaja con el plan del hub—, pero los módulos de TERCEROS se
+      // siguen comprando por hub (ADR-0114) y son suyos.
+      //
+      // Las frases son literalmente las del Hub (`modulePlan.*` en apps/web/src/i18n/locales/es.ts):
+      // si aquí se escribiera otra cosa, esta pantalla dejaría de enseñar el producto.
       const STATES = {
         free: {
           tone: 'success', icon: 'checkmark-circle-outline', label: 'Activo', tier: 0,
-          line: 'Estás en WhatsApp Free, el plan con el que entra todo el mundo.',
+          line: 'Estás en Free, el plan con el que entra todo el mundo.',
         },
         active: {
-          tone: 'success', icon: 'checkmark-circle-outline', label: 'Activo', tier: 1,
+          tone: 'success', icon: 'checkmark-circle-outline', label: 'Activo', tier: 2,
           line: 'Se renueva el 07 oct 2026',
         },
         past_due: {
-          tone: 'warning', icon: 'alert-circle-outline', label: 'Pago pendiente', tier: 1,
+          tone: 'warning', icon: 'alert-circle-outline', label: 'Pago pendiente', tier: 2,
           line: 'Hay un pago pendiente en tu suscripción.',
         },
         canceled: {
-          tone: 'warning', icon: 'alert-circle-outline', label: 'Cancelado', tier: 1,
-          line: 'Se cancela el 30 sept 2026. Después vuelves a WhatsApp Free.',
+          tone: 'warning', icon: 'alert-circle-outline', label: 'Cancelado', tier: 2,
+          line: 'Se cancela el 30 sept 2026',
         },
         expired: {
           tone: 'danger', icon: 'close-circle-outline', label: 'Caducado', tier: 0,
-          line: 'Tu suscripción ha caducado. Sigues en WhatsApp Free.',
+          line: 'Tu suscripción ha caducado. Sigues en Free.',
         },
       };
 
       // `tierFeatures()` del panel: la cuota de cada tier y, si es medido, el sobrecoste.
-      // La cuota se lee en español: la clave del manifest (`conversations_per_month`) es del autor
-      // del módulo, no una cadena de UI, así que la unidad se traduce en vez de sustituir los `_`.
+      //
+      // Los cuatro niveles llevan el nombre COMÚN de los planes de ERPlora (ADR-0474): el nivel de
+      // un módulo premium propio es un derecho que viaja con el plan del hub, no algo que se
+      // compre aparte. Por eso los cuatro valen 0 € aquí y el importe está en el plan — lo que
+      // cambia entre ellos es la cuota. `priceLabel()` pinta «Gratis» y `periodLabel()` deja el
+      // periodo vacío cuando el tier no cuesta, así que ninguna tarjeta dice «/mes».
+      //
+      // La cuota se lee en español: la clave del manifest (`billable_messages_per_month`) es del
+      // autor del módulo, no una cadena de UI, así que la unidad sale de su `locales/es.json`
+      // (hub#1604) en vez de sustituir los `_` por espacios.
       const TIERS = [
-        { name: 'WhatsApp Free', price: 'Gratis', period: '', features: ['Incluye 30 conversaciones al mes'] },
-        { name: 'WhatsApp Starter', price: '14,99 €', period: '/mes', features: ['Incluye 200 conversaciones al mes'] },
-        { name: 'WhatsApp Business', price: '59,99 €', period: '/mes', features: ['Incluye 800 conversaciones al mes'] },
-        {
-          name: 'WhatsApp Flex', price: '19,99 €', period: '/mes',
-          features: ['Incluye 270 conversaciones al mes', '0,08 € por unidad extra'],
-        },
+        { name: 'Free', price: 'Gratis', period: '', features: ['Incluye 30 mensajes al mes'] },
+        { name: 'Basic', price: 'Gratis', period: '', features: ['Incluye 150 mensajes al mes'] },
+        { name: 'Pro', price: 'Gratis', period: '', features: ['Incluye 500 mensajes al mes'] },
+        { name: 'Enterprise', price: 'Gratis', period: '', features: ['Incluye 800 mensajes al mes'] },
       ];
 
       const tierCol = (tier, index) => `
-        <ion-col size="12" size-md="6" size-lg="3">
+        <ion-col class="tier-col" size="12" size-md="6" size-lg="3">
           <ok-pricing-card
             data-tier="${index}"
             name="${tier.name}"
@@ -132,7 +139,7 @@
           <div class="plan-panel">
             <ok-inline-feedback id="plan-status" tone="success" icon="checkmark-circle-outline" heading="Tu plan">
               <ok-status-pill id="plan-pill" tone="success" label="Activo" size="sm"></ok-status-pill>
-              <p class="status-line" id="plan-line">Estás en WhatsApp Free, el plan con el que entra todo el mundo.</p>
+              <p class="status-line" id="plan-line">Estás en Free, el plan con el que entra todo el mundo.</p>
               <p class="status-line opacity-70">Los planes de este módulo se gestionan desde tu cuenta de ERPlora, en erplora.com.</p>
 
               <ion-button slot="actions" size="small" data-testid="module-manage-plan">
@@ -154,18 +161,20 @@
         footer: `
           <ion-footer class="ion-no-border">
             <ion-toolbar>
+              <!-- Las tres pestañas de `navigation[]` del módulo (con sus etiquetas e iconos de
+                   locales/es.json y module.json) más la «Plan» que inyecta el shell. -->
               <ion-segment id="module-tabs" class="module-tabs" value="__plan__">
                 <ion-segment-button value="inbox">
-                  <ion-icon name="chatbubbles-outline"></ion-icon><ion-label>Bandeja</ion-label>
+                  <ion-icon name="chatbubbles-outline"></ion-icon><ion-label>Bandeja de entrada</ion-label>
                 </ion-segment-button>
                 <ion-segment-button value="requests">
-                  <ion-icon name="git-pull-request-outline"></ion-icon><ion-label>Solicitudes</ion-label>
+                  <ion-icon name="clipboard-outline"></ion-icon><ion-label>Solicitudes</ion-label>
                 </ion-segment-button>
-                <ion-segment-button value="templates">
-                  <ion-icon name="documents-outline"></ion-icon><ion-label>Plantillas</ion-label>
+                <ion-segment-button value="settings">
+                  <ion-icon name="settings-outline"></ion-icon><ion-label>Ajustes</ion-label>
                 </ion-segment-button>
                 <ion-segment-button value="__plan__">
-                  <ion-icon name="pricetag-outline"></ion-icon><ion-label>Plan</ion-label>
+                  <ion-icon name="pricetag"></ion-icon><ion-label>Plan</ion-label>
                 </ion-segment-button>
               </ion-segment>
             </ion-toolbar>
@@ -190,9 +199,9 @@
             pill.label = state.label;
             line.textContent = state.line;
 
-            // La tarjeta del plan que tienes va marcada — `featured` + `badge` de ok-pricing-card,
-            // que ya existían y el panel no usaba. Es lo que hacen Shopify, Odoo y Square: el plan
-            // actual se señala en su tarjeta, no solo en un texto suelto.
+            // La tarjeta del plan que tienes va marcada — `featured` + `badge` de ok-pricing-card.
+            // Es lo que hacen Shopify, Odoo y Square: con cuatro niveles delante, un «Activo»
+            // suelto no dice cuál es el tuyo.
             cards.forEach((card, index) => {
               card.featured = index === state.tier;
               card.badge = index === state.tier ? 'Tu plan' : '';
