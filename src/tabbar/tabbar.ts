@@ -20,11 +20,14 @@ export type TabbarOverflow = 'none' | 'start' | 'end' | 'both';
 /** Margen de subpíxel: `scrollLeft` es fraccionario y nunca iguala exactamente al tope. */
 const EPSILON = 1;
 /**
- * Ancho del degradado de borde. Espejo del default de `--ok-tabbar-fade` en `tabbar.css`, y lo
- * ata un test de paridad: si se mueve uno sin el otro, revelar una pestaña volvería a dejarla
- * debajo del fade — que es justo el fallo que revelarla vino a quitar.
+ * Ancho del degradado de borde. Espejo del default de `--ok-tabbar-fade` en `tabbar.css`.
+ *
+ * Se EXPORTA sólo para que el test de paridad pueda comparar contra este número y no contra una
+ * copia suya: pinchar el valor esperado en el test no ata nada — mover `FADE_PX` seguiría pasando.
+ * Si se mueven uno sin el otro, revelar una pestaña volvería a dejarla debajo del fade, que es
+ * justo el fallo que revelarla vino a quitar.
  */
-const FADE_PX = 36;
+export const FADE_PX = 36;
 /** Cuánto se asoma la barra al dar la pista, y cuánto tarda en volver. */
 const HINT_PX = 28;
 const HINT_VUELTA_MS = 420;

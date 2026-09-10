@@ -3,8 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-/** Espejo de `FADE_PX` en `tabbar.ts` (no se exporta: es interno del módulo). */
-const FADE_PX_ESPERADO = 36;
+import { FADE_PX } from './tabbar';
 
 // The CSS half of the drag: `bindTabbar` adds `.ok-tabbar-dragging` while a pointer drag is live,
 // and `tabbar.css` is what makes the strip FEEL dragged. Without `user-select:none` the mouse drag
@@ -26,7 +25,7 @@ describe('tabbar.css - the drag affordance', () => {
   it('the fade width the CSS paints is the one the reveal clears', () => {
     const [, ancho] = css.match(/--ok-tabbar-fade\s*,\s*(\d+)px/) ?? [];
     expect(ancho, 'the CSS no longer declares a default fade width').toBeDefined();
-    expect(Number(ancho)).toBe(FADE_PX_ESPERADO);
+    expect(Number(ancho)).toBe(FADE_PX);
   });
 
   it('the strip advertises it can be grabbed', () => {
