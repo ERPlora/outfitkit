@@ -35,6 +35,7 @@ import rawClose from '~icons/ion/close?raw';
 import rawCloseOutline from '~icons/ion/close-outline?raw';
 import rawCloudUploadOutline from '~icons/ion/cloud-upload-outline?raw';
 import rawCreateOutline from '~icons/ion/create-outline?raw';
+import rawContractOutline from '~icons/ion/contract-outline?raw';
 import rawDocumentAttachOutline from '~icons/ion/document-attach-outline?raw';
 import rawDocumentOutline from '~icons/ion/document-outline?raw';
 import rawDocumentTextOutline from '~icons/ion/document-text-outline?raw';
@@ -97,6 +98,7 @@ export const iconCloseOutline = bake(rawCloseOutline);
 export const iconCloudUploadOutline = bake(rawCloudUploadOutline);
 export const iconCreateOutline = bake(rawCreateOutline);
 export const iconDocumentAttachOutline = bake(rawDocumentAttachOutline);
+export const iconContractOutline = bake(rawContractOutline);
 export const iconDocumentOutline = bake(rawDocumentOutline);
 export const iconDocumentTextOutline = bake(rawDocumentTextOutline);
 export const iconDownloadOutline = bake(rawDownloadOutline);
@@ -145,6 +147,7 @@ const BY_NAME: Record<string, string> = {
   'cloud-upload-outline': iconCloudUploadOutline,
   'create-outline': iconCreateOutline,
   'document-attach-outline': iconDocumentAttachOutline,
+  'contract-outline': iconContractOutline,
   'document-outline': iconDocumentOutline,
   'document-text-outline': iconDocumentTextOutline,
   'download-outline': iconDownloadOutline,

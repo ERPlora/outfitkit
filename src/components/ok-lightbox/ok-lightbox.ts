@@ -1,7 +1,8 @@
 import { LitElement, html, css, render, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
-import { iconChevronBackOutline, iconChevronForwardOutline, iconCloseOutline, iconDownloadOutline, iconExpandOutline, iconPlayOutline } from '../../base/icons.js';
+import { iconChevronBackOutline, iconChevronForwardOutline, iconCloseOutline, iconContractOutline, iconDownloadOutline, iconExpandOutline, iconPlayOutline } from '../../base/icons.js';
+import { isActive, isCapable, onChange, toggle } from '../../base/fullscreen.js';
 import { tapTarget } from '../../base/tap-target.js';
 
 // Tipo de medio de un item del lightbox.
@@ -29,8 +30,10 @@ export interface OkLightboxLabels {
   close: string;
   /** aria-label del botón descargar. */
   download: string;
-  /** aria-label del botón pantalla completa. */
+  /** aria-label del botón pantalla completa (acción: entrar). */
   fullscreen: string;
+  /** aria-label del mismo botón cuando ya está en pantalla completa (acción: salir). */
+  exitFullscreen: string;
 }
 
 const DEFAULT_LABELS: OkLightboxLabels = {
@@ -39,6 +42,7 @@ const DEFAULT_LABELS: OkLightboxLabels = {
   close: 'Close',
   download: 'Download',
   fullscreen: 'Fullscreen',
+  exitFullscreen: 'Exit fullscreen',
 };
 
 // ok-lightbox — visor de medios a pantalla completa (galería). Overlay oscuro `fixed inset:0`,
@@ -300,6 +304,12 @@ export class OkLightbox extends LitElement {
   // Estado interno: clase de visibilidad para disparar la transición de entrada/salida.
   @state() private shown = false;
 
+  // ¿Es ESTE overlay el que está a pantalla completa? Esc y F11 también lo cambian, así que se
+  // escucha en vez de darlo por sabido al pulsar el botón.
+  @state() private fullscreenOn = false;
+
+  private stopFullscreenWatch?: () => void;
+
   // Textos efectivos: defaults en inglés + overrides del consumidor.
   private get t(): OkLightboxLabels {
     return { ...DEFAULT_LABELS, ...this.labels };
@@ -308,8 +318,17 @@ export class OkLightbox extends LitElement {
   // Portal del overlay en `document.body` (shadow propio) para escapar de ancestros transformados.
   private portalRoot: ShadowRoot | null = null;
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.stopFullscreenWatch = onChange(() => {
+      this.fullscreenOn = isActive(this.boxEl() ?? undefined);
+    });
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.stopFullscreenWatch?.();
+    this.stopFullscreenWatch = undefined;
     this.unbind();
     const host = this.portalRoot?.host;
     this.portalRoot = null;
@@ -463,14 +482,18 @@ export class OkLightbox extends LitElement {
                   <ion-icon .icon=${iconDownloadOutline}></ion-icon>
                 </a>`
               : null}
-            <button
-              type="button"
-              class="icon-btn"
-              aria-label=${this.t.fullscreen}
-              @click=${() => this.toggleFullscreen()}
-            >
-              <ion-icon .icon=${iconExpandOutline}></ion-icon>
-            </button>
+            ${isCapable()
+              ? html`<button
+                  type="button"
+                  class="icon-btn"
+                  aria-label=${this.fullscreenOn ? this.t.exitFullscreen : this.t.fullscreen}
+                  @click=${() => void this.toggleFullscreen()}
+                >
+                  <ion-icon
+                    .icon=${this.fullscreenOn ? iconContractOutline : iconExpandOutline}
+                  ></ion-icon>
+                </button>`
+              : null}
             <button
               type="button"
               class="icon-btn"
@@ -541,14 +564,25 @@ export class OkLightbox extends LitElement {
     </button>`;
   }
 
-  // Pantalla completa nativa sobre el overlay portado (con fallback silencioso si no se concede).
-  private toggleFullscreen(): void {
-    const box = this.portalRoot?.querySelector('.lightbox') as HTMLElement | null;
+  /** El `.lightbox` vive en el portal, que tiene shadow root PROPIO: no está en este `shadowRoot`. */
+  private boxEl(): HTMLElement | null {
+    return (this.portalRoot?.querySelector('.lightbox') as HTMLElement | null) ?? null;
+  }
+
+  // Pantalla completa nativa sobre el overlay portado.
+  //
+  // Pregunta por ESTE overlay, no por «¿hay algo a pantalla completa?»: con el shell del Hub en modo
+  // inmersivo la pregunta global era siempre que sí, y el botón cerraba el modo del shell en vez de
+  // agrandar la galería. `isActive` mira además el shadow root del portal, porque
+  // `document.fullscreenElement` reporta el HOST del portal y nunca el `.lightbox`.
+  private async toggleFullscreen(): Promise<void> {
+    const box = this.boxEl();
     if (!box) return;
-    if (document.fullscreenElement) {
-      void document.exitFullscreen?.();
-    } else {
-      void box.requestFullscreen?.().catch(() => undefined);
+    try {
+      await toggle(box);
+    } catch {
+      // Denegado por política o sin gesto válido: la galería sigue viéndose igual de bien en la
+      // ventana normal, y el estado real lo reporta `onChange`, que es quien manda sobre el icono.
     }
   }
 }

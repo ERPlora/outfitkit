@@ -1848,7 +1848,9 @@ video.addEventListener('ok-pause', () => …);
 video.addEventListener('ok-ended', () => …);`,
     api: [
       { kind: 'prop', name: 'src · poster', type: 'string', detail: 'URL del vídeo · imagen de portada' },
+      { kind: 'prop', name: 'labels', type: 'object', detail: 'Textos (default inglés): play, pause, mute, unmute, volume, fullscreen, exitFullscreen' },
       { kind: 'event', name: 'ok-play · ok-pause · ok-ended', type: '—', detail: 'Reproducir · pausar · fin' },
+      { kind: 'nota', name: 'pantalla completa', type: '—', detail: 'El botón solo se pinta si el navegador puede hacerlo; en el iPhone usa el reproductor del sistema. Sigue Esc/F11 y no interfiere con el modo inmersivo del Hub' },
     ],
   },
   {
@@ -2662,7 +2664,7 @@ lb.addEventListener('ok-close', () => { lb.open = false; });
 lb.addEventListener('ok-index', (e) => { lb.index = e.detail.index; });
     },
     code: "const lb = document.querySelector('ok-lightbox');\nlb.items = [\n  { src: '/media/fresas.webp', alt: 'Fresas frescas' },\n  { src: '/media/clip.mp4', type: 'video', thumb: '/media/clip-thumb.webp' },\n];\nlb.labels = { prev: 'Anterior', next: 'Siguiente', close: 'Cerrar', download: 'Descargar', fullscreen: 'Pantalla completa' };\nlb.addEventListener('ok-close', () => { lb.open = false; });\nlb.addEventListener('ok-index', (e) => { lb.index = e.detail.index; });\n// abrir desde una miniatura:\nlb.index = 0; lb.open = true;",
-    api: [{"kind": "prop", "name": ".items", "type": "OkLightboxItem[]", "detail": "Medios a mostrar: { src, alt?, type?: 'img'|'video', thumb? }"}, {"kind": "prop", "name": "index", "type": "number", "detail": "Indice activo (0-based); se clampa a los limites"}, {"kind": "prop", "name": "open", "type": "boolean", "detail": "Muestra/oculta el visor (overlay portado a document.body)"}, {"kind": "prop", "name": ".labels", "type": "Partial<OkLightboxLabels>", "detail": "Textos aria traducibles (prev/next/close/download/fullscreen); merge sobre defaults en ingles"}, {"kind": "event", "name": "ok-index", "type": "CustomEvent<{ index:number }>", "detail": "Emitido al cambiar de medio (flecha, miniatura o teclado)"}, {"kind": "event", "name": "ok-close", "type": "CustomEvent", "detail": "Emitido al cerrar (Esc, boton cerrar); el consumidor pone open=false"}],
+    api: [{"kind": "prop", "name": ".items", "type": "OkLightboxItem[]", "detail": "Medios a mostrar: { src, alt?, type?: 'img'|'video', thumb? }"}, {"kind": "prop", "name": "index", "type": "number", "detail": "Indice activo (0-based); se clampa a los limites"}, {"kind": "prop", "name": "open", "type": "boolean", "detail": "Muestra/oculta el visor (overlay portado a document.body)"}, {"kind": "prop", "name": ".labels", "type": "Partial<OkLightboxLabels>", "detail": "Textos aria traducibles (prev/next/close/download/fullscreen/exitFullscreen); merge sobre defaults en ingles"}, {"kind": "nota", "name": "pantalla completa", "detail": "El boton solo se pinta si el navegador puede hacerlo (no en iOS Safari, ni en un iframe sin allow=fullscreen). No interfiere con el modo inmersivo del Hub", "type": "\u2014"}, {"kind": "event", "name": "ok-index", "type": "CustomEvent<{ index:number }>", "detail": "Emitido al cambiar de medio (flecha, miniatura o teclado)"}, {"kind": "event", "name": "ok-close", "type": "CustomEvent", "detail": "Emitido al cerrar (Esc, boton cerrar); el consumidor pone open=false"}],
   },
   {
     id: "ok-cropper",

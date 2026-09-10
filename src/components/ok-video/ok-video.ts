@@ -1,7 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
-import { iconExpandOutline, okIcon } from '../../base/icons.js';
+import { iconContractOutline, iconExpandOutline, okIcon } from '../../base/icons.js';
+import { isActive, isCapable, onChange, toggle } from '../../base/fullscreen.js';
 import { tapTarget } from '../../base/tap-target.js';
 
 // ok-video — reproductor de vídeo con controles PROPIOS sobre un `<video>` nativo (sin libs).
@@ -28,8 +29,10 @@ export interface OkVideoLabels {
   unmute: string;
   /** aria-label del slider de volumen. */
   volume: string;
-  /** aria-label del botón de pantalla completa. */
+  /** aria-label del botón de pantalla completa (acción: entrar). */
   fullscreen: string;
+  /** aria-label del mismo botón cuando ya está en pantalla completa (acción: salir). */
+  exitFullscreen: string;
 }
 
 const DEFAULT_LABELS: OkVideoLabels = {
@@ -39,7 +42,18 @@ const DEFAULT_LABELS: OkVideoLabels = {
   unmute: 'Unmute',
   volume: 'Volume',
   fullscreen: 'Fullscreen',
+  exitFullscreen: 'Exit fullscreen',
 };
+
+/** iOS Safari no trae la Fullscreen API de elemento, pero un <video> sí sabe irse a pantalla
+ * completa por su cuenta. Es el ÚNICO prefijo que compramos: aquí sí da funcionalidad real. */
+type WebkitFullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+
+function hasIosVideoFullscreen(): boolean {
+  if (typeof HTMLVideoElement === 'undefined') return false;
+  const proto = HTMLVideoElement.prototype as WebkitFullscreenVideo;
+  return typeof proto.webkitEnterFullscreen === 'function';
+}
 
 export class OkVideo extends LitElement {
   static styles = [tapTarget, css`
@@ -197,6 +211,12 @@ export class OkVideo extends LitElement {
   @state() private volume = 1;
   @state() private muted = false;
 
+  /** ¿Es ESTE vídeo el que está en pantalla completa? Cambia también por Esc y F11, no solo por
+   * nuestro botón, así que se sincroniza escuchando a `onChange` y no al pulsar. */
+  @state() private fullscreenOn = false;
+
+  private stopFullscreenWatch?: () => void;
+
   @query('video') private videoEl!: HTMLVideoElement;
   @query('.stage') private stageEl!: HTMLElement;
 
@@ -275,13 +295,43 @@ export class OkVideo extends LitElement {
     if (this.videoEl) this.videoEl.muted = this.muted;
   }
 
-  // Pantalla completa con la API nativa (sobre el contenedor, para conservar los controles).
-  private toggleFullscreen(): void {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else if (this.stageEl?.requestFullscreen) {
-      this.stageEl.requestFullscreen();
+  // Pantalla completa sobre el CONTENEDOR (no sobre el <video>), para conservar nuestros controles.
+  //
+  // La pregunta es «¿estoy YO en pantalla completa?», nunca «¿hay algo en pantalla completa?»: el
+  // shell del Hub en modo inmersivo ya tiene `documentElement` a pantalla completa, y la pregunta
+  // global hacía que este botón cerrase el modo del shell en vez de agrandar el vídeo.
+  private async onFullscreen(): Promise<void> {
+    if (isCapable(this.stageEl)) {
+      try {
+        await toggle(this.stageEl);
+      } catch {
+        // Denegado por política o sin gesto válido: no hay nada que contarle a quien mira el vídeo,
+        // y el estado real lo reporta `onChange`, que es quien manda sobre el icono.
+      }
+      return;
     }
+    // iPhone: no hay Fullscreen API de elemento, pero el propio <video> sí sabe irse a pantalla
+    // completa con el reproductor del sistema. No tiene contrapartida de salida — la cierra el
+    // sistema, y por eso tampoco toca `fullscreenOn`.
+    (this.videoEl as WebkitFullscreenVideo | undefined)?.webkitEnterFullscreen?.();
+  }
+
+  /** ¿Tiene sentido pintar el botón? Un control que no puede funcionar no se ofrece. */
+  private get canFullscreen(): boolean {
+    return isCapable() || hasIosVideoFullscreen();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.stopFullscreenWatch = onChange(() => {
+      this.fullscreenOn = isActive(this.stageEl);
+    });
+  }
+
+  override disconnectedCallback(): void {
+    this.stopFullscreenWatch?.();
+    this.stopFullscreenWatch = undefined;
+    super.disconnectedCallback();
   }
 
   // Formatea segundos a m:ss (sin libs de fechas).
@@ -361,14 +411,19 @@ export class OkVideo extends LitElement {
             />
           </div>
 
-          <ion-button
-            fill="clear"
-            size="small"
-            aria-label=${this.t.fullscreen}
-            @click=${this.toggleFullscreen}
-          >
-            <ion-icon slot="icon-only" .icon=${iconExpandOutline}></ion-icon>
-          </ion-button>
+          ${this.canFullscreen
+            ? html`<ion-button
+                fill="clear"
+                size="small"
+                aria-label=${this.fullscreenOn ? this.t.exitFullscreen : this.t.fullscreen}
+                @click=${this.onFullscreen}
+              >
+                <ion-icon
+                  slot="icon-only"
+                  .icon=${this.fullscreenOn ? iconContractOutline : iconExpandOutline}
+                ></ion-icon>
+              </ion-button>`
+            : null}
         </div>
       </div>
     `;

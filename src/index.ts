@@ -12,6 +12,9 @@ export { OkStore } from './components/ok-store/ok-store.js';
 export { bindTabbar, tabbarOverflow, syncTabbarOverflow, scrollActiveTabIntoView, shouldHintScroll, hintScroll } from './tabbar/tabbar.js';
 export type { TabbarOverflow } from './tabbar/tabbar.js';
 
+// ── Pantalla completa (utilidad, no componente: misma familia que anchor/relay de base/) ───
+export { isCapable, isActive, activeEl, request, exit, toggle, onChange } from './base/fullscreen.js';
+
 // ── Compuesto / datos ─────────────────────────────────────────────────────────────────────
 export { OkDataTable } from './components/ok-data-table/ok-data-table.js';
 export type {
