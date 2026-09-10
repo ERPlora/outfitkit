@@ -3,6 +3,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+/** Espejo de `FADE_PX` en `tabbar.ts` (no se exporta: es interno del módulo). */
+const FADE_PX_ESPERADO = 36;
+
 // The CSS half of the drag: `bindTabbar` adds `.ok-tabbar-dragging` while a pointer drag is live,
 // and `tabbar.css` is what makes the strip FEEL dragged. Without `user-select:none` the mouse drag
 // selects the tab labels instead of panning, which is the classic "this is broken" look.
@@ -16,6 +19,15 @@ describe('tabbar.css - the drag affordance', () => {
   );
   const rule = (selector: string): string =>
     (css.match(new RegExp(`${selector.replace(/[.[\]()-]/g, '\\$&')}\\s*\\{[^}]*\\}`, 'g')) ?? []).join('\n');
+
+  // The reveal (hub#1734) has to clear the gradient by exactly the gradient's own width, and that
+  // width lives in the CSS. Two numbers that must agree in two files is a drift waiting to happen,
+  // so it is pinned here: move `--ok-tabbar-fade` alone and this fails.
+  it('the fade width the CSS paints is the one the reveal clears', () => {
+    const [, ancho] = css.match(/--ok-tabbar-fade\s*,\s*(\d+)px/) ?? [];
+    expect(ancho, 'the CSS no longer declares a default fade width').toBeDefined();
+    expect(Number(ancho)).toBe(FADE_PX_ESPERADO);
+  });
 
   it('the strip advertises it can be grabbed', () => {
     expect(rule('.ok-tabbar')).toMatch(/cursor\s*:\s*grab/);

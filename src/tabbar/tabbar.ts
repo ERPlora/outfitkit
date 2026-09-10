@@ -19,6 +19,12 @@ export type TabbarOverflow = 'none' | 'start' | 'end' | 'both';
 
 /** Margen de subpíxel: `scrollLeft` es fraccionario y nunca iguala exactamente al tope. */
 const EPSILON = 1;
+/**
+ * Ancho del degradado de borde. Espejo del default de `--ok-tabbar-fade` en `tabbar.css`, y lo
+ * ata un test de paridad: si se mueve uno sin el otro, revelar una pestaña volvería a dejarla
+ * debajo del fade — que es justo el fallo que revelarla vino a quitar.
+ */
+const FADE_PX = 36;
 /** Cuánto se asoma la barra al dar la pista, y cuánto tarda en volver. */
 const HINT_PX = 28;
 const HINT_VUELTA_MS = 420;
@@ -68,15 +74,22 @@ export function scrollActiveTabIntoView(segment: HTMLElement | null): void {
 
   const activa = segment.querySelector<HTMLElement>('.segment-button-checked');
   if (!activa) return;
-  if (segment.scrollWidth <= segment.clientWidth) return;
+  const maximo = segment.scrollWidth - segment.clientWidth;
+  if (maximo <= 0) return;
 
   const inicio = activa.offsetLeft;
   const fin = inicio + activa.offsetWidth;
   const visibleInicio = segment.scrollLeft;
   const visibleFin = visibleInicio + segment.clientWidth;
 
-  if (inicio < visibleInicio) segment.scrollLeft = inicio;
-  else if (fin > visibleFin) segment.scrollLeft = fin - segment.clientWidth;
+  // Se deja el ancho del degradado de margen: dejar la pestaña A RAS del borde la mete debajo del
+  // fade, que se lee como "cortada" — el efecto exacto que el degradado existe para evitar. Se
+  // acota a [0, máximo], así que en los extremos queda pegada al borde de verdad y ahí el
+  // degradado ya se apaga solo. Medido en el banco: sin el margen, la última pestaña de Ajustes se
+  // revelaba a 78 con el máximo en 82, y el `both` resultante la volvía a tapar.
+  const acotar = (v: number): number => Math.max(0, Math.min(v, maximo));
+  if (inicio < visibleInicio) segment.scrollLeft = acotar(inicio - FADE_PX);
+  else if (fin > visibleFin) segment.scrollLeft = acotar(fin - segment.clientWidth + FADE_PX);
 }
 
 /**

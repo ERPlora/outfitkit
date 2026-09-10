@@ -253,6 +253,35 @@ describe('bindTabbar - reveals the active tab', () => {
     expect(seg.scrollLeft).toBe(0); // no reveal fired: the write was not a tab change
   });
 
+  // Measured on the bench at 390px (`/settings#data`): the strip is 464px in a 382px bar and the
+  // last tab ENDS at 460 -- there are 4px of trailing padding after it. Aligning that tab flush
+  // with the right edge lands on 78 while the maximum is 82, so `data-overflow` stays `both` and
+  // the 36px gradient falls straight onto the tab that was just revealed. The unit geometry above
+  // hides this because there the last tab ends exactly at `scrollWidth`.
+  function benchSegment(): HTMLElement {
+    const seg = document.createElement('ion-segment');
+    metricas(seg, { clientWidth: 382, scrollWidth: 464 });
+    const anchos = [0, 88, 176, 264, 372];
+    anchos.forEach((left, i) => {
+      const b = document.createElement('ion-segment-button');
+      if (i === anchos.length - 1) b.classList.add('segment-button-checked');
+      metricas(b, { offsetLeft: left, offsetWidth: 88 });
+      seg.appendChild(b);
+    });
+    seg.scrollLeft = 0;
+    document.body.appendChild(seg);
+    return seg;
+  }
+
+  it('reveals the last tab CLEAR of the gradient, not flush under it', () => {
+    const seg = benchSegment();
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(82); // the maximum: nothing left to the right
+    expect(seg.dataset.overflow).toBe('start'); // so the fade sits on the LEFT, off the active tab
+  });
+
   it('the cleanup stops following the active tab too', async () => {
     const seg = segmentCon(6, 0, 382);
     const cleanup = bindTabbar(seg, { hint: false });
