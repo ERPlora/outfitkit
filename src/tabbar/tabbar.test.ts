@@ -173,6 +173,100 @@ describe('bindTabbar', () => {
   });
 });
 
+// REVEALING THE ACTIVE TAB (hub#1734). `scrollActiveTabIntoView` was written, documented and unit
+// tested from the start -- and `bindTabbar`, the call the docs describe as "the only one the
+// consumer needs", never invoked it. So no consumer got it: landing on a deep link, on `back`, or
+// on the last tab left the SELECTED tab off screen with the bar still at `scrollLeft: 0`. Measured
+// on the bench at 390px: `/settings#data` put the checked tab 78px past the right edge.
+describe('bindTabbar - reveals the active tab', () => {
+  it('on mount, brings a route-selected tab into view: the checked tab cannot start off screen', () => {
+    const seg = segmentCon(6, 5, 382); // strip 504px, last tab at 420..504
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(122); // 504 - 382: the checked tab ends flush with the right edge
+  });
+
+  it('leaves the bar alone when the active tab already fits: no unrequested movement', () => {
+    const seg = segmentCon(6, 0, 382);
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(0);
+  });
+
+  it('moves the gradient after revealing, or the fade would sit on the tab it just revealed', () => {
+    const seg = segmentCon(6, 5, 382);
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.dataset.overflow).toBe('start');
+  });
+
+  it('follows the active tab when it CHANGES, not only on mount', async () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(0);
+
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[0].classList.remove('segment-button-checked');
+    botones[5].classList.add('segment-button-checked');
+
+    await vi.waitFor(() => expect(seg.scrollLeft).toBe(122));
+  });
+
+  it('does not hint on top of the reveal: the bar already moved, a second jerk reads as a glitch', () => {
+    vi.useFakeTimers();
+    const seg = segmentCon(6, 5, 382);
+    const movs: number[] = [];
+    seg.scrollTo = ((o: { left: number }) => movs.push(o.left)) as unknown as typeof seg.scrollTo;
+
+    bindTabbar(seg); // hint ON on purpose
+
+    vi.advanceTimersByTime(500);
+    expect(movs).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('still hints when nothing had to be revealed: the discovery cue is not lost', () => {
+    vi.useFakeTimers();
+    const seg = segmentCon(6, 0, 382);
+    const movs: number[] = [];
+    seg.scrollTo = ((o: { left: number }) => movs.push(o.left)) as unknown as typeof seg.scrollTo;
+
+    bindTabbar(seg);
+
+    vi.advanceTimersByTime(500);
+    expect(movs).toEqual([28]);
+    vi.useRealTimers();
+  });
+
+  it('ignores its OWN `data-overflow`: watching every attribute would feed the observer its own writes', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(122); // revealed on mount
+
+    seg.scrollLeft = 0; // the user slides back to the start
+    seg.dataset.overflow = 'none'; // and something rewrites the published state
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0); // no reveal fired: the write was not a tab change
+  });
+
+  it('the cleanup stops following the active tab too', async () => {
+    const seg = segmentCon(6, 0, 382);
+    const cleanup = bindTabbar(seg, { hint: false });
+    cleanup();
+
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[0].classList.remove('segment-button-checked');
+    botones[5].classList.add('segment-button-checked');
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0);
+  });
+});
+
 // POINTER DRAG (the POS symptom): the category strip moved with the wheel but not by pressing and
 // dragging. With a FINGER the browser already pans on its own -- `scrollable` disables Ionic's
 // internal segment gesture and leaves `overflow-x:auto` -- but no browser turns a MOUSE drag into

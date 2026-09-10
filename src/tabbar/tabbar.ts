@@ -116,7 +116,12 @@ export function hintScroll(segment: HTMLElement | null): void {
  * - `scroll` → el usuario desliza;
  * - `ResizeObserver` → cambia el ancho disponible (rotar el móvil, plegar el menú);
  * - `MutationObserver` → cambia el NÚMERO de pestañas sin cambiar el ancho (un shell que las carga
- *   async desde un manifest), caso en el que el ResizeObserver no se entera.
+ *   async desde un manifest), caso en el que el ResizeObserver no se entera; y cambia CUÁL está
+ *   marcada, que es la otra mitad: la activa la fija la ruta tanto como el dedo.
+ *
+ * Y revela la pestaña activa — al montar y cada vez que cambia. `scrollActiveTabIntoView` existía,
+ * documentado y probado, pero nadie lo llamaba: el consumidor solo llama aquí, así que en la
+ * práctica no lo tenía nadie (hub#1734).
  *
  * `hint: false` desactiva la pista de movimiento (el degradado se mantiene).
  */
@@ -240,7 +245,18 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   segment.classList.add(CLASE);
   const sync = (): void => syncTabbarOverflow(segment);
-  sync();
+
+  /**
+   * Revelar y luego publicar, en ese orden: el degradado describe DÓNDE está la barra, así que
+   * calcularlo antes de moverla lo dejaría marcando el borde equivocado — el fade acabaría
+   * justo encima de la pestaña que se acaba de revelar, que es el efecto de "roto" que evita.
+   */
+  const revelarActiva = (): void => {
+    scrollActiveTabIntoView(segment);
+    sync();
+  };
+
+  revelarActiva();
 
   segment.addEventListener('scroll', sync, { passive: true });
 
@@ -248,8 +264,12 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
   ro?.observe(segment);
-  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(sync) : null;
-  mo?.observe(segment, { childList: true });
+  // `attributeFilter: ['class']` no es cosmético: sin filtro, el `data-overflow` que escribe `sync`
+  // volvería a disparar este observer sobre sí mismo. Con el filtro solo entran las clases, que es
+  // donde Ionic mueve `segment-button-checked`. Revelar es idempotente, así que las otras clases
+  // que Ionic toquetea (`ion-activated`…) no hacen daño: si la activa ya se ve, no mueve nada.
+  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(revelarActiva) : null;
+  mo?.observe(segment, { childList: true, subtree: true, attributeFilter: ['class'] });
 
   let pista: ReturnType<typeof setTimeout> | null = null;
   if (opts.hint !== false) {
