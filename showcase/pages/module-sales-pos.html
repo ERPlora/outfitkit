@@ -273,6 +273,7 @@
   <body>
     <script type="module">
       import { defineHubPage } from './_hub.js';
+      import { isCapable, toggle as toggleFullscreen } from '../../dist/outfitkit.js';
 
       // Fixtures oficiales de modules/sales/fixtures/. El preview no inventa catálogo ni pagos.
       const PRODUCT_FIXTURE = [
@@ -869,12 +870,19 @@
           });
           doc.getElementById('pos-open-cart').addEventListener('click', () => cartElement.setAttribute('data-open', ''));
           doc.getElementById('pos-close-cart').addEventListener('click', () => cartElement.removeAttribute('data-open'));
-          doc.getElementById('pos-fullscreen').addEventListener('click', async () => {
-            try {
-              if (doc.fullscreenElement) await doc.exitFullscreen();
-              else await doc.querySelector('.pos-canvas').requestFullscreen();
-            } catch { /* El navegador puede rechazar pantalla completa. */ }
-          });
+          // Pantalla completa por la puerta ÚNICA de la librería: pregunta por el lienzo del TPV,
+          // no por «¿hay algo a pantalla completa?» — con el shell inmersivo esa pregunta global
+          // sacaba al shell del modo en vez de agrandar el TPV.
+          const posFullscreen = doc.getElementById('pos-fullscreen');
+          if (isCapable()) {
+            posFullscreen.addEventListener('click', async () => {
+              try {
+                await toggleFullscreen(doc.querySelector('.pos-canvas'));
+              } catch { /* Denegado por política o sin gesto válido: el TPV sigue igual de usable. */ }
+            });
+          } else {
+            posFullscreen.remove(); // Un control que no puede funcionar no se ofrece (iOS Safari).
+          }
 
           renderCategories();
           renderProducts();

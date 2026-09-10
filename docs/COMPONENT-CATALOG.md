@@ -138,7 +138,7 @@ lo que Ionic no trae.
 - `ok-qr` — Generador de código QR autocontenido (SVG, sin dependencias). · props: `value`, `ec`, `size · margin`, `color · background`
 - `ok-receipt` — Tiquet/recibo de venta (POS) presentacional: recibe un JSON (prop .receipt) y lo pinta con estética de impresora térmica (80mm). · props: `receipt`, `receipt.table`, `receipt.decimals`, `lines[].components · lines[].modifiers`, `qr-size`
 - `ok-signature` — Pad de firma sobre canvas con trazo suavizado y soporte HiDPI (devicePixelRatio). · props: `pen-color · line-width`, `background · height`, `show-export` · eventos: `clear() · toDataURL() · isEmpty()`, `ok-change · ok-clear`
-- `ok-video` — Reproductor de vídeo responsive (aspect-ratio 16/9) con controles propios y póster. · props: `src · poster` · eventos: `ok-play · ok-pause · ok-ended`
+- `ok-video` — Reproductor de vídeo responsive (aspect-ratio 16/9) con controles propios y póster. · props: `src · poster`, `labels` · eventos: `ok-play · ok-pause · ok-ended`
 
 ## Estado (1)
 
