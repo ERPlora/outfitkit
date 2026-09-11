@@ -100,20 +100,20 @@ beforeEach(() => {
   viewport(false);
 });
 
-describe('ok-data-table · ganchos data-testid del cromo (#143)', () => {
-  it('sin prefijo no pinta NINGÚN gancho: quien no lo pide no ve ningún cambio', async () => {
+describe('ok-data-table · data-testid hooks of the chrome (#143)', () => {
+  it('paints NO hook without a prefix: whoever does not ask sees no change', async () => {
     const table = await mount({ testid: undefined });
 
     expect(hooks(table)).toEqual([]);
   });
 
-  it('un prefijo en blanco tampoco pinta ganchos (no deja `-add` suelto)', async () => {
+  it('paints no hook for a blank prefix either (no dangling `-add`)', async () => {
     const table = await mount({ testid: '   ' });
 
     expect(hooks(table)).toEqual([]);
   });
 
-  it('nombra la barra: alta, acción primaria, buscador e import/export CSV', async () => {
+  it('names the toolbar: add, primary action, search and CSV import/export', async () => {
     const table = await mount({ primaryAction: { id: 'import', label: 'Importar' } });
 
     expect(byTestId(table, 'products-table-add')).toHaveLength(1);
@@ -124,16 +124,16 @@ describe('ok-data-table · ganchos data-testid del cromo (#143)', () => {
     expect(byTestId(table, 'products-table-search')).toHaveLength(1);
     expect(byTestId(table, 'products-table-search')[0].tagName.toLowerCase()).toBe('ion-searchbar');
 
-    // El gancho de importar va en el `<input type=file>`, no en el botón bonito que lo dispara:
-    // es lo que un spec rellena (`setInputFiles`), y el diálogo nativo del botón no lo conduce
-    // nadie. Mismo criterio que `GrantFilePicker.vue` en el Hub.
+    // The import hook goes on the `<input type=file>`, not on the pretty button that triggers it:
+    // that is what a spec fills (`setInputFiles`), and nobody drives the button's native dialog.
+    // Same criterion as `GrantFilePicker.vue` in the Hub.
     expect(byTestId(table, 'products-table-csv-import')).toHaveLength(1);
     expect(byTestId(table, 'products-table-csv-import')[0].tagName.toLowerCase()).toBe('input');
 
     expect(byTestId(table, 'products-table-csv-export')).toHaveLength(1);
   });
 
-  it('nombra cada fila y cada acción con la identidad de la fila, nunca por posición', async () => {
+  it('names every row and every row action by the row identity, never by position', async () => {
     const table = await mount();
 
     expect(byTestId(table, 'products-table-row-r1')).toHaveLength(1);
@@ -142,11 +142,11 @@ describe('ok-data-table · ganchos data-testid del cromo (#143)', () => {
     expect(byTestId(table, 'products-table-row-r1-delete')).toHaveLength(1);
     expect(byTestId(table, 'products-table-row-r2-edit')).toHaveLength(1);
 
-    // La fila 11 está en la segunda página: su gancho NO existe todavía.
+    // Row 11 is on the second page: its hook does NOT exist yet.
     expect(byTestId(table, 'products-table-row-r11')).toHaveLength(0);
   });
 
-  it('nombra también las filas en vista TARJETAS (el arranque del móvil)', async () => {
+  it('names the rows in the CARDS view too (the mobile default)', async () => {
     const table = await mount({ views: true, defaultView: 'cards' });
 
     expect(byTestId(table, 'products-table-row-r1')).toHaveLength(1);
@@ -154,50 +154,50 @@ describe('ok-data-table · ganchos data-testid del cromo (#143)', () => {
     expect(byTestId(table, 'products-table-row-r1-edit')).toHaveLength(1);
   });
 
-  it('nombra el pager en escritorio', async () => {
+  it('names the desktop pager', async () => {
     const table = await mount();
 
     expect(byTestId(table, 'products-table-page-prev')).toHaveLength(1);
     expect(byTestId(table, 'products-table-page-next')).toHaveLength(1);
   });
 
-  it('en MÓVIL el pie es «cargar más», y lleva su propio gancho', async () => {
+  it('on MOBILE the footer is «load more», with its own hook', async () => {
     viewport(true);
     const table = await mount();
 
-    // El pager numerado no existe en móvil (#78): sin este gancho, un spec de teléfono —el
-    // viewport del TPV— no tiene forma de pedir la siguiente tanda de filas.
+    // The numbered pager does not exist on mobile (#78): without this hook a phone spec — the
+    // POS viewport — has no way to ask for the next batch of rows.
     expect(byTestId(table, 'products-table-page-next')).toHaveLength(0);
     expect(byTestId(table, 'products-table-load-more')).toHaveLength(1);
   });
 
-  it('con las acciones PLEGADAS el gancho vive en el menú y NO se duplica', async () => {
+  it('with the actions COLLAPSED the hook lives in the menu and is NOT duplicated', async () => {
     const table = await mount();
     table.rowActionsCollapsed = true;
     await table.updateComplete;
 
-    // El disparador del menú de la fila tiene nombre propio…
+    // The row menu trigger has a name of its own…
     expect(byTestId(table, 'products-table-row-r1-menu')).toHaveLength(1);
     (byTestId(table, 'products-table-row-r1-menu')[0] as HTMLElement).click();
     await table.updateComplete;
 
-    // …y la acción se llama IGUAL esté plegada o no, así que el mismo spec vale a cualquier
-    // ancho. Una sola vez: dos elementos con el gancho harían que `getByTestId` eligiera al azar.
+    // …and the action is named the SAME collapsed or not, so one spec works at any width. Exactly
+    // once: two elements with the hook would make `getByTestId` pick one at random.
     expect(byTestId(table, 'products-table-row-r1-edit')).toHaveLength(1);
     expect(byTestId(table, 'products-table-row-r1-edit')[0].tagName.toLowerCase()).toBe('ion-item');
 
-    // Al desplegarse de nuevo el gancho vuelve al botón directo, y sigue habiendo uno solo.
+    // When it unfolds again the hook returns to the direct button, and there is still only one.
     table.rowActionsCollapsed = false;
     await table.updateComplete;
     expect(byTestId(table, 'products-table-row-r1-edit')).toHaveLength(1);
     expect(byTestId(table, 'products-table-row-r1-edit')[0].tagName.toLowerCase()).toBe('ion-button');
   });
 
-  it('dos tablas en la misma pantalla no comparten NI UN gancho', async () => {
+  it('two tables on the same screen share NOT ONE hook', async () => {
     const products = await mount({ testid: 'products-table' });
     const customers = await mount({ testid: 'customers-table' });
 
-    // Sin esta primera aserción la comparación sería verde con las dos tablas mudas.
+    // Without this first assertion the comparison would be green with both tables mute.
     expect(hooks(products).length).toBeGreaterThan(0);
     expect(hooks(customers).length).toBeGreaterThan(0);
 
@@ -206,11 +206,60 @@ describe('ok-data-table · ganchos data-testid del cromo (#143)', () => {
     expect(hooks(customers).every((h) => h.startsWith('customers-table-'))).toBe(true);
   });
 
-  it('TODO gancho que pinta la tabla sale del prefijo del host — ninguno es fijo', async () => {
+  it('EVERY hook the table paints derives from the host prefix — none is fixed', async () => {
     const table = await mount({ primaryAction: { id: 'import', label: 'Importar' } });
 
     const painted = hooks(table);
     expect(painted.length).toBeGreaterThan(0);
     expect(painted.filter((h) => !h.startsWith('products-table-'))).toEqual([]);
+  });
+
+  it('each hook drives the control it names, not merely an element that exists', async () => {
+    // A hook is a contract with specs in another repo: `-page-next` that goes BACK, or `-add`
+    // that fires `primaryAction` instead of opening the create panel, would pass a presence-only
+    // check and break every spec that trusts the name (mutants M1/M2 of the review of #145).
+    const table = await mount({ primaryAction: { id: 'import', label: 'Importar' } });
+    const events: Array<{ type: string; detail: unknown }> = [];
+    for (const type of ['rowAction', 'primaryAction']) {
+      table.addEventListener(type, (e) => events.push({ type, detail: (e as CustomEvent).detail }));
+    }
+
+    // `-search` filters the rows through the host's own searchbar.
+    const search = byTestId(table, 'products-table-search')[0] as HTMLInputElement;
+    search.value = 'Producto 12';
+    search.dispatchEvent(new Event('ionInput'));
+    await table.updateComplete;
+    expect(byTestId(table, 'products-table-row-r12')).toHaveLength(1);
+    expect(byTestId(table, 'products-table-row-r1')).toHaveLength(0);
+    search.value = '';
+    search.dispatchEvent(new Event('ionInput'));
+    await table.updateComplete;
+    expect(byTestId(table, 'products-table-row-r1')).toHaveLength(1);
+
+    // `-page-next` shows the second page (row 11 appears, row 1 leaves); `-page-prev` comes back.
+    expect(byTestId(table, 'products-table-row-r11')).toHaveLength(0);
+    (byTestId(table, 'products-table-page-next')[0] as HTMLElement).click();
+    await table.updateComplete;
+    expect(byTestId(table, 'products-table-row-r11')).toHaveLength(1);
+    expect(byTestId(table, 'products-table-row-r1')).toHaveLength(0);
+    (byTestId(table, 'products-table-page-prev')[0] as HTMLElement).click();
+    await table.updateComplete;
+    expect(byTestId(table, 'products-table-row-r1')).toHaveLength(1);
+    expect(byTestId(table, 'products-table-row-r11')).toHaveLength(0);
+
+    // `-row-r1-delete` emits rowAction for THAT row and THAT action.
+    (byTestId(table, 'products-table-row-r1-delete')[0] as HTMLElement).click();
+    expect(events).toContainEqual({ type: 'rowAction', detail: { actionId: 'delete', row: ROWS[0] } });
+
+    // `-primary-action` emits primaryAction and does NOT open the create panel…
+    (byTestId(table, 'products-table-primary-action')[0] as HTMLElement).click();
+    await table.updateComplete;
+    expect(events.some((e) => e.type === 'primaryAction')).toBe(true);
+    expect(table.renderRoot.querySelector('slot[name="create"]')).toBeNull();
+
+    // …while `-add` is the one that opens it.
+    (byTestId(table, 'products-table-add')[0] as HTMLElement).click();
+    await table.updateComplete;
+    expect(table.renderRoot.querySelector('slot[name="create"]')).not.toBeNull();
   });
 });

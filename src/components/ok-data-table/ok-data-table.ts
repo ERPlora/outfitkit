@@ -803,17 +803,17 @@ export class OkDataTable extends LitElement {
   /** (NUEVO) Cuerpo a medida de la tarjeta (string/HTML). Si se omite, se listan los campos. */
   @property({ attribute: false }) renderCard?: (row: Record<string, unknown>) => unknown;
 
-  /** #143 — Espacio de nombres de los `data-testid` del cromo: alta, acción primaria, buscador,
-   *  import/export CSV, filas, acciones de fila y pager. `testid="products-table"` produce
+  /** #143 — Namespace of the chrome's `data-testid` hooks: add, primary action, searchbar,
+   *  CSV import/export, rows, row actions and pager. `testid="products-table"` yields
    *  `products-table-add`, `products-table-search`, `products-table-row-<id>`…
    *
-   *  El prefijo lo da el HOST y no hay nombres fijos dentro a propósito: dos tablas en la misma
-   *  pantalla con el mismo gancho harían que `getByTestId` eligiera una al azar. Sin prefijo la
-   *  tabla no pinta ningún gancho, así que quien no lo pide no ve ningún cambio.
+   *  The HOST gives the prefix and there are no fixed names inside on purpose: two tables on the
+   *  same screen with the same hook would make `getByTestId` pick one at random. Without a prefix
+   *  the table paints no hook at all, so whoever does not ask sees no change.
    *
-   *  Convención: `architecture/hub/apps/testids.md` (`<superficie>-<acción>`, kebab-case, la
-   *  identidad de la fila al final). Un `data-testid` es un CONTRATO con los specs de QA, que
-   *  viven en otro repo: renombrar uno es un cambio de contrato. */
+   *  Convention: `architecture/hub/apps/testids.md` (`<surface>-<action>`, kebab-case, the row
+   *  identity at the end). A `data-testid` is a CONTRACT with the QA specs, which live in another
+   *  repo: renaming one is a contract change. */
   @property({ type: String }) testid?: string;
 
   // Estado interno SOLO del modo cliente.
@@ -1078,9 +1078,9 @@ export class OkDataTable extends LitElement {
     if (typeof this.rowKey === 'string') return String(row[this.rowKey] ?? '');
     return String(row[this.rowKeyField] ?? '');
   }
-  /** #143 — `<prefijo>-<sufijo>`, o `nothing` (= el atributo no se pinta) si el host no dio
-   *  prefijo. Un prefijo en blanco cuenta como ausente: `" "` dejaría ganchos `-add` sueltos,
-   *  idénticos en todas las tablas de la pantalla, que es justo lo que el prefijo evita. */
+  /** #143 — `<prefix>-<suffix>`, or `nothing` (= the attribute is not painted) when the host gave
+   *  no prefix. A blank prefix counts as absent: `" "` would leave dangling `-add` hooks, identical
+   *  on every table of the screen, which is exactly what the prefix prevents. */
   private tid(suffix: string): string | typeof nothing {
     const prefix = this.testid?.trim();
     return prefix ? `${prefix}-${suffix}` : nothing;
@@ -1517,11 +1517,11 @@ export class OkDataTable extends LitElement {
               const disabled = a.loading?.(row) === true || a.disabled?.(row) === true;
               const label = typeof a.label === 'function' ? a.label(row) : a.label;
               return html`
-                <!-- #143 — La acción se llama IGUAL esté plegada o no, así que el mismo spec vale
-                     a cualquier ancho. Solo la lleva mientras los botones directos NO están: el
-                     popover sobrevive al cierre («rowMenuRow» no se limpia), y si la tabla se
-                     vuelve a ensanchar habría DOS elementos con el gancho y «getByTestId»
-                     elegiría uno al azar. -->
+                <!-- #143 — The action is named the SAME collapsed or not, so one spec works at any
+                     width. It carries the hook only while the direct buttons are NOT there: the
+                     popover survives its dismissal («rowMenuRow» is not cleared), and if the table
+                     widened again there would be TWO elements with the hook and «getByTestId»
+                     would pick one at random. -->
                 <ion-item
                   button
                   data-testid=${this.rowActionsCollapsed ? this.tid(`row-${key}-${a.id}`) : nothing}
@@ -1773,8 +1773,8 @@ export class OkDataTable extends LitElement {
   // a phone. If you add a view that lays these buttons out, MEASURE it.
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
-    // #143 — La identidad de la fila va al final del gancho, NUNCA su posición: el orden cambia
-    // con cada filtro y el spec pasaría a afirmar sobre otra fila sin enterarse.
+    // #143 — The row identity goes at the end of the hook, NEVER its position: the order changes
+    // with every filter and the spec would silently start asserting on another row.
     const key = this.keyOf(row);
     // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
     // Shopify, Business Central o Salesforce en pantallas estrechas. Baja el mínimo de la tabla
@@ -1998,11 +1998,11 @@ export class OkDataTable extends LitElement {
                     ${this.effImport
                       ? html`
                           ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), this.t.importCsv)}
-                          <!-- #143 — El gancho de importar va en el INPUT, no en el botón que lo
-                               dispara: lo que un spec conduce es «setInputFiles», y el diálogo
-                               nativo del botón no lo abre nadie desde un test. Mismo criterio que
-                               «GrantFilePicker.vue» en el Hub (el gancho va en el control, no en
-                               su disfraz). -->
+                          <!-- #143 — The import hook goes on the INPUT, not on the button that
+                               triggers it: what a spec drives is «setInputFiles», and nobody opens
+                               the button's native dialog from a test. Same criterion as
+                               «GrantFilePicker.vue» in the Hub (the hook goes on the control, not
+                               on its disguise). -->
                           <input class="tk-file" data-testid=${this.tid('csv-import')} type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
                         `
                       : nothing}
@@ -2020,11 +2020,11 @@ export class OkDataTable extends LitElement {
                     ${this.renderOverflowMenu()}
                     ${this.primaryAction
                       ? html`
-                          <!-- #143 — Gancho propio y NO «-add»: «addable» y «primaryAction» son
-                               dos botones distintos que pueden convivir, y los dos se usan de
-                               verdad («addable» en los módulos, «primaryAction» en las pantallas
-                               del SaaS). Compartir nombre daría dos elementos con el mismo gancho
-                               en cuanto una pantalla declarase los dos. -->
+                          <!-- #143 — Its own hook and NOT «-add»: «addable» and «primaryAction» are
+                               two different buttons that may coexist, and both are really used
+                               («addable» in the modules, «primaryAction» in the SaaS screens).
+                               Sharing the name would give two elements with the same hook as soon
+                               as a screen declared both. -->
                           <ion-button class="primary-btn add-btn" data-testid=${this.tid('primary-action')} size="small" @click=${() => this.emit('primaryAction', {})}>
                             <ion-icon slot="start" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon>${this.primaryAction.label}
                           </ion-button>
