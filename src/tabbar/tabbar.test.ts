@@ -105,6 +105,24 @@ describe('scrollActiveTabIntoView', () => {
     scrollActiveTabIntoView(seg);
     expect(seg.scrollLeft).toBe(0);
   });
+
+  // The two cases above sit at `scrollLeft: 0`, where an implementation that ALWAYS re-aligns the
+  // checked tab lands on 0 anyway (the clamp hides it). Mid-strip is where "already visible" has
+  // to mean "do not move": the reveal runs on every class change of the strip now, so a
+  // non-idempotent reveal would jerk the bar on each press.
+  it('does not move the bar when the active tab is visible MID-strip either', () => {
+    const seg = segmentCon(10, 4, 382); // tab 4 at 336..420, window 200..582
+    seg.scrollLeft = 200;
+    scrollActiveTabIntoView(seg);
+    expect(seg.scrollLeft).toBe(200);
+  });
+
+  it('revealing to the LEFT clears the gradient too, not only to the right', () => {
+    const seg = segmentCon(10, 2, 382); // tab 2 at 168..252, off to the left of window 300..682
+    seg.scrollLeft = 300;
+    scrollActiveTabIntoView(seg);
+    expect(seg.scrollLeft).toBe(168 - 36); // one fade width before the tab, inside [0, max]
+  });
 });
 
 describe('shouldHintScroll', () => {
@@ -170,6 +188,160 @@ describe('bindTabbar', () => {
 
   it('sin segment devuelve un cleanup inocuo en vez de reventar', () => {
     expect(() => bindTabbar(null)()).not.toThrow();
+  });
+});
+
+// REVEALING THE ACTIVE TAB (hub#1734). `scrollActiveTabIntoView` was written, documented and unit
+// tested from the start -- and `bindTabbar`, the call the docs describe as "the only one the
+// consumer needs", never invoked it. So no consumer got it: landing on a deep link, on `back`, or
+// on the last tab left the SELECTED tab off screen with the bar still at `scrollLeft: 0`. Measured
+// on the bench at 390px: `/settings#data` put the checked tab 78px past the right edge.
+describe('bindTabbar - reveals the active tab', () => {
+  it('on mount, brings a route-selected tab into view: the checked tab cannot start off screen', () => {
+    const seg = segmentCon(6, 5, 382); // strip 504px, last tab at 420..504
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(122); // 504 - 382: the checked tab ends flush with the right edge
+  });
+
+  it('leaves the bar alone when the active tab already fits: no unrequested movement', () => {
+    const seg = segmentCon(6, 0, 382);
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(0);
+  });
+
+  it('moves the gradient after revealing, or the fade would sit on the tab it just revealed', () => {
+    const seg = segmentCon(6, 5, 382);
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.dataset.overflow).toBe('start');
+  });
+
+  it('follows the active tab when it CHANGES, not only on mount', async () => {
+    const seg = segmentCon(6, 0, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(0);
+
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[0].classList.remove('segment-button-checked');
+    botones[5].classList.add('segment-button-checked');
+
+    await vi.waitFor(() => expect(seg.scrollLeft).toBe(122));
+  });
+
+  it('does not hint on top of the reveal: the bar already moved, a second jerk reads as a glitch', () => {
+    vi.useFakeTimers();
+    const seg = segmentCon(6, 5, 382);
+    const movs: number[] = [];
+    seg.scrollTo = ((o: { left: number }) => movs.push(o.left)) as unknown as typeof seg.scrollTo;
+
+    bindTabbar(seg); // hint ON on purpose
+
+    vi.advanceTimersByTime(500);
+    expect(movs).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('still hints when nothing had to be revealed: the discovery cue is not lost', () => {
+    vi.useFakeTimers();
+    const seg = segmentCon(6, 0, 382);
+    const movs: number[] = [];
+    seg.scrollTo = ((o: { left: number }) => movs.push(o.left)) as unknown as typeof seg.scrollTo;
+
+    bindTabbar(seg);
+
+    vi.advanceTimersByTime(500);
+    expect(movs).toEqual([28]);
+    vi.useRealTimers();
+  });
+
+  it('ignores its OWN `data-overflow`: watching every attribute would feed the observer its own writes', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(122); // revealed on mount
+
+    seg.scrollLeft = 0; // the user slides back to the start
+    seg.dataset.overflow = 'none'; // and something rewrites the published state
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0); // no reveal fired: the write was not a tab change
+  });
+
+  // Measured on the bench at 390px (`/settings#data`): the strip is 464px in a 382px bar and the
+  // last tab ENDS at 460 -- there are 4px of trailing padding after it. Aligning that tab flush
+  // with the right edge lands on 78 while the maximum is 82, so `data-overflow` stays `both` and
+  // the 36px gradient falls straight onto the tab that was just revealed. The unit geometry above
+  // hides this because there the last tab ends exactly at `scrollWidth`.
+  function benchSegment(): HTMLElement {
+    const seg = document.createElement('ion-segment');
+    metricas(seg, { clientWidth: 382, scrollWidth: 464 });
+    const anchos = [0, 88, 176, 264, 372];
+    anchos.forEach((left, i) => {
+      const b = document.createElement('ion-segment-button');
+      if (i === anchos.length - 1) b.classList.add('segment-button-checked');
+      metricas(b, { offsetLeft: left, offsetWidth: 88 });
+      seg.appendChild(b);
+    });
+    seg.scrollLeft = 0;
+    document.body.appendChild(seg);
+    return seg;
+  }
+
+  it('reveals the last tab CLEAR of the gradient, not flush under it', () => {
+    const seg = benchSegment();
+
+    bindTabbar(seg, { hint: false });
+
+    expect(seg.scrollLeft).toBe(82); // the maximum: nothing left to the right
+    expect(seg.dataset.overflow).toBe('start'); // so the fade sits on the LEFT, off the active tab
+  });
+
+  // Ionic marks EVERY press with a class -- `ion-activated`, and `ion-segment-button` carries
+  // `ion-activatable-instant`, so it lands on `pointerdown` itself -- and the observer now watches
+  // classes. A press is not a change of selection: when the person has panned the strip away from
+  // the checked tab and touches another one, revealing on that press yanks the strip back under
+  // their finger BEFORE the tap lands. Measured on the bench (`/settings#data`, 390px): with
+  // «Datos y copias» checked and the bar panned to 0, `mousedown` on «General» moved the bar to
+  // 82 before `mouseup`. Same story for the strip's own drag class: a mouse drag starts with it.
+  it('a press on another tab does not yank the bar back to the checked one', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(122); // revealed on mount
+
+    seg.scrollLeft = 0; // the person panned back to the start...
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[1].classList.add('ion-activated'); // ...and pressed the second tab
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0); // where the finger left it: the checked tab did not change
+  });
+
+  it('starting a drag on the strip does not snap it back to the checked tab', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    seg.scrollLeft = 0;
+
+    seg.classList.add('ok-tabbar-dragging'); // what `bindDrag` does past the threshold
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0);
+  });
+
+  it('the cleanup stops following the active tab too', async () => {
+    const seg = segmentCon(6, 0, 382);
+    const cleanup = bindTabbar(seg, { hint: false });
+    cleanup();
+
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[0].classList.remove('segment-button-checked');
+    botones[5].classList.add('segment-button-checked');
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0);
   });
 });
 

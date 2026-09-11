@@ -19,6 +19,15 @@ export type TabbarOverflow = 'none' | 'start' | 'end' | 'both';
 
 /** Margen de subpíxel: `scrollLeft` es fraccionario y nunca iguala exactamente al tope. */
 const EPSILON = 1;
+/**
+ * Width of the edge gradient. Mirror of the `--ok-tabbar-fade` default in `tabbar.css`.
+ *
+ * EXPORTED only so the parity test can compare against this number instead of a copy of it: a
+ * value pinned inside the test ties nothing -- moving `FADE_PX` alone would still pass. If one
+ * moves without the other, revealing a tab would leave it under the fade again, which is exactly
+ * the failure the reveal came to remove.
+ */
+export const FADE_PX = 36;
 /** Cuánto se asoma la barra al dar la pista, y cuánto tarda en volver. */
 const HINT_PX = 28;
 const HINT_VUELTA_MS = 420;
@@ -68,15 +77,22 @@ export function scrollActiveTabIntoView(segment: HTMLElement | null): void {
 
   const activa = segment.querySelector<HTMLElement>('.segment-button-checked');
   if (!activa) return;
-  if (segment.scrollWidth <= segment.clientWidth) return;
+  const maximo = segment.scrollWidth - segment.clientWidth;
+  if (maximo <= 0) return;
 
   const inicio = activa.offsetLeft;
   const fin = inicio + activa.offsetWidth;
   const visibleInicio = segment.scrollLeft;
   const visibleFin = visibleInicio + segment.clientWidth;
 
-  if (inicio < visibleInicio) segment.scrollLeft = inicio;
-  else if (fin > visibleFin) segment.scrollLeft = fin - segment.clientWidth;
+  // Leave one gradient width of margin: a tab FLUSH with the edge sits under the fade and reads as
+  // "cut off" -- the exact effect the gradient exists to avoid. Clamped to [0, max], so at the
+  // extremes the tab hugs the real edge, where the gradient already switches itself off. Measured
+  // on the bench: without the margin the last tab of Settings revealed at 78 with the max at 82,
+  // and the resulting `both` covered it again.
+  const clamp = (v: number): number => Math.max(0, Math.min(v, maximo));
+  if (inicio < visibleInicio) segment.scrollLeft = clamp(inicio - FADE_PX);
+  else if (fin > visibleFin) segment.scrollLeft = clamp(fin - segment.clientWidth + FADE_PX);
 }
 
 /**
@@ -116,7 +132,13 @@ export function hintScroll(segment: HTMLElement | null): void {
  * - `scroll` → el usuario desliza;
  * - `ResizeObserver` → cambia el ancho disponible (rotar el móvil, plegar el menú);
  * - `MutationObserver` → cambia el NÚMERO de pestañas sin cambiar el ancho (un shell que las carga
- *   async desde un manifest), caso en el que el ResizeObserver no se entera.
+ *   async desde un manifest), caso en el que el ResizeObserver no se entera;
+ * - the same observer → WHICH tab is checked changes, the other half: the route sets the active
+ *   tab as much as the finger does.
+ *
+ * And it reveals the active tab -- on mount and whenever it changes. `scrollActiveTabIntoView`
+ * existed, documented and tested, but nobody called it: the consumer only calls here, so in
+ * practice nobody had it (hub#1734).
  *
  * `hint: false` desactiva la pista de movimiento (el degradado se mantiene).
  */
@@ -240,7 +262,31 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   segment.classList.add(CLASE);
   const sync = (): void => syncTabbarOverflow(segment);
-  sync();
+
+  /**
+   * Reveal, then publish, in that order: the gradient describes WHERE the bar is, so computing it
+   * before moving would leave it marking the wrong edge -- the fade would land right on the tab
+   * that was just revealed, which is the "broken" look it exists to avoid.
+   *
+   * And reveal ONLY when WHICH tab is checked changes. The observer below fires on any class of
+   * the subtree, and Ionic marks every press with one (`ion-activated`, instant on
+   * `ion-segment-button`) and the strip's own drag adds another (`ok-tabbar-dragging`): revealing
+   * there yanks the bar back to the checked tab right after the person panned it away, before the
+   * tap even lands -- measured on the bench, `mousedown` on «General» with «Datos y copias»
+   * checked moved the bar from 0 to 82 before `mouseup`. So the last revealed tab is remembered
+   * and the reveal runs again only for a different one (or on mount, or when the tabs load later).
+   */
+  let revealed: Element | null = null;
+  const revealActive = (): void => {
+    const active = segment.querySelector('.segment-button-checked');
+    if (active !== revealed) {
+      revealed = active;
+      scrollActiveTabIntoView(segment);
+    }
+    sync();
+  };
+
+  revealActive();
 
   segment.addEventListener('scroll', sync, { passive: true });
 
@@ -248,8 +294,12 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
   ro?.observe(segment);
-  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(sync) : null;
-  mo?.observe(segment, { childList: true });
+  // `attributeFilter: ['class']` is not cosmetic: without the filter, the `data-overflow` that
+  // `sync` writes would fire this observer on itself. With it only classes get in, which is where
+  // Ionic moves `segment-button-checked`; the other classes Ionic toggles (`ion-activated`...) do
+  // reach the callback, and `revealActive` is what keeps them from moving the bar.
+  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(revealActive) : null;
+  mo?.observe(segment, { childList: true, subtree: true, attributeFilter: ['class'] });
 
   let pista: ReturnType<typeof setTimeout> | null = null;
   if (opts.hint !== false) {
