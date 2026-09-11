@@ -105,6 +105,24 @@ describe('scrollActiveTabIntoView', () => {
     scrollActiveTabIntoView(seg);
     expect(seg.scrollLeft).toBe(0);
   });
+
+  // The two cases above sit at `scrollLeft: 0`, where an implementation that ALWAYS re-aligns the
+  // checked tab lands on 0 anyway (the clamp hides it). Mid-strip is where "already visible" has
+  // to mean "do not move": the reveal runs on every class change of the strip now, so a
+  // non-idempotent reveal would jerk the bar on each press.
+  it('does not move the bar when the active tab is visible MID-strip either', () => {
+    const seg = segmentCon(10, 4, 382); // tab 4 at 336..420, window 200..582
+    seg.scrollLeft = 200;
+    scrollActiveTabIntoView(seg);
+    expect(seg.scrollLeft).toBe(200);
+  });
+
+  it('revealing to the LEFT clears the gradient too, not only to the right', () => {
+    const seg = segmentCon(10, 2, 382); // tab 2 at 168..252, off to the left of window 300..682
+    seg.scrollLeft = 300;
+    scrollActiveTabIntoView(seg);
+    expect(seg.scrollLeft).toBe(168 - 36); // one fade width before the tab, inside [0, max]
+  });
 });
 
 describe('shouldHintScroll', () => {
@@ -280,6 +298,37 @@ describe('bindTabbar - reveals the active tab', () => {
 
     expect(seg.scrollLeft).toBe(82); // the maximum: nothing left to the right
     expect(seg.dataset.overflow).toBe('start'); // so the fade sits on the LEFT, off the active tab
+  });
+
+  // Ionic marks EVERY press with a class -- `ion-activated`, and `ion-segment-button` carries
+  // `ion-activatable-instant`, so it lands on `pointerdown` itself -- and the observer now watches
+  // classes. A press is not a change of selection: when the person has panned the strip away from
+  // the checked tab and touches another one, revealing on that press yanks the strip back under
+  // their finger BEFORE the tap lands. Measured on the bench (`/settings#data`, 390px): with
+  // «Datos y copias» checked and the bar panned to 0, `mousedown` on «General» moved the bar to
+  // 82 before `mouseup`. Same story for the strip's own drag class: a mouse drag starts with it.
+  it('a press on another tab does not yank the bar back to the checked one', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    expect(seg.scrollLeft).toBe(122); // revealed on mount
+
+    seg.scrollLeft = 0; // the person panned back to the start...
+    const botones = [...seg.querySelectorAll('ion-segment-button')];
+    botones[1].classList.add('ion-activated'); // ...and pressed the second tab
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0); // where the finger left it: the checked tab did not change
+  });
+
+  it('starting a drag on the strip does not snap it back to the checked tab', async () => {
+    const seg = segmentCon(6, 5, 382);
+    bindTabbar(seg, { hint: false });
+    seg.scrollLeft = 0;
+
+    seg.classList.add('ok-tabbar-dragging'); // what `bindDrag` does past the threshold
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seg.scrollLeft).toBe(0);
   });
 
   it('the cleanup stops following the active tab too', async () => {

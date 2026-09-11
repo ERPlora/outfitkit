@@ -20,12 +20,12 @@ export type TabbarOverflow = 'none' | 'start' | 'end' | 'both';
 /** Margen de subpíxel: `scrollLeft` es fraccionario y nunca iguala exactamente al tope. */
 const EPSILON = 1;
 /**
- * Ancho del degradado de borde. Espejo del default de `--ok-tabbar-fade` en `tabbar.css`.
+ * Width of the edge gradient. Mirror of the `--ok-tabbar-fade` default in `tabbar.css`.
  *
- * Se EXPORTA sólo para que el test de paridad pueda comparar contra este número y no contra una
- * copia suya: pinchar el valor esperado en el test no ata nada — mover `FADE_PX` seguiría pasando.
- * Si se mueven uno sin el otro, revelar una pestaña volvería a dejarla debajo del fade, que es
- * justo el fallo que revelarla vino a quitar.
+ * EXPORTED only so the parity test can compare against this number instead of a copy of it: a
+ * value pinned inside the test ties nothing -- moving `FADE_PX` alone would still pass. If one
+ * moves without the other, revealing a tab would leave it under the fade again, which is exactly
+ * the failure the reveal came to remove.
  */
 export const FADE_PX = 36;
 /** Cuánto se asoma la barra al dar la pista, y cuánto tarda en volver. */
@@ -85,14 +85,14 @@ export function scrollActiveTabIntoView(segment: HTMLElement | null): void {
   const visibleInicio = segment.scrollLeft;
   const visibleFin = visibleInicio + segment.clientWidth;
 
-  // Se deja el ancho del degradado de margen: dejar la pestaña A RAS del borde la mete debajo del
-  // fade, que se lee como "cortada" — el efecto exacto que el degradado existe para evitar. Se
-  // acota a [0, máximo], así que en los extremos queda pegada al borde de verdad y ahí el
-  // degradado ya se apaga solo. Medido en el banco: sin el margen, la última pestaña de Ajustes se
-  // revelaba a 78 con el máximo en 82, y el `both` resultante la volvía a tapar.
-  const acotar = (v: number): number => Math.max(0, Math.min(v, maximo));
-  if (inicio < visibleInicio) segment.scrollLeft = acotar(inicio - FADE_PX);
-  else if (fin > visibleFin) segment.scrollLeft = acotar(fin - segment.clientWidth + FADE_PX);
+  // Leave one gradient width of margin: a tab FLUSH with the edge sits under the fade and reads as
+  // "cut off" -- the exact effect the gradient exists to avoid. Clamped to [0, max], so at the
+  // extremes the tab hugs the real edge, where the gradient already switches itself off. Measured
+  // on the bench: without the margin the last tab of Settings revealed at 78 with the max at 82,
+  // and the resulting `both` covered it again.
+  const clamp = (v: number): number => Math.max(0, Math.min(v, maximo));
+  if (inicio < visibleInicio) segment.scrollLeft = clamp(inicio - FADE_PX);
+  else if (fin > visibleFin) segment.scrollLeft = clamp(fin - segment.clientWidth + FADE_PX);
 }
 
 /**
@@ -132,12 +132,13 @@ export function hintScroll(segment: HTMLElement | null): void {
  * - `scroll` → el usuario desliza;
  * - `ResizeObserver` → cambia el ancho disponible (rotar el móvil, plegar el menú);
  * - `MutationObserver` → cambia el NÚMERO de pestañas sin cambiar el ancho (un shell que las carga
- *   async desde un manifest), caso en el que el ResizeObserver no se entera; y cambia CUÁL está
- *   marcada, que es la otra mitad: la activa la fija la ruta tanto como el dedo.
+ *   async desde un manifest), caso en el que el ResizeObserver no se entera;
+ * - the same observer → WHICH tab is checked changes, the other half: the route sets the active
+ *   tab as much as the finger does.
  *
- * Y revela la pestaña activa — al montar y cada vez que cambia. `scrollActiveTabIntoView` existía,
- * documentado y probado, pero nadie lo llamaba: el consumidor solo llama aquí, así que en la
- * práctica no lo tenía nadie (hub#1734).
+ * And it reveals the active tab -- on mount and whenever it changes. `scrollActiveTabIntoView`
+ * existed, documented and tested, but nobody called it: the consumer only calls here, so in
+ * practice nobody had it (hub#1734).
  *
  * `hint: false` desactiva la pista de movimiento (el degradado se mantiene).
  */
@@ -263,16 +264,29 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
   const sync = (): void => syncTabbarOverflow(segment);
 
   /**
-   * Revelar y luego publicar, en ese orden: el degradado describe DÓNDE está la barra, así que
-   * calcularlo antes de moverla lo dejaría marcando el borde equivocado — el fade acabaría
-   * justo encima de la pestaña que se acaba de revelar, que es el efecto de "roto" que evita.
+   * Reveal, then publish, in that order: the gradient describes WHERE the bar is, so computing it
+   * before moving would leave it marking the wrong edge -- the fade would land right on the tab
+   * that was just revealed, which is the "broken" look it exists to avoid.
+   *
+   * And reveal ONLY when WHICH tab is checked changes. The observer below fires on any class of
+   * the subtree, and Ionic marks every press with one (`ion-activated`, instant on
+   * `ion-segment-button`) and the strip's own drag adds another (`ok-tabbar-dragging`): revealing
+   * there yanks the bar back to the checked tab right after the person panned it away, before the
+   * tap even lands -- measured on the bench, `mousedown` on «General» with «Datos y copias»
+   * checked moved the bar from 0 to 82 before `mouseup`. So the last revealed tab is remembered
+   * and the reveal runs again only for a different one (or on mount, or when the tabs load later).
    */
-  const revelarActiva = (): void => {
-    scrollActiveTabIntoView(segment);
+  let revealed: Element | null = null;
+  const revealActive = (): void => {
+    const active = segment.querySelector('.segment-button-checked');
+    if (active !== revealed) {
+      revealed = active;
+      scrollActiveTabIntoView(segment);
+    }
     sync();
   };
 
-  revelarActiva();
+  revealActive();
 
   segment.addEventListener('scroll', sync, { passive: true });
 
@@ -280,11 +294,11 @@ export function bindTabbar(segment: HTMLElement | null, opts: { hint?: boolean }
 
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
   ro?.observe(segment);
-  // `attributeFilter: ['class']` no es cosmético: sin filtro, el `data-overflow` que escribe `sync`
-  // volvería a disparar este observer sobre sí mismo. Con el filtro solo entran las clases, que es
-  // donde Ionic mueve `segment-button-checked`. Revelar es idempotente, así que las otras clases
-  // que Ionic toquetea (`ion-activated`…) no hacen daño: si la activa ya se ve, no mueve nada.
-  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(revelarActiva) : null;
+  // `attributeFilter: ['class']` is not cosmetic: without the filter, the `data-overflow` that
+  // `sync` writes would fire this observer on itself. With it only classes get in, which is where
+  // Ionic moves `segment-button-checked`; the other classes Ionic toggles (`ion-activated`...) do
+  // reach the callback, and `revealActive` is what keeps them from moving the bar.
+  const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(revealActive) : null;
   mo?.observe(segment, { childList: true, subtree: true, attributeFilter: ['class'] });
 
   let pista: ReturnType<typeof setTimeout> | null = null;
