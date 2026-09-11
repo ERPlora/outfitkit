@@ -803,6 +803,19 @@ export class OkDataTable extends LitElement {
   /** (NUEVO) Cuerpo a medida de la tarjeta (string/HTML). Si se omite, se listan los campos. */
   @property({ attribute: false }) renderCard?: (row: Record<string, unknown>) => unknown;
 
+  /** #143 — Espacio de nombres de los `data-testid` del cromo: alta, acción primaria, buscador,
+   *  import/export CSV, filas, acciones de fila y pager. `testid="products-table"` produce
+   *  `products-table-add`, `products-table-search`, `products-table-row-<id>`…
+   *
+   *  El prefijo lo da el HOST y no hay nombres fijos dentro a propósito: dos tablas en la misma
+   *  pantalla con el mismo gancho harían que `getByTestId` eligiera una al azar. Sin prefijo la
+   *  tabla no pinta ningún gancho, así que quien no lo pide no ve ningún cambio.
+   *
+   *  Convención: `architecture/hub/apps/testids.md` (`<superficie>-<acción>`, kebab-case, la
+   *  identidad de la fila al final). Un `data-testid` es un CONTRATO con los specs de QA, que
+   *  viven en otro repo: renombrar uno es un cambio de contrato. */
+  @property({ type: String }) testid?: string;
+
   // Estado interno SOLO del modo cliente.
   @state() private q = '';
   @state() private clientPage = 0;
@@ -1065,6 +1078,14 @@ export class OkDataTable extends LitElement {
     if (typeof this.rowKey === 'string') return String(row[this.rowKey] ?? '');
     return String(row[this.rowKeyField] ?? '');
   }
+  /** #143 — `<prefijo>-<sufijo>`, o `nothing` (= el atributo no se pinta) si el host no dio
+   *  prefijo. Un prefijo en blanco cuenta como ausente: `" "` dejaría ganchos `-add` sueltos,
+   *  idénticos en todas las tablas de la pantalla, que es justo lo que el prefijo evita. */
+  private tid(suffix: string): string | typeof nothing {
+    const prefix = this.testid?.trim();
+    return prefix ? `${prefix}-${suffix}` : nothing;
+  }
+
   private get selection(): Set<string> {
     return this.selectedKeys ?? this.internalSelection;
   }
@@ -1481,6 +1502,7 @@ export class OkDataTable extends LitElement {
   private renderRowMenu(): unknown {
     const row = this.rowMenuRow;
     if (!this.actions.length || !row) return nothing;
+    const key = this.keyOf(row);
     return html`
       <ion-popover
         class="row-menu"
@@ -1495,8 +1517,14 @@ export class OkDataTable extends LitElement {
               const disabled = a.loading?.(row) === true || a.disabled?.(row) === true;
               const label = typeof a.label === 'function' ? a.label(row) : a.label;
               return html`
+                <!-- #143 — La acción se llama IGUAL esté plegada o no, así que el mismo spec vale
+                     a cualquier ancho. Solo la lleva mientras los botones directos NO están: el
+                     popover sobrevive al cierre («rowMenuRow» no se limpia), y si la tabla se
+                     vuelve a ensanchar habría DOS elementos con el gancho y «getByTestId»
+                     elegiría uno al azar. -->
                 <ion-item
                   button
+                  data-testid=${this.rowActionsCollapsed ? this.tid(`row-${key}-${a.id}`) : nothing}
                   ?disabled=${disabled}
                   aria-disabled=${disabled ? 'true' : nothing}
                   .detail=${false}
@@ -1745,6 +1773,9 @@ export class OkDataTable extends LitElement {
   // a phone. If you add a view that lays these buttons out, MEASURE it.
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
+    // #143 — La identidad de la fila va al final del gancho, NUNCA su posición: el orden cambia
+    // con cada filtro y el spec pasaría a afirmar sobre otra fila sin enterarse.
+    const key = this.keyOf(row);
     // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
     // Shopify, Business Central o Salesforce en pantallas estrechas. Baja el mínimo de la tabla
     // de 796px a 652px, que es lo que quita la columna fijada de encima del «Estado».
@@ -1755,6 +1786,7 @@ export class OkDataTable extends LitElement {
             size="small"
             fill="clear"
             color="medium"
+            data-testid=${this.tid(`row-${key}-menu`)}
             aria-label=${this.t.moreActions}
             title=${this.t.moreActions}
             aria-haspopup="menu"
@@ -1779,6 +1811,7 @@ export class OkDataTable extends LitElement {
               size="small"
               fill="clear"
               color=${a.color ?? 'medium'}
+              data-testid=${this.tid(`row-${key}-${a.id}`)}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
               aria-label=${label}
@@ -1798,9 +1831,16 @@ export class OkDataTable extends LitElement {
 
   // Botón de barra icon-only (filtros / alta / conmutador de vista). `on` = estado activo.
   // `badge` opcional → contador (p.ej. nº de filtros activos), look del Hub.
-  private toolButton(icon: string, on: boolean, onClick: () => void, label: string, badge?: number): unknown {
+  private toolButton(
+    icon: string,
+    on: boolean,
+    onClick: () => void,
+    label: string,
+    badge?: number,
+    testid: string | typeof nothing = nothing,
+  ): unknown {
     return html`
-      <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} title=${label} aria-label=${label} @click=${onClick}>
+      <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} data-testid=${testid} title=${label} aria-label=${label} @click=${onClick}>
         <ion-icon slot="icon-only" .icon=${okIcon(icon)}></ion-icon>
         ${badge && badge > 0 ? html`<span class="badge">${badge}</span>` : nothing}
       </ion-button>
@@ -1898,7 +1938,7 @@ export class OkDataTable extends LitElement {
     // servidor se dibujaba sin `.value`, así que era un control no controlado y el módulo no tenía
     // camino de vuelta para imponerle un texto (ni para vaciarlo). `q` lo escriben el teclado y la
     // propiedad `search`, así que enlazarlo no le quita nada al usuario.
-    const searchbar = html`<ion-searchbar class="ion-no-border" .value=${this.q} placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
+    const searchbar = html`<ion-searchbar class="ion-no-border" data-testid=${this.tid('search')} .value=${this.q} placeholder=${this.effSearchPlaceholder} debounce="250" @ionInput=${this.onSearch}></ion-searchbar>`;
 
     const selCount = this.selection.size;
     const showTopbar =
@@ -1958,16 +1998,21 @@ export class OkDataTable extends LitElement {
                     ${this.effImport
                       ? html`
                           ${this.toolButton('cloud-upload-outline', false, () => (this.renderRoot.querySelector('.tk-file') as HTMLInputElement)?.click(), this.t.importCsv)}
-                          <input class="tk-file" type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
+                          <!-- #143 — El gancho de importar va en el INPUT, no en el botón que lo
+                               dispara: lo que un spec conduce es «setInputFiles», y el diálogo
+                               nativo del botón no lo abre nadie desde un test. Mismo criterio que
+                               «GrantFilePicker.vue» en el Hub (el gancho va en el control, no en
+                               su disfraz). -->
+                          <input class="tk-file" data-testid=${this.tid('csv-import')} type="file" accept=".csv,text/csv" hidden @change=${(e: Event) => this.onImportFile(e)} />
                         `
                       : nothing}
-                    ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), this.t.exportCsv) : nothing}
+                    ${this.effExport ? this.toolButton('download-outline', false, () => this.exportCsv(), this.t.exportCsv, undefined, this.tid('csv-export')) : nothing}
                     <!-- #113 — Mismo botón en los dos viewports: la acción principal de la pantalla
                          se lee, no se adivina. En escritorio era un «+» de 36px idéntico a los
                          iconos de vista/filtrar/exportar, y era el último de cuatro. -->
                     ${this.addable
                       ? html`
-                          <ion-button class="primary-btn add-btn" size="small" @click=${() => this.toggle('create')}>
+                          <ion-button class="primary-btn add-btn" data-testid=${this.tid('add')} size="small" @click=${() => this.toggle('create')}>
                             <ion-icon slot="start" .icon=${okIcon('add')}></ion-icon>${this.t.add}
                           </ion-button>
                         `
@@ -1975,7 +2020,12 @@ export class OkDataTable extends LitElement {
                     ${this.renderOverflowMenu()}
                     ${this.primaryAction
                       ? html`
-                          <ion-button class="primary-btn add-btn" size="small" @click=${() => this.emit('primaryAction', {})}>
+                          <!-- #143 — Gancho propio y NO «-add»: «addable» y «primaryAction» son
+                               dos botones distintos que pueden convivir, y los dos se usan de
+                               verdad («addable» en los módulos, «primaryAction» en las pantallas
+                               del SaaS). Compartir nombre daría dos elementos con el mismo gancho
+                               en cuanto una pantalla declarase los dos. -->
+                          <ion-button class="primary-btn add-btn" data-testid=${this.tid('primary-action')} size="small" @click=${() => this.emit('primaryAction', {})}>
                             <ion-icon slot="start" .icon=${okIcon(this.primaryAction.icon ?? 'add')}></ion-icon>${this.primaryAction.label}
                           </ion-button>
                         `
@@ -2021,18 +2071,18 @@ export class OkDataTable extends LitElement {
                 </div>
                 ${this.isMobile
                   ? canLoadMore
-                    ? html`<ion-button class="load-more" size="small" @click=${loadMore}>${this.t.loadMore}</ion-button>`
+                    ? html`<ion-button class="load-more" data-testid=${this.tid('load-more')} size="small" @click=${loadMore}>${this.t.loadMore}</ion-button>`
                     : nothing
                   : pages > 1
                   ? html`
                       <div class="nav">
-                        <ion-button size="small" fill="clear" ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon></ion-button>
+                        <ion-button size="small" fill="clear" data-testid=${this.tid('page-prev')} ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon></ion-button>
                         ${this.pageList(current + 1, pages).map((p) =>
                           p === '…'
                             ? html`<span class="pgap">…</span>`
                             : html`<button class=${`pnum${p === current + 1 ? ' on' : ''}`} @click=${() => goTo(p - 1)}>${p}</button>`,
                         )}
-                        <ion-button size="small" fill="clear" ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" .icon=${iconChevronForward}></ion-icon></ion-button>
+                        <ion-button size="small" fill="clear" data-testid=${this.tid('page-next')} ?disabled=${current >= pages - 1} @click=${() => goTo(current + 1)}><ion-icon slot="icon-only" .icon=${iconChevronForward}></ion-icon></ion-button>
                       </div>
                     `
                   : nothing}
@@ -2192,6 +2242,7 @@ export class OkDataTable extends LitElement {
                 <div
                   class=${`grow grow-data${selected ? ' selected' : ''}${this.rowClickable ? ' clickable' : ''}`}
                   role="row"
+                  data-testid=${this.tid(`row-${key}`)}
                   style=${styleMap(tpl)}
                   tabindex=${this.rowClickable ? '0' : nothing}
                   @click=${this.rowClickable ? () => this.emit('rowClick', { row }) : nothing}
@@ -2231,6 +2282,7 @@ export class OkDataTable extends LitElement {
             return html`
               <ion-card
                 class=${`rcard${selected ? ' selected' : ''}${this.rowClickable ? ' clickable' : ''}`}
+                data-testid=${this.tid(`row-${key}`)}
                 role=${this.rowClickable ? 'button' : nothing}
                 tabindex=${this.rowClickable ? '0' : nothing}
                 @click=${this.rowClickable ? () => this.emit('rowClick', { row }) : nothing}
