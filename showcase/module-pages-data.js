@@ -803,6 +803,20 @@ export const MODULE_PAGES = [
     "file": "pages/module-verifactu-recovery.html"
   },
   {
+    "id": "module-verifactu-config",
+    "name": "Configuration",
+    "icon": "key-outline",
+    "surface": "modules",
+    "section": "VeriFactu",
+    "moduleId": "verifactu",
+    "navId": "config",
+    "component": "erp-verifactu-config",
+    "source": "modules-workspace/modules/verifactu/ui/components/erp-verifactu-config/erp-verifactu-config.ts",
+    "route": "/m/verifactu/config",
+    "parity": "current",
+    "file": "pages/module-verifactu-config.html"
+  },
+  {
     "id": "module-verifactu-settings",
     "name": "Ajustes",
     "icon": "settings-outline",
