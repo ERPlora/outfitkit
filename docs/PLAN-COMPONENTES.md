@@ -5,7 +5,10 @@
 OutfitKit = **librería de Web Components que Ionic NO tiene**, construidos *con* primitivos de Ionic
 + estilos, **responsive**. NO wrappers de lo que Ionic ya da (botones, layout, app-shell, inputs…).
 
-Fuente de inspiración: catálogo **`ERPlora/ux`** (https://erplora.github.io/ux/), 90 componentes.
+Fuente de inspiración: catálogo **`ERPlora/ux`**, 90 componentes. 🪦 Ese repo está **archivado** y
+su showcase (`erplora.github.io/ux`) devuelve **404** — se deja el nombre porque explica de dónde
+salió el set original, pero no hay nada que consultar ahí. El showcase vivo es el de este repo:
+https://erplora.github.io/outfitkit/
 
 ### Estado (act. 2026-09-16) — BACKLOG COMPLETO; el recuento vivo lo genera un script
 
