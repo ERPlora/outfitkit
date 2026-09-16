@@ -61,8 +61,23 @@ Detalles que conviene no deshacer sin leer el workflow:
 - `release-it` tiene `npm.publish: false` a propósito: **no** publica; deja que el paso siguiente
   publique con la confianza OIDC del servidor.
 
-⚠️ **`ci.yml` no ejecuta `npm test`** — solo `build`, `typecheck` y `verify:csp`. Los tests
-(`npx vitest run`) hay que correrlos **en local** antes de abrir el PR; nadie los va a correr por ti.
+### Qué mira cada gate
+
+Hay **dos** workflows y no miran lo mismo — conviene no confundirlos:
+
+| Workflow | Cuándo | Qué corre |
+|---|---|---|
+| `ci.yml` | cada PR y cada push a `main` | job `quality`: higiene de git + `build` + `typecheck` + `verify:csp` + **`npm test`** · job `parity`: clona `hub/`, `saas/` y los módulos que la suite compara y corre **`npm run test:parity`** |
+| `publish.yml` | push a `main` que toque `src/**` o la config de build | el gate de `release-it` (`before:init`: `build` + `typecheck` + `verify:csp`) y luego el publish |
+
+O sea: **los tests los corre `ci.yml`, no el publish**. El gate del publish es deliberadamente el
+corto —si el PR entró, la suite ya pasó—, así que un rojo de tests se ve **antes de mergear**, que
+es donde sirve.
+
+> Hasta `outfitkit#66` esto no era así: `ci.yml` **no llamaba a `npm test` en absoluto**. 471 tests
+> escritos que CI no ejecutó nunca, y nueve ficheros meses en rojo sin que nadie se enterara — en la
+> librería de la que dependen los módulos, el Hub y el Cloud. Ese es el motivo de que hoy sean dos
+> jobs y de que la paridad **falle** en vez de auto-omitirse cuando le falta un checkout.
 
 ## Verificar
 

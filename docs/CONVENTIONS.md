@@ -30,7 +30,10 @@ chrome web/marketing), incluidos los que por dentro usan uno o varios `ion-*` co
    - Tokens globales `--ok-*` (los pone el consumidor; espejo de `--ion-*`).
    - Vars por componente en `:host`, estilo Ionic, con default = cadena `--ok-* → --ion-* → hex`.
    El `ion-*` interno hereda el tema `--ion-*` del host, así que claro/oscuro funcionan solos.
-7. **CSP estricta**: sin `eval`/`new Function`. Verifica con `pnpm verify:csp`.
+7. **CSP estricta**: sin `eval`/`new Function`. Verifica con `npm run verify:csp`.
+8. **Una API del navegador se envuelve UNA vez, en `src/base/`** ([ADR-0480](https://github.com/ERPlora/architecture/blob/main/00-overview/decision-log.md#adr-0480)).
+   Un componente **no** llama a la API nativa: llama a la función plana de `base/`, y si la puerta
+   no existe todavía **se crea ahí**, no en el componente.
 
 ## Esqueleto de un componente (hueco que Ionic no cubre)
 
@@ -65,6 +68,34 @@ define('ok-qty-stepper', OkQtyStepper);
 
 Cuando el `ion-*` interno emite sus propios eventos (`ionInput`/`ionChange`…) y quieres
 normalizarlos, usa `relay(this, e, 'ok-…')` (`src/base/relay.ts`) en vez de reenviarlos a mano.
+
+## Utilidades de `base/` (la puerta única a las APIs del navegador)
+
+`src/base/` no es «un cajón de helpers»: es donde vive **la única** copia de cada decisión que se
+repetiría en cada componente —empezando por las **APIs del navegador**—, en funciones planas y sin
+framework. Lo que sale por ahí sale **también por el barrel**, porque el shell del Hub necesita las
+mismas puertas que los componentes.
+
+| Módulo | Qué resuelve, una sola vez |
+|---|---|
+| `base/define.ts` | registro idempotente de custom elements (`define(tag, Class)`) |
+| `base/relay.ts` | re-emisión de eventos `ion*` → `ok-*` preservando `detail` |
+| `base/icons.ts` | los SVG horneados de Iconify + `okIcon(value)` para el icono que pasa el consumidor |
+| `base/fullscreen.ts` | **la Fullscreen API**: `isCapable` · `isActive(el)` · `activeEl` · `request` · `exit` · `toggle` · `onChange` |
+| `base/anchor.ts` | `computeAnchor()`: a qué lado abre un panel flotante según el hueco del viewport |
+| `base/tap-target.ts` | el suelo de superficie táctil, como fragmento `css` compartido |
+
+**Con guard, no con buena voluntad**: `base/fullscreen-single-door.test.ts` deniega que cualquier
+fichero de `src/` o de `showcase/` llame a la Fullscreen API nativa, y **se verifica a sí mismo**
+(comprueba que caza las formas que se escribieron de verdad, y que no salta con una clave i18n que
+se llame igual ni con un comentario que la mencione).
+
+Por qué existe la regla: la Fullscreen API estaba escrita **cuatro veces** —`ok-video`,
+`ok-lightbox`, la página POS del showcase y el shell del Hub— y las cuatro cometían **el mismo par
+de errores** por su cuenta: preguntaban `document.fullscreenElement` («¿hay *algo* a pantalla
+completa?») en vez de «¿soy *yo*?», de modo que el botón de un vídeo **cerraba el modo inmersivo del
+TPV**; y no publicaban si el navegador **puede**, así que el botón se pintaba también en el Safari
+de iPhone, donde no hace nada. No eran cuatro bugs: era **una decisión de librería que faltaba**.
 
 ## Componentes que leen hijos tipados → API de datos
 

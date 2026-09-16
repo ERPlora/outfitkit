@@ -89,9 +89,16 @@ El bundle `outfitkit.js` deja `lit` external, así que necesitas un **import-map
 
 ## Inventario de componentes
 
-92 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
+94 web components rellena-huecos (todos registran su tag `ok-*` vía `define()`). Abajo el qué-hace y
 los **eventos `ok-*`** que emite cada uno (`—` = presentacional, sin eventos). La **referencia viva
 de props/slots** es el [showcase](https://erplora.github.io/outfitkit/).
+
+El **índice corto** —qué existe ya, con sus props y eventos, para decidir *antes* de escribir markup
+o crear un componente— es [`docs/COMPONENT-CATALOG.md`](docs/COMPONENT-CATALOG.md). **No se escribe
+a mano**: se genera del registro del showcase con `npm run catalog`, y
+`src/repo/generate-component-catalog.test.ts` lo regenera en cada pasada, así que un componente
+añadido sin regenerar pone el gate en rojo. Esa es la cuenta que no caduca (la tabla de abajo es el
+resumen legible, y antes de existir el generador llegó a llevar tres totales distintos a la vez).
 
 Los patrones que Ionic ya resuelve no se exportan como `ok-*`: drawer lateral (`ion-modal`),
 skeleton (`ion-skeleton-text`), fecha/hora (`ion-datetime`) y rango doble (`ion-range dual-knobs`)
@@ -104,6 +111,7 @@ viven como recetas copiables en el showcase.
 | `ok-data-table` | Tabla rica: lista/tarjetas, búsqueda, filtros, orden, paginación (server-side), selección, columnas, vistas, CSV import/export. Componente central, API congelada. | `pageChange`, `sortChange`, `searchChange`, `filterChange`, `selectionChange`, `rowAction`, `primaryAction`, `menuAction`, `columnsChange`, `csvImport`, `csvExport` |
 | `ok-tree` | Árbol expandible recursivo por datos, con líneas guía y selección. | `ok-toggle`, `ok-select` |
 | `ok-detail-list` | Description list (`dl`) para fichas: pares label/value alineados, 1–2 columnas. | — |
+| `ok-money` | Importe monetario pintado desde el **entero en unidad mínima** que guarda el sistema (1650 → `16,50 €`), con `currency`/`locale` (ADR-0123). | — |
 | `ok-bar-list` | Ranking de barras horizontales animadas con formateo de valores. | — |
 | `ok-sparkline` | Mini-gráfico inline (línea/barras) en SVG, sin ejes, autoescalado. | — |
 | `ok-code` | Visor de código monospace con etiqueta de lenguaje y botón copiar. | `ok-copy` |
@@ -442,6 +450,7 @@ npm run test:all     # las dos
 npm run build        # vite (dist/*.js, outfitkit.js, theme.example.css) + tsc (dist/*.d.ts)
 npm run typecheck    # comprobación de tipos sin emitir
 npm run verify:csp   # rechaza eval / new Function en dist (CSP estricta)
+npm run catalog      # regenera docs/COMPONENT-CATALOG.md del registro (el gate lo exige al día)
 npm run dev          # vite build --watch (showcase en local)
 npm run release      # release-it a mano (NO hace falta: la CI publica al mergear, ver docs/RELEASING.md)
 ```
@@ -462,6 +471,11 @@ Los tests están partidos porque solo una mitad puede correr en un runner limpio
   otro repo sin la marca se cae ahí, en rojo y en el acto. Esa es la red de seguridad del reparto.
 - Si la suite de paridad **no puede** correr (falta un checkout), **falla diciendo cuál** — nunca se
   auto-omite. Un test invisible es peor que no tener test.
+- La paridad no es solo «se parecen»: cada demo queda **atada a su manifest** y no puede ofrecer un
+  filtro que el módulo real no declara (`scripts/showcase-filter-parity.mjs`, con el emparejamiento
+  leído **por tabla**, no por página). El trinquete
+  `src/showcase/demo-filter-declaration-ratchet.test.ts` impide que una demo nueva se libre de
+  declarar su lista. Se arregló a mano dos veces y volvió las dos; por eso hoy hay guardia.
 
 Publicación a npm: [`docs/RELEASING.md`](docs/RELEASING.md) (Trusted Publishing / OIDC).
 
