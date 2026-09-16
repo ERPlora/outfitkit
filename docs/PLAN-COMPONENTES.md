@@ -5,14 +5,26 @@
 OutfitKit = **librería de Web Components que Ionic NO tiene**, construidos *con* primitivos de Ionic
 + estilos, **responsive**. NO wrappers de lo que Ionic ya da (botones, layout, app-shell, inputs…).
 
-Fuente de inspiración: catálogo **`ERPlora/ux`** (https://erplora.github.io/ux/), 90 componentes.
+Fuente de inspiración: catálogo **`ERPlora/ux`**, 90 componentes. 🪦 Ese repo está **archivado** y
+su showcase (`erplora.github.io/ux`) devuelve **404** — se deja el nombre porque explica de dónde
+salió el set original, pero no hay nada que consultar ahí. El showcase vivo es el de este repo:
+https://erplora.github.io/outfitkit/
 
-### Estado (act. 2026-08-06) — BACKLOG COMPLETO; el recuento vivo está en el README
+### Estado (act. 2026-09-16) — BACKLOG COMPLETO; el recuento vivo lo genera un script
 
-Este doc no lleva la cifra de componentes (caduca): la fuente es el
-[inventario del README](../README.md) y `ls src/components/` (a fecha de esta actualización, 92).
+**Qué sigue vigente de este documento:** el *enfoque* (rellenar los huecos de Ionic, no envolverlo),
+los **descartes razonados** y el reparto **core ↔ módulos** (Tier 4). Todo lo demás —las listas de
+«construidos», las cifras y las casillas— es **histórico**: se construyó entero y esos recuentos
+caducan en cuanto entra un componente.
 
-**Construidos** (Tier 0–3): navbar (offcanvas móvil), footer, hero, container(-full), contact-form ·
+Este doc **no lleva** la cifra de componentes. La fuente que no caduca es
+[`docs/COMPONENT-CATALOG.md`](COMPONENT-CATALOG.md), que **se genera** del registro del showcase con
+`npm run catalog` y lo mantiene honesto un gate (un componente añadido sin regenerar pone el test en
+rojo). Hoy son **94**. Copiar el número a mano es justo lo que llevó a tener tres totales distintos
+a la vez.
+
+**Construidos** (Tier 0–3, lista histórica — el inventario al día está en el catálogo generado):
+navbar (offcanvas móvil), footer, hero, container(-full), contact-form ·
 data-table, tree, sparkline, inline-feedback, empty-state, kpi, stat, stepper, wizard, calendar,
 kanban, scheduler, chat, timeline · combo, tag-input, rating, otp, pinpad, currency, phone,
 dropzone, qty-stepper, color-picker · app-launcher, split-button, menubar, command-palette ·
@@ -46,7 +58,9 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
 
 **Efectos/animaciones en el propio showcase (`showcase/`):**
 - [x] Página de cada componente: los tags nuevos están en `showcase/components-data.js`
-  (ejemplo + API + código) — hecho; hoy cubre los 133 tags `ok-*`.
+  (ejemplo + API + código) — hecho, y ya no es cuestión de fe: el registro cubre **todos** los
+  `ok-*` de `src/components/` porque `src/showcase/component-catalog-completeness.test.ts` lo
+  exige, y de ahí sale el catálogo generado.
 - Pendiente (genuinamente sin hacer): envolver las secciones del showcase en `ok-reveal`, hero con
   `.ok-section` + rejilla de categorías como `ok-bento`, demo de `ok-language-select`/`ok-navbar glass`,
   repaso de `prefers-reduced-motion`. **Si se quiere hacer, abrir Issue en el
@@ -73,9 +87,10 @@ icono lo pintan como **máscara CSS sobre la SVG del API de Iconify** (`backgrou
 Todo lo que listaba este backlog (Tier 0–3: web/marketing, genéricos núcleo, inputs, multimedia)
 **ya está construido**. Este documento no rastrea componente a componente qué falta — eso caduca en
 cuanto se construye algo y nadie vuelve a marcar la casilla. La fuente de verdad es el código y el
-inventario del README:
+índice que se genera de él:
 
-- Inventario con qué-hace + eventos: [`README.md` § Inventario de componentes](../README.md).
+- Índice generado (qué existe, con props y eventos): [`docs/COMPONENT-CATALOG.md`](COMPONENT-CATALOG.md) — `npm run catalog`.
+- Inventario legible con qué-hace + eventos: [`README.md` § Inventario de componentes](../README.md).
 - Lista viva de carpetas: `ls src/components/`.
 - Si falta un `ok-*` que de verdad no existe, se abre una Issue (trabajo abierto vive en el
   [board](https://github.com/orgs/ERPlora/projects/3), no en checkboxes de este `.md`).
