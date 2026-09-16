@@ -203,6 +203,10 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-verifactu-recovery.html',
     parity: 'current',
   },
+  'module-verifactu-config': {
+    file: 'pages/module-verifactu-config.html',
+    parity: 'current',
+  },
   'module-verifactu-settings': {
     file: 'pages/module-verifactu-settings.html',
     parity: 'current',

@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERPlora Hub · Configuración VeriFactu</title>
+    <script type="importmap">
+      { "imports": { "lit": "https://esm.run/lit@3", "lit/": "https://esm.run/lit@3/" } }
+    </script>
+    <script src="./_ionic-config.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+    <script type="module" src="../../dist/outfitkit.js"></script>
+    <style>
+      .verifactu-config-page { display:flex; flex-direction:column; gap:.75rem; }
+      .verifactu-config-tabs { margin-bottom:.25rem; }
+      .verifactu-config-panel[hidden] { display:none !important; }
+      .verifactu-cert { display:flex; flex-direction:column; gap:.4rem; width:100%; padding:.25rem 0; }
+      .verifactu-cert-head { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+      .verifactu-kv { display:flex; gap:.4rem; flex-wrap:wrap; align-items:baseline; font-size:.8rem; }
+      .verifactu-kv .k { color: var(--ion-color-medium, #6b7280); }
+      .verifactu-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+      .verifactu-actions { display:flex; gap:.5rem; flex-wrap:wrap; padding-top:.25rem; }
+      .verifactu-hint { font-size:.82rem; color: var(--ion-color-medium, #6b7280); margin:0; }
+      .verifactu-submitted, .verifactu-history { display:flex; flex-direction:column; gap:.25rem; }
+      .verifactu-docs, .verifactu-history-rows { list-style:none; margin:.25rem 0 0; padding:0; display:flex; flex-direction:column; gap:.25rem; }
+      .verifactu-docs li { display:flex; align-items:center; gap:.4rem; font-size:.85rem; }
+      .verifactu-docs ion-icon { color: var(--ion-color-success, #2dd36f); font-size:1.1rem; }
+      .verifactu-history-rows li { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.25rem .75rem; font-size:.8rem; padding:.3rem 0; border-bottom:1px solid var(--ion-color-light, #eceef1); }
+      .verifactu-history-rows .k { color: var(--ion-color-medium, #6b7280); }
+      .verifactu-resend { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+      ok-dropzone { --ok-dropzone-max-width: 100%; }
+      [hidden] { display:none !important; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { defineHubPage } from './_hub.js';
+
+      // El obligado tributario, tal como lo lee el componente real de `verifactu.config.get`
+      // (mismo NIF de ejemplo que usan `module-verifactu-settings.html` y `module-verifactu-recovery.html`).
+      const ISSUER_NIF = 'B27593136';
+      const ISSUER_NAME = 'ERPLORA CLOUD SL';
+
+      // La conexión de MÁQUINA con la celda fiscal (verifactu#76): activa, sin nada que pedir.
+      const GATEWAY = {
+        common_name: 'hub-a1c93e7f.erplora.cloud',
+        not_after: '2027-03-01',
+      };
+
+      // El certificado del negocio, guardado en el hub aunque hoy remita ERPlora en su nombre
+      // (`certificate::route_of` sigue diciendo "delegated" — el .p12 se conserva por si se enciende).
+      const CERTIFICATE = { present: true, subject: ISSUER_NAME, uploaded_at: '15/01/2026' };
+
+      // El otorgamiento de representación: tres envíos reales, cada uno con su desenlace. El
+      // ESTADO ACTUAL es el del último envío (n.º 3, en revisión) — igual que en el componente
+      // real, la fila más reciente del historial y el estado de arriba cuentan la misma historia.
+      const GRANT_HISTORY = [
+        {
+          version: 1,
+          date: '10/02/2026',
+          status: 'rechazado',
+          reason: 'El NIF del firmante no coincide con el del obligado.',
+        },
+        { version: 2, date: '02/03/2026', status: 'vigente' },
+        { version: 3, date: '18/04/2026', status: 'pendiente' },
+      ];
+      const GRANT_DOCS = ['Modelo firmado', 'Copia del documento de identidad', 'Justificante de representación'];
+
+      defineHubPage({
+        active: '/m/verifactu/config',
+        title: 'Configuración',
+        body: `
+          <div class="verifactu-config-page">
+            <h2>Configuración de VeriFactu</h2>
+            <ion-segment id="verifactu-config-tabs" class="verifactu-config-tabs" value="delegated">
+              <ion-segment-button value="delegated" id="verifactu-config-tab-delegated">
+                <ion-label>Lo remite ERPlora</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="own" id="verifactu-config-tab-own">
+                <ion-label>Mi certificado</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+
+            <div id="verifactu-config-delegated" class="verifactu-config-panel">
+              <ion-card>
+                <ion-card-header><ion-card-title>Otorgamiento de representación</ion-card-title></ion-card-header>
+                <ion-card-content>
+                  <ok-inline-feedback id="verifactu-grant-state" tone="info" icon="shield-outline">
+                    Subido el 18/04/2026. Lo estamos revisando y te avisamos por email en 24-72 horas.
+                  </ok-inline-feedback>
+
+                  <div class="verifactu-submitted">
+                    <h4>Lo que has enviado</h4>
+                    <p class="verifactu-hint" id="verifactu-grant-submitted-on">Envío n.º 3, enviado el 18/04/2026</p>
+                    <ul class="verifactu-docs" id="verifactu-grant-docs"></ul>
+                  </div>
+
+                  <div class="verifactu-history">
+                    <h4>Historial de envíos</h4>
+                    <ul class="verifactu-history-rows" id="verifactu-grant-history-rows"></ul>
+                  </div>
+
+                  <div class="verifactu-resend">
+                    <ion-button id="verifactu-grant-resend" fill="outline" size="small">
+                      <ion-icon slot="start" name="refresh-outline"></ion-icon>Volver a enviar
+                    </ion-button>
+                  </div>
+                  <ok-inline-feedback id="verifactu-grant-resend-hint" tone="info" icon="information-circle-outline" hidden></ok-inline-feedback>
+                  <div class="verifactu-resend" id="verifactu-grant-resend-actions" hidden>
+                    <ion-button id="verifactu-grant-resend-cancel" fill="clear" size="small">Cancelar</ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+
+              <ion-card>
+                <ion-card-content>
+                  <ion-item lines="none">
+                    <div class="verifactu-cert">
+                      <div class="verifactu-cert-head">
+                        <ion-label>Conexión segura con ERPlora</ion-label>
+                        <ok-status-pill id="verifactu-gateway-status" dot tone="success" label="activa"></ok-status-pill>
+                      </div>
+                      <p class="verifactu-hint">Para que ERPlora pueda remitir a la Agencia Tributaria en tu nombre, este hub y ERPlora se identifican con un certificado de este equipo. La clave privada se crea aquí y nunca sale.</p>
+                      <div class="verifactu-kv">
+                        <span class="k">Identificador de este hub</span>
+                        <code id="verifactu-gateway-common-name">hub-a1c93e7f.erplora.cloud</code>
+                      </div>
+                      <div class="verifactu-kv">
+                        <span class="k">Válida hasta</span>
+                        <code id="verifactu-gateway-valid-until">01/03/2027</code>
+                      </div>
+                    </div>
+                  </ion-item>
+                </ion-card-content>
+              </ion-card>
+            </div>
+
+            <div id="verifactu-config-own" class="verifactu-config-panel" hidden>
+              <ion-card>
+                <ion-card-content>
+                  <div class="verifactu-row">
+                    <h3>Certificado del negocio (.p12 / .pfx)</h3>
+                    <ok-status-pill id="verifactu-config-p12-status" dot tone="success" label="Cargado"></ok-status-pill>
+                  </div>
+                  <div class="verifactu-kv" id="verifactu-config-p12-holder">
+                    <span class="k">Titular</span>
+                    <code>ERPLORA CLOUD SL</code>
+                    <span class="k">Subido el 15/01/2026</span>
+                  </div>
+                  <p class="verifactu-hint">El fichero y su contraseña los guarda el hub, y no vuelven a esta pantalla nunca más.</p>
+                  <ok-dropzone
+                    id="verifactu-config-p12-file"
+                    accept=".p12,.pfx"
+                    max-size="1048576"
+                    hint="Certificado del negocio (.p12 o .pfx)"
+                  ></ok-dropzone>
+                  <ion-input
+                    id="verifactu-config-p12-password"
+                    type="password"
+                    mode="md"
+                    fill="outline"
+                    label-placement="floating"
+                    label="Contraseña del certificado"
+                  ></ion-input>
+                  <ok-inline-feedback id="verifactu-config-p12-feedback" tone="success" icon="information-circle-outline" hidden></ok-inline-feedback>
+                  <div class="verifactu-actions">
+                    <ion-button id="verifactu-config-p12-upload">Subir certificado</ion-button>
+                    <ion-button id="verifactu-config-p12-remove" fill="outline" color="danger">Quitarlo</ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </div>
+          </div>
+        `,
+        setup(doc) {
+          const tabs = doc.getElementById('verifactu-config-tabs');
+          const panelDelegated = doc.getElementById('verifactu-config-delegated');
+          const panelOwn = doc.getElementById('verifactu-config-own');
+          const grantDocs = doc.getElementById('verifactu-grant-docs');
+          const historyRows = doc.getElementById('verifactu-grant-history-rows');
+          const resendButton = doc.getElementById('verifactu-grant-resend');
+          const resendHint = doc.getElementById('verifactu-grant-resend-hint');
+          const resendActions = doc.getElementById('verifactu-grant-resend-actions');
+          const resendCancel = doc.getElementById('verifactu-grant-resend-cancel');
+          const p12File = doc.getElementById('verifactu-config-p12-file');
+          const p12Password = doc.getElementById('verifactu-config-p12-password');
+          const p12Feedback = doc.getElementById('verifactu-config-p12-feedback');
+          const p12Status = doc.getElementById('verifactu-config-p12-status');
+          const p12Holder = doc.getElementById('verifactu-config-p12-holder');
+          const p12Upload = doc.getElementById('verifactu-config-p12-upload');
+          const p12Remove = doc.getElementById('verifactu-config-p12-remove');
+
+          function recordQuery(name, params = {}) {
+            doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
+          }
+
+          // El interruptor sale de `certificate::route_of`, NUNCA de `has_certificate` (hub#1489):
+          // ese 0/1 dice "¿tiene este hub una VÍA?" y vale 1 en las dos, así que un p12 guardado no
+          // implica que el hub remita con él.
+          function goTab(tab) {
+            tabs.value = tab;
+            panelDelegated.hidden = tab !== 'delegated';
+            panelOwn.hidden = tab !== 'own';
+            const { pathname, search } = window.location;
+            window.history.pushState({}, '', `${pathname}${search}#${tab}`);
+          }
+          tabs.addEventListener('ionChange', (event) => goTab(String(event.target.value || 'delegated')));
+
+          function renderDocs() {
+            grantDocs.innerHTML = GRANT_DOCS.map(
+              (label) => `<li><ion-icon name="checkmark-circle-outline"></ion-icon>${label}</li>`,
+            ).join('');
+          }
+
+          function renderHistory() {
+            historyRows.innerHTML = GRANT_HISTORY.map((row) => {
+              const outcome = row.status === 'rechazado'
+                ? `Rechazado${row.reason ? `: ${row.reason}` : ''}`
+                : row.status === 'vigente'
+                  ? 'Aceptado: vigente'
+                  : 'En revisión';
+              return `<li><span class="k">N.º ${row.version} · ${row.date}</span><span>${outcome}</span></li>`;
+            }).join('');
+          }
+
+          // «Volver a enviar»: con el envío actual en revisión (`pendiente`), el hueco lo dice la
+          // MISMA frase que pinta el componente real para ese estado — la de un `vigente` es otra.
+          resendButton.addEventListener('click', () => {
+            resendButton.parentElement.hidden = true;
+            resendHint.hidden = false;
+            resendHint.textContent = 'Si algo salió mal, envíalo de nuevo: el envío nuevo sustituye al que está en revisión.';
+            resendActions.hidden = false;
+          });
+          resendCancel.addEventListener('click', () => {
+            resendButton.parentElement.hidden = false;
+            resendHint.hidden = true;
+            resendActions.hidden = true;
+          });
+
+          const toBase64 = (file) => file.arrayBuffer().then((buffer) => {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (const byte of bytes) binary += String.fromCharCode(byte);
+            return btoa(binary);
+          });
+
+          let pickedFile = null;
+          p12File.labels = {
+            title: 'Arrastra aquí el fichero o {browse}',
+            browse: 'elígelo',
+            errorType: '«{name}» no es de un tipo admitido.',
+            errorSize: '«{name}» pesa más de {size}.',
+            removeLabel: 'Quitar {name}',
+          };
+          p12File.addEventListener('ok-change', (event) => {
+            pickedFile = event.detail?.files?.[0] ?? null;
+          });
+
+          function showP12(message, tone = 'success') {
+            p12Feedback.hidden = false;
+            p12Feedback.tone = tone;
+            p12Feedback.textContent = message;
+          }
+
+          p12Upload.addEventListener('click', async () => {
+            if (!pickedFile) {
+              showP12('Elige antes un fichero .p12 o .pfx.', 'warning');
+              return;
+            }
+            // La misma puerta del core que custodia el `.p12` (ADR-0081): PUT a
+            // `/api/business/certificate` con `pkcs12_b64`/`password`, nunca por un comando del
+            // módulo — la clave no es dato de VeriFactu, es del negocio.
+            const pkcs12_b64 = await toBase64(pickedFile);
+            const payload = { pkcs12_b64, password: String(p12Password.value || '') };
+            void payload;
+            p12Status.tone = 'success';
+            p12Status.label = 'Cargado';
+            p12Holder.innerHTML = `<span class="k">Titular</span><code>${ISSUER_NAME}</code><span class="k">Subido el ${new Date().toLocaleDateString('es')}</span>`;
+            p12Password.value = '';
+            pickedFile = null;
+            showP12('Certificado subido');
+          });
+
+          p12Remove.addEventListener('click', () => {
+            p12Status.tone = 'neutral';
+            p12Status.label = 'Sin cargar';
+            p12Holder.innerHTML = '';
+            showP12('Certificado quitado. ERPlora vuelve a remitir en tu nombre.');
+          });
+
+          renderDocs();
+          renderHistory();
+          recordQuery('verifactu.config.get', {});
+          recordQuery('hub.fiscal.transmission', {});
+        },
+      });
+    </script>
+  </body>
+</html>

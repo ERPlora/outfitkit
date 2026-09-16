@@ -271,6 +271,7 @@ describe('catálogo de páginas reales', () => {
       'module-verifactu-contingency',
       'module-verifactu-events',
       'module-verifactu-recovery',
+      'module-verifactu-config',
       'module-verifactu-settings',
       'module-whatsapp-inbox-inbox',
       'module-whatsapp-inbox-requests',
