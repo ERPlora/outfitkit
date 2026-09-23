@@ -30,6 +30,10 @@ const settingsFixture = JSON.parse(
   readFileSync(new URL('fixtures/printing.settings.get.json', moduleBase), 'utf8'),
 ) as Record<string, unknown>[];
 
+const printingEs = JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as {
+  ui: { receiptTextLivesInSales: string; receiptSettingsLink: string };
+};
+
 function pageSource(page: keyof typeof pages): string {
   expect(existsSync(pages[page]), `falta la demo real de printing/${page}`).toBe(true);
   return readFileSync(pages[page], 'utf8');
@@ -61,7 +65,8 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
 
     const outfitTags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
     expect(new Set(outfitTags)).toEqual(new Set());
-    for (const tag of ['ion-input', 'ion-select', 'ion-toggle', 'ion-button', 'ion-list', 'ion-item']) {
+    // No ion-input since printing#46: the only text boxes were the receipt header and footer.
+    for (const tag of ['ion-select', 'ion-toggle', 'ion-button', 'ion-list', 'ion-item']) {
       expect(page).toContain(`<${tag}`);
     }
   });
@@ -72,11 +77,11 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
     expect(page).toContain("recordQuery('printing.settings.get'");
   });
 
-  it('expone los seis campos del schema y conserva sus dominios reales', () => {
+  it('exposes the four fields the schema still owns and keeps their real domains', () => {
     const page = pageSource('settings');
+    // printing#46: the receipt header/footer left this schema — they live in the Sales settings now.
     expect(settingsSchema.required).toEqual([
-      'receipt_header', 'receipt_footer', 'paper_width', 'auto_print_on_sale',
-      'open_drawer_on_sale', 'print_kitchen',
+      'paper_width', 'auto_print_on_sale', 'open_drawer_on_sale', 'print_kitchen',
     ]);
     for (const field of settingsSchema.required) {
       expect(components.settings).toContain(field);
@@ -87,10 +92,32 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
     expect(page).toContain('<ion-select-option value="58">58 mm</ion-select-option>');
   });
 
+  it('no longer asks for the receipt header and footer: it points to the Sales settings instead', () => {
+    const page = pageSource('settings');
+    expect(page).not.toContain('id="printing-receipt-header"');
+    expect(page).not.toContain('id="printing-receipt-footer"');
+
+    // Same note and same link the real screen shows, with the module's own Spanish copy.
+    expect(components.settings).toContain('data-testid="printing-receipt-settings-note"');
+    expect(components.settings).toContain('data-testid="printing-receipt-settings-link"');
+    expect(page).toContain(printingEs.ui.receiptTextLivesInSales);
+    expect(page).toContain(printingEs.ui.receiptSettingsLink);
+
+    const salesRoute = components.settings.match(/const SALES_RECEIPT_ROUTE = '([^']+)'/);
+    expect(salesRoute, 'the module must keep declaring where the receipt is configured').not.toBeNull();
+    expect(page).toContain(`id="printing-receipt-settings-link" href="${salesRoute![1]}"`);
+    expect(page).toContain(`recordNavigation('${salesRoute![1]}')`);
+  });
+
   it('guarda el payload correcto y conserva las acciones reales del Bridge', () => {
     const page = pageSource('settings');
     expect(manifest.commands).toHaveProperty('printing.settings.update');
     expect(page).toContain("recordCommand('printing.settings.update', payload)");
+    // Save sends only what this module owns — exactly the schema's fields, never the receipt text.
+    const payload = page.match(/const payload = \{([\s\S]*?)\};/);
+    expect(payload, 'the save payload must stay an auditable object literal').not.toBeNull();
+    const payloadKeys = [...payload![1].matchAll(/^\s*([a-z_]+):/gm)].map((match) => match[1]);
+    expect(payloadKeys).toEqual(settingsSchema.required);
     expect(page).toContain("recordPeripheral('discoverPrinters'");
     expect(page).toContain("recordPeripheral('setDeviceRole'");
     expect(page).toContain("recordPeripheral('testPrint'");
