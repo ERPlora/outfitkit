@@ -56,3 +56,21 @@ describe('qrSvgMarkup', () => {
     expect(qrSvgMarkup('x'.repeat(5000))).toBe('');
   });
 });
+
+describe('qrSvgMarkup quiet zone', () => {
+  // The parity test above compares the function with <ok-qr>, and both share `modulesPath`: a
+  // bug in the shared offset would keep them equal and slip through. Pin the absolute position
+  // instead: the top-left finder pattern is always dark, so the path starts at (margin, margin).
+  it('offsets every module by the quiet zone: the finder pattern starts at (margin, margin)', () => {
+    const at = (margin: number) =>
+      new DOMParser().parseFromString(qrSvgMarkup(QR, { margin }), 'image/svg+xml').querySelector('path')?.getAttribute('d') ?? '';
+    expect(at(4).startsWith('M4 4h1v1h-1z')).toBe(true);
+    expect(at(0).startsWith('M0 0h1v1h-1z')).toBe(true);
+    // And the viewBox grows by the quiet zone on both sides, so the code stays centred.
+    const svg = new DOMParser().parseFromString(qrSvgMarkup(QR, { margin: 4 }), 'image/svg+xml').querySelector('svg');
+    const [, , w] = (svg?.getAttribute('viewBox') ?? '').split(' ').map(Number);
+    const svg0 = new DOMParser().parseFromString(qrSvgMarkup(QR, { margin: 0 }), 'image/svg+xml').querySelector('svg');
+    const [, , w0] = (svg0?.getAttribute('viewBox') ?? '').split(' ').map(Number);
+    expect(w - w0).toBe(8);
+  });
+});

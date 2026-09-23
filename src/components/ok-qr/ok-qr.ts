@@ -291,11 +291,16 @@ function buildMatrix(codewords: Uint8Array, version: number, ec: EcLevel): boole
     set(i, 6, v);
   }
 
-  // Patrones de alineación (no se solapan con finders).
+  // Alignment patterns. Only the three that would overlap a finder are left out (first/first,
+  // first/last, last/first): from version 7 some centres sit on the timing lines (row/column 6),
+  // which are reserved too, and skipping on `reserved` dropped those patterns and made every
+  // v7+ code unreadable.
   const aps = ALIGN_POS[version - 1];
+  const first = aps[0];
+  const last = aps[aps.length - 1];
   for (const r of aps) {
     for (const c of aps) {
-      if (reserved[r][c]) continue; // evita finders
+      if ((r === first && c === first) || (r === first && c === last) || (r === last && c === first)) continue;
       for (let dr = -2; dr <= 2; dr++) {
         for (let dc = -2; dc <= 2; dc++) {
           const ring = Math.max(Math.abs(dr), Math.abs(dc));
