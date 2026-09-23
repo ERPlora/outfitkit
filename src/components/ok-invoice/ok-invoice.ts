@@ -156,6 +156,9 @@ export interface InvoiceData {
    *  right under the QR at the size of the invoice data (Orden HAC/1177/2024 art. 20.1.b),
    *  separate from `qr_note`, which is a small caption and changes when the AEAT answers. */
   qr_legend?: string;
+  /** sales#339 — the text that must precede the fiscal QR («QR tributario:», AEAT QR spec v0.5.0
+   *  §3), painted ABOVE it at the size of the invoice data. No QR → not painted. */
+  qr_heading?: string;
 }
 
 export class OkInvoice extends LitElement {
@@ -214,11 +217,12 @@ export class OkInvoice extends LitElement {
     .summary .grand td { font-size: 15px; font-weight: 800; border-top: 1.5px solid var(--ink); padding-top: 2mm; }
     .summary .grand td.num { color: var(--accent); }
     .muted { color: var(--muted); }
-    /* Pie: pago, notas, QR. */
+    /* Foot: payment and notes (the fiscal QR opens the sheet, sales#339). */
     .foot { margin-top: 8mm; display: flex; justify-content: space-between; gap: 2rem; align-items: flex-start; }
     .pay-box { font-size: 11px; }
     .pay-box .h { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-    .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; }
+    .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-bottom: 6mm; }
+    .qr-heading { font-size: 12px; font-weight: 700; text-align: center; }
     .qr-legend { font-size: 12px; font-weight: 700; text-align: center; letter-spacing: .04em; }
     .qr-note { font-size: 8px; max-width: 36mm; text-align: center; color: var(--muted); word-break: break-word; }
     .legal { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 9px; color: var(--muted); white-space: pre-line; text-align: center; }
@@ -283,7 +287,10 @@ export class OkInvoice extends LitElement {
     const inv = this.invoice;
     if (!inv) return html`<div class="sheet empty">${this.t.empty}</div>`;
 
+    // sales#339 — the fiscal QR opens the sheet, at the top and centred, before anything the
+    // system writes (AEAT QR spec v0.5.0 §3: «al principio de la factura»).
     return html`<div class="sheet" part="sheet">
+      ${this.renderQr(inv)}
       ${this.renderTop(inv)}
       ${this.renderBillTo(inv)}
       ${this.renderLines(inv)}
@@ -379,20 +386,23 @@ export class OkInvoice extends LitElement {
 
   private renderFoot(inv: InvoiceData) {
     const hasPay = inv.payment_method || inv.payment_terms || inv.notes;
-    if (!hasPay && !inv.qr) return nothing;
+    if (!hasPay) return nothing;
     return html`<div class="foot">
       <div class="pay-box">
         ${inv.payment_method ? html`<div class="h">${this.t.paymentMethod}</div><div>${inv.payment_method}</div>` : nothing}
         ${inv.payment_terms ? html`<div style="margin-top:2mm" class="muted">${inv.payment_terms}</div>` : nothing}
         ${inv.notes ? html`<div style="margin-top:3mm">${inv.notes}</div>` : nothing}
       </div>
-      ${inv.qr
-        ? html`<div class="qr-wrap">
-            <ok-qr .value=${inv.qr} .size=${this.qrSize} ec="M"></ok-qr>
-            ${inv.qr_legend ? html`<div class="qr-legend">${inv.qr_legend}</div>` : nothing}
-            ${inv.qr_note ? html`<div class="qr-note">${inv.qr_note}</div>` : nothing}
-          </div>`
-        : nothing}
+    </div>`;
+  }
+
+  private renderQr(inv: InvoiceData) {
+    if (!inv.qr) return nothing;
+    return html`<div class="qr-wrap">
+      ${inv.qr_heading ? html`<div class="qr-heading">${inv.qr_heading}</div>` : nothing}
+      <ok-qr .value=${inv.qr} .size=${this.qrSize} ec="M"></ok-qr>
+      ${inv.qr_legend ? html`<div class="qr-legend">${inv.qr_legend}</div>` : nothing}
+      ${inv.qr_note ? html`<div class="qr-note">${inv.qr_note}</div>` : nothing}
     </div>`;
   }
 }
