@@ -129,11 +129,6 @@
                         Abrir cajón al cobrar
                       </ion-toggle>
                     </ion-item>
-                    <ion-item>
-                      <ion-toggle id="printing-print-kitchen" justify="space-between">
-                        Enrutar comandas a cocina/barra
-                      </ion-toggle>
-                    </ion-item>
                   </ion-list>
                   <ion-button id="printing-save" type="submit">Guardar ajustes</ion-button>
                 </form>
@@ -166,7 +161,6 @@
           const widthSelect = doc.getElementById('printing-paper-width');
           const autoPrintToggle = doc.getElementById('printing-auto-print-on-sale');
           const drawerToggle = doc.getElementById('printing-open-drawer-on-sale');
-          const kitchenToggle = doc.getElementById('printing-print-kitchen');
           const printersList = doc.getElementById('printing-printers');
           const rescanButton = doc.getElementById('printing-rescan');
           const toast = doc.getElementById('printing-toast');
@@ -174,7 +168,6 @@
           widthSelect.value = String(settings.paper_width);
           autoPrintToggle.checked = settings.auto_print_on_sale === 1;
           drawerToggle.checked = settings.open_drawer_on_sale === 1;
-          kitchenToggle.checked = settings.print_kitchen === 1;
 
           function showToast(message, color = 'success') {
             toast.message = message;
@@ -224,7 +217,8 @@
               paper_width: Number(widthSelect.value) === 58 ? 58 : 80,
               auto_print_on_sale: autoPrintToggle.checked ? 1 : 0,
               open_drawer_on_sale: drawerToggle.checked ? 1 : 0,
-              print_kitchen: kitchenToggle.checked ? 1 : 0,
+              // No control on the real screen (printing#17): sent back as stored.
+              print_kitchen: settings.print_kitchen,
             };
             recordCommand('printing.settings.update', payload);
             showToast('Ajustes guardados.');

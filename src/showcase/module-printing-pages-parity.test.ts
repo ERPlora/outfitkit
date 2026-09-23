@@ -77,15 +77,24 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
     expect(page).toContain("recordQuery('printing.settings.get'");
   });
 
-  it('exposes the four fields the schema still owns and keeps their real domains', () => {
+  it('shows a control only for the fields the real screen paints, and keeps their real domains', () => {
     const page = pageSource('settings');
     // printing#46: the receipt header/footer left this schema — they live in the Sales settings now.
     expect(settingsSchema.required).toEqual([
       'paper_width', 'auto_print_on_sale', 'open_drawer_on_sale', 'print_kitchen',
     ]);
+    // A field has a control on the real screen when its template writes it back with `this.set`.
+    const controlled = [...components.settings.matchAll(/this\.set\('([a-z_]+)'/g)].map((match) => match[1]);
+    expect(controlled.length, 'the real screen must keep painting its settings controls').toBeGreaterThan(0);
     for (const field of settingsSchema.required) {
       expect(components.settings).toContain(field);
-      expect(page).toContain(`id="printing-${field.replaceAll('_', '-')}"`);
+      const control = `id="printing-${field.replaceAll('_', '-')}"`;
+      if (controlled.includes(field)) {
+        expect(page, `the demo must show the ${field} control the real screen has`).toContain(control);
+      } else {
+        // outfitkit#153: e.g. print_kitchen — the real screen has no switch for it, so neither does the demo.
+        expect(page, `the demo must not show a ${field} control the real screen lacks`).not.toContain(control);
+      }
     }
     expect(settingsSchema.properties.paper_width.enum).toEqual([80, 58]);
     expect(page).toContain('<ion-select-option value="80">80 mm</ion-select-option>');
@@ -118,6 +127,9 @@ describe('showcase module-printing-printing — ajustes reales de impresión', (
     expect(payload, 'the save payload must stay an auditable object literal').not.toBeNull();
     const payloadKeys = [...payload![1].matchAll(/^\s*([a-z_]+):/gm)].map((match) => match[1]);
     expect(payloadKeys).toEqual(settingsSchema.required);
+    // A field without a control on screen is round-tripped as stored, like the real screen does.
+    expect(components.settings).toContain('print_kitchen: this.settings.print_kitchen,');
+    expect(payload![1]).toMatch(/^\s*print_kitchen: settings\.print_kitchen,$/m);
     expect(page).toContain("recordPeripheral('discoverPrinters'");
     expect(page).toContain("recordPeripheral('setDeviceRole'");
     expect(page).toContain("recordPeripheral('testPrint'");
