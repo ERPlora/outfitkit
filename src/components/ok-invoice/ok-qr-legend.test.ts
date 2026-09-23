@@ -90,8 +90,11 @@ describe('qr_legend — visible type size (Orden HAC/1177/2024 art. 20.1.b)', ()
     expect(fontSize(OkReceipt.styles, '.qr-legend')).toBeGreaterThanOrEqual(11);
   });
 
-  it('ok-invoice paints it larger than the 8px QR caption', () => {
+  it('ok-invoice paints it at least as large as the invoice body text (12px)', () => {
+    // AEAT «Detalle de las especificaciones técnicas del código QR» v0.5.0 §3: the phrase goes in
+    // a type "siempre igual o superior" to the rest of the invoice data — the body is 12px here.
     expect(fontSize(OkInvoice.styles, '.qr-legend')).toBeGreaterThan(fontSize(OkInvoice.styles, '.qr-note'));
-    expect(fontSize(OkInvoice.styles, '.qr-legend')).toBeGreaterThanOrEqual(10);
+    expect(fontSize(OkInvoice.styles, '.qr-legend')).toBeGreaterThanOrEqual(fontSize(OkInvoice.styles, '.sheet'));
+    expect(fontSize(OkInvoice.styles, '.sheet')).toBe(12);
   });
 });

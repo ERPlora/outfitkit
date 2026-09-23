@@ -219,7 +219,7 @@ export class OkInvoice extends LitElement {
     .pay-box { font-size: 11px; }
     .pay-box .h { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; }
-    .qr-legend { font-size: 11px; font-weight: 700; text-align: center; letter-spacing: .04em; }
+    .qr-legend { font-size: 12px; font-weight: 700; text-align: center; letter-spacing: .04em; }
     .qr-note { font-size: 8px; max-width: 36mm; text-align: center; color: var(--muted); word-break: break-word; }
     .legal { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 9px; color: var(--muted); white-space: pre-line; text-align: center; }
     .empty { padding: 12mm; text-align: center; color: #999; font-style: italic; }
