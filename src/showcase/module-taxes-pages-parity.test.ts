@@ -31,6 +31,13 @@ const ruleSchema = JSON.parse(readFileSync(new URL('schemas/rule_create.json', m
   required: string[];
   properties: { tax_type: { enum: string[] } };
 };
+const repairSchema = JSON.parse(readFileSync(new URL('schemas/rule_repair.json', moduleBase), 'utf8')) as {
+  required: string[];
+  properties: { mode: { enum: string[] } };
+};
+// The demo speaks Spanish: its visible strings are the module's own `es` catalogue, so a wording
+// change in the module sends whoever touches it back to the demo.
+const esUi = (JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as { ui: Record<string, string> }).ui;
 const aliasSchema = JSON.parse(readFileSync(new URL('schemas/alias_create.json', moduleBase), 'utf8')) as {
   required: string[];
   properties: { source: { enum: string[] } };
@@ -47,7 +54,13 @@ function jsonFixture(source: string, name: string): Record<string, unknown>[] {
   return JSON.parse(match![1]) as Record<string, unknown>[];
 }
 
-function expectSharedPageContract(page: string, route: string, title: string, tableId: string): void {
+function expectSharedPageContract(
+  page: string,
+  route: string,
+  title: string,
+  tableId: string,
+  extraOutfitTags: string[] = [],
+): void {
   expect(page).toContain("import { defineHubPage } from './_hub.js'");
   expect(page).toContain(`active: '${route}'`);
   expect(page).toContain(`title: '${title}'`);
@@ -60,7 +73,7 @@ function expectSharedPageContract(page: string, route: string, title: string, ta
   expect(page).not.toMatch(/mode:\s*['"]md['"]/);
 
   const outfitTags = [...page.matchAll(/<\/?(ok-[a-z-]+)/g)].map((match) => match[1]);
-  expect(new Set(outfitTags)).toEqual(new Set(['ok-data-table']));
+  expect(new Set(outfitTags)).toEqual(new Set(['ok-data-table', ...extraOutfitTags]));
   for (const property of [
     'serverSide = true',
     'fill = true',
@@ -81,9 +94,12 @@ function expectSharedPageContract(page: string, route: string, title: string, ta
 }
 
 describe('showcase taxes — contrato común real del módulo', () => {
-  it('usa Hub + Ionic iOS y deja ok-data-table como única pieza OutfitKit', () => {
+  it('usa Hub + Ionic iOS y deja ok-data-table como pieza OutfitKit (más el aviso de reglas)', () => {
     expectSharedPageContract(pageSource('categories'), '/m/taxes/categories', 'Categorías fiscales', 'taxes-categories-table');
-    expectSharedPageContract(pageSource('rules'), '/m/taxes/rules', 'Reglas por jurisdicción', 'taxes-rules-table');
+    // Rules also paints the module's warning banner (taxes#64), which is an `ok-inline-feedback`.
+    expectSharedPageContract(pageSource('rules'), '/m/taxes/rules', 'Reglas por jurisdicción', 'taxes-rules-table', [
+      'ok-inline-feedback',
+    ]);
     expectSharedPageContract(pageSource('aliases'), '/m/taxes/aliases', 'Alias de categorías', 'taxes-aliases-table');
   });
 });
@@ -154,14 +170,14 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     // `is_active` va AL FINAL: taxes#53 lo quitó de las tres listas por mentiroso y taxes#52
     // (PR ERPlora/taxes#56) lo devolvió SOLO aquí —una regla desactivada se puede volver a ver y
     // recuperar—, así que reentró por la cola. En reglas es un filtro REAL; en categorías y
-    // alias no existe.
+    // alias no existe. `is_incoherent` entró detrás con taxes#64 (outfitkit#155).
     expect(Object.keys(list.filters)).toEqual([
       'country_code', 'region_code', 'tax_category_key', 'rate_pct',
-      'tax_type', 'parent_id', 'operation_class', 'regime_key', 'is_active',
+      'tax_type', 'parent_id', 'operation_class', 'regime_key', 'is_active', 'is_incoherent',
     ]);
     expect(page).toContain("sort: 'country_code'");
     expect(page).toContain("cardIcon = () => 'options-outline'");
-    expect(page).toContain("table.actions = [{ id: 'deactivate'");
+    expect(page).toContain("{ id: 'deactivate'");
     expect(page).not.toMatch(/id:\s*['"](?:edit|delete|duplicate)['"]/);
     expect(page).toContain("recordCommand('taxes.rules.deactivate', { rule_id: row.id })");
 
@@ -192,7 +208,73 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
       expect(row.tax_type).toBe('vat');
       expect(row.valid_from).toBe('2012-09-01');
       expect(row.is_active).toBe(1);
+      expect(row.operation_class).toBe('subject');
     }
+  });
+
+  // taxes#64 (outfitkit#155): rules saved with a rate on a class that charges no tax before the
+  // taxes#62 guard are flagged by the server (`is_incoherent`) and the owner repairs them.
+  it('enseña el aviso, la marca y «Reparar» de las reglas incoherentes como el módulo', () => {
+    const page = pageSource('rules');
+
+    // The module's screen has the four pieces the demo has to mirror.
+    for (const piece of [
+      'taxes-rules-incoherent-warning',
+      "t('ui.incoherentBadge')",
+      "id: 'repair'",
+      'disabled: (row) => !isIncoherent(row)',
+      "erplora().command('taxes.rules.repair', { rule_id: row.id, mode })",
+      "role: 'charge_tax'",
+      "role: 'no_tax'",
+    ]) {
+      expect(components.rules).toContain(piece);
+    }
+
+    // Command and payload exist in the manifest with exactly these two modes.
+    expect(manifest.commands).toHaveProperty('taxes.rules.repair');
+    expect(repairSchema.required).toEqual(['rule_id']);
+    expect(repairSchema.properties.mode.enum).toEqual(['no_tax', 'charge_tax']);
+
+    // 1. Warning with the count, same tone and test id as the module.
+    expect(page).toMatch(/<ok-inline-feedback id="taxes-rules-incoherent-warning"[^>]*tone="warning"/);
+    expect(page).toContain(`\`${esUi.incoherentWarning.replace('{count}', '${count}')}\``);
+    // 2. Badge on the rate.
+    expect(page).toContain(`· ${esUi.incoherentBadge}`);
+    // 3. «Reparar» only on the incoherent rows, and the command the module sends.
+    expect(page).toContain(`{ id: 'repair', label: '${esUi.actionRepair}', icon: 'construct-outline', color: 'warning', disabled: (row) => !isIncoherent(row) }`);
+    expect(page).toContain("recordCommand('taxes.rules.repair', { rule_id: row.id, mode })");
+    // 4. Confirmation with the owner's two readings; «charge the tax» only when the own class is wrong.
+    expect(page).toContain('<ion-alert id="taxes-rules-repair-confirm"></ion-alert>');
+    for (const key of ['repairConfirmTitle', 'repairConfirmMessage', 'repairNoTax', 'repairChargeTax', 'cancel']) {
+      expect(page).toContain(`'${esUi[key]}'`);
+    }
+    expect(page).toContain("role: 'charge_tax'");
+    expect(page).toContain("role: 'no_tax'");
+    expect(page).toContain('canRepairByChargingTax(row)');
+  });
+
+  it('trae reglas incoherentes de antes de la guarda para que el aviso se vea', () => {
+    const rows = jsonFixture(pageSource('rules'), 'LEGACY_RULE_FIXTURE');
+    const classes = (JSON.parse(readFileSync(new URL('schemas/rule_create.json', moduleBase), 'utf8')) as {
+      properties: { operation_class: { enum: string[] } };
+    }).properties.operation_class.enum;
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    // Same condition as `queries/rules_list.sql`: a rate, and the own or the root class charges no tax.
+    const incoherent = (row: Record<string, unknown>): boolean => {
+      const root = row.parent_id ? byId.get(row.parent_id) : undefined;
+      return Number(row.rate_pct) > 0
+        && (row.operation_class !== 'subject' || (root !== undefined && root.operation_class !== 'subject'));
+    };
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const row of rows) {
+      expect(classes).toContain(row.operation_class);
+      expect(seed).toContain(`'${row.tax_category_key}'`);
+      expect(incoherent(row), `${String(row.id)} debe ser incoherente`).toBe(true);
+    }
+    // Both repair paths: a root whose own class is wrong (two buttons) and a subject component
+    // under such a root (only «Sin impuesto»).
+    expect(rows.some((row) => !row.parent_id && row.operation_class !== 'subject')).toBe(true);
+    expect(rows.some((row) => row.parent_id && row.operation_class === 'subject')).toBe(true);
   });
 });
 
