@@ -150,6 +150,7 @@
                 <ion-button id="tax-rule-save" type="submit">Añadir</ion-button>
               </form>
             </ok-data-table>
+            <ion-alert id="taxes-rules-deactivate-confirm"></ion-alert>
             <ion-alert id="taxes-rules-repair-confirm"></ion-alert>
           </div>
         `,
@@ -168,6 +169,7 @@
           const saveButton = doc.getElementById('tax-rule-save');
           const incoherentBanner = doc.getElementById('taxes-rules-incoherent-warning');
           const repairAlert = doc.getElementById('taxes-rules-repair-confirm');
+          const deactivateAlert = doc.getElementById('taxes-rules-deactivate-confirm');
           const state = {
             page: 0,
             pageSize: 50,
@@ -175,7 +177,10 @@
             dir: 'asc',
             search: '',
             filters: {},
+            // `{ include_archived: 1 }` only while «Activa: No» is picked, as the real screen does.
+            context: {},
           };
+          let showingArchived = false;
 
           table.columns = [
             {
@@ -213,12 +218,16 @@
               format: (row) => Number(row.is_active) ? 'Sí' : 'No',
             },
           ];
-          const deactivateAction = { id: 'deactivate', label: 'Desactivar', icon: 'power-outline', color: 'danger' };
+          const deactivateAction = { id: 'deactivate', label: 'Desactivar', icon: 'ban-outline', color: 'danger' };
+          const restoreAction = { id: 'restore', label: 'Reactivar', icon: 'arrow-undo-outline', color: 'success' };
           // «Reparar» only on a page with something to repair, and only enabled on those rows.
           function rowActions(pageRows) {
             const repair = pageRows.some((row) => isIncoherent(row))
               ? [{ id: 'repair', label: 'Reparar', icon: 'construct-outline', color: 'warning', disabled: (row) => !isIncoherent(row) }]
               : [];
+            if (showingArchived) {
+              return [...repair, restoreAction];
+            }
             return [...repair, deactivateAction];
           }
           table.actions = rowActions([]);
@@ -248,11 +257,14 @@
             recordQuery('taxes.rules.list', { ...state });
             const term = state.search.trim().toLocaleLowerCase('es');
             const listed = rules.map(withIncoherence);
-            const incoherentCount = listed.filter((row) => isIncoherent(row)).length;
+            // The warning counts active rules only: a deactivated rule no longer sells anything.
+            const incoherentCount = listed.filter((row) => Number(row.is_active) === 1 && isIncoherent(row)).length;
             incoherentBanner.hidden = incoherentCount === 0;
             incoherentBanner.textContent = incoherentCount ? incoherentWarning(incoherentCount) : '';
             const filtered = listed
               .filter((row) => {
+                // Same scope as `taxes.rules.list`: deactivated rules only when asked for.
+                if (!Number(row.is_active) && !state.context.include_archived) return false;
                 if (term && !`${row.country_code} ${row.region_code || ''} ${row.tax_category_key}`.toLocaleLowerCase('es').includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
                   if (value == null || value === '') return true;
@@ -312,12 +324,42 @@
               if (isIncoherent(row)) confirmRepair(row);
               return;
             }
+            if (event.detail.actionId === 'restore') {
+              // No confirmation: restoring undoes the destructive step (taxes#52).
+              recordCommand('taxes.rules.activate', { rule_id: String(row.id) });
+              setActive(row.id, 1);
+              return;
+            }
             if (event.detail.actionId !== 'deactivate') return;
             if (!Number(row.is_active)) return;
-            recordCommand('taxes.rules.deactivate', { rule_id: row.id });
-            rules = rules.filter((candidate) => candidate.id !== row.id);
-            queryPage();
+            confirmDeactivate(row);
           });
+
+          // Deactivating keeps the rule (is_active = 0): «Activa: No» shows it again to restore it.
+          function setActive(ruleId, isActive) {
+            rules = rules.map((candidate) => (candidate.id === ruleId ? { ...candidate, is_active: isActive } : candidate));
+            queryPage();
+          }
+
+          deactivateAlert.addEventListener('ionAlertDidDismiss', () => { deactivateAlert.isOpen = false; });
+
+          function confirmDeactivate(row) {
+            deactivateAlert.header = 'Desactivar regla fiscal';
+            deactivateAlert.message = 'La regla dejará de aplicarse a operaciones nuevas. Los documentos fiscales ya emitidos no se modifican.';
+            deactivateAlert.buttons = [
+              { text: 'Cancelar', role: 'cancel' },
+              {
+                text: 'Desactivar regla',
+                role: 'confirm',
+                cssClass: 'alert-button-danger',
+                handler: () => {
+                  recordCommand('taxes.rules.deactivate', { rule_id: row.id });
+                  setActive(row.id, 0);
+                },
+              },
+            ];
+            deactivateAlert.isOpen = true;
+          }
 
           form.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -379,6 +421,10 @@
             queryPage();
           });
           table.addEventListener('filterChange', (event) => {
+            if (event.detail.col === 'is_active') {
+              showingArchived = String(event.detail.value ?? '') === '0';
+              state.context = showingArchived ? { include_archived: 1 } : {};
+            }
             state.filters[event.detail.col] = event.detail.value;
             state.page = 0;
             queryPage();
