@@ -55,12 +55,20 @@
 
       // Copia auditable de las seis reglas IVA ES de seed/install.sqlite.sql (ADR-0085).
       const RULE_FIXTURE = [
-        { "id": "taxrule-es-product-generic", "country_code": "ES", "region_code": null, "tax_category_key": "product.generic", "rate_pct": 21, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
-        { "id": "taxrule-es-service-generic", "country_code": "ES", "region_code": null, "tax_category_key": "service.generic", "rate_pct": 21, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
-        { "id": "taxrule-es-restaurant-food", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.food", "rate_pct": 10, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
-        { "id": "taxrule-es-restaurant-drink", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.drink", "rate_pct": 10, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
-        { "id": "taxrule-es-restaurant-delivery", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.delivery", "rate_pct": 10, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
-        { "id": "taxrule-es-restaurant-alcohol", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.alcohol", "rate_pct": 21, "tax_type": "vat", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 }
+        { "id": "taxrule-es-product-generic", "country_code": "ES", "region_code": null, "tax_category_key": "product.generic", "rate_pct": 21, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-service-generic", "country_code": "ES", "region_code": null, "tax_category_key": "service.generic", "rate_pct": 21, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-restaurant-food", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.food", "rate_pct": 10, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-restaurant-drink", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.drink", "rate_pct": 10, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-restaurant-delivery", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.delivery", "rate_pct": 10, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-restaurant-alcohol", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.alcohol", "rate_pct": 21, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 }
+      ];
+
+      // Two rules saved BEFORE the taxes#62 guard (taxes#64): an exempt rule that still carries a
+      // rate, and a subject component hanging from it. The server flags them (`is_incoherent`) and
+      // the owner repairs them; the demo brings them so the warning can be seen.
+      const LEGACY_RULE_FIXTURE = [
+        { "id": "taxrule-es-service-education", "country_code": "ES", "region_code": null, "tax_category_key": "service.education", "rate_pct": 21, "tax_type": "vat", "operation_class": "exempt", "exempt_reason": "E1", "parent_id": null, "component_label": null, "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 },
+        { "id": "taxrule-es-service-education-surcharge", "country_code": "ES", "region_code": null, "tax_category_key": "service.education", "rate_pct": 5.2, "tax_type": "surcharge", "operation_class": "subject", "exempt_reason": null, "parent_id": "taxrule-es-service-education", "component_label": "Recargo de equivalencia", "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 }
       ];
 
       const CATEGORIES = [
@@ -69,6 +77,7 @@
         ['restaurant.alcohol', 'Restaurant — alcohol'],
         ['restaurant.delivery', 'Restaurant — delivery'],
         ['service.generic', 'Service — generic'],
+        ['service.education', 'Service — education (VAT exempt)'],
         ['product.generic', 'Product — generic'],
       ];
       const TAX_TYPES = [
@@ -80,7 +89,7 @@
         ['import_duty', 'Arancel'],
       ];
       const TYPE_LABELS = Object.fromEntries(TAX_TYPES);
-      let rules = RULE_FIXTURE.map((row) => ({ ...row }));
+      let rules = [...RULE_FIXTURE, ...LEGACY_RULE_FIXTURE].map((row) => ({ ...row }));
       const commandLog = [];
       const queryLog = [];
 
@@ -93,11 +102,33 @@
         queryLog.push({ name, params: { ...params } });
       }
 
+      // What `queries/rules_list.sql` answers as `is_incoherent`: a rate on a rule that charges no
+      // tax — its own class, or its root's, is not `subject`.
+      function withIncoherence(row) {
+        const root = row.parent_id ? rules.find((candidate) => candidate.id === row.parent_id) : null;
+        const chargesNoTax = row.operation_class !== 'subject' || (root != null && root.operation_class !== 'subject');
+        return { ...row, is_incoherent: Number(row.rate_pct) > 0 && chargesNoTax ? 1 : 0 };
+      }
+
+      function isIncoherent(row) {
+        return Number(row.is_incoherent) === 1;
+      }
+
+      // «Keep the rate, charge the tax» only fixes a rule whose OWN class is the problem.
+      function canRepairByChargingTax(row) {
+        return isIncoherent(row) && row.operation_class !== 'subject';
+      }
+
+      function incoherentWarning(count) {
+        return `${count} reglas cobran un tipo en una clase que no lleva impuesto (exenta, no sujeta o inversión del sujeto pasivo). Sus ventas se cobran en caja pero no se pueden facturar. Usa «Reparar» en las filas marcadas.`;
+      }
+
       defineHubPage({
         active: '/m/taxes/rules',
         title: 'Reglas por jurisdicción',
         body: `
           <div class="taxes-page">
+            <ok-inline-feedback id="taxes-rules-incoherent-warning" tone="warning" icon="warning-outline" hidden></ok-inline-feedback>
             <ok-data-table id="taxes-rules-table" fill>
               <form id="taxes-rule-form" slot="create" class="taxes-form">
                 <ion-input id="tax-rule-country" mode="md" fill="outline" label="País" label-placement="floating" placeholder="ES" minlength="2" maxlength="2" required></ion-input>
@@ -119,6 +150,7 @@
                 <ion-button id="tax-rule-save" type="submit">Añadir</ion-button>
               </form>
             </ok-data-table>
+            <ion-alert id="taxes-rules-repair-confirm"></ion-alert>
           </div>
         `,
         setup(doc) {
@@ -134,6 +166,8 @@
           const parentInput = doc.getElementById('tax-rule-parent');
           const componentLabelInput = doc.getElementById('tax-rule-component-label');
           const saveButton = doc.getElementById('tax-rule-save');
+          const incoherentBanner = doc.getElementById('taxes-rules-incoherent-warning');
+          const repairAlert = doc.getElementById('taxes-rules-repair-confirm');
           const state = {
             page: 0,
             pageSize: 50,
@@ -157,7 +191,7 @@
             },
             { key: 'country_code', header: 'País', sortable: true, filterable: true, filterType: 'text' },
             { key: 'region_code', header: 'Región', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.region_code || '—') },
-            { key: 'rate_pct', header: '%', align: 'right', sortable: true, format: (row) => `${Number(row.rate_pct).toFixed(2)}%` },
+            { key: 'rate_pct', header: '%', align: 'right', sortable: true, format: (row) => isIncoherent(row) ? `${Number(row.rate_pct).toFixed(2)}% · debe ser 0 % en esta clase` : `${Number(row.rate_pct).toFixed(2)}%` },
             {
               key: 'tax_type',
               header: 'Tipo',
@@ -179,7 +213,15 @@
               format: (row) => Number(row.is_active) ? 'Sí' : 'No',
             },
           ];
-          table.actions = [{ id: 'deactivate', label: 'Desactivar', icon: 'power-outline', color: 'danger' }];
+          const deactivateAction = { id: 'deactivate', label: 'Desactivar', icon: 'power-outline', color: 'danger' };
+          // «Reparar» only on a page with something to repair, and only enabled on those rows.
+          function rowActions(pageRows) {
+            const repair = pageRows.some((row) => isIncoherent(row))
+              ? [{ id: 'repair', label: 'Reparar', icon: 'construct-outline', color: 'warning', disabled: (row) => !isIncoherent(row) }]
+              : [];
+            return [...repair, deactivateAction];
+          }
+          table.actions = rowActions([]);
           table.serverSide = true;
           table.fill = true;
           table.addable = true;
@@ -205,7 +247,11 @@
           function queryPage() {
             recordQuery('taxes.rules.list', { ...state });
             const term = state.search.trim().toLocaleLowerCase('es');
-            const filtered = rules
+            const listed = rules.map(withIncoherence);
+            const incoherentCount = listed.filter((row) => isIncoherent(row)).length;
+            incoherentBanner.hidden = incoherentCount === 0;
+            incoherentBanner.textContent = incoherentCount ? incoherentWarning(incoherentCount) : '';
+            const filtered = listed
               .filter((row) => {
                 if (term && !`${row.country_code} ${row.region_code || ''} ${row.tax_category_key}`.toLocaleLowerCase('es').includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
@@ -224,6 +270,7 @@
 
             const start = state.page * state.pageSize;
             table.rows = filtered.slice(start, start + state.pageSize);
+            table.actions = rowActions(table.rows);
             table.total = filtered.length;
             table.page = state.page;
             table.pageSize = state.pageSize;
@@ -231,9 +278,41 @@
             table.sortDir = state.dir;
           }
 
+          function repairRule(row, mode) {
+            recordCommand('taxes.rules.repair', { rule_id: row.id, mode });
+            rules = rules.map((candidate) => {
+              if (mode === 'charge_tax' && candidate.id === row.id) return { ...candidate, operation_class: 'subject', exempt_reason: null };
+              // «Sin impuesto» on a root also clears the rates of its components, as the command does.
+              if (mode === 'no_tax' && (candidate.id === row.id || (!row.parent_id && candidate.parent_id === row.id))) {
+                return { ...candidate, rate_pct: 0 };
+              }
+              return candidate;
+            });
+            queryPage();
+          }
+
+          repairAlert.addEventListener('ionAlertDidDismiss', () => { repairAlert.isOpen = false; });
+
+          function confirmRepair(row) {
+            repairAlert.header = 'Reparar regla fiscal';
+            repairAlert.message = 'Esta regla cobra un tipo, pero su clase no lleva impuesto, así que sus ventas no se pueden facturar. Elige qué querías: sin impuesto (el tipo pasa a 0 %) o cobrar el tipo (la regla pasa a sujeta). Las ventas pasadas y las facturas emitidas no cambian.';
+            repairAlert.buttons = [
+              { text: 'Cancelar', role: 'cancel' },
+              ...(canRepairByChargingTax(row)
+                ? [{ text: 'Cobrar el tipo', role: 'charge_tax', handler: () => repairRule(row, 'charge_tax') }]
+                : []),
+              { text: 'Sin impuesto (0 %)', role: 'no_tax', handler: () => repairRule(row, 'no_tax') },
+            ];
+            repairAlert.isOpen = true;
+          }
+
           table.addEventListener('rowAction', (event) => {
-            if (event.detail.actionId !== 'deactivate') return;
             const row = event.detail.row;
+            if (event.detail.actionId === 'repair') {
+              if (isIncoherent(row)) confirmRepair(row);
+              return;
+            }
+            if (event.detail.actionId !== 'deactivate') return;
             if (!Number(row.is_active)) return;
             recordCommand('taxes.rules.deactivate', { rule_id: row.id });
             rules = rules.filter((candidate) => candidate.id !== row.id);
@@ -269,6 +348,7 @@
               region_code: null,
               parent_id: null,
               component_label: null,
+              operation_class: 'subject',
               valid_from: null,
               valid_to: null,
               is_active: 1,
