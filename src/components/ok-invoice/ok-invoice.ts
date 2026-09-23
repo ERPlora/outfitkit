@@ -152,6 +152,10 @@ export interface InvoiceData {
   qr?: string;
   /** Leyenda bajo el QR. */
   qr_note?: string;
+  /** sales#327 — legal legend of the fiscal QR («VERI*FACTU», RD 1619/2012 art. 6.5.b). Painted
+   *  right under the QR at the size of the invoice data (Orden HAC/1177/2024 art. 20.1.b),
+   *  separate from `qr_note`, which is a small caption and changes when the AEAT answers. */
+  qr_legend?: string;
 }
 
 export class OkInvoice extends LitElement {
@@ -215,6 +219,7 @@ export class OkInvoice extends LitElement {
     .pay-box { font-size: 11px; }
     .pay-box .h { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; }
+    .qr-legend { font-size: 11px; font-weight: 700; text-align: center; letter-spacing: .04em; }
     .qr-note { font-size: 8px; max-width: 36mm; text-align: center; color: var(--muted); word-break: break-word; }
     .legal { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 9px; color: var(--muted); white-space: pre-line; text-align: center; }
     .empty { padding: 12mm; text-align: center; color: #999; font-style: italic; }
@@ -384,6 +389,7 @@ export class OkInvoice extends LitElement {
       ${inv.qr
         ? html`<div class="qr-wrap">
             <ok-qr .value=${inv.qr} .size=${this.qrSize} ec="M"></ok-qr>
+            ${inv.qr_legend ? html`<div class="qr-legend">${inv.qr_legend}</div>` : nothing}
             ${inv.qr_note ? html`<div class="qr-note">${inv.qr_note}</div>` : nothing}
           </div>`
         : nothing}

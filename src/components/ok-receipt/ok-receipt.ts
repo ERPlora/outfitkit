@@ -146,6 +146,10 @@ export interface ReceiptData {
   qr?: string;
   /** Leyenda bajo el QR. */
   qr_note?: string;
+  /** sales#327 — legal legend of the fiscal QR («VERI*FACTU», RD 1619/2012 art. 6.5.b). Painted
+   *  right under the QR at body size (Orden HAC/1177/2024 art. 20.1.b), separate from `qr_note`,
+   *  which is a small caption and changes when the AEAT answers with a CSV. */
+  qr_legend?: string;
   /** QR promocional del negocio (reseñas Google, redes, web). Va SIEMPRE al final,
    *  después del fiscal (que es el legal) y más pequeño. Si vacío, no deja rastro. */
   promo_qr?: string;
@@ -205,6 +209,7 @@ export class OkReceipt extends LitElement {
     .pay td { font-size: 10px; }
     .footer { font-size: 10px; white-space: pre-line; }
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
+    .qr-legend { font-size: 11px; font-weight: 700; text-align: center; letter-spacing: .04em; }
     .qr-note { font-size: 8px; text-align: center; word-break: break-word; }
     .promo-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
     .promo-note { font-size: 9px; text-align: center; word-break: break-word; }
@@ -334,6 +339,7 @@ export class OkReceipt extends LitElement {
     if (!r.qr) return nothing;
     return html`<div class="qr-wrap">
       <ok-qr .value=${r.qr} .size=${this.qrSize} ec="M" color="#000" background="#fff"></ok-qr>
+      ${r.qr_legend ? html`<div class="qr-legend">${r.qr_legend}</div>` : nothing}
       ${r.qr_note ? html`<div class="qr-note">${r.qr_note}</div>` : nothing}
     </div>`;
   }

@@ -1918,7 +1918,8 @@ formatMinor(123456, { decimals: 2, locale: 'es', currency: '€' }); // '1.234,5
         decimals: 2,
         footer: '¡Gracias por su visita!\nwww.barpepe.example',
         qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=A-000142&total=8.80',
-        qr_note: 'Factura verificable en la sede electrónica de la AEAT (VeriFactu)',
+        qr_legend: 'VERI*FACTU',
+        qr_note: 'CSV: A-7F3K9QX2M1',
       };
     },
     code: `const el = document.createElement('ok-receipt');
@@ -1933,7 +1934,7 @@ el.receipt = {
   ],
   subtotal: 1650, taxes: [{ label: 'IVA 10%', base: 1650, amount: 165 }], total: 1815, decimals: 2,
   payment: { method: 'Efectivo', paid: 2000, change: 185 },
-  qr: 'https://…', qr_note: 'VeriFactu',
+  qr: 'https://…', qr_legend: 'VERI*FACTU', qr_note: 'CSV: …',
 };
 container.appendChild(el);
 // Imprimir desde el contenedor padre: window.print() + @media print`,
@@ -1977,7 +1978,8 @@ container.appendChild(el);
         notes: 'Gracias por confiar en ERPlora.',
         footer: 'ERPlora S.L. · Inscrita en el Registro Mercantil de Madrid, Tomo 0000, Folio 00, Hoja M-000000 · NIF B-12345678',
         qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=F2026/0042&total=1074.48',
-        qr_note: 'Factura verificable en la AEAT (VeriFactu)',
+        qr_legend: 'VERI*FACTU',
+        qr_note: 'CSV: A-7F3K9QX2M1',
       };
     },
     code: `const el = document.createElement('ok-invoice');
@@ -1989,7 +1991,7 @@ el.invoice = {
   lines: [{ description: 'Licencia Pro', qty: 1, unit_price: 48000, tax_rate: 21, total: 48000 }],
   subtotal: 48000, taxes: [{ label: 'IVA 21%', base: 48000, amount: 10080 }], tax_total: 10080, total: 58080, decimals: 2,
   payment_method: 'Transferencia', payment_terms: 'IBAN ES… · 30 días',
-  qr: 'https://…', qr_note: 'VeriFactu',
+  qr: 'https://…', qr_legend: 'VERI*FACTU', qr_note: 'CSV: …',
 };
 container.appendChild(el);`,
     api: [
