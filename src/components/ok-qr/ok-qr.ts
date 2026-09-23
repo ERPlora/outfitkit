@@ -507,6 +507,46 @@ function generateQr(value: string, ec: EcLevel): boolean[][] | null {
   return null; // no cabe ni en v40
 }
 
+/** The dark modules as ONE path in module units, offset by the quiet zone (shared by `<ok-qr>` and
+ *  `qrSvgMarkup`, so the screen and the paper draw the same code). */
+function modulesPath(matrix: boolean[][], quiet: number): string {
+  let d = '';
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix.length; c++) {
+      if (matrix[r][c]) d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+    }
+  }
+  return d;
+}
+
+function escapeMarkup(v: string): string {
+  return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/**
+ * sales#340 — the same QR `<ok-qr>` paints, as a standalone SVG string (black on white, `size` px,
+ * quiet zone included). For documents where no custom element exists: the ticket printed by the
+ * browser is plain HTML written into an isolated iframe. Empty string when `value` is empty or does
+ * not fit in version 40.
+ */
+export function qrSvgMarkup(
+  value: string,
+  opts: { size?: number; ec?: EcLevel; margin?: number } = {},
+): string {
+  if (!value) return '';
+  const level: EcLevel = opts.ec && EC_ORDER.includes(opts.ec) ? opts.ec : 'M';
+  const matrix = generateQr(value, level);
+  if (!matrix) return '';
+  const quiet = Math.max(0, Math.floor(opts.margin ?? 4));
+  const dim = matrix.length + quiet * 2;
+  const size = Math.max(1, Math.round(opts.size ?? 160));
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${dim} ${dim}" ` +
+    `shape-rendering="crispEdges" role="img" aria-label="${escapeMarkup(`Código QR: ${value}`)}">` +
+    `<rect x="0" y="0" width="${dim}" height="${dim}" fill="#fff"/>` +
+    `<path d="${modulesPath(matrix, quiet)}" fill="#000"/></svg>`;
+}
+
 // ───────────────────────── Componente ─────────────────────────
 export class OkQr extends LitElement {
   static styles = css`
@@ -558,14 +598,7 @@ export class OkQr extends LitElement {
     const dim = count + quiet * 2; // dimensión total en módulos (incl. quiet zone)
 
     // Un único <path> con todos los módulos oscuros (más eficiente que N <rect>).
-    let d = '';
-    for (let r = 0; r < count; r++) {
-      for (let c = 0; c < count; c++) {
-        if (matrix[r][c]) {
-          d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
-        }
-      }
-    }
+    const d = modulesPath(matrix, quiet);
 
     // Overrides directos de color vía propiedades CSS inline (siguen siendo CSP-safe: style attr
     // estático, no inline scripts).
