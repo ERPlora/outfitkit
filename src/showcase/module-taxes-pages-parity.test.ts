@@ -250,7 +250,10 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     }
     expect(page).toContain("role: 'charge_tax'");
     expect(page).toContain("role: 'no_tax'");
-    expect(page).toContain('canRepairByChargingTax(row)');
+    expect(components.rules).toContain("canRepairByChargingTax(this.pendingRepair) ? [{ text: t('ui.repairChargeTax'), role: 'charge_tax' }]");
+    expect(page).toContain(`...(canRepairByChargingTax(row)
+                ? [{ text: '${esUi.repairChargeTax}', role: 'charge_tax'`);
+    expect(page).toContain("return isIncoherent(row) && row.operation_class !== 'subject';");
   });
 
   it('trae reglas incoherentes de antes de la guarda para que el aviso se vea', () => {
