@@ -4,6 +4,7 @@ import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 import { CSV_BOM, decodeCsvBuffer } from './csv-encoding.js';
 import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevronForward, iconChevronUpOutline, iconClose, iconEllipsisVertical, iconFileTrayOutline, iconSwapVerticalOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-checkbox / ion-icon NATIVOS (los registra el host). OutfitKit
@@ -93,7 +94,7 @@ export interface DataTableMenuAction {
   label: string;
   /** Nombre de un ion-icon opcional. */
   icon?: string;
-  /** Color Ionic (p.ej. 'danger', 'primary'). */
+  /** Theme colour name (e.g. 'danger', 'primary'); painted from its token, see base/ion-tone.ts (#162). */
   color?: string;
 }
 
@@ -1534,8 +1535,8 @@ export class OkDataTable extends LitElement {
                     this.emit('rowAction', { actionId: a.id, row });
                   }}
                 >
-                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} color=${a.color ?? nothing}></ion-icon>` : nothing}
-                  <ion-label color=${a.color ?? nothing}>${label}</ion-label>
+                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} style=${ionTone(a.color, 'text') ?? nothing}></ion-icon>` : nothing}
+                  <ion-label style=${ionTone(a.color, 'text') ?? nothing}>${label}</ion-label>
                 </ion-item>
               `;
             })}
@@ -1749,8 +1750,8 @@ export class OkDataTable extends LitElement {
             ${this.menuActions.map(
               (a) => html`
                 <ion-item button .detail=${false} @click=${() => { this.menuOpen = false; this.emit('menuAction', { actionId: a.id }); }}>
-                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} color=${a.color ?? nothing}></ion-icon>` : nothing}
-                  <ion-label color=${a.color ?? nothing}>${a.label}</ion-label>
+                  ${a.icon ? html`<ion-icon slot="start" .icon=${okIcon(a.icon)} style=${ionTone(a.color, 'text') ?? nothing}></ion-icon>` : nothing}
+                  <ion-label style=${ionTone(a.color, 'text') ?? nothing}>${a.label}</ion-label>
                 </ion-item>
               `,
             )}
@@ -1785,7 +1786,7 @@ export class OkDataTable extends LitElement {
           <ion-button
             size="small"
             fill="clear"
-            color="medium"
+            style=${ionTone('medium', 'clear')}
             data-testid=${this.tid(`row-${key}-menu`)}
             aria-label=${this.t.moreActions}
             title=${this.t.moreActions}
@@ -1810,7 +1811,7 @@ export class OkDataTable extends LitElement {
             <ion-button
               size="small"
               fill="clear"
-              color=${a.color ?? 'medium'}
+              style=${ionTone(a.color ?? 'medium', 'clear') ?? nothing}
               data-testid=${this.tid(`row-${key}-${a.id}`)}
               ?disabled=${disabled}
               aria-disabled=${disabled ? 'true' : nothing}
