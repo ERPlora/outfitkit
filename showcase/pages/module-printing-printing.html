@@ -25,6 +25,7 @@
       .printing-settings-page ion-card { margin: 0; }
       .printing-settings-form { display: flex; flex-direction: column; gap: 0.75rem; }
       .printing-settings-form ion-button { align-self: flex-end; }
+      .printing-receipt-note { margin: 0; color: var(--ion-color-medium); }
       .printing-printer-id { color: var(--ion-color-medium); font-size: 0.78rem; }
       .printing-printer-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
       .printing-printer-actions ion-select { min-width: 8.5rem; }
@@ -85,6 +86,10 @@
         document.dispatchEvent(new CustomEvent('erplora:preview-peripheral', { detail: { name, payload } }));
       }
 
+      function recordNavigation(route) {
+        document.dispatchEvent(new CustomEvent('erplora:preview-navigate', { detail: { route } }));
+      }
+
       defineHubPage({
         active: '/m/printing/printing',
         title: 'Impresoras',
@@ -97,20 +102,11 @@
               </ion-card-header>
               <ion-card-content>
                 <form id="printing-settings-form" class="printing-settings-form">
-                  <ion-input
-                    id="printing-receipt-header" mode="md"
-                    fill="outline"
-                    label="Cabecera del recibo"
-                    label-placement="floating"
-                    placeholder="Mi negocio · NIF · dirección"
-                  ></ion-input>
-                  <ion-input
-                    id="printing-receipt-footer" mode="md"
-                    fill="outline"
-                    label="Pie del recibo"
-                    label-placement="floating"
-                    placeholder="¡Gracias por su compra!"
-                  ></ion-input>
+                  <!-- printing#46: the receipt header and footer are configured in the Sales settings. -->
+                  <p id="printing-receipt-settings-note" class="printing-receipt-note">
+                    El encabezado y el pie del tique forman parte de los ajustes de Ventas, que es de donde sale el tique.
+                  </p>
+                  <a id="printing-receipt-settings-link" href="/m/sales/settings">Abrir los ajustes del tique</a>
                   <ion-list inset>
                     <ion-item>
                       <ion-select
@@ -166,8 +162,7 @@
         setup(doc) {
           const settings = { ...SETTINGS_FIXTURE[0] };
           const form = doc.getElementById('printing-settings-form');
-          const headerInput = doc.getElementById('printing-receipt-header');
-          const footerInput = doc.getElementById('printing-receipt-footer');
+          const salesLink = doc.getElementById('printing-receipt-settings-link');
           const widthSelect = doc.getElementById('printing-paper-width');
           const autoPrintToggle = doc.getElementById('printing-auto-print-on-sale');
           const drawerToggle = doc.getElementById('printing-open-drawer-on-sale');
@@ -176,8 +171,6 @@
           const rescanButton = doc.getElementById('printing-rescan');
           const toast = doc.getElementById('printing-toast');
 
-          headerInput.value = settings.receipt_header;
-          footerInput.value = settings.receipt_footer;
           widthSelect.value = String(settings.paper_width);
           autoPrintToggle.checked = settings.auto_print_on_sale === 1;
           drawerToggle.checked = settings.open_drawer_on_sale === 1;
@@ -228,8 +221,6 @@
           form.addEventListener('submit', (event) => {
             event.preventDefault();
             const payload = {
-              receipt_header: String(headerInput.value ?? ''),
-              receipt_footer: String(footerInput.value ?? ''),
               paper_width: Number(widthSelect.value) === 58 ? 58 : 80,
               auto_print_on_sale: autoPrintToggle.checked ? 1 : 0,
               open_drawer_on_sale: drawerToggle.checked ? 1 : 0,
@@ -237,6 +228,12 @@
             };
             recordCommand('printing.settings.update', payload);
             showToast('Ajustes guardados.');
+          });
+
+          salesLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            recordNavigation('/m/sales/settings');
+            showToast('Abriendo los ajustes de Ventas.');
           });
 
           rescanButton.addEventListener('click', () => {
