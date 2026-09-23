@@ -150,6 +150,9 @@ export interface ReceiptData {
    *  right under the QR at body size (Orden HAC/1177/2024 art. 20.1.b), separate from `qr_note`,
    *  which is a small caption and changes when the AEAT answers with a CSV. */
   qr_legend?: string;
+  /** sales#339 — the text that must precede the fiscal QR («QR tributario:», AEAT QR spec v0.5.0
+   *  §3), painted ABOVE it at body size. The producer owns the legal text; no QR → not painted. */
+  qr_heading?: string;
   /** QR promocional del negocio (reseñas Google, redes, web). Va SIEMPRE al final,
    *  después del fiscal (que es el legal) y más pequeño. Si vacío, no deja rastro. */
   promo_qr?: string;
@@ -208,7 +211,8 @@ export class OkReceipt extends LitElement {
     .grand td { font-size: 14px; font-weight: 700; padding-top: 1mm; }
     .pay td { font-size: 10px; }
     .footer { font-size: 10px; white-space: pre-line; }
-    .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
+    .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-bottom: 2mm; }
+    .qr-heading { font-size: 11px; font-weight: 700; text-align: center; }
     .qr-legend { font-size: 11px; font-weight: 700; text-align: center; letter-spacing: .04em; }
     .qr-note { font-size: 8px; text-align: center; word-break: break-word; }
     .promo-wrap { display: flex; flex-direction: column; align-items: center; gap: 1mm; margin-top: 2mm; }
@@ -243,7 +247,10 @@ export class OkReceipt extends LitElement {
     const r = this.receipt;
     if (!r) return html`<div class="paper empty">${this.t.empty}</div>`;
 
+    // sales#339 — the fiscal QR opens the paper, before anything the system writes (AEAT QR spec
+    // v0.5.0 §3: «al principio de la factura»); the promotional QR stays at the foot.
     return html`<div class="paper" part="paper">
+      ${this.renderQr(r)}
       ${r.title ? html`<div class="doc-title">${r.title}</div>` : nothing}
       ${this.renderHeader(r)}
       <hr class="sep" />
@@ -253,7 +260,6 @@ export class OkReceipt extends LitElement {
       <hr class="sep" />
       ${this.renderTotals(r)}
       ${r.footer ? html`<hr class="sep" /><div class="center footer">${r.footer}</div>` : nothing}
-      ${this.renderQr(r)}
       ${this.renderPromo(r)}
     </div>`;
   }
@@ -338,6 +344,7 @@ export class OkReceipt extends LitElement {
   private renderQr(r: ReceiptData) {
     if (!r.qr) return nothing;
     return html`<div class="qr-wrap">
+      ${r.qr_heading ? html`<div class="qr-heading">${r.qr_heading}</div>` : nothing}
       <ok-qr .value=${r.qr} .size=${this.qrSize} ec="M" color="#000" background="#fff"></ok-qr>
       ${r.qr_legend ? html`<div class="qr-legend">${r.qr_legend}</div>` : nothing}
       ${r.qr_note ? html`<div class="qr-note">${r.qr_note}</div>` : nothing}
