@@ -196,6 +196,52 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     expect(page).toContain("recordCommand('taxes.rules.create'");
   });
 
+  // outfitkit#156 (taxes#52): deactivating keeps the rule with is_active = 0; «Activa: No» widens the
+  // list to the deactivated ones and their action is «Reactivar», exactly like the real screen.
+  it('deactivates without deleting, and «Activa: No» shows the deactivated rules with «Reactivar»', () => {
+    const page = pageSource('rules');
+
+    // Same two actions as the module, with its icon, colour and Spanish label.
+    for (const id of ['deactivate', 'restore']) {
+      const action = components.rules.match(
+        new RegExp(`\\{ id: '${id}', label: t\\('ui\\.([A-Za-z]+)'\\), icon: '([a-z-]+)', color: '([a-z]+)' \\}`),
+      );
+      expect(action, `the module must keep declaring the ${id} action`).not.toBeNull();
+      const [, labelKey, icon, color] = action!;
+      expect(page).toContain(`{ id: '${id}', label: '${esUi[labelKey]}', icon: '${icon}', color: '${color}' }`);
+    }
+    expect(page).not.toContain('power-outline');
+
+    // «Activa: No» is what switches the screen to the deactivated rules and widens the scope.
+    expect(components.rules).toContain("this.showingArchived = String(value ?? '') === '0';");
+    expect(components.rules).toContain('this.ctrl.state.context = this.showingArchived ? { include_archived: 1 } : {};');
+    expect(page).toContain("showingArchived = String(event.detail.value ?? '') === '0';");
+    expect(page).toContain('state.context = showingArchived ? { include_archived: 1 } : {};');
+    expect(page).toMatch(/if \(showingArchived\) \{\s*return \[\.\.\.repair, restoreAction\];/);
+
+    // Without that scope the list only carries active rules, as the real query does.
+    const listSql = readFileSync(new URL('queries/rules_list.sql', moduleBase), 'utf8');
+    expect(listSql).toContain("AND (r.is_active = 1 OR COALESCE(CAST(:include_archived AS TEXT), '0') IN ('1', 'true'))");
+    expect(page).toContain('if (!Number(row.is_active) && !state.context.include_archived) return false;');
+    // The warning counts active rules only: a deactivated rule no longer sells anything.
+    expect(page).toContain('listed.filter((row) => Number(row.is_active) === 1 && isIncoherent(row)).length');
+
+    // Deactivating asks first (same alert and copy as the module) and keeps the row.
+    expect(components.rules).toContain('data-testid="taxes-rules-deactivate-confirm"');
+    expect(page).toContain('<ion-alert id="taxes-rules-deactivate-confirm"></ion-alert>');
+    for (const key of ['deactivateConfirmTitle', 'deactivateConfirmMessage', 'deactivateConfirmAction']) {
+      expect(page).toContain(esUi[key]);
+    }
+    expect(page).not.toMatch(/rules = rules\.filter\(/);
+    expect(page).toContain('setActive(row.id, 0)');
+
+    // Restoring needs no confirmation and goes through the module's own command.
+    expect(manifest.commands).toHaveProperty('taxes.rules.activate');
+    expect(components.rules).toContain("erplora().command('taxes.rules.activate', { rule_id: String(row.id) })");
+    expect(page).toContain("recordCommand('taxes.rules.activate', { rule_id: String(row.id) })");
+    expect(page).toContain('setActive(row.id, 1)');
+  });
+
   it('parte exactamente de las seis reglas IVA sembradas', () => {
     const rows = jsonFixture(pageSource('rules'), 'RULE_FIXTURE');
     expect(rows).toHaveLength(6);
