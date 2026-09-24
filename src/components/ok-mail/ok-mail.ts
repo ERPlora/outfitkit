@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 import { iconArchiveOutline, iconArrowRedoOutline, iconArrowUndoOutline, iconChevronBack, iconCreateOutline, iconDocumentAttachOutline, iconTrashOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-icon / ion-searchbar / ion-avatar / ion-badge NATIVOS (los
 // registra el HOST). Para los estados vacíos REUSA <ok-empty-state> del catálogo. OutfitKit
@@ -588,7 +589,7 @@ export class OkMail extends LitElement {
           <ion-button fill="clear" size="small" aria-label=${this.t.archive} @click=${() => this.emit('ok-archive', { id: m.id })}>
             <ion-icon slot="icon-only" .icon=${iconArchiveOutline}></ion-icon>
           </ion-button>
-          <ion-button fill="clear" size="small" color="danger" aria-label=${this.t.delete} @click=${() => this.emit('ok-delete', { id: m.id })}>
+          <ion-button fill="clear" size="small" style=${ionTone('danger', 'clear')} aria-label=${this.t.delete} @click=${() => this.emit('ok-delete', { id: m.id })}>
             <ion-icon slot="icon-only" .icon=${iconTrashOutline}></ion-icon>
           </ion-button>
         </div>

@@ -1,6 +1,7 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 import { iconChevronDownOutline, okIcon } from '../../base/icons.js';
 
 // Item del menú desplegable. Lo aporta el consumidor vía la prop `.items`.
@@ -19,7 +20,8 @@ export interface OkSplitButtonItem {
 // autocontenido. Es INLINE (no ancho completo): ocupa solo lo que miden los botones. Cierra al
 // click fuera o Esc.
 //   • prop `label`   → texto del botón principal
-//   • prop `color`   → color Ionic (primary, danger, …) propagado a los ion-button
+//   • prop `color`   → theme tone (primary, danger, …) painted on both ion-button halves through
+//                      ionTone(), not `color=`, which does not reach inside this shadow root (#163)
 //   • prop `fill`    → fill Ionic (solid | outline | clear) propagado a los ion-button
 //   • prop `.items`  → Array<OkSplitButtonItem>
 // Eventos (bubbles + composed):
@@ -244,12 +246,18 @@ export class OkSplitButton extends LitElement {
     </button>`;
   }
 
+  /** The tone as inline custom properties: `color=` would not reach inside this shadow root (#163). */
+  private toneStyle(): string | undefined {
+    // Ionic renders `fill="default"` as solid outside a toolbar.
+    return ionTone(this.color, this.fill === 'default' ? 'solid' : this.fill);
+  }
+
   render(): unknown {
     return html`
       <div class="group">
         <ion-button
           class="main"
-          color=${this.color}
+          style=${this.toneStyle() ?? nothing}
           fill=${this.fill}
           @click=${() => this.mainClick()}
         >
@@ -257,7 +265,7 @@ export class OkSplitButton extends LitElement {
         </ion-button>
         <ion-button
           class="caret"
-          color=${this.color}
+          style=${this.toneStyle() ?? nothing}
           fill=${this.fill}
           aria-haspopup="menu"
           aria-expanded=${this.open ? 'true' : 'false'}

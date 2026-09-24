@@ -19,18 +19,60 @@ const DEFAULT_HEX: Record<string, string> = {
   dark: '#222428',
 };
 
+/** Ionic 8 default contrast of each tone: what a solid button writes its text with. */
+const DEFAULT_CONTRAST: Record<string, string> = {
+  primary: '#fff',
+  secondary: '#fff',
+  tertiary: '#fff',
+  success: '#000',
+  warning: '#000',
+  danger: '#fff',
+  light: '#000',
+  medium: '#fff',
+  dark: '#fff',
+};
+
 /** A theme colour name: lowercase, digits and dashes. Anything else is refused (it goes into CSS). */
 const TONE_NAME = /^[a-z][a-z0-9-]*$/;
+
+/** How the control is filled, which decides the custom properties that carry the tone. */
+export type IonToneVariant = 'clear' | 'text' | 'solid' | 'outline';
+
+/** `var(--ok-<name>, var(--ion-color-<name>, <hex>))`, the hex only when Ionic ships one. */
+function tokenChain(okName: string, ionName: string, hex: string | undefined): string {
+  return `var(--ok-${okName}, var(--ion-color-${ionName}${hex ? `, ${hex}` : ''}))`;
+}
 
 /**
  * Inline style that paints an Ionic control with a theme tone.
  * - `clear`: an `ion-button` with `fill="clear"` (sets its `--color`).
  * - `text`: an `ion-icon` / `ion-label` (sets `color`).
+ * - `solid`: an `ion-button` with `fill="solid"` (background from the tone, text from its contrast,
+ *   and hover / press / focus from its tint / shade so they do not flash Ionic's primary).
+ * - `outline`: an `ion-button` with `fill="outline"` (text and border from the tone).
  * Returns `undefined` for an empty or invalid tone, so `style=${ionTone(…) ?? nothing}` renders no attribute.
  */
-export function ionTone(tone: string | undefined, variant: 'clear' | 'text'): string | undefined {
+export function ionTone(tone: string | undefined, variant: IonToneVariant): string | undefined {
   if (!tone || !TONE_NAME.test(tone)) return undefined;
-  const hex = DEFAULT_HEX[tone];
-  const value = `var(--ok-${tone}, var(--ion-color-${tone}${hex ? `, ${hex}` : ''}))`;
-  return variant === 'clear' ? `--color: ${value};` : `color: ${value};`;
+  const value = tokenChain(tone, tone, DEFAULT_HEX[tone]);
+  switch (variant) {
+    case 'text':
+      return `color: ${value};`;
+    case 'clear':
+      return `--color: ${value};`;
+    case 'outline':
+      return (
+        `--color: ${value}; --border-color: ${value}; ` +
+        `--background-activated: ${value}; --background-focused: ${value};`
+      );
+    case 'solid': {
+      const contrast = tokenChain(`${tone}-contrast`, `${tone}-contrast`, DEFAULT_CONTRAST[tone]);
+      return (
+        `--background: ${value}; --color: ${contrast}; ` +
+        `--background-hover: var(--ion-color-${tone}-tint, ${value}); ` +
+        `--background-activated: var(--ion-color-${tone}-shade, ${value}); ` +
+        `--background-focused: var(--ion-color-${tone}-shade, ${value});`
+      );
+    }
+  }
 }

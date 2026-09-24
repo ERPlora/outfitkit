@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 import { OkStepper, type OkStep } from '../ok-stepper/ok-stepper.js';
 
 // Re-exportamos el tipo de paso para que el consumidor no tenga que importar de dos sitios.
@@ -133,10 +134,10 @@ export class OkWizard extends LitElement {
       <div class="nav ${isFirst ? 'no-back' : ''}">
         ${isFirst
           ? ''
-          : html`<ion-button fill="outline" color="medium" @click=${() => this._back()}>
+          : html`<ion-button fill="outline" style=${ionTone('medium', 'outline')} @click=${() => this._back()}>
               ${this.backLabel}
             </ion-button>`}
-        <ion-button color="primary" @click=${() => this._next()}>
+        <ion-button @click=${() => this._next()}>
           ${isLast ? this.finishLabel : this.nextLabel}
         </ion-button>
       </div>

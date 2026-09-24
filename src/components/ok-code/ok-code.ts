@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 
 // ok-code — visor de código sin resaltado de sintaxis.
 // Bloque: superficie monospace bordeada, scroll horizontal, whitespace preservado,
@@ -170,7 +171,7 @@ export class OkCode extends LitElement {
               class="copy"
               size="small"
               fill="solid"
-              color="medium"
+              style=${ionTone('medium', 'solid')}
               aria-label="Copiar código"
               @click=${this.handleCopy}
               >${this.copied ? 'Copiado' : 'Copiar'}</ion-button

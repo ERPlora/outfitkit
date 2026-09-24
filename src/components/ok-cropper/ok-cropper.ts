@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { ionTone } from '../../base/ion-tone.js';
 
 // ok-cropper — UI de recorte de imagen. Construye lo que Ionic no trae: un viewport con
 // checkerboard de transparencia + overlay oscuro, rectángulo de recorte arrastrable y
@@ -471,7 +472,7 @@ export class OkCropper extends LitElement {
             `,
           )}
           <span class="spacer"></span>
-          <ion-button size="small" fill="clear" color="medium" @click=${() => this.emitCancel()}>
+          <ion-button size="small" fill="clear" style=${ionTone('medium', 'clear')} @click=${() => this.emitCancel()}>
             ${this.cancelLabel}
           </ion-button>
           <ion-button size="small" fill="solid" @click=${() => this.emitCrop()}>
