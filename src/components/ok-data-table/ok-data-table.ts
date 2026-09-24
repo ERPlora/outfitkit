@@ -258,6 +258,10 @@ export interface OkDataTableLabels {
   recordPlural: string;
   /** Pie en MÓVIL: botón que trae la siguiente tanda de filas (sustituye al pager numerado). */
   loadMore: string;
+  /** #171 — Client mode: there ARE rows, but the search/filters hide them all (≠ `empty`). */
+  noMatches: string;
+  /** #171 — Button under `noMatches` that clears the search and filters. */
+  showAll: string;
 }
 
 /** Defaults en INGLÉS. Variables con token `{n}`/`{label}`/`{from}`/`{to}`. */
@@ -297,6 +301,8 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   recordSingular: 'record',
   recordPlural: 'records',
   loadMore: 'Load more',
+  noMatches: 'No results match your search or filters',
+  showAll: 'Show all',
 };
 
 const ES_LABELS: OkDataTableLabels = {
@@ -335,6 +341,8 @@ const ES_LABELS: OkDataTableLabels = {
   recordSingular: 'registro',
   recordPlural: 'registros',
   loadMore: 'Cargar más',
+  noMatches: 'Ningún resultado coincide con la búsqueda o los filtros',
+  showAll: 'Mostrar todo',
 };
 
 export class OkDataTable extends LitElement {
@@ -692,6 +700,10 @@ export class OkDataTable extends LitElement {
   @property({ type: Number, attribute: 'page-size' }) pageSize = 10;
   /** Mensaje cuando no hay filas. Si no se pasa, deriva de `this.t.empty` (inglés por defecto). */
   @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  /** #171 — Message when rows exist but the search/filters hide them all (client mode only; in
+   *  `serverSide` the consumer owns the query and words `empty-message` itself). Falls back to
+   *  `this.t.noMatches`. */
+  @property({ attribute: 'no-matches-message' }) noMatchesMessage?: string;
   /** Placeholder del buscador. Si no se pasa, deriva de `this.t.search` (inglés por defecto). */
   @property({ attribute: 'search-placeholder' }) searchPlaceholder?: string;
   /** (NUEVO, additivo) Textos humanos del data-table para i18n (parcial). Lo no pasado cae al
@@ -1046,6 +1058,10 @@ export class OkDataTable extends LitElement {
   private get effEmptyMessage(): string {
     return this.emptyMessage ?? this.t.empty;
   }
+  /** #171 — Effective "no matches" message (explicit prop → i18n label → English default). */
+  private get effNoMatchesMessage(): string {
+    return this.noMatchesMessage ?? this.t.noMatches;
+  }
 
   // ── Resolución de alias (compat + documentados) ──────────────────────────────────────────
   private get effPageSizes(): number[] {
@@ -1224,6 +1240,17 @@ export class OkDataTable extends LitElement {
   }
   private clearFilters(): void {
     this.filterDraft = {};
+  }
+  /** #171 — "Show all" under the no-matches state: drops the search AND the column filters, so
+   *  every row is back in one tap. Consumers listening to `filterChange` hear the reset. */
+  private resetSearchAndFilters(): void {
+    const hadFilters = Object.keys(this.clientFilters).length > 0;
+    this.q = '';
+    this.clientFilters = {};
+    this.filterDraft = {};
+    this.clientPage = 0;
+    this.mobileShown = 0;
+    if (hadFilters) this.emit('filterChange', { filters: {} });
   }
   private serializeFilters(src: Record<string, { values?: Set<string>; from?: string; to?: string }>) {
     const out: Record<string, unknown> = {};
@@ -2204,10 +2231,17 @@ export class OkDataTable extends LitElement {
   }
 
   private emptyState(): unknown {
+    // #171 — Rows that exist but are all hidden by the search/filters are not an empty list: saying
+    // "nothing here" made people believe the catalogue was empty. Only reachable in client mode —
+    // in `serverSide` the visible rows ARE `rows`, so this state only shows when `rows` is empty.
+    const noMatches = this.rows.length > 0;
     return html`
       <div class="empty">
         <span class="empty-ic"><ion-icon .icon=${iconFileTrayOutline}></ion-icon></span>
-        <span>${this.effEmptyMessage}</span>
+        <span>${noMatches ? this.effNoMatchesMessage : this.effEmptyMessage}</span>
+        ${noMatches
+          ? html`<ion-button fill="clear" size="small" data-role="no-matches-reset" data-testid=${this.tid('show-all')} @click=${() => this.resetSearchAndFilters()}>${this.t.showAll}</ion-button>`
+          : nothing}
       </div>
     `;
   }
