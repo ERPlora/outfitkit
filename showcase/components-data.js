@@ -142,7 +142,10 @@ dt.rowClickable = true;           // la fila entera abre el registro → evento 
 dt.views = ['table', 'cards'];
 dt.pageSizes = [5, 10, 25, 50];   // selector de filas/pág. en la toolbar
 dt.addable = true;                // botón «Añadir» rotulado que abre el slot create (panel: empuja en escritorio, hoja completa en móvil)
-dt.actions = [{ id: 'edit', label: 'Editar', icon: 'create-outline' }];
+dt.actions = [
+  { id: 'edit', label: 'Editar', icon: 'create-outline' },                        // sin color → gris (medium)
+  { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },      // se pinta desde el token --ok-danger / --ion-color-danger (#162)
+];
 dt.menuActions = [{ id: 'export', label: 'Exportar CSV', icon: 'download-outline' }];
 dt.addEventListener('rowAction', (e) => …);   // { actionId, row }
 dt.addEventListener('menuAction', (e) => …);  // { actionId }
@@ -165,7 +168,7 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: 'inlineFilters', type: 'bool', detail: 'Filtros (select / daterange) en la toolbar en vez del drawer' },
       { kind: 'prop', name: '.menuActions', type: 'DataTableMenuAction[]', detail: 'Menú overflow «⋮» → emite menuAction (no hay fila: `label` es siempre string)' },
       { kind: 'prop', name: '.pageSizes · pageSize', type: 'number[] · number', detail: 'Selector de filas/pág. en la toolbar · filas por página' },
-      { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — `label` acepta string o (row)=>string (también como aria-label/title); loading muestra ion-spinner y deshabilita. Si los botones NO caben en el ancho disponible (tablet estrecha, tablas de muchas columnas) se pliegan solos en un menú «⋮» por fila con las mismas acciones, etiquetas, colores y estados: no hay nada que configurar (#122)' },
+      { kind: 'prop', name: '.actions', type: 'DataTableAction[]', detail: '{id, label, icon?, color?, disabled?(row), loading?(row)} por fila — `label` acepta string o (row)=>string (también como aria-label/title); loading muestra ion-spinner y deshabilita. Si los botones NO caben en el ancho disponible (tablet estrecha, tablas de muchas columnas) se pliegan solos en un menú «⋮» por fila con las mismas acciones, etiquetas, colores y estados: no hay nada que configurar (#122). `color` es un nombre del tema (danger, success…) y se pinta desde su token; sin `color` la acción sale en gris (#162)' },
       { kind: 'prop', name: '.views', type: 'string[]', detail: "['table','cards']" },
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
       { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila —y la tarjeta en vista «cards»— abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
