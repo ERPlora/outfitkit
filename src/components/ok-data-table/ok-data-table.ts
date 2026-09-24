@@ -1137,8 +1137,11 @@ export class OkDataTable extends LitElement {
     a.download = this.csvName;
     a.click();
     URL.revokeObjectURL(url);
-    this.emit('csvExport', { rows: this.rows.length });
-    this.emit('export', { rows: this.rows.length });
+    // `count` is the unambiguous row count on all four CSV events; `rows` keeps its legacy meaning
+    // (a number here, the parsed list on import) so existing consumers do not break (#139).
+    const count = this.rows.length;
+    this.emit('csvExport', { rows: count, count });
+    this.emit('export', { rows: count, count });
   }
   private parseCsv(text: string): { headers: string[]; rows: Record<string, string>[] } {
     const out: string[][] = [];
@@ -1173,8 +1176,8 @@ export class OkDataTable extends LitElement {
     // («Café» → «Caf�») y su "CSV UTF-8" con BOM (ver csv-encoding.ts).
     const text = decodeCsvBuffer(await file.arrayBuffer());
     const { headers, rows } = this.parseCsv(text);
-    this.emit('csvImport', { headers, rows });
-    this.emit('import', { headers, rows });
+    this.emit('csvImport', { headers, rows, count: rows.length });
+    this.emit('import', { headers, rows, count: rows.length });
     input.value = '';
   }
 
