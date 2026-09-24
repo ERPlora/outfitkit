@@ -2231,9 +2231,10 @@ export class OkDataTable extends LitElement {
   }
 
   private emptyState(): unknown {
-    // #171 — In client mode, rows that exist but are all hidden by the search/filters are not an
-    // empty list: saying "nothing here" made people believe the catalogue was empty.
-    const noMatches = !this.serverSide && this.rows.length > 0;
+    // #171 — Rows that exist but are all hidden by the search/filters are not an empty list: saying
+    // "nothing here" made people believe the catalogue was empty. Only reachable in client mode —
+    // in `serverSide` the visible rows ARE `rows`, so this state only shows when `rows` is empty.
+    const noMatches = this.rows.length > 0;
     return html`
       <div class="empty">
         <span class="empty-ic"><ion-icon .icon=${iconFileTrayOutline}></ion-icon></span>
