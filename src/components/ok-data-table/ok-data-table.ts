@@ -110,6 +110,11 @@ export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
    *  `<ion-spinner name="dots">` en lugar del icono/label Y queda deshabilitado
    *  (una acción en curso no debe ser re-clicable). */
   loading?: (row: Record<string, unknown>) => boolean;
+  /** (optional, per row) When it returns `true` for a row, the action is NOT rendered on that row:
+   *  not in the list, not on the card, not in the "..." menu. Use it for an action that does not
+   *  apply to the row ("Update" with no new version), and `disabled` for one that applies but
+   *  cannot be taken right now — a greyed-out button reads as "something is blocked" (hub#2014). */
+  hidden?: (row: Record<string, unknown>) => boolean;
 }
 
 /** Input of `decideRowActionsFit`: what gets measured of the hole the table lives in. */
@@ -925,8 +930,11 @@ export class OkDataTable extends LitElement {
       if (this.actionsTrackPx !== 0) this.actionsTrackPx = 0;
       return;
     }
-    const el = this.renderRoot?.querySelector?.('.grow-data .gcell.actions-col .actions');
-    const width = el ? Math.ceil(el.scrollWidth) : 0;
+    // hub#2014 — With `hidden` per row, rows carry different numbers of buttons: the track takes
+    // the WIDEST one, or a row with more buttons than the first would spill out of it.
+    const boxes = this.renderRoot?.querySelectorAll?.('.grow-data .gcell.actions-col .actions') ?? [];
+    let width = 0;
+    for (const el of boxes) width = Math.max(width, Math.ceil(el.scrollWidth));
     // 0 = todavía sin maquetar (o vista tarjetas): se deja `max-content` y se vuelve a medir.
     if (width > 0 && width !== this.actionsTrackPx) this.actionsTrackPx = width;
   }
@@ -1503,6 +1511,7 @@ export class OkDataTable extends LitElement {
   private renderRowMenu(): unknown {
     const row = this.rowMenuRow;
     if (!this.actions.length || !row) return nothing;
+    const actions = this.visibleActions(row);
     const key = this.keyOf(row);
     return html`
       <ion-popover
@@ -1514,7 +1523,7 @@ export class OkDataTable extends LitElement {
       >
         <ion-content>
           <ion-list lines="none">
-            ${this.actions.map((a) => {
+            ${actions.map((a) => {
               const disabled = a.loading?.(row) === true || a.disabled?.(row) === true;
               const label = typeof a.label === 'function' ? a.label(row) : a.label;
               return html`
@@ -1772,15 +1781,23 @@ export class OkDataTable extends LitElement {
   // appointment carries, the row asks for 380px and the card gives 379px at 411dp, 237px at 768px
   // and 272px at 1440px — so the first button hung off the card at ALL THREE widths, not just on
   // a phone. If you add a view that lays these buttons out, MEASURE it.
+  /** hub#2014 — The row actions that exist for THIS row (`hidden` filtered out), in their order. */
+  private visibleActions(row: Record<string, unknown>): DataTableAction[] {
+    return this.actions.filter((a) => a.hidden?.(row) !== true);
+  }
+
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
     // #143 — The row identity goes at the end of the hook, NEVER its position: the order changes
     // with every filter and the spec would silently start asserting on another row.
     const key = this.keyOf(row);
+    const actions = this.visibleActions(row);
     // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
     // Shopify, Business Central o Salesforce en pantallas estrechas. Baja el mínimo de la tabla
     // de 796px a 652px, que es lo que quita la columna fijada de encima del «Estado».
     if (collapsible && this.rowActionsCollapsed) {
+      // hub#2014 — Nothing left to do on this row: a "..." that opens an empty menu is noise.
+      if (!actions.length) return html`<div class="actions"></div>`;
       return html`
         <div class="actions">
           <ion-button
@@ -1800,7 +1817,7 @@ export class OkDataTable extends LitElement {
     }
     return html`
       <div class="actions">
-        ${this.actions.map(
+        ${actions.map(
           (a) => {
             // Acción en curso → spinner y no re-clicable; deshabilitada → botón inerte.
             const loading = a.loading?.(row) === true;

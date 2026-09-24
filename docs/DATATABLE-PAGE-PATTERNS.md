@@ -79,7 +79,7 @@ El API actual ya cubre lo usado de forma repetida:
 - modo cliente y server-side;
 - búsqueda, filtros de texto/select/multiselect/número/fecha/rangos, orden y paginación;
 - columnas renderizadas, ocultables y con ancho;
-- acciones por fila con estado disabled/loading;
+- acciones por fila con estado disabled/loading y ocultables por fila (`hidden`);
 - vista tabla/tarjetas y contenido de tarjeta personalizado;
 - selección, importación/exportación CSV, acción primaria y menú overflow;
 - panel `create`, `fill`, etiquetas i18n y key estable de fila.
@@ -110,9 +110,14 @@ No hace falta otro componente de tabla ni una variante por producto.
    hace falta acceso interno: `filterValues` y `search` son props controladas
    (`server-filter-values.test.ts`, `controlled-search.test.ts`).
 2. 🟡 **Acciones por fila — a medias.** Una acción ya puede llevar **etiqueta calculada con la
-   fila** y `disabled`/`loading` por fila, y cuando no caben se **pliegan** solas en el menú «⋮»
-   (decidido MIDIENDO el hueco, no por un breakpoint fijo). Sigue sin cubrirse lo que SaaS resuelve
-   con su columna propia: **visibilidad por fila**, URL/POST, confirmación y acciones hijas.
+   fila**, `disabled`/`loading` por fila y **visibilidad por fila** (`hidden(row)`, hub#2014: la
+   acción que no aplica a esa fila no se pinta, ni en lista, ni en tarjeta, ni en el «⋮»), y cuando
+   no caben se **pliegan** solas en el menú «⋮» (decidido MIDIENDO el hueco, no por un breakpoint
+   fijo). Sigue sin cubrirse lo que SaaS resuelve con su columna propia: URL/POST, confirmación y
+   acciones hijas.
+   Regla: `hidden` para lo que **no aplica** a la fila («Actualizar» sin versión nueva);
+   `disabled` para lo que aplica pero ahora no se puede. Un botón gris se lee como «algo está
+   bloqueado».
 3. 🔴 **Acciones masivas dentro de la barra de selección.** La barra nativa muestra contador y
    limpiar; SaaS coloca las operaciones en el menú `⋮`. La funcionalidad existe, pero la paridad
    visual con la antigua barra contextual no es completa.
