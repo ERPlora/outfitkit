@@ -179,7 +179,7 @@ export type { OkFileItemState } from './components/ok-file-item/ok-file-item.js'
 export { OkRichText } from './components/ok-rich-text/ok-rich-text.js';
 export type { OkRichTextSize } from './components/ok-rich-text/ok-rich-text.js';
 export { OkCode } from './components/ok-code/ok-code.js';
-export type { OkCodeCopyDetail } from './components/ok-code/ok-code.js';
+export type { OkCodeCopyDetail, OkCodeLabels } from './components/ok-code/ok-code.js';
 export { OkJsonViewer } from './components/ok-json-viewer/ok-json-viewer.js';
 export type { OkJsonViewerSize, OkJsonValue } from './components/ok-json-viewer/ok-json-viewer.js';
 export { OkDiff } from './components/ok-diff/ok-diff.js';

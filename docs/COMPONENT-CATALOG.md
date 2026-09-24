@@ -67,7 +67,7 @@ lo que Ionic no trae.
 ## Inputs (18)
 
 - `ok-calculator` — Calculadora genérica con display de dos líneas (operación previa + valor) y teclado de 4 columnas; máquina de estados completa (+ − × ÷, AC, ⌫, decimal). · props: `value` · eventos: `ok-input`, `ok-change`
-- `ok-code` — Visor de código sin resaltado: bloque monospace bordeado con scroll horizontal, etiqueta de lenguaje opcional y botón de copiar (emite ok-copy); variante inline (pill) para `code` dentro de texto. · props: `code`, `language`, `inline`, `copy` · eventos: `ok-copy`
+- `ok-code` — Visor de código sin resaltado: bloque monospace bordeado con scroll horizontal, etiqueta de lenguaje opcional y botón de copiar (emite ok-copy); variante inline (pill) para `code` dentro de texto. · props: `code`, `language`, `inline`, `copy`, `labels` · eventos: `ok-copy`
 - `ok-color-picker` — Selector de color: un botón-muestra (swatch) abre un panel con área HSV, hex y una rejilla de presets. · props: `value`, `.presets` · eventos: `ok-change`, `ok-open`
 - `ok-combo` — Selector con búsqueda (autocomplete): escribe para filtrar opciones y elige una. · props: `.options`, `value · placeholder · label` · eventos: `ok-input`, `ok-change`
 - `ok-currency` — Campo de importe con formato de moneda según locale (separadores, símbolo) y valor numérico limpio. · props: `value`, `currency · locale`, `placeholder · label` · eventos: `ok-change`

@@ -3,6 +3,22 @@ import { property, state } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { ionTone } from '../../base/ion-tone.js';
 
+// Translatable texts (English defaults). The host passes its translation via the `labels` prop.
+export interface OkCodeLabels {
+  /** Copy button text. */
+  copy: string;
+  /** Copy button text right after a successful copy. */
+  copied: string;
+  /** aria-label of the copy button. */
+  copyAriaLabel: string;
+}
+
+const DEFAULT_LABELS: OkCodeLabels = {
+  copy: 'Copy',
+  copied: 'Copied',
+  copyAriaLabel: 'Copy code',
+};
+
 // ok-code — visor de código sin resaltado de sintaxis.
 // Bloque: superficie monospace bordeada, scroll horizontal, whitespace preservado,
 // etiqueta de lenguaje opcional y botón de copiar (navigator.clipboard).
@@ -124,6 +140,9 @@ export class OkCode extends LitElement {
   /** Muestra el botón de copiar (solo en variante bloque). */
   @property({ type: Boolean }) copy = false;
 
+  /** Overrides of the copy button texts (see `OkCodeLabels`). */
+  @property({ attribute: false }) labels: Partial<OkCodeLabels> = {};
+
   /** Estado transitorio tras copiar (feedback visual). */
   @state() private copied = false;
 
@@ -161,6 +180,7 @@ export class OkCode extends LitElement {
     }
 
     const showCopy = this.copy;
+    const t: OkCodeLabels = { ...DEFAULT_LABELS, ...this.labels };
 
     return html`
       <div class="wrap">
@@ -172,9 +192,9 @@ export class OkCode extends LitElement {
               size="small"
               fill="solid"
               style=${ionTone('medium', 'solid')}
-              aria-label="Copiar código"
+              aria-label=${t.copyAriaLabel}
               @click=${this.handleCopy}
-              >${this.copied ? 'Copiado' : 'Copiar'}</ion-button
+              >${this.copied ? t.copied : t.copy}</ion-button
             >`
           : null}
       </div>
