@@ -1917,6 +1917,10 @@ export class OkDataTable extends LitElement {
     // button just asks for the next page and the parent decides whether to append or replace.
     const served = this.serverSide ? (current + 1) * ps : Math.min(this.mobileShown || ps, count);
     const canLoadMore = this.isMobile && served < count;
+    // hub#1984 — The pager's «to». On a phone (client mode) it is what has been served so far; on
+    // desktop it is the end of the CURRENT page. Reading `served` on desktop froze it at page 1's
+    // end, so page 2 of 14 said «11–10».
+    const rangeTo = this.isMobile && !this.serverSide ? Math.min(served, count) : Math.min((current + 1) * ps, count);
     const loadMore = (): void => {
       if (this.serverSide) this.emit('pageChange', current + 1);
       else this.mobileShown = Math.min((this.mobileShown || ps) + ps, count);
@@ -2058,7 +2062,7 @@ export class OkDataTable extends LitElement {
                     ${pages > 1
                       ? html`${this.t.showing
                           .replace('{from}', String(this.isMobile && !this.serverSide ? 1 : current * ps + 1))
-                          .replace('{to}', String(Math.min(served, count)))} `
+                          .replace('{to}', String(rangeTo))} `
                       : nothing}
                     <span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}
                   </span>
