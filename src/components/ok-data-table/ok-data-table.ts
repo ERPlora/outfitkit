@@ -1005,6 +1005,35 @@ export class OkDataTable extends LitElement {
     this.measureActionsTrack();
     this.measureRowActionsFit();
     if (changed.has('panel')) this.syncSheetTop();
+    this.syncSearchInputName();
+  }
+
+  /**
+   * outfitkit#182 — Ionic 8's `ion-searchbar` renders its input with a constant
+   * `aria-label="search text"` and only forwards `lang`/`dir` to it, so screen readers announced
+   * «search text» instead of the visible hint. Stencil only rewrites that attribute when its vdom
+   * value changes (never, since it is a constant), so setting it here on the input survives every
+   * re-render. Runs on every `updated()` so it follows changes to `searchPlaceholder`, `.labels`,
+   * the document locale, and a searchbar re-created by Lit.
+   */
+  private syncSearchInputName(): void {
+    const bar = this.shadowRoot?.querySelector('ion-searchbar');
+    if (!bar) return;
+    void customElements.whenDefined('ion-searchbar')
+      .then(() => (bar as HTMLElement & { getInputElement?: () => Promise<HTMLInputElement> }).getInputElement?.())
+      .then((input) => {
+        // Re-read the CURRENT value at resolution time (not whatever it was when this call
+        // started): this call may resolve after a LATER one (e.g. `searchPlaceholder` changed
+        // while `ion-searchbar` was still registering), and a stale value must not win.
+        const name = this.effSearchPlaceholder;
+        if (input && input.getAttribute('aria-label') !== name) {
+          input.setAttribute('aria-label', name);
+        }
+      })
+      .catch(() => {
+        // Best-effort a11y: a missing searchbar/input (not yet upgraded, torn down mid-flight) is
+        // not a failure worth surfacing.
+      });
   }
 
   /** #75 — Where the mobile sheet starts. `position: fixed; inset: 0` painted it from y=0 and the
