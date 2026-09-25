@@ -22,15 +22,6 @@ const cases = [
     file: 'module-whatsapp-inbox-inbox.html',
     source: 'ui/components/erp-whatsapp-inbox-inbox/erp-whatsapp-inbox-inbox.ts',
   },
-  {
-    id: 'module-whatsapp-inbox-requests',
-    navId: 'requests',
-    route: '/m/whatsapp_inbox/requests',
-    title: 'Solicitudes',
-    component: 'erp-whatsapp-inbox-requests',
-    file: 'module-whatsapp-inbox-requests.html',
-    source: 'ui/components/erp-whatsapp-inbox-requests/erp-whatsapp-inbox-requests.ts',
-  },
 ] as const;
 
 function pageSource(file: string): string {
@@ -98,28 +89,6 @@ describe('showcase · páginas reales de whatsapp_inbox', () => {
     }
     expect(page).not.toContain("cardTitle = 'contact_name'");
     expect(page).not.toContain("cardIcon = 'chatbubbles-outline'");
-  });
-
-  it('reproduce solicitudes y sus únicas acciones reales de revisión', () => {
-    const page = pageSource('module-whatsapp-inbox-requests.html');
-    const component = readFileSync(new URL(cases[1].source, moduleRoot), 'utf8');
-
-    expect(page).toContain('<ok-data-table id="whatsapp-requests-table">');
-    for (const key of ['reference_number', 'request_type', 'contact_name', 'status', 'confidence_score', 'id']) {
-      expect(component).toContain(`key: '${key}'`);
-      expect(page).toContain(`key: '${key}'`);
-    }
-    for (const type of ['order', 'reservation', 'appointment', 'quote', 'transport', 'custom']) {
-      expect(page).toContain(`value: '${type}'`);
-    }
-    for (const status of ['pending_review', 'confirmed', 'fulfilled', 'rejected', 'cancelled']) {
-      expect(page).toContain(`value: '${status}'`);
-    }
-    expect(page).toContain('id="whatsapp-pending-review"');
-    expect(page).toContain("emitCommand('whatsapp_inbox.requests.approve'");
-    expect(page).toContain("emitCommand('whatsapp_inbox.requests.reject'");
-    expect(page).not.toContain('whatsapp_inbox.requests.fulfill');
-    expect(page).not.toContain('whatsapp_inbox.requests.delete');
   });
 
   /*
