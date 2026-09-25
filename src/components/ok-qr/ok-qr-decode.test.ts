@@ -173,3 +173,50 @@ describe('negative controls: the reader is not a rubber stamp', () => {
     expect(decode(broken)).toBeNull();
   });
 });
+
+/** The mask pattern the generator chose, read from the symbol's format information exactly as a
+ *  reader does (ISO/IEC 18004 §7.9: 15 BCH-coded bits around the top-left finder, XOR 0x5412; the
+ *  top five data bits are two bits of EC level and three of mask). Independent of the generator's
+ *  tables: only the standard's positions and the standard's mask constant. */
+function formatInfoOf({ dim, dark }: Symbol): { mask: number; ecBits: number } {
+  const quiet = 4; // every symbol in this file keeps the default quiet zone
+  expect(dim % 2).toBe(1); // (version * 4 + 17) + 2 * 4 is always odd
+  const g = (r: number, c: number): boolean => dark[r + quiet][c + quiet];
+  let fmt = 0;
+  for (let i = 0; i < 15; i++) {
+    const bit = i < 6 ? g(i, 8) : i === 6 ? g(7, 8) : i === 7 ? g(8, 8) : i === 8 ? g(8, 7) : g(8, 14 - i);
+    if (bit) fmt |= 1 << i;
+  }
+  const data = (fmt ^ 0x5412) >> 10;
+  return { mask: data & 7, ecBits: data >> 3 };
+}
+
+describe('every one of the 8 mask patterns decodes', () => {
+  // The generator picks the mask by penalty score, so which mask a value gets is not a knob: the
+  // positives above only ever land on masks 2, 3, 4 and 6, and a broken mask 0, 1, 5 or 7 stayed
+  // green. These values were searched for so that, together, they exercise all eight (fiscal
+  // URLs where one exists; mask 0 only ever came up for short text). If a change to the penalty
+  // rules moves one of them, the coverage assertion below says so instead of the gap reopening.
+  const ONE_VALUE_PER_MASK = [
+    '6TV7Y1A',
+    'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=K45040369&numserie=YY-924200&fecha=26-04-2026&importe=1245.98',
+    'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=P30481433&numserie=W9-679461&fecha=05-11-2026&importe=3536.36',
+    'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=R44727575&numserie=PL-793469&fecha=09-08-2026&importe=926.54',
+    'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=J28695964&numserie=O8-512215&fecha=25-02-2026&importe=797.42',
+    'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR?nif=L92460084&numserie=T-54&fecha=23-09-2026&importe=138.54',
+    'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B59054428&numserie=UX-79222&fecha=08-02-2026&importe=907.65',
+    'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR?nif=M44868171&numserie=T-510&fecha=23-09-2026&importe=132.73',
+  ];
+
+  it('the corpus covers masks 0-7 and each symbol decodes to its value', async () => {
+    const masks = new Set<number>();
+    for (const value of ONE_VALUE_PER_MASK) {
+      const symbol = await renderedSymbol(value);
+      const { mask, ecBits } = formatInfoOf(symbol);
+      expect(ecBits, `format info of ${value} declares level M (00)`).toBe(0);
+      masks.add(mask);
+      expect(decode(symbol), `mask ${mask}: ${value}`).toBe(value);
+    }
+    expect([...masks].sort()).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  });
+});
