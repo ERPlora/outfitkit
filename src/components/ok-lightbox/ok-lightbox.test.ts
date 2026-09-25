@@ -168,3 +168,33 @@ describe('ok-lightbox — fullscreen', () => {
     el.remove();
   });
 });
+
+// #175: on a phone the 60% cap painted the photo SMALLER than its thumbnail in the conversation
+// (1200x900 → 210px wide at 390px). Narrow screens use the full width; tablet/desktop keep 60%.
+describe('ok-lightbox — media width on narrow screens (#175)', () => {
+  function narrowBlock(css: string): string {
+    const m = /@media\s*\(max-width:\s*767(?:\.98)?px\)\s*\{([\s\S]*?\})\s*\}/.exec(css);
+    expect(m, 'narrow-screen @media block not found').not.toBeNull();
+    return m![1];
+  }
+
+  it('the photo takes the full width under 768px', () => {
+    const block = narrowBlock(stylesText());
+    const media = /\.media\s*\{([^}]*)\}/.exec(block);
+    expect(media, '.media rule missing in the narrow block').not.toBeNull();
+    expect(media![1]).toMatch(/max-width:\s*100%/);
+  });
+
+  it('the empty frame takes the full width under 768px too', () => {
+    const block = narrowBlock(stylesText());
+    const empty = /\.media-empty\s*\{([^}]*)\}/.exec(block);
+    expect(empty, '.media-empty rule missing in the narrow block').not.toBeNull();
+    expect(empty![1]).toMatch(/width:\s*100%/);
+  });
+
+  it('keeps the 60% cap as the wide-screen default', () => {
+    const css = stylesText();
+    const base = /\n\s*\.media\s*\{([^}]*)\}/.exec(css);
+    expect(base![1]).toMatch(/max-width:\s*60%/);
+  });
+});

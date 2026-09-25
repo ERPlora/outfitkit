@@ -45,10 +45,10 @@ const DEFAULT_LABELS: OkLightboxLabels = {
   exitFullscreen: 'Exit fullscreen',
 };
 
-// ok-lightbox — visor de medios a pantalla completa (galería). Overlay oscuro `fixed inset:0`,
-// cabecera mono "N / M · fichero" + descargar/fullscreen/cerrar, medio centrado (máx 60% de ancho,
-// 16:10), navegación circular glass prev/next de 44px y filmstrip inferior de miniaturas 50×36
-// (la activa a opacidad total con outline de marca). Teclado: flechas para navegar, Esc para cerrar.
+// ok-lightbox — full-screen media viewer (gallery). Dark `fixed inset:0` overlay, mono header
+// "N / M · file" + download/fullscreen/close, centered media (max 60% wide, full width under 768px,
+// 16:10), 44px glass prev/next arrows and a bottom filmstrip of 50×36 thumbnails (the active one at
+// full opacity with a brand outline). Keyboard: arrows to navigate, Esc to close.
 // AUTOCONTENIDO (sin Ionic salvo `ion-icon`, que registra el host) y cumple CSP.
 // El overlay se PORTA a `document.body` (shadow propio con la misma hoja de estilos) para que el
 // `position:fixed` se ancle al viewport y no a un ancestro con transform/filter/contain.
@@ -189,6 +189,16 @@ export class OkLightbox extends LitElement {
     }
     video.media {
       max-height: 100%;
+    }
+    /* Phones: the 60% cap painted the photo smaller than its thumbnail in the conversation (#175);
+       use the full width like any phone gallery. The nav arrows stay on top of the media. */
+    @media (max-width: 767px) {
+      .media {
+        max-width: 100%;
+      }
+      .media-empty {
+        width: 100%;
+      }
     }
 
     /* Navegación circular glass de 44px. */
