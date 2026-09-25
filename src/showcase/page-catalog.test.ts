@@ -77,6 +77,8 @@ describe('catálogo de páginas reales', () => {
       // #134 — `whatsapp_inbox` dropped its templates screen: `navigation[]` no longer declares
       // it, so the showcase cannot keep publishing a demo of a page the module does not have.
       'module-whatsapp-inbox-templates',
+      // #177 — `whatsapp_inbox` dropped its «Requests» screen too (whatsapp_inbox#207).
+      'module-whatsapp-inbox-requests',
     ];
     expect(pages.filter((page) => removed.includes(page.id))).toEqual([]);
 
@@ -127,6 +129,7 @@ describe('catálogo de páginas reales', () => {
       'module-backup-settings.html',
       'settings-devices.html',
       'module-whatsapp-inbox-templates.html',
+      'module-whatsapp-inbox-requests.html',
     ];
     for (const file of obsoleteFiles) {
       expect(existsSync(resolve(process.cwd(), 'showcase', 'pages', file)), file).toBe(false);
@@ -274,7 +277,6 @@ describe('catálogo de páginas reales', () => {
       'module-verifactu-config',
       'module-verifactu-settings',
       'module-whatsapp-inbox-inbox',
-      'module-whatsapp-inbox-requests',
     ];
     expect(pages.filter((page) => page.parity === 'current').map((page) => page.id)).toEqual(currentIds);
   });

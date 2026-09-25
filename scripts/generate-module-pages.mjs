@@ -215,10 +215,6 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-whatsapp-inbox-inbox.html',
     parity: 'current',
   },
-  'module-whatsapp-inbox-requests': {
-    file: 'pages/module-whatsapp-inbox-requests.html',
-    parity: 'current',
-  },
 };
 
 function argumentValue(name, fallback) {

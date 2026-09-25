@@ -804,7 +804,7 @@ export const MODULE_PAGES = [
   },
   {
     "id": "module-verifactu-config",
-    "name": "Configuration",
+    "name": "Configuración",
     "icon": "key-outline",
     "surface": "modules",
     "section": "VeriFactu",
@@ -843,20 +843,6 @@ export const MODULE_PAGES = [
     "route": "/m/whatsapp_inbox/inbox",
     "parity": "current",
     "file": "pages/module-whatsapp-inbox-inbox.html"
-  },
-  {
-    "id": "module-whatsapp-inbox-requests",
-    "name": "Solicitudes",
-    "icon": "clipboard-outline",
-    "surface": "modules",
-    "section": "Bandeja de WhatsApp",
-    "moduleId": "whatsapp_inbox",
-    "navId": "requests",
-    "component": "erp-whatsapp-inbox-requests",
-    "source": "modules-workspace/modules/whatsapp_inbox/ui/components/erp-whatsapp-inbox-requests/erp-whatsapp-inbox-requests.ts",
-    "route": "/m/whatsapp_inbox/requests",
-    "parity": "current",
-    "file": "pages/module-whatsapp-inbox-requests.html"
   },
   {
     "id": "module-whatsapp-inbox-settings",

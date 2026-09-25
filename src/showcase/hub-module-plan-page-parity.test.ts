@@ -33,7 +33,10 @@ const manifest = JSON.parse(
     new URL('../../../modules-workspace/modules/whatsapp_inbox/module.json', import.meta.url),
     'utf8',
   ),
-) as { billing: { trial_days?: number; tiers: ManifestTier[] } };
+) as {
+  billing: { trial_days?: number; tiers: ManifestTier[] };
+  navigation: Array<{ id: string; icon: string }>;
+};
 const moduleEs = JSON.parse(
   readFileSync(
     new URL('../../../modules-workspace/modules/whatsapp_inbox/locales/es.json', import.meta.url),
@@ -90,6 +93,17 @@ describe('showcase Hub — pestaña «Plan» de un módulo de pago', () => {
   it('la pestaña la inyecta el shell, no el manifest del módulo', () => {
     expect(hubView).toContain("PLAN_TAB_ID = '__plan__'");
     expect(page).toContain('value="__plan__"');
+  });
+
+  // outfitkit#177: whatsapp_inbox#207 dropped «Requests» from `navigation[]` and this page kept
+  // painting its tab. The module tabs are the manifest's, in its order, plus the shell's «Plan».
+  it('pinta como pestañas del módulo exactamente las de su navigation[]', () => {
+    const tabs = [...page.matchAll(/<ion-segment-button value="([^"]+)">\s*<ion-icon name="([^"]+)">/g)]
+      .map(([, value, icon]) => ({ id: value, icon }))
+      .filter(({ id }) => id !== '__plan__');
+    expect(tabs, moved('module.json → navigation[]')).toEqual(
+      manifest.navigation.map(({ id, icon }) => ({ id, icon })),
+    );
   });
 
   it('usa el shell Hub y configura Ionic iOS antes de cargar Ionic', () => {
