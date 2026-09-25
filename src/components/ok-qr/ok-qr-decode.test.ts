@@ -103,8 +103,8 @@ describe('ok-qr decodes to the value it was given (independent reader)', () => {
   });
 
   it('the production fiscal URL really is a version 7+ symbol (45+ modules)', async () => {
-    const { dim } = await renderedSymbol(PROD_URL);
-    expect(dim - 2 * 4).toBeGreaterThanOrEqual(45);
+    const { dim } = await renderedSymbol(PROD_URL, { margin: 0 });
+    expect(dim).toBeGreaterThanOrEqual(45);
   });
 
   it.each(['L', 'M', 'Q', 'H'] as const)('decodes at error-correction level %s', async (ec) => {
@@ -131,16 +131,25 @@ describe('ok-qr decodes to the value it was given (independent reader)', () => {
   });
 });
 
-describe('ok-qr quiet zone', () => {
-  it.each([PROD_URL, PRE_URL])('leaves the 4-module light border the standard requires: %s', async (value) => {
-    const { dim, dark } = await renderedSymbol(value);
-    for (let i = 0; i < dim; i++) {
-      for (let q = 0; q < 4; q++) {
-        expect(dark[q][i] || dark[dim - 1 - q][i] || dark[i][q] || dark[i][dim - 1 - q]).toBe(false);
-      }
+/** The reader above still locks onto a code with no quiet zone at all, so the border the standard
+ *  requires (4 modules) is pinned on its own — thermal paper and phone cameras are less forgiving. */
+function expectQuietZone({ dim, dark }: Symbol): void {
+  for (let i = 0; i < dim; i++) {
+    for (let q = 0; q < 4; q++) {
+      expect(dark[q][i] || dark[dim - 1 - q][i] || dark[i][q] || dark[i][dim - 1 - q]).toBe(false);
     }
-    // And the code starts right after it: the top-left finder is dark at (4, 4).
-    expect(dark[4][4]).toBe(true);
+  }
+  // And the code starts right after it: the top-left finder is dark at (4, 4).
+  expect(dark[4][4]).toBe(true);
+}
+
+describe('quiet zone: the 4-module light border the standard requires', () => {
+  it.each([PROD_URL, PRE_URL])('<ok-qr> by default: %s', async (value) => {
+    expectQuietZone(await renderedSymbol(value));
+  });
+
+  it.each([PROD_URL, PRE_URL])('the printed ticket SVG (qrSvgMarkup) by default: %s', (value) => {
+    expectQuietZone(markupSymbol(qrSvgMarkup(value)));
   });
 });
 
