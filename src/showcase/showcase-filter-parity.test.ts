@@ -16,7 +16,7 @@ const root = resolve(import.meta.dirname, '../..');
  * How many demos this sweep can compare TODAY.
  *
  * Only the demos that PAINT filter boxes have anything to compare, and all 41 of them now declare
- * the module query behind those boxes (outfitkit#118); the other 10 of the 51 published paint no
+ * the module query behind those boxes (outfitkit#118); the other 11 of the 52 published paint no
  * filter at all, so the number must still never be read as "all the demos". The floor is here so a
  * demo cannot quietly stop declaring its query and shrink the coverage in silence — the fast gate
  * holds the other end with `demo-filter-declaration-ratchet.test.ts`.
