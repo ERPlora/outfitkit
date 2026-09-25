@@ -15,8 +15,8 @@ const root = resolve(import.meta.dirname, '../..');
 /**
  * How many demos this sweep can compare TODAY.
  *
- * Only the demos that PAINT filter boxes have anything to compare, and all 42 of them now declare
- * the module query behind those boxes (outfitkit#118); the other 10 of the 52 published paint no
+ * Only the demos that PAINT filter boxes have anything to compare, and all 41 of them now declare
+ * the module query behind those boxes (outfitkit#118); the other 11 of the 52 published paint no
  * filter at all, so the number must still never be read as "all the demos". The floor is here so a
  * demo cannot quietly stop declaring its query and shrink the coverage in silence — the fast gate
  * holds the other end with `demo-filter-declaration-ratchet.test.ts`.
@@ -26,8 +26,11 @@ const root = resolve(import.meta.dirname, '../..');
  * EXIST, so retiring one lowers it by exactly one — and only ever with the retirement written
  * down here. A demo that stops declaring its query still shows up as `unmapped` in the sweep
  * above and drops this count below the floor, which is the case this number is guarding.
+ *
+ * It was 42 until outfitkit#177: `whatsapp_inbox` dropped its «Requests» screen
+ * (whatsapp_inbox#207), and the demo that declared `whatsapp_inbox.requests.list` went with it.
  */
-const MAPPED_DEMOS = 42;
+const MAPPED_DEMOS = 41;
 
 const audit = auditShowcaseFilters({
   pagesDirectory: resolve(root, 'showcase/pages'),
