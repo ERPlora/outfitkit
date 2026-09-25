@@ -274,7 +274,9 @@ export class OkWidgetBoard extends LitElement {
       if (w.category) { const p = document.createElement('p'); p.textContent = w.category; lbl.appendChild(p); }
       it.appendChild(lbl);
       const tog = document.createElement('ion-toggle') as HTMLElement & { checked: boolean };
-      tog.setAttribute('slot', 'end'); tog.checked = checked;
+      // #180 — the toggle has no visible text of its own, so it is named after its widget: Ionic
+      // hands the host's aria-label to its inner switch (otherwise announced as a bare «switch»).
+      tog.setAttribute('slot', 'end'); tog.setAttribute('aria-label', w.title); tog.checked = checked;
       tog.addEventListener('ionChange', onToggle);
       it.appendChild(tog);
       if (withHandle) { const r = document.createElement('ion-reorder'); r.setAttribute('slot', 'end'); it.appendChild(r); }
