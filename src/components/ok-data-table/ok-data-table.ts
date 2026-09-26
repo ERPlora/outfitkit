@@ -68,7 +68,9 @@ export interface DataTableColumn {
   /** Render de celda a medida (devuelve un TemplateResult de Lit, p.ej. un `ok-toggle` o un chip).
    *  Tiene prioridad sobre `format`/valor crudo. El módulo lo crea con su `html` (lit deduplicado). */
   render?: (row: Record<string, unknown>) => unknown;
-  /** Oculta la columna por defecto (el usuario la reactiva en el selector de columnas). */
+  /** Not painted until the person turns it on in the column chooser (hub#2245). A hidden column
+   *  still filters, sorts and keeps its control in the filter panel: hide a column to save room,
+   *  never drop it from `columns`, or its active filter and sort are lost without a word. */
   hidden?: boolean;
   /** (opcional) Ancho CSS de la columna en la vista lista en grid (p.ej. '8rem', '20%', 'minmax(8rem,1fr)').
    *  When omitted the column takes `minmax(5.5rem,1fr)` (#120): 88px is the readable floor and
@@ -906,8 +908,9 @@ export class OkDataTable extends LitElement {
   // Breakpoint (móvil) en px. Coincide con el punto donde la rejilla de tarjetas es más usable que
   // una tabla con scroll horizontal. 640px = límite habitual móvil↔tablet.
   private static readonly MOBILE_BREAKPOINT = 640;
-  // Columnas ocultas por el usuario (column chooser). Vacío = todas visibles.
-  @state() private hiddenKeys = new Set<string>();
+  // What the person picked in the column chooser, per column key (true = shown). A column they
+  // never touched follows its own `hidden` (hub#2245), so a host can hide and show it again.
+  @state() private columnChoice = new Map<string, boolean>();
   // Selección interna (cuando el padre no controla `selectedKeys`).
   @state() private internalSelection = new Set<string>();
   // Menú overflow («⋮»): abierto/cerrado + evento de anclaje del ion-popover (sin trigger-by-id, que
@@ -1042,7 +1045,7 @@ export class OkDataTable extends LitElement {
     this.measureXOverflow();
     // #122 — Cambiar las columnas o las acciones cambia lo que la tabla necesita: la decisión de
     // plegado vigente ya no vale y hay que volver a juzgarla con los botones fuera.
-    if (changed.has('columns') || changed.has('actions') || changed.has('hiddenKeys') || changed.has('selectable')) {
+    if (changed.has('columns') || changed.has('actions') || changed.has('columnChoice') || changed.has('selectable')) {
       this.fitDecidedAtWidth = -1;
     }
     this.measureActionsTrack();
@@ -1166,13 +1169,15 @@ export class OkDataTable extends LitElement {
     return this.views === true;
   }
 
-  /** Columnas actualmente visibles (respeta el column chooser). */
+  /** Columns painted now: the person's pick in the column chooser, else the column's own `hidden`.
+   *  A hidden column is only not painted — it still filters, sorts and keeps its filter control
+   *  (hub#2245), which read `columns`. */
   private get visibleColumns(): DataTableColumn[] {
-    return this.hiddenKeys.size ? this.columns.filter((c) => !this.hiddenKeys.has(c.key)) : this.columns;
+    return this.columns.filter((c) => this.columnChoice.get(c.key) ?? c.hidden !== true);
   }
   private setVisibleColumns(keys: string[]): void {
     const visible = new Set(keys);
-    this.hiddenKeys = new Set(this.columns.map((c) => c.key).filter((k) => !visible.has(k)));
+    this.columnChoice = new Map(this.columns.map((c) => [c.key, visible.has(c.key)]));
     this.emit('columnsChange', { visible: keys });
   }
 
