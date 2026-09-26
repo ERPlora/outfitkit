@@ -1,7 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import { keyed } from 'lit/directives/keyed.js';
 import { define } from '../../base/define.js';
 import { shadowAnchorEvent } from '../../base/anchor.js';
 import { ionTone } from '../../base/ion-tone.js';
@@ -940,10 +939,11 @@ export class OkFileManager extends LitElement {
   // Phone sheet (#201): the «⋮» actions of a file, or the «Move to…» folder list. A popover is the
   // wrong container on a phone — Ionic squeezes it into whatever is left below the anchor — so
   // both open as a bottom sheet. `sheetOpen` drives Ionic's animation; `sheet` keeps the content
-  // alive until `didDismiss`, and `sheetSeq` gives every opening a fresh ion-modal.
+  // alive until `didDismiss`. The ion-modal itself never leaves the template: Ionic moves an inline
+  // modal to ion-app while presented and puts it back after didDismiss, so dropping it from the
+  // template there makes Lit remove Ionic's placeholder first and Ionic throws on insertBefore.
   @state() private sheet: { file: OkFmFile; step: 'actions' | 'move' } | null = null;
   @state() private sheetOpen = false;
-  private sheetSeq = 0;
   private afterSheet: (() => void) | null = null;
 
   // MIME propio para arrastrar elementos internos (ficheros/carpetas del gestor). Distingue el
@@ -1164,7 +1164,6 @@ export class OkFileManager extends LitElement {
   }
 
   private openSheet(file: OkFmFile, step: 'actions' | 'move'): void {
-    this.sheetSeq++;
     this.sheet = { file, step };
     this.sheetOpen = true;
   }
@@ -1219,13 +1218,15 @@ export class OkFileManager extends LitElement {
 
   private renderSheet(flat: { f: OkFmFolder; d: number }[]): unknown {
     const sheet = this.sheet;
-    if (!sheet) return '';
-    const { file, step } = sheet;
+    const file = sheet?.file;
+    const step = sheet?.step;
     const destinations = flat.filter(({ f }) => !f.readOnly);
-    const actions = step === 'actions' ? this.sheetActions(file) : [];
+    const actions = file && step === 'actions' ? this.sheetActions(file) : [];
     const bp = this.sheetBreakpoint(step === 'move' ? destinations.length : actions.length);
-    const items =
-      step === 'move'
+    const title = step === 'move' ? this.t.move : (file?.name ?? '');
+    const items = !file
+      ? ''
+      : step === 'move'
         ? destinations.map(
             ({ f, d }) => html`<ion-item
               button
@@ -1251,19 +1252,19 @@ export class OkFileManager extends LitElement {
               <ion-label>${a.label}</ion-label>
             </ion-item>`
           );
-    return keyed(
-      this.sheetSeq,
-      html`<ion-modal
+    // `.isOpen` goes last: Lit sets bindings in order, and Ionic must see the breakpoints of the new
+    // content when the flip to true starts the presentation.
+    return html`<ion-modal
         class="fm-sheet"
-        .isOpen=${this.sheetOpen}
         .initialBreakpoint=${bp}
         .breakpoints=${bp < 1 ? [0, bp, 1] : [0, 1]}
         .expandToScroll=${false}
+        .isOpen=${this.sheetOpen}
         @didDismiss=${() => this.onSheetDismissed()}
       >
         <ion-header>
           <ion-toolbar>
-            <ion-title>${step === 'move' ? this.t.move : file.name}</ion-title>
+            <ion-title>${title}</ion-title>
             <ion-buttons slot="end">
               <ion-button data-act="close-sheet" aria-label=${this.t.close} @click=${() => this.closeSheet()}>
                 <ion-icon slot="icon-only" aria-hidden="true" .icon=${okIcon('close')}></ion-icon>
@@ -1272,10 +1273,9 @@ export class OkFileManager extends LitElement {
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-list lines="none" aria-label=${step === 'move' ? this.t.move : file.name}>${items}</ion-list>
+          <ion-list lines="none" aria-label=${title}>${items}</ion-list>
         </ion-content>
-      </ion-modal>`
-    );
+      </ion-modal>`;
   }
 
   private closeMovePicker(): void {

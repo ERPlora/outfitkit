@@ -180,7 +180,8 @@ describe("ok-file-manager · card on a phone: one «⋮», nothing over the thum
 describe("ok-file-manager · «⋮» opens a bottom sheet with the actions by name (outfitkit#201)", () => {
   it("tapping «⋮» opens a sheet titled with the file, listing every action the folder allows", async () => {
     const el = await mount();
-    expect(sheet(el)).toBeNull();
+    expect(sheet(el)?.isOpen ?? false).toBe(false);
+    expect(sheetActs(el)).toEqual([]);
 
     btn(el, "more", ".card")!.click();
     await el.updateComplete;
@@ -250,7 +251,8 @@ describe("ok-file-manager · «⋮» opens a bottom sheet with the actions by na
       expect(spy).toHaveBeenCalledWith(detail);
       expect(sheet(el)!.isOpen).toBe(false);
       await finishDismiss(el);
-      expect(sheet(el)).toBeNull();
+      expect(sheet(el)!.isOpen).toBe(false);
+      expect(sheetActs(el)).toEqual([]);
     },
   );
 
@@ -268,7 +270,8 @@ describe("ok-file-manager · «⋮» opens a bottom sheet with the actions by na
     btn(el, "more", ".card")!.click();
     await el.updateComplete;
     await finishDismiss(el);
-    expect(sheet(el)).toBeNull();
+    expect(sheet(el)!.isOpen).toBe(false);
+    expect(sheetActs(el)).toEqual([]);
     expect(spy).not.toHaveBeenCalled();
   });
 });
@@ -327,7 +330,7 @@ describe("ok-file-manager · «Move to…» on a phone is a sheet the list fits 
     btn(el, "move-file", ".lrow")!.click();
     await el.updateComplete;
     expect(root(el).querySelector("ion-popover")).not.toBeNull();
-    expect(sheet(el)).toBeNull();
+    expect(sheet(el)?.isOpen ?? false).toBe(false);
   });
 
   it("a short list opens at a height that shows all of it; the list scrolls inside the sheet", async () => {
@@ -369,6 +372,35 @@ describe("ok-file-manager · «Move to…» on a phone is a sheet the list fits 
     const s = sheet(el)!;
     expect(s.initialBreakpoint).toBe(1);
     expect(s.breakpoints).toEqual([0, 1]);
+  });
+});
+
+describe("ok-file-manager · the sheet is ONE ion-modal that never leaves the template (outfitkit#201)", () => {
+  // Ionic moves an inline ion-modal to ion-app while it is presented, leaving a comment where it
+  // was, and puts it back AFTER emitting didDismiss. If the template drops the modal on didDismiss,
+  // Lit removes that comment first and Ionic throws «Cannot read properties of null (reading
+  // 'insertBefore')». So the modal stays mounted and only `isOpen` and its content change.
+  it("open → dismiss → reopen → move reuses the very same ion-modal node", async () => {
+    const el = await mount();
+    const first = sheet(el);
+    expect(first, "the sheet modal must be rendered up front, closed").not.toBeNull();
+
+    btn(el, "more", ".card")!.click();
+    await el.updateComplete;
+    expect(sheet(el)).toBe(first);
+    await finishDismiss(el);
+    expect(sheet(el)).toBe(first);
+
+    btn(el, "more", ".card")!.click();
+    await el.updateComplete;
+    sheetActs(el)
+      .find((n) => n.dataset.sheetAct === "move-file")!
+      .click();
+    await el.updateComplete;
+    await finishDismiss(el);
+    expect(sheet(el)).toBe(first);
+    expect(sheet(el)!.isOpen).toBe(true);
+    expect(moveTargets(el).length).toBe(3);
   });
 });
 
