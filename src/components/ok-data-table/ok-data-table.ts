@@ -861,7 +861,7 @@ export class OkDataTable extends LitElement {
   // vista lista y tarjetas. Desde #75 EMPUJA la tabla en escritorio (rejilla de dos columnas) y es
   // hoja a pantalla completa en móvil — ver el CSS de `.card.has-panel`.
   @state() private panel: 'none' | 'filters' | 'create' | 'edit' = 'none';
-  /** #150 — caller-provided header for the form panel (open(mode, { title })); reset on every other opening. */
+  /** #150 — caller-provided header for the form panel; open() and toggle() set it on every opening. */
   @state() private panelTitle = '';
   @state() private viewMode: 'table' | 'cards' = 'table';
   /** El usuario eligió vista a mano: a partir de ahí el arranque automático no vuelve a tocarla. */
@@ -1306,7 +1306,6 @@ export class OkDataTable extends LitElement {
   /** Closes the side panel. */
   close(): void {
     this.panel = 'none';
-    this.panelTitle = '';
   }
 
   private emit<T>(type: string, detail: T): void {
