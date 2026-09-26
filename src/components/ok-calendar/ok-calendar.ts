@@ -1,5 +1,6 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
 import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
@@ -44,8 +45,36 @@ const DEFAULT_LABELS: OkCalendarLabels = {
   nextMonth: 'Next month',
 };
 
-// Nombres de los días de la semana (Lun–Dom) según el locale, vía Intl.
-const WEEKDAY_REF = new Date(2021, 1, 1); // 2021-02-01 es lunes
+// A known Sunday: weekday names are formatted from it (`getDay()` 0 = Sunday … 6 = Saturday).
+const SUNDAY_REF = new Date(2021, 0, 31);
+
+// CLDR `firstDay` by region, for engines without `Intl.Locale#getWeekInfo` (older Firefox/Safari).
+// Every region not listed starts the week on Monday.
+const SUNDAY_REGIONS = new Set(
+  'AG AS BD BR BS BT BW BZ CA CN CO DM DO ET GT GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW'.split(' '),
+);
+const SATURDAY_REGIONS = new Set('AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY'.split(' '));
+const FRIDAY_REGIONS = new Set(['MV']);
+
+type WeekInfo = { firstDay: number };
+type LocaleWithWeekInfo = Intl.Locale & { getWeekInfo?: () => WeekInfo | undefined; weekInfo?: WeekInfo };
+
+/** First day of the week of a BCP-47 locale: 0 = Sunday … 6 = Saturday (Monday if unknown). */
+export function localeFirstDayOfWeek(locale: string): number {
+  try {
+    const loc = new Intl.Locale(locale) as LocaleWithWeekInfo;
+    const info = loc.getWeekInfo?.() ?? loc.weekInfo;
+    // Intl counts 1 = Monday … 7 = Sunday.
+    if (info && info.firstDay >= 1 && info.firstDay <= 7) return info.firstDay % 7;
+    const region = loc.maximize().region ?? '';
+    if (SUNDAY_REGIONS.has(region)) return 0;
+    if (SATURDAY_REGIONS.has(region)) return 6;
+    if (FRIDAY_REGIONS.has(region)) return 5;
+  } catch {
+    // Invalid locale tag: fall through to the ISO week.
+  }
+  return 1;
+}
 
 // ok-calendar — calendario por DATOS (`events`), algo que Ionic NO ofrece: `ion-datetime` es solo
 // un picker de fechas, no una rejilla con eventos. AUTOCONTENIDO: CSS propio en el shadow, sin
@@ -54,7 +83,11 @@ const WEEKDAY_REF = new Date(2021, 1, 1); // 2021-02-01 es lunes
 //   • prop `.events` → Array<OkCalendarEvent>
 //   • prop `value`   → día seleccionado (`YYYY-MM-DD`)
 //   • prop `view`    → 'month' | 'agenda' (def 'month')
-// Vista MES: cabecera ‹ mes/año › + toggle Mes/Agenda; rejilla 7 columnas (Lun–Dom); hoy resaltado;
+//   • prop `picker`  → DATE PICKER mode (outfitkit#198): compact (max 20rem, 44 px days), no
+//     Month/Agenda toggle and no event chips; days are `<button aria-pressed>` with a single tab
+//     stop and APG date-grid keys (arrows, Home/End = week of the locale, PageUp/PageDown = month).
+//   • prop `first-day-of-week` → 0 = Sunday … 6 = Saturday; by default, the week of `locale`.
+// Vista MES: cabecera ‹ mes/año › + toggle Mes/Agenda; rejilla 7 columnas (semana del locale); hoy resaltado;
 //   cada día muestra hasta N eventos como chips y "+X más".
 // Vista AGENDA: próximos eventos agrupados por día (útil en móvil).
 // Eventos (bubbles + composed):
@@ -108,7 +141,6 @@ export class OkCalendar extends LitElement {
       text-align: center;
       font-weight: 600;
       font-size: 1.05rem;
-      text-transform: capitalize;
     }
     .toggle {
       display: inline-flex;
@@ -267,7 +299,6 @@ export class OkCalendar extends LitElement {
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--color-muted);
-      text-transform: capitalize;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.25rem;
     }
@@ -313,6 +344,74 @@ export class OkCalendar extends LitElement {
       }
     }
 
+    /* ── Picker mode (outfitkit#198) ─────────────────────────────── */
+    :host([picker]) {
+      max-width: 20rem;
+    }
+    :host([picker]) .header {
+      flex-wrap: nowrap;
+      margin-bottom: 0.25rem;
+    }
+    :host([picker]) .nav {
+      width: 100%;
+      justify-content: space-between;
+    }
+    :host([picker]) .title {
+      min-width: 0;
+      font-size: 1rem;
+    }
+    :host([picker]) .grid {
+      gap: 0;
+      background: none;
+      border: 0;
+      border-radius: 0;
+      /* The focus outline is drawn outside the day: do not clip it on the edge columns. */
+      overflow: visible;
+    }
+    :host([picker]) .weekday {
+      background: none;
+      padding: 0.25rem 0;
+    }
+    .pday {
+      appearance: none;
+      border: 0;
+      margin: 0 auto;
+      padding: 0;
+      width: 100%;
+      max-width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 999px;
+      background: none;
+      color: inherit;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      transition: background-color var(--ok-transition, 150ms ease),
+        color var(--ok-transition, 150ms ease), box-shadow var(--ok-transition, 150ms ease);
+    }
+    @media (hover: hover) {
+      .pday:hover {
+        background: var(--hover-bg);
+      }
+    }
+    .pday.other-month {
+      opacity: 0.4;
+    }
+    .pday.today {
+      box-shadow: inset 0 0 0 1px var(--primary-color);
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    .pday[aria-pressed='true'] {
+      background: var(--primary-color);
+      color: var(--primary-contrast);
+      font-weight: 600;
+    }
+    .pday:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 1px;
+    }
+
     /* ── Responsive (móvil) ─────────────────────────────────────── */
     @media (max-width: 540px) {
       .day {
@@ -345,6 +444,10 @@ export class OkCalendar extends LitElement {
   @property() locale = 'en-US';
   /** Textos humanos sobreescribibles (i18n). Default INGLÉS. */
   @property({ attribute: false }) labels: Partial<OkCalendarLabels> = {};
+  /** Date picker mode: compact, no Month/Agenda toggle, no chips, keyboard-navigable days. */
+  @property({ type: Boolean, reflect: true }) picker = false;
+  /** First day of the week, 0 = Sunday … 6 = Saturday. Unset / out of range → the locale's. */
+  @property({ type: Number, attribute: 'first-day-of-week' }) firstDayOfWeek?: number;
 
   /** Textos efectivos: defaults INGLÉS mezclados con los del consumidor. */
   private get t(): OkCalendarLabels {
@@ -355,13 +458,27 @@ export class OkCalendar extends LitElement {
   @state() private cursor = new Date();
   // Marca para sembrar el cursor desde `value` una sola vez.
   private seeded = false;
+  // Picker: day holding the single tab stop after keyboard moves (roving tabindex).
+  @state() private focusKey = '';
 
-  // Nombres cortos de los días (Lun–Dom) según el locale actual.
+  // Effective first day of the week (0 = Sunday … 6 = Saturday).
+  private firstDay(): number {
+    const f = this.firstDayOfWeek;
+    return typeof f === 'number' && Number.isInteger(f) && f >= 0 && f <= 6 ? f : localeFirstDayOfWeek(this.locale);
+  }
+
+  // Short weekday names, starting on the first day of the week.
   private weekdays(): string[] {
     const fmt = new Intl.DateTimeFormat(this.locale, { weekday: 'short' });
+    const first = this.firstDay();
     return Array.from({ length: 7 }, (_, i) =>
-      fmt.format(new Date(WEEKDAY_REF.getFullYear(), WEEKDAY_REF.getMonth(), 1 + i)),
+      fmt.format(new Date(SUNDAY_REF.getFullYear(), SUNDAY_REF.getMonth(), SUNDAY_REF.getDate() + ((first + i) % 7))),
     );
+  }
+
+  // Sentence case: only the first letter up («Octubre de 2026», never «Octubre De 2026»).
+  private sentenceCase(s: string): string {
+    return s.charAt(0).toLocaleUpperCase(this.locale) + s.slice(1);
   }
 
   // Normaliza una fecha (`YYYY-MM-DD` o ISO) a clave local `YYYY-MM-DD`.
@@ -397,7 +514,11 @@ export class OkCalendar extends LitElement {
 
   // Cambia el mes visible (delta en meses) y emite `ok-nav`.
   private navMonth(delta: number): void {
-    const next = new Date(this.cursor.getFullYear(), this.cursor.getMonth() + delta, 1);
+    this.showMonth(new Date(this.cursor.getFullYear(), this.cursor.getMonth() + delta, 1));
+  }
+
+  // Shows the month of `next` and emits `ok-nav`.
+  private showMonth(next: Date): void {
     this.cursor = next;
     this.dispatchEvent(
       new CustomEvent('ok-nav', {
@@ -424,6 +545,7 @@ export class OkCalendar extends LitElement {
   // Selecciona un día y emite `ok-date-select`.
   private selectDay(key: string): void {
     this.value = key;
+    this.focusKey = key;
     this.dispatchEvent(
       new CustomEvent('ok-date-select', {
         detail: { date: key },
@@ -445,18 +567,18 @@ export class OkCalendar extends LitElement {
     );
   }
 
-  // Etiqueta de mes/año del cursor (capitalizada vía CSS).
+  // Etiqueta de mes/año del cursor, en sentence case.
   private monthLabel(): string {
-    return this.cursor.toLocaleDateString(this.locale, { month: 'long', year: 'numeric' });
+    return this.sentenceCase(this.cursor.toLocaleDateString(this.locale, { month: 'long', year: 'numeric' }));
   }
 
-  // Construye la matriz de días visibles (semanas que empiezan en lunes).
+  // Construye la matriz de días visibles (semanas que empiezan en el primer día del locale).
   private buildDays(): Date[] {
     const year = this.cursor.getFullYear();
     const month = this.cursor.getMonth();
     const first = new Date(year, month, 1);
-    // getDay(): 0=Dom..6=Sáb → desplazamos para que lunes sea el primer día.
-    const offset = (first.getDay() + 6) % 7;
+    // getDay(): 0=Dom..6=Sáb → desplazamos para que la semana empiece en `firstDay()`.
+    const offset = (first.getDay() - this.firstDay() + 7) % 7;
     const start = new Date(year, month, 1 - offset);
     const days: Date[] = [];
     // 6 semanas × 7 días = rejilla estable de 42 celdas.
@@ -510,6 +632,97 @@ export class OkCalendar extends LitElement {
     </div>`;
   }
 
+  // Picker: the day holding the single tab stop — the keyboard-focused day, else the selected
+  // day, else today, else the 1st; only while it belongs to the visible month.
+  private tabStopKey(): string {
+    const inMonth = (key: string): boolean => {
+      if (!key) return false;
+      const d = this.parseDate(key);
+      return d.getFullYear() === this.cursor.getFullYear() && d.getMonth() === this.cursor.getMonth();
+    };
+    for (const key of [this.focusKey, this.value, this.dayKey(new Date())]) if (inMonth(key)) return key;
+    return this.dayKey(new Date(this.cursor.getFullYear(), this.cursor.getMonth(), 1));
+  }
+
+  // Picker keyboard (WAI-ARIA APG date picker grid). Moves the focus; picking stays on
+  // Enter / Space / click, which the native <button> already turns into a click.
+  private onDayKey(e: KeyboardEvent, key: string): void {
+    const d = this.parseDate(key);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const day = d.getDate();
+    const back = (d.getDay() - this.firstDay() + 7) % 7;
+    const inMonth = (delta: number): Date => {
+      const last = new Date(y, m + delta + 1, 0).getDate();
+      return new Date(y, m + delta, Math.min(day, last));
+    };
+    const moves: Record<string, () => Date> = {
+      ArrowLeft: () => new Date(y, m, day - 1),
+      ArrowRight: () => new Date(y, m, day + 1),
+      ArrowUp: () => new Date(y, m, day - 7),
+      ArrowDown: () => new Date(y, m, day + 7),
+      Home: () => new Date(y, m, day - back),
+      End: () => new Date(y, m, day + 6 - back),
+      PageUp: () => inMonth(-1),
+      PageDown: () => inMonth(1),
+    };
+    const move = moves[e.key];
+    if (!move) return;
+    e.preventDefault();
+    void this.focusDay(move());
+  }
+
+  private async focusDay(d: Date): Promise<void> {
+    const key = this.dayKey(d);
+    this.focusKey = key;
+    if (d.getFullYear() !== this.cursor.getFullYear() || d.getMonth() !== this.cursor.getMonth()) {
+      this.showMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    }
+    await this.updateComplete;
+    this.renderRoot.querySelector<HTMLButtonElement>(`button[data-date="${key}"]`)?.focus();
+  }
+
+  // Render of the PICKER grid: compact buttons, no chips.
+  private renderPicker(): unknown {
+    const todayKey = this.dayKey(new Date());
+    const month = this.cursor.getMonth();
+    const tabStop = this.tabStopKey();
+    const dayLabel = new Intl.DateTimeFormat(this.locale, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    return html`<div class="grid" role="group" aria-label=${this.monthLabel()}>
+      ${this.weekdays().map((w) => html`<div class="weekday" aria-hidden="true">${w}</div>`)}
+      ${repeat(
+        this.buildDays(),
+        // Keyed by date: a recycled button would fade its old picked/today state onto another day.
+        (d) => this.dayKey(d),
+        (d) => {
+          const key = this.dayKey(d);
+          const classes = ['pday', d.getMonth() !== month ? 'other-month' : '', key === todayKey ? 'today' : '']
+            .filter(Boolean)
+            .join(' ');
+          return html`<button
+            type="button"
+            class=${classes}
+            data-date=${key}
+            tabindex=${key === tabStop ? 0 : -1}
+            aria-pressed=${key === this.value ? 'true' : 'false'}
+            aria-current=${key === todayKey ? 'date' : nothing}
+            aria-label=${dayLabel.format(d)}
+            @click=${() => this.selectDay(key)}
+            @keydown=${(e: KeyboardEvent) => this.onDayKey(e, key)}
+          >
+            ${d.getDate()}
+          </button>`;
+        },
+      )}
+    </div>`;
+  }
+
   // Render de la vista AGENDA: próximos eventos (hoy en adelante) agrupados por día.
   private renderAgenda(byDay: Map<string, OkCalendarEvent[]>): unknown {
     const todayKey = this.dayKey(new Date());
@@ -523,11 +736,13 @@ export class OkCalendar extends LitElement {
     return html`<div class="agenda">
       ${keys.map((key) => {
         const d = this.parseDate(key);
-        const label = d.toLocaleDateString(this.locale, {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        });
+        const label = this.sentenceCase(
+          d.toLocaleDateString(this.locale, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          }),
+        );
         return html`<div class="agenda-group">
           <div class="agenda-date">${label}</div>
           ${byDay.get(key)!.map(
@@ -571,7 +786,9 @@ export class OkCalendar extends LitElement {
             <ion-icon slot="icon-only" .icon=${iconChevronForwardOutline}></ion-icon>
           </ion-button>
         </div>
-        <div class="toggle" role="tablist">
+        ${this.picker
+          ? nothing
+          : html`<div class="toggle" role="tablist">
           <button
             type="button"
             class=${this.view === 'month' ? 'active' : ''}
@@ -586,9 +803,13 @@ export class OkCalendar extends LitElement {
           >
             ${this.t.agenda}
           </button>
-        </div>
+        </div>`}
       </div>
-      ${this.view === 'agenda' ? this.renderAgenda(byDay) : this.renderMonth(byDay)}`;
+      ${this.picker
+        ? this.renderPicker()
+        : this.view === 'agenda'
+          ? this.renderAgenda(byDay)
+          : this.renderMonth(byDay)}`;
   }
 }
 
