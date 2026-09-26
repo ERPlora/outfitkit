@@ -185,6 +185,13 @@ export interface DataTablePrimaryAction {
 /** Clave estable de fila: nombre de campo o función que la devuelve. */
 export type DataTableRowKey = string | ((row: Record<string, unknown>) => string);
 
+/** Detail of the `panelClose` event (outfitkit#195): emitted every time the side panel goes from
+ *  open to closed. `panel` is the panel that WAS open; `reason` is how it closed. */
+export interface DataTablePanelCloseDetail {
+  panel: 'filters' | 'create' | 'edit';
+  reason: 'close-button' | 'backdrop' | 'escape' | 'toggle' | 'apply' | 'api';
+}
+
 /** (NUEVO, additivo) Todos los textos humanos del data-table, para i18n.
  *  Se pasan desde fuera vía la prop `.labels` (parcial); lo no pasado cae al idioma del documento
  *  (`<html lang="es">` → español; cualquier otro idioma → inglés).
@@ -900,8 +907,19 @@ export class OkDataTable extends LitElement {
 
   private readonly onLocaleChanged = (): void => this.requestUpdate();
 
+  /** outfitkit#195 — Escape closes the open side panel. Listened ON THE HOST (not the shadow
+   *  root) so it catches keydown bubbling both from slotted form inputs (light DOM, e.g. the
+   *  `create`/`edit` form) and from rows inside the shadow root while focus is anywhere in the
+   *  table. Other keys, or the panel already closed, are left untouched (no stopPropagation). */
+  private readonly onKeydown = (e: KeyboardEvent): void => {
+    if (e.key !== 'Escape' || this.panel === 'none') return;
+    e.stopPropagation();
+    this.closePanel('escape');
+  };
+
   connectedCallback(): void {
     super.connectedCallback();
+    this.addEventListener('keydown', this.onKeydown);
     if (typeof window !== 'undefined') {
       window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
       // #67 — al cambiar el ancho, la tabla puede pasar a caber (o dejar de caber).
@@ -1039,6 +1057,7 @@ export class OkDataTable extends LitElement {
   }
 
   disconnectedCallback(): void {
+    this.removeEventListener('keydown', this.onKeydown);
     if (typeof window !== 'undefined') {
       window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
       window.removeEventListener('resize', this.onWindowResize);
@@ -1212,7 +1231,21 @@ export class OkDataTable extends LitElement {
       // Al abrir el panel de filtros (modo cliente) clonamos el estado aplicado como borrador.
       this.filterDraft = this.cloneFilters(this.clientFilters);
     }
-    this.panel = this.panel === p ? 'none' : p;
+    if (this.panel === p) this.closePanel('toggle');
+    else this.panel = p;
+  }
+
+  /** Closes the side panel and, if one was actually open, emits `panelClose` with the panel that
+   *  was open and the reason it closed. No-op (no event) when the panel is already `'none'`.
+   *
+   *  outfitkit#195 — modules that load the edit form after an `await` (read the full row, then
+   *  fill the form) listen to `panelClose` to discard that pending load if the person closes the
+   *  panel meanwhile (X, backdrop, Escape) before the reply arrives. */
+  private closePanel(reason: DataTablePanelCloseDetail['reason']): void {
+    if (this.panel === 'none') return;
+    const panel = this.panel;
+    this.panel = 'none';
+    this.emit<DataTablePanelCloseDetail>('panelClose', { panel, reason });
   }
 
   // ── Filtros en memoria (modo cliente): borrador → aplicar. ───────────────────────────────────
@@ -1245,7 +1278,7 @@ export class OkDataTable extends LitElement {
     this.clientFilters = clean;
     this.clientPage = 0;
     this.mobileShown = 0; // #78 — a new result set starts at one page again
-    this.panel = 'none';
+    this.closePanel('apply');
     this.emit('filterChange', { filters: this.serializeFilters(clean) });
   }
   private clearFilters(): void {
@@ -1276,9 +1309,10 @@ export class OkDataTable extends LitElement {
     this.panelTitle = panel === 'filters' ? '' : (opts.title ?? '').trim();
     this.panel = panel;
   }
-  /** Closes the side panel. */
+  /** Closes the side panel (public API for the module). Emits `panelClose` with reason `'api'`
+   *  when a panel was actually open (outfitkit#195); no-op when it was already closed. */
   close(): void {
-    this.panel = 'none';
+    this.closePanel('api');
   }
 
   private emit<T>(type: string, detail: T): void {
@@ -2171,11 +2205,11 @@ export class OkDataTable extends LitElement {
     const clientFilters = isFilters && !this.serverSide;
     const formTitle = this.panelTitle || (this.panel === 'edit' ? this.t.editRecord : this.t.newRecord);
     return html`
-      <div class="tk-scrim" @click=${() => this.close()}></div>
+      <div class="tk-scrim" @click=${() => this.closePanel('backdrop')}></div>
       <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.panelTitle || this.t.form}>
         <header class="dh">
           <strong>${isFilters ? this.t.filters : formTitle}</strong>
-          <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.close()}><ion-icon slot="icon-only" .icon=${iconClose}></ion-icon></ion-button>
+          <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.closePanel('close-button')}><ion-icon slot="icon-only" .icon=${iconClose}></ion-icon></ion-button>
         </header>
         <div class="db">
           ${isFilters

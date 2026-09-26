@@ -108,7 +108,7 @@ viven como recetas copiables en el showcase.
 
 | Componente | Qué hace | Eventos clave |
 |---|---|---|
-| `ok-data-table` | Tabla rica: lista/tarjetas, búsqueda, filtros, orden, paginación (server-side), selección, columnas, vistas, CSV import/export. Componente central, API congelada. | `pageChange`, `sortChange`, `searchChange`, `filterChange`, `selectionChange`, `rowAction`, `primaryAction`, `menuAction`, `columnsChange`, `csvImport` (`{ headers, rows, count }`), `csvExport` (`{ rows, count }`) — la cifra de filas es siempre `count` |
+| `ok-data-table` | Tabla rica: lista/tarjetas, búsqueda, filtros, orden, paginación (server-side), selección, columnas, vistas, CSV import/export. Componente central, API congelada. | `pageChange`, `sortChange`, `searchChange`, `filterChange`, `selectionChange`, `rowAction`, `primaryAction`, `menuAction`, `columnsChange`, `panelClose` (`{ panel, reason }` al cerrarse el panel lateral: X, fondo, Escape, «Añadir», «Aplicar» o `close()`), `csvImport` (`{ headers, rows, count }`), `csvExport` (`{ rows, count }`) — la cifra de filas es siempre `count` |
 | `ok-tree` | Árbol expandible recursivo por datos, con líneas guía y selección. | `ok-toggle`, `ok-select` |
 | `ok-detail-list` | Description list (`dl`) para fichas: pares label/value alineados, 1–2 columnas. | — |
 | `ok-money` | Importe monetario pintado desde el **entero en unidad mínima** que guarda el sistema (1650 → `16,50 €`), con `currency`/`locale` (ADR-0123). | — |
