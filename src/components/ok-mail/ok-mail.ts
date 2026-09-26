@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
 import { ionTone } from '../../base/ion-tone.js';
+import { syncSearchbarInputName } from '../../base/searchbar-name.js';
 import { iconArchiveOutline, iconArrowRedoOutline, iconArrowUndoOutline, iconChevronBack, iconCreateOutline, iconDocumentAttachOutline, iconTrashOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-icon / ion-searchbar / ion-avatar / ion-badge NATIVOS (los
 // registra el HOST). Para los estados vacíos REUSA <ok-empty-state> del catálogo. OutfitKit
@@ -405,9 +406,11 @@ export class OkMail extends LitElement {
     return this.activeMessage ? 'message' : 'list';
   }
 
-  // Refleja la vista móvil en un atributo del host para que el CSS responsive muestre un panel.
+  // Mirrors the mobile view in a host attribute so the responsive CSS shows one panel.
   updated(): void {
     this.setAttribute('data-mview', this.mobileView);
+    // #184 — name the searchbar's inner input after its visible hint.
+    syncSearchbarInputName(this.shadowRoot, () => this.t.searchPlaceholder);
   }
 
   /** Iniciales de un nombre para el avatar (p.ej. "Ana Pérez" → "AP"). */
