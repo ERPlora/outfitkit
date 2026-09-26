@@ -55,7 +55,7 @@ lo que Ionic no trae.
 
 ## Flujo (8)
 
-- `ok-calendar` — Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. · props: `.events`, `value`, `view`, `max-per-day` · eventos: `ok-date-select`, `ok-event-click`, `ok-view-change · ok-nav`
+- `ok-calendar` — Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. · props: `.events`, `value`, `view`, `max-per-day`, `picker`, `locale`, `first-day-of-week`, `.labels` · eventos: `ok-date-select`, `ok-event-click`, `ok-view-change · ok-nav`
 - `ok-chat` — Hilo de mensajes (chat): burbujas self/ajeno, avatar, hora y compositor con enviar. · props: `.messages`, `title · placeholder · readonly` · eventos: `ok-send`
 - `ok-kanban` — Tablero de columnas con tarjetas arrastrables entre columnas (drag & drop). · props: `.columns` · eventos: `ok-card-move`, `ok-card-click`
 - `ok-mail` — Cliente de correo estilo Outlook pero SOLO email: 3 paneles (carpetas · lista · lectura), buscador, no leídos, estrella, adjuntos y acciones (responder/reenviar/archivar/eliminar). · props: `.folders`, `.messages`, `active-folder · active-message` · eventos: `ok-message-select · ok-folder-select`, `ok-compose · ok-reply · ok-forward · ok-archive · ok-delete · ok-star`, `ok-search`

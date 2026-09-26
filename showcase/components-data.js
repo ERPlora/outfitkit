@@ -576,9 +576,18 @@ wizard.addEventListener('ok-finish', () => …);`,
     id: 'ok-calendar',
     name: 'ok-calendar',
     category: 'flujo',
-    desc: 'Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. Ionic no trae calendario.',
+    desc: 'Calendario mensual / agenda con eventos por día, navegación de mes y selección de fecha. Con `picker` es un selector de fecha compacto: sin conmutador Mes/Agenda, semana del idioma (inglés de EE. UU. empieza en domingo, español en lunes) y días que se eligen con el teclado (flechas, Inicio/Fin, RePág/AvPág, Intro). Ionic no trae calendario.',
     importPath: "@erplora/outfitkit/ok-calendar",
-    example: '<ok-calendar id="cal" view="month" max-per-day="3" style="display:block;width:100%"></ok-calendar>',
+    example: '<ok-calendar id="cal" view="month" max-per-day="3" style="display:block;width:100%"></ok-calendar>'
+      + '<h3 style="margin:1.5rem 0 .75rem;font-size:1rem">Selector de fecha (<code>picker</code>)</h3>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-start">'
+      + '<figure style="margin:0;flex:1 1 16rem;max-width:20rem"><figcaption style="font-size:.85rem;margin-bottom:.5rem">English (US) — the week starts on Sunday</figcaption>'
+      + '<ok-calendar picker locale="en-US" data-testid="calendar-picker-en"></ok-calendar>'
+      + '<p style="font-size:.85rem;margin:.5rem 0 0">Picked: <output data-testid="calendar-picker-en-value"></output></p></figure>'
+      + '<figure style="margin:0;flex:1 1 16rem;max-width:20rem"><figcaption style="font-size:.85rem;margin-bottom:.5rem">Español — la semana empieza el lunes</figcaption>'
+      + '<ok-calendar picker locale="es" data-testid="calendar-picker-es"></ok-calendar>'
+      + '<p style="font-size:.85rem;margin:.5rem 0 0">Elegido: <output data-testid="calendar-picker-es-value"></output></p></figure>'
+      + '</div>',
     setup: (root) => {
       const cal = root.querySelector('#cal');
       cal.events = [
@@ -588,18 +597,42 @@ wizard.addEventListener('ok-finish', () => …);`,
         { id: 'e4', date: _ymd(20), title: 'Pedido proveedor', color: 'tertiary' },
       ];
       cal.value = _ymd(12);
+      // Selectores de fecha: uno por idioma, con el día elegido a la vista.
+      const pickers = [
+        ['en', {}],
+        ['es', { prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente' }],
+      ];
+      for (const [lang, labels] of pickers) {
+        const picker = root.querySelector(`[data-testid="calendar-picker-${lang}"]`);
+        const out = root.querySelector(`[data-testid="calendar-picker-${lang}-value"]`);
+        picker.labels = labels;
+        picker.value = _ymd(12);
+        out.textContent = picker.value;
+        picker.addEventListener('ok-date-select', (e) => {
+          out.textContent = e.detail.date;
+        });
+      }
     },
     code: `cal.events = [{ id, date: '2026-06-12', title: 'Inventario', color: 'success' }];
 cal.value = '2026-06-12';
 cal.view = 'month'; // 'month' | 'agenda'
 cal.maxPerDay = 3;
 cal.addEventListener('ok-date-select', (e) => …); // { date }
-cal.addEventListener('ok-event-click', (e) => …); // { id, event }`,
+cal.addEventListener('ok-event-click', (e) => …); // { id, event }
+
+// Selector de fecha compacto: sin Mes/Agenda, semana del idioma, teclado.
+// <ok-calendar picker locale="es"></ok-calendar>
+picker.labels = { prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente' };
+picker.firstDayOfWeek = 1; // opcional (0 = domingo … 6 = sábado); por defecto, la del locale`,
     api: [
       { kind: 'prop', name: '.events', type: 'OkCalendarEvent[]', detail: "{id, date:'YYYY-MM-DD', title, color?}" },
       { kind: 'prop', name: 'value', type: 'string', detail: 'Fecha seleccionada (YYYY-MM-DD)' },
       { kind: 'prop', name: 'view', type: 'month|agenda', detail: 'Modo de vista' },
       { kind: 'prop', name: 'max-per-day', type: 'number', detail: 'Máx. eventos visibles por celda' },
+      { kind: 'prop', name: 'picker', type: 'boolean', detail: 'Selector de fecha compacto: sin conmutador ni chips; días <button aria-pressed> con teclado' },
+      { kind: 'prop', name: 'locale', type: 'string', detail: 'BCP-47 (def. en-US): nombres de mes/día y primer día de la semana' },
+      { kind: 'prop', name: 'first-day-of-week', type: '0–6', detail: '0 = domingo … 6 = sábado; sin él, el del locale' },
+      { kind: 'prop', name: '.labels', type: 'Partial<OkCalendarLabels>', detail: 'Textos (def. inglés): month, agenda, more, agendaEmpty, prevMonth, nextMonth' },
       { kind: 'event', name: 'ok-date-select', type: '{date}', detail: 'Selección de día' },
       { kind: 'event', name: 'ok-event-click', type: '{id, event}', detail: 'Click en un evento' },
       { kind: 'event', name: 'ok-view-change · ok-nav', type: '{view} · {year, month}', detail: 'Cambio de vista · navegación de mes' },
