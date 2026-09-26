@@ -2446,6 +2446,18 @@ export class OkDataTable extends LitElement {
     `;
   }
 
+  /** #205 — The column a card's title already shows, so the default body does not repeat it
+   *  («Tarifa mayorista 1» as the title and again as «Nombre»). Decided per card: the first visible
+   *  column whose cell reads exactly like the title. Only text is compared: a title given as a
+   *  template, or a column with its own `render`, is never matched. */
+  private cardTitleColumn(title: unknown, row: Record<string, unknown>): DataTableColumn | undefined {
+    if (typeof title !== 'string' && typeof title !== 'number') return undefined;
+    const text = String(title).trim();
+    if (!text) return undefined;
+    // String(): a module's `format` is bundled without a typecheck and may hand back a non-string.
+    return this.visibleColumns.find((c) => !c.render && String(this.cell(c, row) ?? '').trim() === text);
+  }
+
   private renderCards(visible: Record<string, unknown>[]): unknown {
     if (visible.length === 0) return this.emptyState();
     const hasHead = !!this.cardTitle || !!this.cardIcon || this.selectable;
@@ -2458,6 +2470,8 @@ export class OkDataTable extends LitElement {
             const key = this.keyOf(row);
             const selected = this.selectable && this.selection.has(key);
             const icon = this.cardIcon?.(row);
+            const title = this.cardTitle?.(row);
+            const titleColumn = this.cardTitleColumn(title, row);
             return html`
               <ion-card
                 class=${`rcard${selected ? ' selected' : ''}${this.rowClickable ? ' clickable' : ''}`}
@@ -2473,7 +2487,7 @@ export class OkDataTable extends LitElement {
                         ${icon != null && icon !== ''
                           ? html`<span class="rc-icon">${typeof icon === 'string' ? html`<ion-icon .icon=${okIcon(icon)}></ion-icon>` : icon}</span>`
                           : nothing}
-                        <span class="rc-title">${this.cardTitle ? this.cardTitle(row) : nothing}</span>
+                        <span class="rc-title">${this.cardTitle ? title : nothing}</span>
                         ${this.selectable
                           ? html`<ion-checkbox .checked=${selected} aria-label=${this.t.select} @click=${(e: Event) => e.stopPropagation()} @ionChange=${() => this.toggleRow(key)}></ion-checkbox>`
                           : nothing}
@@ -2483,7 +2497,7 @@ export class OkDataTable extends LitElement {
                 <ion-card-content class="rcard-body">
                   ${this.renderCard
                     ? this.renderCard(row)
-                    : this.visibleColumns.map(
+                    : this.visibleColumns.filter((c) => c !== titleColumn).map(
                         (c) => html`<div class="rrow"><span class="rk">${c.header}</span><span class="rv">${c.render ? c.render(row) : this.cell(c, row)}</span></div>`,
                       )}
                 </ion-card-content>
