@@ -179,7 +179,13 @@ describe('showcase Hub — pestaña «Plan» de un módulo de pago', () => {
     // panel lo remapea sobre el tier gratuito (`displayStatus`) en vez de pintar «Sin plan» en la
     // única pantalla que existe para explicarte tu plan.
     expect(hubPanel, moved('el panel del Hub ya no remapea el estado')).toContain('displayStatus');
-    expect(hubPanel).toMatch(/\(s === 'none' \|\| s === 'trialing'\) && onFreeTier/);
+    // outfitkit#188: hub#2094 added a second way into the free-tier remap (`includedByPlan`, the
+    // module comes with the hub plan). What this demo depends on is that being on the free tier
+    // still remaps to `free`, so the check pins `onFreeTier` INSIDE the condition and the return,
+    // not the exact shape of the whole expression.
+    expect(hubPanel, 'hub ModulePlanPanel.vue no longer remaps none/trialing on the free tier to free').toMatch(
+      /if \(\(s === 'none' \|\| s === 'trialing'\) && [^\n]*\bonFreeTier\b[^\n]*\) return 'free';/,
+    );
     expect(hubPanel).not.toContain('t(`modulePlan.status.${s}`)');
     expect(freeTier, moved('module.json → billing.tiers[] sin tier gratuito')).toBeDefined();
     expect(page, moved(`module.json → billing.tiers[${freeTier?.slug}].name`)).toContain(
