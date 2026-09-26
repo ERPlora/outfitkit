@@ -156,6 +156,21 @@ describe('a card shows its name once: as the title, not again as a field (outfit
     expect(cardFields(table)).toEqual([['Código=L1', 'Nombre=Tarifa mayorista 1']]);
   });
 
+  it('still paints the cards when a module format returns something that is not text', async () => {
+    // Modules are bundled without a typecheck: a `format` that returns a number or `undefined` in
+    // one branch painted fine before; comparing it with the title must not break every card.
+    const table = await mountCards({
+      rows: [{ id: '1', code: 'L1', name: 'Tarifa mayorista 1', priority: 7 }],
+      columns: [
+        { key: 'code', header: 'Código', format: () => undefined },
+        { key: 'priority', header: 'Prioridad', format: (r: Row) => r.priority },
+        { key: 'name', header: 'Nombre' },
+      ],
+    });
+    expect(titles(table)).toEqual(['Tarifa mayorista 1']);
+    expect(cardFields(table)).toEqual([['Código=', 'Prioridad=7']]);
+  });
+
   it('leaves a host renderCard untouched', async () => {
     const table = await mountCards({ renderCard: () => html`<div class="rrow"><span class="rk">Own</span><span class="rv">body</span></div>` });
     expect(cardFields(table)).toEqual([['Own=body']]);

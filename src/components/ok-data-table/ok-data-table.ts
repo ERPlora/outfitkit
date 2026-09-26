@@ -2433,7 +2433,8 @@ export class OkDataTable extends LitElement {
     if (typeof title !== 'string' && typeof title !== 'number') return undefined;
     const text = String(title).trim();
     if (!text) return undefined;
-    return this.visibleColumns.find((c) => !c.render && this.cell(c, row).trim() === text);
+    // String(): a module's `format` is bundled without a typecheck and may hand back a non-string.
+    return this.visibleColumns.find((c) => !c.render && String(this.cell(c, row) ?? '').trim() === text);
   }
 
   private renderCards(visible: Record<string, unknown>[]): unknown {
