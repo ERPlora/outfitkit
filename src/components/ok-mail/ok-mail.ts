@@ -100,6 +100,22 @@ const DEFAULT_LABELS: OkMailLabels = {
   to: 'To:',
 };
 
+const ES_LABELS: OkMailLabels = {
+  compose: 'Redactar',
+  searchPlaceholder: 'Buscar correo…',
+  unread: 'No leído',
+  star: 'Destacar',
+  unstar: 'Quitar destacado',
+  noMessages: 'Sin mensajes',
+  selectMessage: 'Selecciona un mensaje',
+  back: 'Volver a la lista',
+  reply: 'Responder',
+  forward: 'Reenviar',
+  archive: 'Archivar',
+  delete: 'Eliminar',
+  to: 'Para:',
+};
+
 export class OkMail extends LitElement {
   static styles = css`
     :host {
@@ -385,12 +401,27 @@ export class OkMail extends LitElement {
   @property({ attribute: 'active-message' }) activeMessage = '';
   /** Muestra el buscador en la lista de mensajes. */
   @property({ type: Boolean }) searchable = true;
-  /** Overrides de textos humanos (i18n). Se fusionan sobre los defaults en inglés. */
+  /** Human-readable text overrides (i18n). English is the source; Spanish is picked when the
+   * document language is `es*`, merged with explicit `.labels` overrides. */
   @property({ attribute: false }) labels: Partial<OkMailLabels> = {};
 
-  /** Textos efectivos (defaults inglés + overrides). */
+  private readonly onLocaleChanged = (): void => this.requestUpdate();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined') window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
+  }
+
+  disconnectedCallback(): void {
+    if (typeof window !== 'undefined') window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+    super.disconnectedCallback();
+  }
+
+  // i18n: document language ← explicit `.labels` overrides
   private get t(): OkMailLabels {
-    return { ...DEFAULT_LABELS, ...this.labels };
+    const lang =
+      typeof document === 'undefined' ? 'en' : document.documentElement.lang.toLowerCase();
+    return { ...(lang.startsWith('es') ? ES_LABELS : DEFAULT_LABELS), ...this.labels };
   }
 
   // Texto del buscador (filtra preview/asunto/remitente en memoria).
