@@ -121,6 +121,13 @@ describe('ok-calendar picker — compact, no Month/Agenda toggle (outfitkit#198)
     expect(el.hasAttribute('picker')).toBe(true);
   });
 
+  it('the focus ring of an edge column is not clipped by the grid', async () => {
+    const el = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
+    // The event grid clips its rounded border (overflow: hidden); the picker draws a 2 px focus
+    // outline OUTSIDE the day, which that clip cut in half on Monday / Sunday (seen in the bench).
+    expect(getComputedStyle(root(el).querySelector('.grid')!).overflow).toBe('visible');
+  });
+
   it('is compact: capped width and 44 px day cells, not the 5.5 rem event cells', async () => {
     const el = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
     expect(getComputedStyle(el).maxWidth).toBe('320px'); // 20rem (happy-dom resolves rem to px)

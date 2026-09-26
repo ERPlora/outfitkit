@@ -364,6 +364,8 @@ export class OkCalendar extends LitElement {
       background: none;
       border: 0;
       border-radius: 0;
+      /* The focus outline is drawn outside the day: do not clip it on the edge columns. */
+      overflow: visible;
     }
     :host([picker]) .weekday {
       background: none;
