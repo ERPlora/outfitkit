@@ -385,6 +385,12 @@ describe('ok-file-manager · mover sin arrastrar — selector de destino (#96)',
     moveTargets(el)[0].click();
     await el.updateComplete;
 
+    // outfitkit#201: the popover stays in the template (Ionic puts an inline overlay back after
+    // didDismiss); «closed» is isOpen=false, and the list goes once Ionic reports the dismiss.
+    const popover = el.shadowRoot!.querySelector('ion-popover') as HTMLElement & { isOpen?: boolean };
+    expect(popover.isOpen).toBe(false);
+    popover.dispatchEvent(new CustomEvent('didDismiss'));
+    await el.updateComplete;
     expect(moveTargets(el)).toHaveLength(0);
   });
 

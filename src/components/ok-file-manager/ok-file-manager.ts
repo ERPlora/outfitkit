@@ -1,7 +1,9 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { define } from '../../base/define.js';
 import { shadowAnchorEvent } from '../../base/anchor.js';
+import { ionTone } from '../../base/ion-tone.js';
 import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
 import { tapTarget } from '../../base/tap-target.js';
 import { syncSearchbarInputName } from '../../base/searchbar-name.js';
@@ -137,6 +139,10 @@ export interface OkFmLabels {
   expand: string;
   /** aria-label of an expanded folder caret. */
   collapse: string;
+  /** aria-label of the card «⋮» that opens the actions sheet on a phone (#201). */
+  more: string;
+  /** aria-label of the button that closes the phone sheet (#201). */
+  close: string;
 }
 
 const DEFAULT_LABELS: OkFmLabels = {
@@ -161,6 +167,8 @@ const DEFAULT_LABELS: OkFmLabels = {
   gridView: 'Grid view',
   expand: 'Expand',
   collapse: 'Collapse',
+  more: 'More actions',
+  close: 'Close',
 };
 
 const ES_LABELS: OkFmLabels = {
@@ -185,6 +193,8 @@ const ES_LABELS: OkFmLabels = {
   gridView: 'Vista cuadrícula',
   expand: 'Expandir',
   collapse: 'Contraer',
+  more: 'Más acciones',
+  close: 'Cerrar',
 };
 
 export class OkFileManager extends LitElement {
@@ -719,6 +729,16 @@ export class OkFileManager extends LitElement {
       width: calc(28px + 2px);
       height: calc(28px + 2px);
     }
+    /* The card «⋮» (#201) only exists on a phone, where it is the card's ONLY action: nothing
+       beside it to protect, so it takes the full 44px hit area. */
+    .action.more {
+      display: none;
+    }
+    .action.more.ok-tap::before {
+      display: block;
+      width: max(100%, var(--ok-tap-min, 44px));
+      height: max(100%, var(--ok-tap-min, 44px));
+    }
     .action:hover {
       background: var(--badge-bg);
       color: var(--ink);
@@ -818,6 +838,17 @@ export class OkFileManager extends LitElement {
       .grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       }
+      /* #201 — five 28px actions (148px) do not fit a ~134px card: they covered the thumbnail. On a
+         phone the card keeps one «⋮» that opens the actions sheet; hover does not exist here. */
+      .card-actions {
+        opacity: 1;
+      }
+      .card-actions .action:not(.more) {
+        display: none;
+      }
+      .card-actions .action.more {
+        display: inline-flex;
+      }
       .lrow {
         grid-template-columns: 34px 1fr auto;
       }
@@ -900,10 +931,23 @@ export class OkFileManager extends LitElement {
   // never fires on touch). `null` ⇒ picker closed. Separate from `dragSource`: that one only
   // exists during an active pointer drag, this one survives across the async popover interaction.
   @state() private moveTarget: OkFmFile | null = null;
+  // The popover stays in the template (like the phone sheet, #201): `moveOpen` drives Ionic and
+  // `moveTarget` keeps the list alive until didDismiss.
+  @state() private moveOpen = false;
   // Event that anchors the "Move to…" ion-popover (Shadow-DOM-safe anchoring, same technique as
   // ok-data-table's overflow menu: `.event`, not `trigger-by-id`, which cannot resolve into a
   // shadow root).
   private moveEv?: Event;
+
+  // Phone sheet (#201): the «⋮» actions of a file, or the «Move to…» folder list. A popover is the
+  // wrong container on a phone — Ionic squeezes it into whatever is left below the anchor — so
+  // both open as a bottom sheet. `sheetOpen` drives Ionic's animation; `sheet` keeps the content
+  // alive until `didDismiss`. The ion-modal itself never leaves the template: Ionic moves an inline
+  // modal to ion-app while presented and puts it back after didDismiss, so dropping it from the
+  // template there makes Lit remove Ionic's placeholder first and Ionic throws on insertBefore.
+  @state() private sheet: { file: OkFmFile; step: 'actions' | 'move' } | null = null;
+  @state() private sheetOpen = false;
+  private afterSheet: (() => void) | null = null;
 
   // MIME propio para arrastrar elementos internos (ficheros/carpetas del gestor). Distingue el
   // DnD de reubicación del de subida (que arrastra ficheros del SO y viene con `files`).
@@ -1109,35 +1153,160 @@ export class OkFileManager extends LitElement {
   // tampoco lo hace -- el tap no le añade al host una puerta que el ratón no tenía.
 
   private openMovePicker(e: Event, file: OkFmFile): void {
+    if (this.isCompact()) {
+      this.openSheet(file, 'move');
+      return;
+    }
     this.moveEv = shadowAnchorEvent(e);
     this.moveTarget = file;
+    this.moveOpen = true;
   }
 
-  private closeMovePicker(): void {
+  // Same breakpoint as the stacked layout in the styles (≤768px).
+  private isCompact(): boolean {
+    return typeof window !== 'undefined' && (window.matchMedia?.('(max-width: 768px)').matches ?? false);
+  }
+
+  private openSheet(file: OkFmFile, step: 'actions' | 'move'): void {
+    this.sheet = { file, step };
+    this.sheetOpen = true;
+  }
+
+  /** Starts Ionic's dismiss; `then` runs once the sheet is gone (e.g. open the folder list). */
+  private closeSheet(then?: () => void): void {
+    this.afterSheet = then ?? null;
+    this.sheetOpen = false;
+  }
+
+  private onSheetDismissed(): void {
+    const next = this.afterSheet;
+    this.afterSheet = null;
+    this.sheet = null;
+    this.sheetOpen = false;
+    next?.();
+  }
+
+  // Sheet height: handle + toolbar + one row per entry (ion-item is 48px in md, 44px in ios). A
+  // list that does not fit opens at full height; either way it scrolls inside (expandToScroll off).
+  private static readonly SHEET_CHROME_PX = 96;
+  private static readonly SHEET_ROW_PX = 48;
+
+  private sheetBreakpoint(rows: number): number {
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const needed = OkFileManager.SHEET_CHROME_PX + rows * OkFileManager.SHEET_ROW_PX;
+    if (!vh || needed >= vh) return 1;
+    return Math.ceil((needed / vh) * 100) / 100;
+  }
+
+  /** The row actions of a file, by name, for the phone sheet: same policy as `fileActions()`. */
+  private sheetActions(file: OkFmFile): { act: string; label: string; icon: string; danger?: boolean; run: () => void }[] {
+    const actions = [
+      { act: 'open', label: this.t.open, icon: 'open-outline', run: () => this.open(file.id) },
+      { act: 'download', label: this.t.download, icon: 'download-outline', run: () => this.download(file) },
+      { act: 'move-file', label: this.t.move, icon: 'folder-open-outline', run: () => this.openSheet(file, 'move') },
+    ];
+    if (this.can('rename')) actions.push({ act: 'rename-file', label: this.t.rename, icon: 'create-outline', run: () => this.renameFile(file) });
+    if (this.can('delete')) actions.push({ act: 'delete-file', label: this.t.delete, icon: 'trash-outline', run: () => this.deleteFile(file.id) });
+    return actions.map((a) => ({ ...a, danger: a.act === 'delete-file' }));
+  }
+
+  // «Move to…» swaps the actions sheet for the folder list once it is gone; the rest act at once.
+  private onSheetAction(act: string, run: () => void): void {
+    if (act === 'move-file') {
+      this.closeSheet(run);
+      return;
+    }
+    this.closeSheet();
+    run();
+  }
+
+  private renderSheet(flat: { f: OkFmFolder; d: number }[]): unknown {
+    const sheet = this.sheet;
+    const file = sheet?.file;
+    const step = sheet?.step;
+    const destinations = flat.filter(({ f }) => !f.readOnly);
+    const actions = file && step === 'actions' ? this.sheetActions(file) : [];
+    const bp = this.sheetBreakpoint(step === 'move' ? destinations.length : actions.length);
+    const title = step === 'move' ? this.t.move : (file?.name ?? '');
+    const items = !file
+      ? ''
+      : step === 'move'
+        ? destinations.map(
+            ({ f, d }) => html`<ion-item
+              button
+              .detail=${false}
+              data-move-target=${f.id}
+              @click=${() => {
+                this.emit('ok-move', { from: file.id, to: f.id });
+                this.closeSheet();
+              }}
+            >
+              <ion-label style=${`padding-left:${d * 16}px`}>${f.label}</ion-label>
+            </ion-item>`
+          )
+        : actions.map(
+            (a) => html`<ion-item
+              button
+              .detail=${false}
+              data-sheet-act=${a.act}
+              style=${ifDefined(ionTone(a.danger ? 'danger' : undefined, 'clear'))}
+              @click=${() => this.onSheetAction(a.act, a.run)}
+            >
+              <ion-icon slot="start" aria-hidden="true" .icon=${okIcon(a.icon)}></ion-icon>
+              <ion-label>${a.label}</ion-label>
+            </ion-item>`
+          );
+    // `.isOpen` goes last: Lit sets bindings in order, and Ionic must see the breakpoints of the new
+    // content when the flip to true starts the presentation.
+    return html`<ion-modal
+        class="fm-sheet"
+        .initialBreakpoint=${bp}
+        .breakpoints=${bp < 1 ? [0, bp, 1] : [0, 1]}
+        .expandToScroll=${false}
+        .isOpen=${this.sheetOpen}
+        @didDismiss=${() => this.onSheetDismissed()}
+      >
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>${title}</ion-title>
+            <ion-buttons slot="end">
+              <ion-button data-act="close-sheet" aria-label=${this.t.close} @click=${() => this.closeSheet()}>
+                <ion-icon slot="icon-only" aria-hidden="true" .icon=${okIcon('close')}></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <ion-list lines="none" aria-label=${title}>${items}</ion-list>
+        </ion-content>
+      </ion-modal>`;
+  }
+
+  private onMovePickerDismissed(): void {
+    this.moveOpen = false;
     this.moveTarget = null;
   }
 
-  /** Emite `ok-move` con el mismo contrato `{from,to}` que el drag&drop y cierra el selector. */
+  /** Emits `ok-move` with the drag&drop `{from,to}` contract and closes the picker. */
   private moveTo(to: string): void {
     if (!this.moveTarget) return;
     this.emit('ok-move', { from: this.moveTarget.id, to });
-    this.closeMovePicker();
+    this.moveOpen = false;
   }
 
   // Selector de carpeta destino: reutiliza el árbol aplanado (`flatFolders`, ya usado por el
   // <select> móvil) y descarta las de solo lectura -- el mismo filtro que `onFolderDrop`.
   private renderMovePicker(flat: { f: OkFmFolder; d: number }[]): unknown {
-    if (!this.moveTarget) return '';
     return html`<ion-popover
-      .isOpen=${true}
       .event=${this.moveEv}
       dismiss-on-select="true"
-      @didDismiss=${() => this.closeMovePicker()}
+      .isOpen=${this.moveOpen}
+      @didDismiss=${() => this.onMovePickerDismissed()}
     >
       <ion-content>
         <ion-list lines="none" aria-label=${this.t.move}>
           ${flat
-            .filter(({ f }) => !f.readOnly)
+            .filter(({ f }) => this.moveTarget && !f.readOnly)
             .map(
               ({ f, d }) => html`<ion-item
                 button
@@ -1424,6 +1593,11 @@ export class OkFileManager extends LitElement {
       <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>`;
   }
+  private get iconMore() {
+    return html`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
+    </svg>`;
+  }
   private get iconMove() {
     return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round">
@@ -1435,7 +1609,7 @@ export class OkFileManager extends LitElement {
 
   // Acciones de un archivo, reutilizadas en grid y lista. Abrir y descargar SIEMPRE se ofrecen;
   // renombrar y borrar solo si la política de la carpeta los concede.
-  private fileActions(file: OkFmFile): unknown {
+  private fileActions(file: OkFmFile, withMore = false): unknown {
     // Los botones llevan `draggable="true"` para que iniciar un drag sobre ellos (el cursor cae en
     // un icono de acción, muy frecuente en el grid) arranque el drag del fichero en vez de quedarse
     // en el botón. El `dragstart` burbujea al card, que tiene el handler que marca el origen.
@@ -1512,6 +1686,21 @@ export class OkFileManager extends LitElement {
           >
             ${this.iconDelete}
           </button>`
+        : ''}
+      ${withMore
+        ? html`<button
+            type="button"
+            class="action more ok-tap"
+            data-act="more"
+            aria-label=${this.t.more}
+            title=${this.t.more}
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this.openSheet(file, 'actions');
+            }}
+          >
+            ${this.iconMore}
+          </button>`
         : ''}`;
   }
 
@@ -1545,7 +1734,7 @@ export class OkFileManager extends LitElement {
           @dragstart=${(e: DragEvent) => this.onItemDragStart(e, file.id, 'file')}
           @dragend=${() => this.onItemDragEnd()}
         >
-          <div class="card-actions">${this.fileActions(file)}</div>
+          <div class="card-actions">${this.fileActions(file, true)}</div>
           ${this.renderBadge(file)}
           <div class="card-name" title=${file.name}>${file.name}</div>
           <div class="card-meta">
@@ -1628,7 +1817,7 @@ export class OkFileManager extends LitElement {
       </section>
     </div>
 
-    ${this.renderMovePicker(flat)}
+    ${this.renderMovePicker(flat)} ${this.renderSheet(flat)}
     <input type="file" multiple @change=${this.onPicked} />`;
   }
 }
