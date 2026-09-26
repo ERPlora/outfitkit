@@ -423,7 +423,7 @@ export class OkDataTable extends LitElement {
        position:fixed dentro de ion-content se ancla al área de contenido (contain), que es justo el hueco
        bajo la cabecera de la app: el usuario conserva el título de la página. */
     @media (max-width: 833.98px) {
-      .drawer { position: fixed; inset: 0; top: var(--ok-sheet-top, 0px); width: 100%; max-width: none; height: auto; border-left: 0; z-index: 1000; }
+      .drawer { position: fixed; inset: 0; top: var(--ok-sheet-top, 0px); bottom: var(--ok-sheet-bottom, 0px); width: 100%; max-width: none; height: auto; border-left: 0; z-index: 1000; }
       .tk-scrim { display: none; }
     }
     .drawer .dh { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
@@ -999,6 +999,9 @@ export class OkDataTable extends LitElement {
   private readonly onWindowResize = (): void => {
     this.measureXOverflow();
     this.measureRowActionsFit();
+    // outfitkit#197 — rotating the phone (or any resize) while the sheet is open re-measures both
+    // offsets; with the sheet closed the sync only clears them.
+    this.syncSheetInsets();
   };
 
   // #67 — Observador del hueco de la tabla. Medir solo al renderizar NO basta: dentro de
@@ -1034,19 +1037,36 @@ export class OkDataTable extends LitElement {
     }
     this.measureActionsTrack();
     this.measureRowActionsFit();
-    if (changed.has('panel')) this.syncSheetTop();
+    if (changed.has('panel')) this.syncSheetInsets();
     syncSearchbarInputName(this.shadowRoot, () => this.effSearchPlaceholder);
   }
 
-  /** #75 — Where the mobile sheet starts. `position: fixed; inset: 0` painted it from y=0 and the
-   *  app's `ion-header` (its own stacking context, above the content) covered the sheet's title and
-   *  its only Close button — measured at 390×844 in the Appointments parity page. CSS inside a
-   *  shadow root cannot know where the content area begins, so on open the table measures the
-   *  closest `ion-content` (walking through shadow hosts) and hands the offset over as a custom
-   *  property; on close it is removed. Without an `ion-content` around, the sheet keeps y=0. */
-  private syncSheetTop(): void {
+  // outfitkit#197 — Observer dedicated to the `ion-content` the mobile sheet is anchored to. The
+  // module tab bar is an `ion-footer` of the shell page, OUTSIDE `ion-content`: it does not resize
+  // the content element by itself on open, but it can mount late (deep link, slow module) or the
+  // content can change size while the sheet stays open (rotation), and both must re-measure the
+  // sheet's insets. It only ever observes the content element, and writing a custom property on
+  // this host does not resize `ion-content`, so there is no feedback loop to guard against.
+  private sheetObserver?: ResizeObserver;
+  private sheetContent: Element | null = null;
+
+  /** #75/#197 — Where the mobile sheet starts and ends. `position: fixed; inset: 0` painted it from
+   *  y=0 to the screen edge: the app's `ion-header` (its own stacking context, above the content)
+   *  covered the sheet's title and its only Close button — measured at 390×844 in the Appointments
+   *  parity page — and the module tab bar (an `ion-footer` OUTSIDE `ion-content`) covered the last
+   *  66px (ios) / 72px (md) of the sheet, so its Save button could not be tapped (inventory#105).
+   *  CSS inside a shadow root cannot know where the content area begins or ends, so on open the
+   *  table measures the closest `ion-content` (walking through shadow hosts) and hands both offsets
+   *  over as custom properties, re-measuring them while the sheet stays open whenever the content
+   *  resizes (rotation, a tab bar mounted late) or the window resizes; on close both are removed and
+   *  the content stops being observed. Without an `ion-content` around, the sheet keeps the screen
+   *  edge on both ends. */
+  private syncSheetInsets(): void {
     if (this.panel === 'none') {
       this.style.removeProperty('--ok-sheet-top');
+      this.style.removeProperty('--ok-sheet-bottom');
+      this.sheetObserver?.disconnect();
+      this.sheetContent = null;
       return;
     }
     let node: Node | null = this;
@@ -1057,7 +1077,21 @@ export class OkDataTable extends LitElement {
       node = parent === node ? null : parent;
     }
     const top = content ? Math.max(0, Math.round(content.getBoundingClientRect().top)) : 0;
+    const bottom = content ? Math.max(0, Math.round(window.innerHeight - content.getBoundingClientRect().bottom)) : 0;
     this.style.setProperty('--ok-sheet-top', `${top}px`);
+    this.style.setProperty('--ok-sheet-bottom', `${bottom}px`);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.sheetObserver ??= new ResizeObserver(() => {
+        if (this.panel !== 'none') this.syncSheetInsets();
+      });
+      // observe() always delivers one initial notification: re-observing the same element on every
+      // sync would re-measure in a loop for as long as the sheet stays open.
+      if (content !== this.sheetContent) {
+        this.sheetObserver.disconnect();
+        if (content) this.sheetObserver.observe(content);
+        this.sheetContent = content;
+      }
+    }
   }
 
   disconnectedCallback(): void {
@@ -1068,6 +1102,9 @@ export class OkDataTable extends LitElement {
     }
     this.xObserver?.disconnect();
     this.xObserver = undefined;
+    this.sheetObserver?.disconnect();
+    this.sheetObserver = undefined;
+    this.sheetContent = null;
     if (this.mq) {
       const handler = (this as unknown as { _mqHandler?: (e: MediaQueryListEvent | Event) => void })._mqHandler;
       if (handler) this.mq.removeEventListener('change', handler);
