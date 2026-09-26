@@ -77,6 +77,20 @@ describe('ok-data-table: a column with `hidden: true` is not painted but keeps w
     expect(headers(table).some((h) => h.includes('App'))).toBe(true);
   });
 
+  it('is not painted in the card view either', async () => {
+    const table = document.createElement('ok-data-table') as unknown as Table & { views: boolean; defaultView: string };
+    table.rows = ROWS;
+    table.columns = columns(true);
+    table.rowKey = 'id';
+    table.views = true;
+    table.defaultView = 'cards';
+    document.body.appendChild(table);
+    await table.updateComplete;
+    const labels = [...(table.shadowRoot?.querySelectorAll('ion-card.rcard .rk') ?? [])].map((k) => k.textContent?.trim());
+    expect(labels, 'not testing the card view').toContain('App');
+    expect(labels).not.toContain('Categoría');
+  });
+
   it('still filters the rows by what is picked for it', async () => {
     const table = await mount(columns(true));
     const before = bodyRows(table);
