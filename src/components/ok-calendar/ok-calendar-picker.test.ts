@@ -9,7 +9,7 @@ vi.mock('../../base/icons.js', () => ({
 }));
 
 import './ok-calendar';
-import type { OkCalendar } from './ok-calendar';
+import { OkCalendar, localeFirstDayOfWeek } from './ok-calendar';
 
 // outfitkit#198 — picking a date showed a full event calendar (~615 px tall), a Month/Agenda
 // toggle whose Agenda view is useless for picking, a week that always started on Monday (also in
@@ -43,6 +43,18 @@ async function press(el: OkCalendar, from: string, key: string): Promise<void> {
 }
 
 const focusedDate = (el: OkCalendar) => (root(el).activeElement as HTMLElement | null)?.dataset.date;
+
+// Makes `Intl.Locale` week info unavailable (`undefined`) or legacy-only (`legacy` from the old
+// `weekInfo` getter). Hides EVERY accessor the engine ships: V8 >= 13 has `getWeekInfo()` next to
+// the legacy getter, while Node 20/22 (the CI) only have the getter, and spying on a method that
+// does not exist throws.
+function hideWeekInfo(legacy: { firstDay: number } | undefined): void {
+  const proto = Intl.Locale.prototype as unknown as { getWeekInfo: () => unknown; weekInfo: unknown };
+  if (typeof Object.getOwnPropertyDescriptor(proto, 'getWeekInfo')?.value === 'function') {
+    vi.spyOn(proto, 'getWeekInfo').mockReturnValue(undefined);
+  }
+  if (Object.getOwnPropertyDescriptor(proto, 'weekInfo')?.get) vi.spyOn(proto, 'weekInfo', 'get').mockReturnValue(legacy);
+}
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -84,10 +96,7 @@ describe('ok-calendar — first day of the week follows the locale (outfitkit#19
   });
 
   it('without Intl week info (older engines) the region table still gives Sunday / Saturday', async () => {
-    // Hide BOTH accessors (V8 still ships the legacy `weekInfo` getter next to `getWeekInfo()`).
-    const proto = Intl.Locale.prototype as unknown as { getWeekInfo: () => unknown; weekInfo: unknown };
-    vi.spyOn(proto, 'getWeekInfo').mockReturnValue(undefined);
-    if (Object.getOwnPropertyDescriptor(proto, 'weekInfo')?.get) vi.spyOn(proto, 'weekInfo', 'get').mockReturnValue(undefined);
+    hideWeekInfo(undefined);
     const probe = new Intl.Locale('en-US') as unknown as { getWeekInfo?: () => unknown; weekInfo?: unknown };
     expect(probe.getWeekInfo?.() ?? probe.weekInfo).toBeUndefined();
     const us = await mount({ locale: 'en-US', picker: '' }, { value: '2026-10-15' });
@@ -96,6 +105,14 @@ describe('ok-calendar — first day of the week follows the locale (outfitkit#19
     expect(dayButtons(eg)[0].dataset.date).toBe('2026-09-26'); // a Saturday
     const es = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
     expect(weekdays(es)[0]).toBe('lun');
+    // Maldives (CLDR firstDay = fri) is the only Friday region.
+    expect(localeFirstDayOfWeek('dv-MV')).toBe(5);
+  });
+
+  it('an engine with only the legacy weekInfo getter (Node 20/22, older Chromium) is read too', () => {
+    // A value the region table would never give for `es` (Monday) proves the getter is read.
+    hideWeekInfo({ firstDay: 3 });
+    expect(localeFirstDayOfWeek('es')).toBe(3); // Wednesday
   });
 });
 
@@ -134,6 +151,38 @@ describe('ok-calendar picker — compact, no Month/Agenda toggle (outfitkit#198)
     const day = dayButton(el, '2026-10-15')!;
     expect(getComputedStyle(day).height).toBe('44px'); // 2.75rem
     expect(getComputedStyle(day).minHeight).not.toBe('88px'); // 5.5rem, the event cell
+  });
+
+  it('the picked day is filled, days of other months are dimmed', async () => {
+    const el = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
+    const picked = getComputedStyle(dayButton(el, '2026-10-15')!);
+    const other = getComputedStyle(dayButton(el, '2026-10-16')!);
+    expect(picked.backgroundColor).not.toBe(other.backgroundColor);
+    expect(picked.backgroundColor).not.toBe('none');
+    expect(dayButton(el, '2026-09-28')!.classList.contains('other-month')).toBe(true);
+    expect(getComputedStyle(dayButton(el, '2026-09-28')!).opacity).toBe('0.4');
+    expect(getComputedStyle(dayButton(el, '2026-10-16')!).opacity).not.toBe('0.4');
+  });
+
+  it('today is ringed and announced as the current date', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 20, 12));
+    try {
+      const el = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
+      const today = dayButton(el, '2026-10-20')!;
+      expect(today.getAttribute('aria-current')).toBe('date');
+      expect(dayButton(el, '2026-10-21')!.hasAttribute('aria-current')).toBe(false);
+      expect(getComputedStyle(today).boxShadow).toContain('inset');
+      expect(getComputedStyle(dayButton(el, '2026-10-21')!).boxShadow).not.toContain('inset');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('the keyboard focus is visible: a solid outline on :focus-visible', () => {
+    // happy-dom does not match :focus-visible, so the rule is read from the component styles.
+    const css = (OkCalendar.styles as { cssText: string }).cssText.replace(/\s+/g, ' ');
+    expect(css).toMatch(/\.pday:focus-visible \{ outline: 2px solid [^;]+; outline-offset: 1px; \}/);
   });
 });
 
@@ -227,6 +276,15 @@ describe('ok-calendar picker — days are real buttons, selectable and keyboard-
     await press(el, '2026-10-31', 'ArrowRight');
     expect(title(el)).toBe('Noviembre de 2026');
     expect(focusedDate(el)).toBe('2026-11-01');
+  });
+
+  it('changing month does not recycle the picked day button for another date', async () => {
+    // Reusing the node made the day in the same grid cell of the new month flash as picked while
+    // the 150 ms background/colour transition faded out (seen in the bench: 12 Sep → 10 Oct).
+    const el = await mount({ locale: 'es', picker: '' }, { value: '2026-09-12' });
+    const picked = dayButton(el, '2026-09-12')!;
+    await press(el, '2026-09-12', 'PageDown');
+    expect(!picked.isConnected || picked.dataset.date === '2026-09-12').toBe(true);
   });
 
   it('other keys are left alone (Tab still leaves the grid)', async () => {

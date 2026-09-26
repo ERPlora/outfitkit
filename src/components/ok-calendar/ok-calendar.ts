@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
 import { iconChevronBackOutline, iconChevronForwardOutline } from '../../base/icons.js';
 
@@ -695,25 +696,30 @@ export class OkCalendar extends LitElement {
 
     return html`<div class="grid" role="group" aria-label=${this.monthLabel()}>
       ${this.weekdays().map((w) => html`<div class="weekday" aria-hidden="true">${w}</div>`)}
-      ${this.buildDays().map((d) => {
-        const key = this.dayKey(d);
-        const classes = ['pday', d.getMonth() !== month ? 'other-month' : '', key === todayKey ? 'today' : '']
-          .filter(Boolean)
-          .join(' ');
-        return html`<button
-          type="button"
-          class=${classes}
-          data-date=${key}
-          tabindex=${key === tabStop ? 0 : -1}
-          aria-pressed=${key === this.value ? 'true' : 'false'}
-          aria-current=${key === todayKey ? 'date' : nothing}
-          aria-label=${dayLabel.format(d)}
-          @click=${() => this.selectDay(key)}
-          @keydown=${(e: KeyboardEvent) => this.onDayKey(e, key)}
-        >
-          ${d.getDate()}
-        </button>`;
-      })}
+      ${repeat(
+        this.buildDays(),
+        // Keyed by date: a recycled button would fade its old picked/today state onto another day.
+        (d) => this.dayKey(d),
+        (d) => {
+          const key = this.dayKey(d);
+          const classes = ['pday', d.getMonth() !== month ? 'other-month' : '', key === todayKey ? 'today' : '']
+            .filter(Boolean)
+            .join(' ');
+          return html`<button
+            type="button"
+            class=${classes}
+            data-date=${key}
+            tabindex=${key === tabStop ? 0 : -1}
+            aria-pressed=${key === this.value ? 'true' : 'false'}
+            aria-current=${key === todayKey ? 'date' : nothing}
+            aria-label=${dayLabel.format(d)}
+            @click=${() => this.selectDay(key)}
+            @keydown=${(e: KeyboardEvent) => this.onDayKey(e, key)}
+          >
+            ${d.getDate()}
+          </button>`;
+        },
+      )}
     </div>`;
   }
 
