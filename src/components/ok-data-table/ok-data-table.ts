@@ -207,6 +207,8 @@ export interface OkDataTableLabels {
   clear: string;
   /** Botón "Aplicar" (filtros). */
   apply: string;
+  /** #207 — Server-mode Filters footer: filters apply live, this button only closes the sheet. */
+  showResults: string;
   /** Barra de selección: "{n} seleccionados" ({n} = nº filas). */
   selected: string;
   /** Botón "Importar CSV". */
@@ -286,6 +288,7 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   filters: 'Filters',
   clear: 'Clear',
   apply: 'Apply',
+  showResults: 'Show results',
   selected: '{n} selected',
   importCsv: 'Import CSV',
   exportCsv: 'Export CSV',
@@ -327,6 +330,7 @@ const ES_LABELS: OkDataTableLabels = {
   filters: 'Filtros',
   clear: 'Limpiar',
   apply: 'Aplicar',
+  showResults: 'Ver resultados',
   selected: '{n} seleccionados',
   importCsv: 'Importar CSV',
   exportCsv: 'Exportar CSV',
@@ -442,6 +446,8 @@ export class OkDataTable extends LitElement {
     /* Pie del drawer de filtros: Limpiar / Aplicar. */
     .df { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; padding: 0.6rem 0.85rem; border-top: 1px solid var(--border-color); }
     .df .df-clear { margin-right: auto; }
+    /* #207 — Server-mode «Show results»: the one button of the footer, as wide as the sheet. */
+    .df .df-done { flex: 1 1 auto; }
 
     /* Modo fill: la tabla ocupa el alto del contenedor; filas con scroll interno; pager fijo. */
     :host([fill]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -2248,6 +2254,10 @@ export class OkDataTable extends LitElement {
     // y botones Aplicar/Limpiar (1:1 con el modal de filtros del Hub). En servidor, controles que
     // emiten `filterChange` en vivo (sin botón Aplicar).
     const clientFilters = isFilters && !this.serverSide;
+    // #207 — Server-mode filters apply live, so there was no footer at all: on a phone the sheet
+    // covers the whole list and the only way back was a 28px X. Shopify/Square/Airbnb end the
+    // filters sheet in one big «Show results» button; it only closes (the filters already applied).
+    const serverFilters = isFilters && this.serverSide;
     // #193 — The dialog is announced with the SAME text its header shows: a generic «Form» name
     // left «+ Add» in the toolbar and the panel's own submit indistinguishable to AT and tests.
     const title = isFilters
@@ -2274,7 +2284,13 @@ export class OkDataTable extends LitElement {
                 <ion-button class="primary-btn" size="small" @click=${() => this.applyFilters()}>${this.t.apply}</ion-button>
               </footer>
             `
-          : nothing}
+          : serverFilters
+            ? html`
+                <footer class="df">
+                  <ion-button class="primary-btn df-done" expand="block" data-testid=${this.tid('filters-show-results')} @click=${() => this.closePanel('apply')}>${this.t.showResults}</ion-button>
+                </footer>
+              `
+            : nothing}
       </aside>
     `;
   }
