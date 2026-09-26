@@ -37,7 +37,15 @@ const repairSchema = JSON.parse(readFileSync(new URL('schemas/rule_repair.json',
 };
 // The demo speaks Spanish: its visible strings are the module's own `es` catalogue, so a wording
 // change in the module sends whoever touches it back to the demo.
-const esUi = (JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as { ui: Record<string, string> }).ui;
+const esCatalogue = JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as {
+  ui: Record<string, string>;
+  errors: Record<string, string>;
+};
+const esUi = esCatalogue.ui;
+const esErrors = esCatalogue.errors;
+const endSchema = JSON.parse(readFileSync(new URL('schemas/rule_end.json', moduleBase), 'utf8')) as {
+  required: string[];
+};
 const aliasSchema = JSON.parse(readFileSync(new URL('schemas/alias_create.json', moduleBase), 'utf8')) as {
   required: string[];
   properties: { source: { enum: string[] } };
@@ -170,10 +178,11 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     // `is_active` va AL FINAL: taxes#53 lo quitó de las tres listas por mentiroso y taxes#52
     // (PR ERPlora/taxes#56) lo devolvió SOLO aquí —una regla desactivada se puede volver a ver y
     // recuperar—, así que reentró por la cola. En reglas es un filtro REAL; en categorías y
-    // alias no existe. `is_incoherent` entró detrás con taxes#64 (outfitkit#155).
+    // alias no existe. `is_incoherent` entró detrás con taxes#64 (outfitkit#155), y `overlaps`
+    // con taxes#72 (outfitkit#202): lo pone el aviso de solapes, no una caja de columna.
     expect(Object.keys(list.filters)).toEqual([
       'country_code', 'region_code', 'tax_category_key', 'rate_pct',
-      'tax_type', 'parent_id', 'operation_class', 'regime_key', 'is_active', 'is_incoherent',
+      'tax_type', 'parent_id', 'operation_class', 'regime_key', 'is_active', 'is_incoherent', 'overlaps',
     ]);
     expect(page).toContain("sort: 'country_code'");
     expect(page).toContain("cardIcon = () => 'options-outline'");
@@ -324,6 +333,136 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     // under such a root (only «Sin impuesto»).
     expect(rows.some((row) => !row.parent_id && row.operation_class !== 'subject')).toBe(true);
     expect(rows.some((row) => row.parent_id && row.operation_class === 'subject')).toBe(true);
+  });
+
+  // taxes#72 (outfitkit#202): two active rules of the same slot saved before the taxes#70 guard are
+  // both in force on the same days. The server flags them (`overlaps`), the screen counts them in a
+  // warning that narrows the table to them, marks their start date, and the owner resolves the pair
+  // with «Poner fecha de fin» (taxes#70) or «Desactivar».
+  it('enseña el aviso, «Ver cuáles», la marca y «Poner fecha de fin» de las reglas que se solapan como el módulo', () => {
+    const page = pageSource('rules');
+    const list = manifest.queries['taxes.rules.list'].list!;
+
+    // The module's screen has the pieces the demo has to mirror.
+    for (const piece of [
+      'data-testid="taxes-rules-overlap-warning"',
+      'data-testid="taxes-rules-overlap-filter"',
+      'data-testid="taxes-rules-overlap-mark"',
+      "this.ctrl.setFilter('overlaps', on ? '1' : '');",
+      "this.showingOverlaps ? t('ui.overlapShowAll') : t('ui.overlapShow')",
+      'if (this.showingOverlaps && this.overlapCount === 0) this.toggleOverlapFilter(false);',
+      "{ id: 'end', label: t('ui.actionEndRule'), icon: 'calendar-outline' },",
+      "erplora().command('taxes.rules.end', { rule_id: String(row.id), valid_to: validTo })",
+      'data-testid="taxes-rules-end-confirm"',
+      "errorCode(e) === 'taxes.rule_overlaps'",
+    ]) {
+      expect(components.rules).toContain(piece);
+    }
+    // «Poner fecha de fin» sits between «Reparar» and «Desactivar» on an active row.
+    expect(components.rules).toMatch(/\.\.\.repair,\s*\{ id: 'end'[^\n]*\n\s*\{ id: 'deactivate'/);
+
+    // Filter, command and payload exist in the manifest.
+    expect(list.filters.overlaps).toEqual({ op: 'eq' });
+    expect(manifest.commands).toHaveProperty('taxes.rules.end');
+    expect(endSchema.required).toEqual(['rule_id', 'valid_to']);
+
+    // 1. Warning with the count, same tone and id as the module, and the button that narrows the
+    //    table through the real `overlaps` filter — and back.
+    expect(page).toMatch(/<ok-inline-feedback id="taxes-rules-overlap-warning"[^>]*tone="warning"/);
+    expect(page).toContain(`\`${esUi.overlapWarning.replace('{count}', '${count}')}\``);
+    expect(page).toMatch(/<ion-button id="taxes-rules-overlap-filter" slot="actions"/);
+    expect(page).toContain(`showingOverlaps ? '${esUi.overlapShowAll}' : '${esUi.overlapShow}'`);
+    expect(page).toContain("state.filters.overlaps = on ? '1' : '';");
+    // The last overlap gone, the filter undoes itself: no empty table with no word about why.
+    expect(page).toContain('if (showingOverlaps && overlapCount === 0) {');
+    // 2. Mark under the start date, on its own line (the module's `markedCell`).
+    expect(page).toContain(`markedCell(from, '${esUi.overlapBadge}', 'taxes-rules-overlap-mark')`);
+    expect(page).toContain(`\`\${from} · ${esUi.overlapBadge}\``);
+    // 3. «Poner fecha de fin» on active rows, with the module's dialog, copy and command.
+    expect(page).toContain(`const endAction = { id: 'end', label: '${esUi.actionEndRule}', icon: 'calendar-outline' };`);
+    expect(page).toMatch(/return \[\.\.\.repair, endAction, deactivateAction\];/);
+    expect(page).toContain('<ion-alert id="taxes-rules-end-confirm"></ion-alert>');
+    for (const key of ['endRuleTitle', 'endRuleMessage', 'endRuleAction', 'cancel']) {
+      expect(page).toContain(`'${esUi[key]}'`);
+    }
+    expect(page).toContain("recordCommand('taxes.rules.end', { rule_id: String(row.id), valid_to: validTo })");
+    // 4. The same refusals as the command: an end before the start, and an end that still overlaps.
+    expect(page).toContain(`const ERR_END_INVALID = '${esErrors['taxes.rule_end_invalid']}';`);
+    expect(page).toContain(`const ERR_OVERLAPS = '${esUi.errRuleOverlaps}';`);
+    expect(page).toMatch(/if \(current\.valid_from && current\.valid_from > validTo\) \{\s*showError\(ERR_END_INVALID\);\s*return;/);
+    expect(page).toMatch(/if \(ruleOverlaps\(next\.find\([^\n]*\), next\)\) \{\s*showError\(ERR_OVERLAPS\);\s*return;/);
+    expect(page).toMatch(/<ok-inline-feedback id="taxes-rules-form-error"[^>]*tone="danger"/);
+  });
+
+  it('marca como solapadas exactamente las reglas que marca `rules_list.sql`', () => {
+    const page = pageSource('rules');
+    // The predicate the server answers `overlaps` with — and the one taxes.rules.end refuses on.
+    const listSql = readFileSync(new URL('queries/rules_list.sql', moduleBase), 'utf8');
+    for (const clause of [
+      "CASE WHEN r.is_active = 1 AND COALESCE(NULLIF(r.parent_id, ''), '') = '' AND EXISTS (",
+      'AND o.id <> r.id',
+      'AND o.is_active = 1',
+      "AND COALESCE(NULLIF(o.parent_id, ''), '') = ''",
+      'AND o.country_code = r.country_code',
+      "AND COALESCE(o.region_code, '') = COALESCE(r.region_code, '')",
+      'AND o.tax_category_key = r.tax_category_key',
+      "AND (COALESCE(o.valid_from, '') = '' OR COALESCE(r.valid_to, '') = '' OR o.valid_from <= r.valid_to)",
+      "AND (COALESCE(r.valid_from, '') = '' OR COALESCE(o.valid_to, '') = '' OR r.valid_from <= o.valid_to))",
+    ]) {
+      expect(listSql).toContain(clause);
+    }
+    type Rule = Record<string, unknown>;
+    const text = (value: unknown): string => (value == null ? '' : String(value));
+    const sqlOverlaps = (r: Rule, all: Rule[]): boolean =>
+      Number(r.is_active) === 1 && text(r.parent_id) === '' && all.some((o) =>
+        o.id !== r.id
+        && Number(o.is_active) === 1
+        && text(o.parent_id) === ''
+        && o.country_code === r.country_code
+        && text(o.region_code) === text(r.region_code)
+        && o.tax_category_key === r.tax_category_key
+        && (text(o.valid_from) === '' || text(r.valid_to) === '' || text(o.valid_from) <= text(r.valid_to))
+        && (text(r.valid_from) === '' || text(o.valid_to) === '' || text(r.valid_from) <= text(o.valid_to)));
+
+    // The demo's own predicate, run for real.
+    const source = page.match(/\n(\s*)function ruleOverlaps\(row, all\) \{[\s\S]*?\n\1\}/);
+    expect(source, 'the demo must keep `ruleOverlaps(row, all)` as a plain function').not.toBeNull();
+    const demoOverlaps = new Function(`${source![0]}\nreturn ruleOverlaps;`)() as (row: Rule, all: Rule[]) => boolean;
+
+    const fixture = [
+      ...jsonFixture(page, 'RULE_FIXTURE'),
+      ...jsonFixture(page, 'LEGACY_RULE_FIXTURE'),
+      ...jsonFixture(page, 'OVERLAP_RULE_FIXTURE'),
+    ];
+    const overlapping = jsonFixture(page, 'OVERLAP_RULE_FIXTURE');
+    expect(overlapping.length).toBeGreaterThanOrEqual(1);
+    for (const row of overlapping) expect(seed).toContain(`'${row.tax_category_key}'`);
+    const newer = overlapping[0];
+    const older = fixture.find((row) => row !== newer && sqlOverlaps(row, [row, newer]))!;
+    expect(older, 'the overlapping rule must collide with a seeded one').toBeDefined();
+    expect(text(older.valid_from) < text(newer.valid_from)).toBe(true);
+    const dayBefore = new Date(Date.parse(`${text(newer.valid_from)}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+
+    const variant = (rows: Rule[], id: unknown, change: Rule): Rule[] =>
+      rows.map((row) => (row.id === id ? { ...row, ...change } : row));
+    const scenarios: Array<[string, Rule[], number]> = [
+      ['the demo as it opens: the pair is flagged', fixture, 2],
+      ['older rule ended the day before: fixed', variant(fixture, older.id, { valid_to: dayBefore }), 0],
+      ['older rule ended ON the start day: still overlaps', variant(fixture, older.id, { valid_to: newer.valid_from }), 2],
+      ['one of them deactivated: fixed', variant(fixture, newer.id, { is_active: 0 }), 0],
+      ['another region: no overlap', variant(fixture, newer.id, { region_code: 'CN' }), 0],
+      ['another country: no overlap', variant(fixture, newer.id, { country_code: 'PT' }), 0],
+      ['another category: no overlap', variant(fixture, newer.id, { tax_category_key: 'product.generic', valid_from: '2012-09-01' }), 2],
+      ['a component never counts', variant(fixture, newer.id, { parent_id: older.id }), 0],
+      ['open start on both', variant(variant(fixture, newer.id, { valid_from: null }), older.id, { valid_from: '' }), 2],
+      ['newer ends before the older starts', variant(fixture, newer.id, { valid_from: '2010-01-01', valid_to: '2012-08-31' }), 0],
+    ];
+    for (const [label, rows, expected] of scenarios) {
+      const flaggedBySql = rows.filter((row) => sqlOverlaps(row, rows)).map((row) => row.id);
+      const flaggedByDemo = rows.filter((row) => demoOverlaps(row, rows)).map((row) => row.id);
+      expect(flaggedBySql, label).toHaveLength(expected);
+      expect(flaggedByDemo, label).toEqual(flaggedBySql);
+    }
   });
 });
 
