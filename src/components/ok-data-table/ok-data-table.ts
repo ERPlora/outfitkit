@@ -237,7 +237,11 @@ export interface OkDataTableLabels {
   newRecord: string;
   /** Drawer title when editing an existing record (open('edit')). */
   editRecord: string;
-  /** Aria del drawer del formulario de alta/edición. */
+  /**
+   * @deprecated #193 — the drawer dialog is now named by its visible header (`newRecord`,
+   * `editRecord` or the opener's title), so this generic name is no longer rendered. Kept so
+   * consumers that still pass it keep compiling.
+   */
   form: string;
   /** Placeholder del input de filtro de texto. */
   filterPlaceholder: string;
@@ -2244,12 +2248,16 @@ export class OkDataTable extends LitElement {
     // y botones Aplicar/Limpiar (1:1 con el modal de filtros del Hub). En servidor, controles que
     // emiten `filterChange` en vivo (sin botón Aplicar).
     const clientFilters = isFilters && !this.serverSide;
-    const formTitle = this.panelTitle || (this.panel === 'edit' ? this.t.editRecord : this.t.newRecord);
+    // #193 — The dialog is announced with the SAME text its header shows: a generic «Form» name
+    // left «+ Add» in the toolbar and the panel's own submit indistinguishable to AT and tests.
+    const title = isFilters
+      ? this.t.filters
+      : this.panelTitle || (this.panel === 'edit' ? this.t.editRecord : this.t.newRecord);
     return html`
       <div class="tk-scrim" @click=${() => this.closePanel('backdrop')}></div>
-      <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.panelTitle || this.t.form}>
+      <aside class="drawer" role="dialog" aria-label=${title}>
         <header class="dh">
-          <strong>${isFilters ? this.t.filters : formTitle}</strong>
+          <strong>${title}</strong>
           <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.closePanel('close-button')}><ion-icon slot="icon-only" .icon=${iconClose}></ion-icon></ion-button>
         </header>
         <div class="db">
