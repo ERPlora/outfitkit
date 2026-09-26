@@ -25,6 +25,7 @@ export type {
   DataTableView,
   DataTablePrimaryAction,
   DataTableRowKey,
+  DataTablePanelCloseDetail,
 } from './components/ok-data-table/ok-data-table.js';
 export { OkMail } from './components/ok-mail/ok-mail.js';
 export type { OkMailFolder, OkMailMessage } from './components/ok-mail/ok-mail.js';
