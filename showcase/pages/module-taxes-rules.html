@@ -15,16 +15,19 @@
     <script type="module" src="../../dist/outfitkit.js"></script>
 
     <style>
+      /* As the module (taxes#72): the table takes what the warnings leave, but never less than a
+         usable minimum — past it the page scrolls and the warnings go by. */
       .taxes-page {
         display: flex;
         flex-direction: column;
         height: 100%;
         min-height: 0;
+        overflow-y: auto;
       }
 
       .taxes-page > ok-data-table {
         flex: 1 1 auto;
-        min-height: 0;
+        min-height: min(28rem, 70vh);
       }
 
       .taxes-form {
@@ -71,6 +74,13 @@
         { "id": "taxrule-es-service-education-surcharge", "country_code": "ES", "region_code": null, "tax_category_key": "service.education", "rate_pct": 5.2, "tax_type": "surcharge", "operation_class": "subject", "exempt_reason": null, "parent_id": "taxrule-es-service-education", "component_label": "Recargo de equivalencia", "valid_from": "2012-09-01", "valid_to": null, "is_active": 1 }
       ];
 
+      // A rate change saved BEFORE the taxes#70 guard (taxes#72): the new drinks rate was added from
+      // a date while the seeded 10 % rule was left open, so both are in force from that day on. The
+      // server flags the pair (`overlaps`) and the owner ends the older one the day before.
+      const OVERLAP_RULE_FIXTURE = [
+        { "id": "taxrule-es-restaurant-drink-2026", "country_code": "ES", "region_code": null, "tax_category_key": "restaurant.drink", "rate_pct": 21, "tax_type": "vat", "operation_class": "subject", "parent_id": null, "component_label": null, "valid_from": "2026-07-01", "valid_to": null, "is_active": 1 }
+      ];
+
       const CATEGORIES = [
         ['restaurant.food', 'Restaurant — food'],
         ['restaurant.drink', 'Restaurant — drink'],
@@ -89,7 +99,7 @@
         ['import_duty', 'Arancel'],
       ];
       const TYPE_LABELS = Object.fromEntries(TAX_TYPES);
-      let rules = [...RULE_FIXTURE, ...LEGACY_RULE_FIXTURE].map((row) => ({ ...row }));
+      let rules = [...RULE_FIXTURE, ...LEGACY_RULE_FIXTURE, ...OVERLAP_RULE_FIXTURE].map((row) => ({ ...row }));
       const commandLog = [];
       const queryLog = [];
 
@@ -103,11 +113,36 @@
       }
 
       // What `queries/rules_list.sql` answers as `is_incoherent`: a rate on a rule that charges no
-      // tax — its own class, or its root's, is not `subject`.
-      function withIncoherence(row) {
+      // tax — its own class, or its root's, is not `subject` — and as `overlaps` (see `ruleOverlaps`).
+      function withServerFlags(row) {
         const root = row.parent_id ? rules.find((candidate) => candidate.id === row.parent_id) : null;
         const chargesNoTax = row.operation_class !== 'subject' || (root != null && root.operation_class !== 'subject');
-        return { ...row, is_incoherent: Number(row.rate_pct) > 0 && chargesNoTax ? 1 : 0 };
+        return {
+          ...row,
+          is_incoherent: Number(row.rate_pct) > 0 && chargesNoTax ? 1 : 0,
+          overlaps: ruleOverlaps(row, rules) ? 1 : 0,
+        };
+      }
+
+      // What `queries/rules_list.sql` answers as `overlaps` (taxes#72), and what `taxes.rules.end`
+      // refuses on: an active root rule in force on at least one day together with another active
+      // root rule of the same country, region (empty = whole country) and category. Inclusive ISO
+      // dates; an empty one is open.
+      function ruleOverlaps(row, all) {
+        const text = (value) => (value == null ? '' : String(value));
+        if (Number(row.is_active) !== 1 || text(row.parent_id) !== '') return false;
+        return all.some((other) => other.id !== row.id
+          && Number(other.is_active) === 1
+          && text(other.parent_id) === ''
+          && other.country_code === row.country_code
+          && text(other.region_code) === text(row.region_code)
+          && other.tax_category_key === row.tax_category_key
+          && (text(other.valid_from) === '' || text(row.valid_to) === '' || text(other.valid_from) <= text(row.valid_to))
+          && (text(row.valid_from) === '' || text(other.valid_to) === '' || text(row.valid_from) <= text(other.valid_to)));
+      }
+
+      function overlaps(row) {
+        return Number(row.overlaps) === 1;
       }
 
       function isIncoherent(row) {
@@ -123,12 +158,46 @@
         return `${count} reglas cobran un tipo en una clase que no lleva impuesto (exenta, no sujeta o inversión del sujeto pasivo). Sus ventas se cobran en caja pero no se pueden facturar. Usa «Reparar» en las filas marcadas.`;
       }
 
+      function overlapWarning(count) {
+        return `${count} reglas están vigentes los mismos días que otra regla del mismo país, región y categoría, y la caja cobra la que empieza más tarde. En las filas marcadas, usa «Poner fecha de fin» en la regla antigua (el día antes de que empiece la nueva) o «Desactivar» la que no deba aplicarse.`;
+      }
+
+      const ERR_END_INVALID = 'Esa regla no puede terminar en esa fecha: la fecha de fin es anterior al día en que empieza la regla.';
+      const ERR_OVERLAPS = 'Se solapa con otra regla activa de este país, región y categoría. Pon antes fecha de fin a la regla actual, o elige fechas que no se solapen.';
+
+      // A row's warning mark goes on its own line under the value, as the module's `markedCell` does:
+      // ok-data-table cuts a `format` string to one line, so a mark appended to it was lost at 1280 px.
+      // Plain warning yellow is unreadable as small text: it is darkened toward the text colour.
+      const MARK_STYLE = {
+        color: 'color-mix(in srgb, var(--ion-color-warning, #ffc409) 40%, var(--ion-text-color, #000))',
+        fontWeight: '600',
+      };
+
+      function markedCell(value, mark, testid) {
+        const cell = document.createElement('div');
+        const note = document.createElement('small');
+        note.dataset.testid = testid;
+        note.textContent = mark;
+        Object.assign(note.style, MARK_STYLE);
+        cell.append(value, document.createElement('br'), note);
+        return cell;
+      }
+
+      function ratePct(row) {
+        return `${Number(row.rate_pct).toFixed(2)}%`;
+      }
+
       defineHubPage({
         active: '/m/taxes/rules',
         title: 'Reglas por jurisdicción',
         body: `
           <div class="taxes-page">
+            <ok-inline-feedback id="taxes-rules-form-error" tone="danger" icon="alert-circle-outline" hidden></ok-inline-feedback>
             <ok-inline-feedback id="taxes-rules-incoherent-warning" tone="warning" icon="warning-outline" hidden></ok-inline-feedback>
+            <ok-inline-feedback id="taxes-rules-overlap-warning" tone="warning" icon="warning-outline" hidden>
+              <span id="taxes-rules-overlap-text"></span>
+              <ion-button id="taxes-rules-overlap-filter" slot="actions" size="small" fill="outline"></ion-button>
+            </ok-inline-feedback>
             <ok-data-table id="taxes-rules-table" fill>
               <form id="taxes-rule-form" slot="create" class="taxes-form">
                 <ion-input id="tax-rule-country" mode="md" fill="outline" label="País" label-placement="floating" placeholder="ES" minlength="2" maxlength="2" required></ion-input>
@@ -151,6 +220,7 @@
               </form>
             </ok-data-table>
             <ion-alert id="taxes-rules-deactivate-confirm"></ion-alert>
+            <ion-alert id="taxes-rules-end-confirm"></ion-alert>
             <ion-alert id="taxes-rules-repair-confirm"></ion-alert>
           </div>
         `,
@@ -168,6 +238,11 @@
           const componentLabelInput = doc.getElementById('tax-rule-component-label');
           const saveButton = doc.getElementById('tax-rule-save');
           const incoherentBanner = doc.getElementById('taxes-rules-incoherent-warning');
+          const overlapBanner = doc.getElementById('taxes-rules-overlap-warning');
+          const overlapText = doc.getElementById('taxes-rules-overlap-text');
+          const overlapFilterButton = doc.getElementById('taxes-rules-overlap-filter');
+          const errorBanner = doc.getElementById('taxes-rules-form-error');
+          const endAlert = doc.getElementById('taxes-rules-end-confirm');
           const repairAlert = doc.getElementById('taxes-rules-repair-confirm');
           const deactivateAlert = doc.getElementById('taxes-rules-deactivate-confirm');
           const state = {
@@ -181,6 +256,8 @@
             context: {},
           };
           let showingArchived = false;
+          // The table narrowed to the rules that overlap another one, from the banner (taxes#72).
+          let showingOverlaps = false;
 
           table.columns = [
             {
@@ -196,7 +273,16 @@
             },
             { key: 'country_code', header: 'País', sortable: true, filterable: true, filterType: 'text' },
             { key: 'region_code', header: 'Región', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.region_code || '—') },
-            { key: 'rate_pct', header: '%', align: 'right', sortable: true, format: (row) => isIncoherent(row) ? `${Number(row.rate_pct).toFixed(2)}% · debe ser 0 % en esta clase` : `${Number(row.rate_pct).toFixed(2)}%` },
+            {
+              key: 'rate_pct',
+              header: '%',
+              align: 'right',
+              sortable: true,
+              format: (row) => isIncoherent(row) ? `${ratePct(row)} · debe ser 0 % en esta clase` : ratePct(row),
+              render: (row) => isIncoherent(row)
+                ? markedCell(ratePct(row), 'debe ser 0 % en esta clase', 'taxes-rules-incoherent-mark')
+                : ratePct(row),
+            },
             {
               key: 'tax_type',
               header: 'Tipo',
@@ -206,7 +292,20 @@
               options: TAX_TYPES.map(([value, label]) => ({ value, label })),
               format: (row) => TYPE_LABELS[row.tax_type] || row.tax_type,
             },
-            { key: 'valid_from', header: 'Vigente desde', sortable: true, format: (row) => String(row.valid_from || '—') },
+            // The start date is where two overlapping ranges collide (taxes#72): the mark goes there.
+            {
+              key: 'valid_from',
+              header: 'Vigente desde',
+              sortable: true,
+              format: (row) => {
+                const from = String(row.valid_from || '—');
+                return overlaps(row) ? `${from} · se solapa con otra regla` : from;
+              },
+              render: (row) => {
+                const from = String(row.valid_from || '—');
+                return overlaps(row) ? markedCell(from, 'se solapa con otra regla', 'taxes-rules-overlap-mark') : from;
+              },
+            },
             { key: 'valid_to', header: 'Vigente hasta', sortable: true, format: (row) => String(row.valid_to || '—') },
             {
               key: 'is_active',
@@ -218,6 +317,7 @@
               format: (row) => Number(row.is_active) ? 'Sí' : 'No',
             },
           ];
+          const endAction = { id: 'end', label: 'Poner fecha de fin', icon: 'calendar-outline' };
           const deactivateAction = { id: 'deactivate', label: 'Desactivar', icon: 'ban-outline', color: 'danger' };
           const restoreAction = { id: 'restore', label: 'Reactivar', icon: 'arrow-undo-outline', color: 'success' };
           // «Reparar» only on a page with something to repair, and only enabled on those rows.
@@ -228,7 +328,7 @@
             if (showingArchived) {
               return [...repair, restoreAction];
             }
-            return [...repair, deactivateAction];
+            return [...repair, endAction, deactivateAction];
           }
           table.actions = rowActions([]);
           table.serverSide = true;
@@ -256,11 +356,22 @@
           function queryPage() {
             recordQuery('taxes.rules.list', { ...state });
             const term = state.search.trim().toLocaleLowerCase('es');
-            const listed = rules.map(withIncoherence);
+            const listed = rules.map(withServerFlags);
             // The warning counts active rules only: a deactivated rule no longer sells anything.
             const incoherentCount = listed.filter((row) => Number(row.is_active) === 1 && isIncoherent(row)).length;
             incoherentBanner.hidden = incoherentCount === 0;
             incoherentBanner.textContent = incoherentCount ? incoherentWarning(incoherentCount) : '';
+            // Every overlapping rule of the hub, not just the visible page (only active ones overlap).
+            const overlapCount = listed.filter((row) => overlaps(row)).length;
+            // The last overlap is gone, and with it the banner that could undo the filter: undo it
+            // here rather than leave an empty table with no word about why (taxes#72).
+            if (showingOverlaps && overlapCount === 0) {
+              toggleOverlapFilter(false);
+              return;
+            }
+            overlapBanner.hidden = overlapCount === 0;
+            overlapText.textContent = overlapCount ? overlapWarning(overlapCount) : '';
+            overlapFilterButton.textContent = showingOverlaps ? 'Ver todas las reglas' : 'Ver cuáles';
             const filtered = listed
               .filter((row) => {
                 // Same scope as `taxes.rules.list`: deactivated rules only when asked for.
@@ -288,6 +399,22 @@
             table.pageSize = state.pageSize;
             table.sort = state.sort;
             table.sortDir = state.dir;
+          }
+
+          // The banner's way to the overlapping rules: narrows the table through the real `overlaps`
+          // filter of `taxes.rules.list`, and back (taxes#72).
+          function toggleOverlapFilter(on) {
+            showingOverlaps = on;
+            state.filters.overlaps = on ? '1' : '';
+            state.page = 0;
+            queryPage();
+          }
+
+          overlapFilterButton.addEventListener('click', () => toggleOverlapFilter(!showingOverlaps));
+
+          function showError(message) {
+            errorBanner.hidden = !message;
+            errorBanner.textContent = message;
           }
 
           function repairRule(row, mode) {
@@ -322,6 +449,10 @@
             const row = event.detail.row;
             if (event.detail.actionId === 'repair') {
               if (isIncoherent(row)) confirmRepair(row);
+              return;
+            }
+            if (event.detail.actionId === 'end') {
+              if (Number(row.is_active)) confirmEnd(row);
               return;
             }
             if (event.detail.actionId === 'restore') {
@@ -359,6 +490,46 @@
               },
             ];
             deactivateAlert.isOpen = true;
+          }
+
+          endAlert.addEventListener('ionAlertDidDismiss', () => { endAlert.isOpen = false; });
+
+          // Scheduling a rate change (taxes#70): the last day the rule applies, inclusive.
+          function confirmEnd(row) {
+            endAlert.header = 'Fecha de fin de la regla';
+            endAlert.message = 'Último día en que se aplica esta regla. Para cambiar el tipo, ponle fin el día antes de que empiece el nuevo y después añade la regla nueva desde ese día. Los documentos ya emitidos no cambian.';
+            endAlert.inputs = [{ name: 'valid_to', type: 'date', value: row.valid_to ?? '' }];
+            endAlert.buttons = [
+              { text: 'Cancelar', role: 'cancel' },
+              {
+                text: 'Guardar fecha de fin',
+                role: 'confirm',
+                handler: (values) => endRule(row, String(values?.valid_to ?? '').trim()),
+              },
+            ];
+            endAlert.isOpen = true;
+          }
+
+          // Same refusals as `taxes.rules.end`: an end before the rule's own start
+          // (`taxes.rule_end_invalid`) and an end that still runs into another active rule of the
+          // slot (`taxes.rule_overlaps`, which the module explains in its own words). Nothing moves.
+          function endRule(row, validTo) {
+            if (!validTo) return;
+            recordCommand('taxes.rules.end', { rule_id: String(row.id), valid_to: validTo });
+            const current = rules.find((candidate) => candidate.id === row.id);
+            if (!current) return;
+            if (current.valid_from && current.valid_from > validTo) {
+              showError(ERR_END_INVALID);
+              return;
+            }
+            const next = rules.map((candidate) => (candidate.id === row.id ? { ...candidate, valid_to: validTo } : candidate));
+            if (ruleOverlaps(next.find((candidate) => candidate.id === row.id), next)) {
+              showError(ERR_OVERLAPS);
+              return;
+            }
+            showError('');
+            rules = next;
+            queryPage();
           }
 
           form.addEventListener('submit', (event) => {
