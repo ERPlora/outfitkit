@@ -4,6 +4,7 @@ import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../../base/define.js';
+import { shadowAnchorEvent } from '../../base/anchor.js';
 import { ionTone } from '../../base/ion-tone.js';
 import { CSV_BOM, decodeCsvBuffer } from './csv-encoding.js';
 import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevronForward, iconChevronUpOutline, iconClose, iconEllipsisVertical, iconFileTrayOutline, iconSwapVerticalOutline, okIcon } from '../../base/icons.js';
@@ -1550,17 +1551,20 @@ export class OkDataTable extends LitElement {
     this.setClientFilter(col.key, { [edge]: v || undefined });
   }
 
-  // Menú overflow: ancla el popover al botón vía el evento de click (compatible con Shadow DOM).
+  // Overflow menu: anchor the popover to the tapped button via Ionic's `ionShadowTarget`
+  // (the retargeted `ev.target` after dispatch would be the whole table, since `trigger` does not
+  // resolve inside Shadow DOM).
   private openMenu(ev: Event): void {
-    this.menuEv = ev;
+    this.menuEv = shadowAnchorEvent(ev);
     this.menuOpen = true;
   }
 
-  /** #122 — Abre el menú «⋮» de UNA fila. Un solo popover para toda la tabla (uno por fila serían
-   *  tantos como filas), anclado por evento porque `trigger` no resuelve dentro de Shadow DOM. */
+  /** #122 — Opens the «⋮» menu of ONE row. A single popover for the whole table (one per row would
+   *  be as many as there are rows), anchored to the tapped button via Ionic's `ionShadowTarget`
+   *  (the retargeted `ev.target` after dispatch would be the whole table). */
   private openRowMenu(ev: Event, row: Record<string, unknown>): void {
     ev.stopPropagation();
-    this.rowMenuEv = ev;
+    this.rowMenuEv = shadowAnchorEvent(ev);
     this.rowMenuRow = row;
     this.rowMenuOpen = true;
   }
