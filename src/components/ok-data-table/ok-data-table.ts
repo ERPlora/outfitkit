@@ -1730,10 +1730,29 @@ export class OkDataTable extends LitElement {
         this.mobileShown = 0;
       }
     }
-    // #78 — A fresh `rows` array is a fresh result set: the accumulated mobile window would
-    // otherwise survive a refresh and show N pages of data the user never scrolled to. Server mode
-    // never accumulates here (the parent owns the window), so it is left alone.
-    if (!this.serverSide && changed.has('rows') && this.mobileShown !== 0) this.mobileShown = 0;
+    // #78 — A new result set starts at one page: the accumulated mobile window would otherwise
+    // show N pages of data the user never scrolled to. But a fresh array holding the SAME records
+    // in the same order is a refresh, not a new result set — the host re-renders after acting on a
+    // row (hub#2245: install an app from the second page, and the list folded back to the first 10
+    // with the installed row gone). The desktop pager keeps its page on that refresh; so does this.
+    // Server mode never accumulates here (the parent owns the window), so it is left alone.
+    if (
+      !this.serverSide &&
+      changed.has('rows') &&
+      this.mobileShown !== 0 &&
+      !this.sameRecords(changed.get('rows') as Record<string, unknown>[] | undefined, this.rows)
+    )
+      this.mobileShown = 0;
+  }
+
+  /** hub#2245 — Same records, same order, told apart by their key. Rows without a key cannot be
+   *  told apart, so they never count as the same (the window starts again, as before). */
+  private sameRecords(before: Record<string, unknown>[] | undefined, after: Record<string, unknown>[]): boolean {
+    if (!before || before.length !== after.length) return false;
+    return after.every((row, i) => {
+      const key = this.keyOf(row);
+      return key !== '' && key === this.keyOf(before[i]);
+    });
   }
 
   private applyInitialView(): void {
