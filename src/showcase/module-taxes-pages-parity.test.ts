@@ -373,6 +373,9 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
     expect(page).toMatch(/<ion-button id="taxes-rules-overlap-filter" slot="actions"/);
     expect(page).toContain(`showingOverlaps ? '${esUi.overlapShowAll}' : '${esUi.overlapShow}'`);
     expect(page).toContain("state.filters.overlaps = on ? '1' : '';");
+    // The warning shows while any rule overlaps, with its count (the module renders it on `overlapCount`).
+    expect(page).toContain('overlapBanner.hidden = overlapCount === 0;');
+    expect(page).toContain("overlapText.textContent = overlapCount ? overlapWarning(overlapCount) : '';");
     // The last overlap gone, the filter undoes itself: no empty table with no word about why.
     expect(page).toContain('if (showingOverlaps && overlapCount === 0) {');
     // 2. Mark under the start date, on its own line (the module's `markedCell`).
@@ -386,6 +389,9 @@ describe('showcase module-taxes-rules — paridad con rules real', () => {
       expect(page).toContain(`'${esUi[key]}'`);
     }
     expect(page).toContain("recordCommand('taxes.rules.end', { rule_id: String(row.id), valid_to: validTo })");
+    // As the module's `onEndDismiss`: no date, no command; an accepted end is applied and relisted.
+    expect(page).toMatch(/function endRule\(row, validTo\) \{\s*if \(!validTo\) return;\s*recordCommand\('taxes\.rules\.end'/);
+    expect(page).toMatch(/showError\(''\);\s*rules = next;\s*queryPage\(\);/);
     // 4. The same refusals as the command: an end before the start, and an end that still overlaps.
     expect(page).toContain(`const ERR_END_INVALID = '${esErrors['taxes.rule_end_invalid']}';`);
     expect(page).toContain(`const ERR_OVERLAPS = '${esUi.errRuleOverlaps}';`);
