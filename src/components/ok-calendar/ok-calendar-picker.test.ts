@@ -44,21 +44,27 @@ async function press(el: OkCalendar, from: string, key: string): Promise<void> {
 
 const focusedDate = (el: OkCalendar) => (root(el).activeElement as HTMLElement | null)?.dataset.date;
 
-// Makes `Intl.Locale` week info unavailable (`undefined`) or legacy-only (`legacy` from the old
-// `weekInfo` getter). Hides EVERY accessor the engine ships: V8 >= 13 has `getWeekInfo()` next to
-// the legacy getter, while Node 20/22 (the CI) only have the getter, and spying on a method that
-// does not exist throws.
-function hideWeekInfo(legacy: { firstDay: number } | undefined): void {
-  const proto = Intl.Locale.prototype as unknown as { getWeekInfo: () => unknown; weekInfo: unknown };
-  if (typeof Object.getOwnPropertyDescriptor(proto, 'getWeekInfo')?.value === 'function') {
-    vi.spyOn(proto, 'getWeekInfo').mockReturnValue(undefined);
-  }
-  if (Object.getOwnPropertyDescriptor(proto, 'weekInfo')?.get) vi.spyOn(proto, 'weekInfo', 'get').mockReturnValue(legacy);
+// Replaces `Intl.Locale#getWeekInfo` / `#weekInfo` whether or not this engine defines them;
+// `afterEach` puts the original descriptors back (or deletes what was not there).
+const LOCALE_PROTO = Intl.Locale.prototype as unknown as Record<string, unknown>;
+const saved: Array<[string, PropertyDescriptor | undefined]> = [];
+function stubWeekInfo(opts: { method: { firstDay: number } | undefined; getter: { firstDay: number } | undefined }): void {
+  for (const name of ['getWeekInfo', 'weekInfo']) saved.push([name, Object.getOwnPropertyDescriptor(LOCALE_PROTO, name)]);
+  Object.defineProperty(LOCALE_PROTO, 'getWeekInfo', {
+    configurable: true,
+    writable: true,
+    value: opts.method ? () => opts.method : undefined,
+  });
+  Object.defineProperty(LOCALE_PROTO, 'weekInfo', { configurable: true, get: () => opts.getter });
 }
 
 afterEach(() => {
   document.body.innerHTML = '';
   vi.restoreAllMocks();
+  for (const [name, desc] of saved.splice(0)) {
+    if (desc) Object.defineProperty(LOCALE_PROTO, name, desc);
+    else delete LOCALE_PROTO[name];
+  }
 });
 
 describe('ok-calendar — first day of the week follows the locale (outfitkit#198)', () => {
@@ -95,8 +101,18 @@ describe('ok-calendar — first day of the week follows the locale (outfitkit#19
     expect(weekdays(el)[0]).toBe('lun');
   });
 
+  it('an engine with only the legacy weekInfo getter (Node 20, older Safari) uses it', async () => {
+    // en-US starts on Sunday everywhere else (method, table): a getter answering Saturday proves the
+    // getter wins over the table and is read at all.
+    stubWeekInfo({ method: undefined, getter: { firstDay: 6 } });
+    const el = await mount({ locale: 'en-US', picker: '' }, { value: '2026-10-15' });
+    expect(dayButtons(el)[0].dataset.date).toBe('2026-09-26'); // a Saturday
+  });
+
   it('without Intl week info (older engines) the region table still gives Sunday / Saturday', async () => {
-    hideWeekInfo(undefined);
+    // Engines differ: Node 24 ships `getWeekInfo()` AND the legacy `weekInfo` getter, Node 20 (CI)
+    // only the getter. Replace whatever exists — and define what does not — so neither answers.
+    stubWeekInfo({ method: undefined, getter: undefined });
     const probe = new Intl.Locale('en-US') as unknown as { getWeekInfo?: () => unknown; weekInfo?: unknown };
     expect(probe.getWeekInfo?.() ?? probe.weekInfo).toBeUndefined();
     const us = await mount({ locale: 'en-US', picker: '' }, { value: '2026-10-15' });
@@ -107,12 +123,6 @@ describe('ok-calendar — first day of the week follows the locale (outfitkit#19
     expect(weekdays(es)[0]).toBe('lun');
     // Maldives (CLDR firstDay = fri) is the only Friday region.
     expect(localeFirstDayOfWeek('dv-MV')).toBe(5);
-  });
-
-  it('an engine with only the legacy weekInfo getter (Node 20/22, older Chromium) is read too', () => {
-    // A value the region table would never give for `es` (Monday) proves the getter is read.
-    hideWeekInfo({ firstDay: 3 });
-    expect(localeFirstDayOfWeek('es')).toBe(3); // Wednesday
   });
 });
 
