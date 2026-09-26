@@ -225,8 +225,10 @@ export interface OkDataTableLabels {
   actions: string;
   /** Aria del botón "Cerrar" (drawer). */
   close: string;
-  /** Título del drawer de alta. */
+  /** Drawer title when creating a record. */
   newRecord: string;
+  /** Drawer title when editing an existing record (open('edit')). */
+  editRecord: string;
   /** Aria del drawer del formulario de alta/edición. */
   form: string;
   /** Placeholder del input de filtro de texto. */
@@ -286,6 +288,7 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   actions: 'Actions',
   close: 'Close',
   newRecord: 'New',
+  editRecord: 'Edit',
   form: 'Form',
   filterPlaceholder: 'Filter…',
   from: 'From',
@@ -326,6 +329,7 @@ const ES_LABELS: OkDataTableLabels = {
   actions: 'Acciones',
   close: 'Cerrar',
   newRecord: 'Nuevo',
+  editRecord: 'Editar',
   form: 'Formulario',
   filterPlaceholder: 'Filtrar…',
   from: 'Desde',
@@ -856,7 +860,9 @@ export class OkDataTable extends LitElement {
   // Panel lateral derecho (drawer) DENTRO de la tabla: filtros o alta/edición. Funciona igual en
   // vista lista y tarjetas. Desde #75 EMPUJA la tabla en escritorio (rejilla de dos columnas) y es
   // hoja a pantalla completa en móvil — ver el CSS de `.card.has-panel`.
-  @state() private panel: 'none' | 'filters' | 'create' = 'none';
+  @state() private panel: 'none' | 'filters' | 'create' | 'edit' = 'none';
+  /** #150 — caller-provided header for the form panel; open() and toggle() set it on every opening. */
+  @state() private panelTitle = '';
   @state() private viewMode: 'table' | 'cards' = 'table';
   /** El usuario eligió vista a mano: a partir de ahí el arranque automático no vuelve a tocarla. */
   private viewChosenByUser = false;
@@ -1228,6 +1234,7 @@ export class OkDataTable extends LitElement {
   }
 
   private toggle(p: 'filters' | 'create'): void {
+    this.panelTitle = '';
     if (p === 'filters' && this.panel !== 'filters') {
       // Al abrir el panel de filtros (modo cliente) clonamos el estado aplicado como borrador.
       this.filterDraft = this.cloneFilters(this.clientFilters);
@@ -1290,11 +1297,13 @@ export class OkDataTable extends LitElement {
     }
     return out;
   }
-  /** Abre el panel lateral (API pública para el módulo, p.ej. "editar" abre el form pre-rellenado). */
-  open(panel: 'filters' | 'create' = 'create'): void {
+  /** Opens the side panel (public API for the module, e.g. "edit" opens the pre-filled form).
+   *  `mode` sets the default header («New» / «Edit»); `opts.title` replaces it (e.g. «Editing service — Brushing»). */
+  open(panel: 'filters' | 'create' | 'edit' = 'create', opts: { title?: string } = {}): void {
+    this.panelTitle = panel === 'filters' ? '' : (opts.title ?? '').trim();
     this.panel = panel;
   }
-  /** Cierra el panel lateral. */
+  /** Closes the side panel. */
   close(): void {
     this.panel = 'none';
   }
@@ -2187,11 +2196,12 @@ export class OkDataTable extends LitElement {
     // y botones Aplicar/Limpiar (1:1 con el modal de filtros del Hub). En servidor, controles que
     // emiten `filterChange` en vivo (sin botón Aplicar).
     const clientFilters = isFilters && !this.serverSide;
+    const formTitle = this.panelTitle || (this.panel === 'edit' ? this.t.editRecord : this.t.newRecord);
     return html`
       <div class="tk-scrim" @click=${() => this.close()}></div>
-      <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.t.form}>
+      <aside class="drawer" role="dialog" aria-label=${isFilters ? this.t.filters : this.panelTitle || this.t.form}>
         <header class="dh">
-          <strong>${isFilters ? this.t.filters : this.t.newRecord}</strong>
+          <strong>${isFilters ? this.t.filters : formTitle}</strong>
           <ion-button fill="clear" size="small" aria-label=${this.t.close} @click=${() => this.close()}><ion-icon slot="icon-only" .icon=${iconClose}></ion-icon></ion-button>
         </header>
         <div class="db">

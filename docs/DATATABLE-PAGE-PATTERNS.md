@@ -60,8 +60,9 @@ completo no debe convertirse en columnas ni trasladarse al core.
 Referencias: `/m/customers/customers`, `/m/inventory/products`, `/m/appointments/appointments` y
 `/m/payment_gateways/gateways`.
 
-Composición: `rowAction` abre Ionic o cambia el estado de la mini-app; `open('create')` se reserva al
-panel estrecho de alta/edición rápida.
+Composición: `rowAction` abre Ionic o cambia el estado de la mini-app; el panel estrecho de alta/edición
+rápida se abre con `open('create')` (cabecera «Nuevo») o `open('edit')` (cabecera «Editar»); al editar,
+pasa el registro como cabecera: `open('edit', { title: 'Editando servicio — Brushing' })` (outfitkit#150).
 
 ### 5. Catálogo o lectura client-side con tarjetas
 
