@@ -148,15 +148,66 @@ describe('ok-data-table: en móvil el pie es «Cargar más», no el pager numera
     expect(dataRows(table), 'la búsqueda hereda el acumulado de la consulta anterior').toBe(10);
   });
 
-  it('cliente: reemplazar `rows` vuelve a empezar por la primera página', async () => {
+  // hub#2245 — this used to replace `rows` with the SAME 25 records and expect the window back at
+  // one page. That is the refresh every host does after acting on a row (install an app, change a
+  // status): the person lost their place and the row they had just acted on left the screen. What
+  // #78 guards against is a NEW result set inheriting the window, so the case is a new result set.
+  it('client: a different result set in `rows` starts again at the first page', async () => {
     viewport(true);
     const table = await mount();
     await press(table);
     expect(dataRows(table)).toBe(20);
 
-    table.rows = rowsOf(25);
+    table.rows = rowsOf(25).map((r) => ({ ...r, id: `other-${String(r.id)}` }));
     await table.updateComplete;
-    expect(dataRows(table), 'un refresco de datos hereda el acumulado anterior').toBe(10);
+    expect(dataRows(table), 'a new result set inherits the previous window').toBe(10);
+  });
+
+  it('client: the same records refreshed keep the window the person opened (hub#2245)', async () => {
+    viewport(true);
+    const table = await mount();
+    await press(table);
+    expect(dataRows(table)).toBe(20);
+
+    // A fresh array with the same records in the same order, one of them changed: what a host
+    // hands over after acting on a row.
+    table.rows = rowsOf(25).map((r) => (r.id === '15' ? { ...r, name: 'Servicio 15 (instalado)' } : r));
+    await table.updateComplete;
+    expect(dataRows(table), 'refreshing the same records folds the list back to one page').toBe(20);
+    expect(table.shadowRoot?.textContent).toContain('Servicio 15 (instalado)');
+  });
+
+  it('client: the same records in another order start again at the first page', async () => {
+    viewport(true);
+    const table = await mount();
+    await press(table);
+
+    // Reordered, the window would hold other rows than the ones the person scrolled through.
+    table.rows = rowsOf(25).reverse();
+    await table.updateComplete;
+    expect(dataRows(table), 'a reordered result set inherits the previous window').toBe(10);
+  });
+
+  it('client: one more record is a different result set and starts again at the first page', async () => {
+    viewport(true);
+    const table = await mount();
+    await press(table);
+
+    table.rows = rowsOf(26);
+    await table.updateComplete;
+    expect(dataRows(table), 'a longer result set inherits the previous window').toBe(10);
+  });
+
+  it('client: rows without a key cannot be told apart, so a refresh starts again', async () => {
+    viewport(true);
+    const keyless = (n: number) => rowsOf(n).map(({ name }) => ({ name }));
+    const table = await mount({ rows: keyless(25) });
+    await press(table);
+    expect(dataRows(table)).toBe(20);
+
+    table.rows = keyless(25);
+    await table.updateComplete;
+    expect(dataRows(table), 'keyless rows were assumed to be the same records').toBe(10);
   });
 
   // ── Modo SERVIDOR: pide la página siguiente ──────────────────────────────────────────────
