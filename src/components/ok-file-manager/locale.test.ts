@@ -24,6 +24,7 @@ type Host = HTMLElement & {
   searchable: boolean;
   uploadable: boolean;
   updateComplete: Promise<unknown>;
+  requestUpdate: () => void;
 };
 
 // Folders with children render expanded by default (their caret offers to collapse).
@@ -143,10 +144,15 @@ describe('ok-file-manager — default texts follow the document language (#190)'
   });
 
   it('stops listening for locale changes once removed from the page', async () => {
-    const remove = vi.spyOn(window, 'removeEventListener');
+    // Not «removeEventListener was called»: a handler removed with the wrong reference would
+    // still fire. The proof is that the event no longer reaches the component.
+    document.documentElement.lang = 'en';
     const el = await mount();
     el.remove();
-    expect(remove.mock.calls.some(([type]) => type === 'erplora:locale-changed')).toBe(true);
-    remove.mockRestore();
+    const update = vi.spyOn(el, 'requestUpdate');
+    document.documentElement.lang = 'es';
+    window.dispatchEvent(new CustomEvent('erplora:locale-changed', { detail: { locale: 'es' } }));
+    expect(update).not.toHaveBeenCalled();
+    update.mockRestore();
   });
 });

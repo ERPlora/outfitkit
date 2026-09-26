@@ -22,6 +22,7 @@ import './ok-mail.js';
 type Host = HTMLElement & {
   labels: Record<string, string>;
   updateComplete: Promise<unknown>;
+  requestUpdate: () => void;
 };
 
 async function mount(labels: Record<string, string> = {}): Promise<Host> {
@@ -85,10 +86,15 @@ describe('ok-mail — default texts follow the document language (#190)', () => 
   });
 
   it('stops listening for locale changes once removed from the page', async () => {
-    const remove = vi.spyOn(window, 'removeEventListener');
+    // Not «removeEventListener was called»: a handler removed with the wrong reference would
+    // still fire. The proof is that the event no longer reaches the component.
+    document.documentElement.lang = 'en';
     const el = await mount();
     el.remove();
-    expect(remove.mock.calls.some(([type]) => type === 'erplora:locale-changed')).toBe(true);
-    remove.mockRestore();
+    const update = vi.spyOn(el, 'requestUpdate');
+    document.documentElement.lang = 'es';
+    window.dispatchEvent(new CustomEvent('erplora:locale-changed', { detail: { locale: 'es' } }));
+    expect(update).not.toHaveBeenCalled();
+    update.mockRestore();
   });
 });
