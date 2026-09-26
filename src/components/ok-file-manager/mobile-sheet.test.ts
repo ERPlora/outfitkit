@@ -206,6 +206,11 @@ describe("ok-file-manager · «⋮» opens a bottom sheet with the actions by na
       "Rename",
       "Delete",
     ]);
+    // Only the destructive action is painted in the danger tone, like a native action sheet.
+    const toned = sheetActs(el).map((n) =>
+      /--color:\s*var\(--ok-danger\b/.test(n.getAttribute("style") ?? ""),
+    );
+    expect(toned).toEqual([false, false, false, false, true]);
   });
 
   it("the sheet obeys the folder policy exactly like the row actions do", async () => {
