@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
+import { shadowAnchorEvent } from '../../base/anchor.js';
 import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
 import { tapTarget } from '../../base/tap-target.js';
 
@@ -1045,7 +1046,7 @@ export class OkFileManager extends LitElement {
   // tampoco lo hace -- el tap no le añade al host una puerta que el ratón no tenía.
 
   private openMovePicker(e: Event, file: OkFmFile): void {
-    this.moveEv = e;
+    this.moveEv = shadowAnchorEvent(e);
     this.moveTarget = file;
   }
 

@@ -42,3 +42,17 @@ export function computeAnchor(
 
   return { end, above };
 }
+
+/**
+ * outfitkit#185 — `ion-popover` reads its anchor as `ev.detail?.ionShadowTarget || ev.target`,
+ * but it does so AFTER the event has finished dispatching. By then the browser has already
+ * retargeted `ev.target` to the shadow host (per the shadow DOM event retargeting spec), so the
+ * popover anchors to the whole custom element instead of the button that was actually tapped.
+ * This helper captures the real target synchronously, while the event is still dispatching (so
+ * `currentTarget`/`target` are not yet retargeted from the listener's point of view), and wraps
+ * it in a CustomEvent carrying `detail.ionShadowTarget`, which Ionic reads and prefers.
+ */
+export function shadowAnchorEvent(ev: Event): CustomEvent<{ ionShadowTarget: Element }> {
+  const el = (ev.currentTarget ?? ev.target) as Element;
+  return new CustomEvent('ok-popover-anchor', { detail: { ionShadowTarget: el } });
+}

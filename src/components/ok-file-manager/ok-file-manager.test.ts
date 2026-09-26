@@ -398,6 +398,25 @@ describe('ok-file-manager · mover sin arrastrar — selector de destino (#96)',
     expect(ids).not.toContain('_logs');
   });
 
+  // outfitkit#185 — Ionic resolves the anchor as `ev.detail.ionShadowTarget || ev.target` when the
+  // popover PRESENTS, after the dispatch is over; by then the browser has retargeted `ev.target` to
+  // the shadow host (the whole file manager), so the picker opened against the component's box
+  // instead of the tapped button. happy-dom does not retarget, so the test applies the DOM rule.
+  it('el selector se ancla al botón "Mover a…" pulsado, no al gestor entero (outfitkit#185)', async () => {
+    const el = await mountForMove();
+    const button = act(el, 'move-file')!;
+
+    button.click();
+    await el.updateComplete;
+
+    const popover = el.shadowRoot!.querySelector('ion-popover') as HTMLElement & {
+      event?: Event & { detail?: { ionShadowTarget?: Element } };
+    };
+    let target = popover.event?.target as Node | null | undefined;
+    while (target && target.getRootNode() instanceof ShadowRoot) target = (target.getRootNode() as ShadowRoot).host;
+    expect(popover.event?.detail?.ionShadowTarget ?? target).toBe(button);
+  });
+
   it('"Mover a…" no depende de la política: se ofrece igual que abrir/descargar', async () => {
     // El drag&drop tampoco la comprueba (solo mira folder.readOnly) -- el tap no le añade una
     // puerta que el ratón no tenía.
