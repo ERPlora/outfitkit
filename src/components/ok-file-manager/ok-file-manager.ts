@@ -4,6 +4,7 @@ import { define } from '../../base/define.js';
 import { shadowAnchorEvent } from '../../base/anchor.js';
 import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
 import { tapTarget } from '../../base/tap-target.js';
+import { syncSearchbarInputName } from '../../base/searchbar-name.js';
 
 // ok-file-manager — widget de gestor de archivos AUTOCONTENIDO y BACKEND-AGNÓSTICO.
 // Solo RENDERIZA (árbol de carpetas + meter de espacio + breadcrumb + toolbar con búsqueda,
@@ -820,6 +821,11 @@ export class OkFileManager extends LitElement {
   // Textos efectivos.
   private get t(): OkFmLabels {
     return { ...DEFAULT_LABELS, ...this.labels };
+  }
+
+  // #184 — name the searchbar's inner input after its visible hint.
+  protected updated(): void {
+    syncSearchbarInputName(this.shadowRoot, () => this.t.search);
   }
 
   // Estado de expansión del árbol por id (todas abiertas por defecto la 1ª vez).
