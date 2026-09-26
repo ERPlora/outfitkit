@@ -319,7 +319,9 @@ describe("ok-file-manager · «Move to…» on a phone is a sheet the list fits 
     const el = await mount({ view: "list" });
     btn(el, "move-file", ".lrow")!.click();
     await el.updateComplete;
-    expect(root(el).querySelector("ion-popover")).toBeNull();
+    expect(
+      (root(el).querySelector("ion-popover") as Sheet | null)?.isOpen ?? false,
+    ).toBe(false);
     expect(sheet(el)?.isOpen).toBe(true);
     expect(moveTargets(el).length).toBe(3);
   });
@@ -329,7 +331,9 @@ describe("ok-file-manager · «Move to…» on a phone is a sheet the list fits 
     const el = await mount({ view: "list" });
     btn(el, "move-file", ".lrow")!.click();
     await el.updateComplete;
-    expect(root(el).querySelector("ion-popover")).not.toBeNull();
+    expect((root(el).querySelector("ion-popover") as Sheet | null)?.isOpen).toBe(
+      true,
+    );
     expect(sheet(el)?.isOpen ?? false).toBe(false);
   });
 
@@ -401,6 +405,44 @@ describe("ok-file-manager · the sheet is ONE ion-modal that never leaves the te
     expect(sheet(el)).toBe(first);
     expect(sheet(el)!.isOpen).toBe(true);
     expect(moveTargets(el).length).toBe(3);
+  });
+});
+
+describe("ok-file-manager · the desktop «Move to…» popover never leaves the template either (outfitkit#201)", () => {
+  // Same Ionic mechanics as the sheet: picking a folder used to drop the ion-popover from the
+  // template while Ionic was still putting it back, and the console showed the insertBefore error.
+  it("open → pick → dismiss → reopen reuses the very same ion-popover node", async () => {
+    viewport(false);
+    const el = await mount({ view: "list" });
+    const pop = () => root(el).querySelector<Sheet>("ion-popover");
+    const first = pop();
+    expect(first, "the popover must be rendered up front, closed").not.toBeNull();
+    expect(first!.isOpen).toBe(false);
+
+    btn(el, "move-file", ".lrow")!.click();
+    await el.updateComplete;
+    expect(pop()).toBe(first);
+    expect(pop()!.isOpen).toBe(true);
+
+    const moved = vi.fn();
+    el.addEventListener("ok-move", (e) => moved((e as CustomEvent).detail));
+    pop()!
+      .querySelector<HTMLElement>('[data-move-target="facturas"]')!
+      .click();
+    await el.updateComplete;
+    expect(moved).toHaveBeenCalledWith({ from: "fotos/a.jpg", to: "facturas" });
+    expect(pop()).toBe(first);
+    expect(pop()!.isOpen).toBe(false);
+
+    pop()!.dispatchEvent(new CustomEvent("didDismiss"));
+    await el.updateComplete;
+    expect(pop()).toBe(first);
+    expect(pop()!.querySelectorAll("[data-move-target]").length).toBe(0);
+
+    btn(el, "move-file", ".lrow")!.click();
+    await el.updateComplete;
+    expect(pop()).toBe(first);
+    expect(pop()!.isOpen).toBe(true);
   });
 });
 

@@ -931,6 +931,9 @@ export class OkFileManager extends LitElement {
   // never fires on touch). `null` ⇒ picker closed. Separate from `dragSource`: that one only
   // exists during an active pointer drag, this one survives across the async popover interaction.
   @state() private moveTarget: OkFmFile | null = null;
+  // The popover stays in the template (like the phone sheet, #201): `moveOpen` drives Ionic and
+  // `moveTarget` keeps the list alive until didDismiss.
+  @state() private moveOpen = false;
   // Event that anchors the "Move to…" ion-popover (Shadow-DOM-safe anchoring, same technique as
   // ok-data-table's overflow menu: `.event`, not `trigger-by-id`, which cannot resolve into a
   // shadow root).
@@ -1156,6 +1159,7 @@ export class OkFileManager extends LitElement {
     }
     this.moveEv = shadowAnchorEvent(e);
     this.moveTarget = file;
+    this.moveOpen = true;
   }
 
   // Same breakpoint as the stacked layout in the styles (≤768px).
@@ -1278,31 +1282,31 @@ export class OkFileManager extends LitElement {
       </ion-modal>`;
   }
 
-  private closeMovePicker(): void {
+  private onMovePickerDismissed(): void {
+    this.moveOpen = false;
     this.moveTarget = null;
   }
 
-  /** Emite `ok-move` con el mismo contrato `{from,to}` que el drag&drop y cierra el selector. */
+  /** Emits `ok-move` with the drag&drop `{from,to}` contract and closes the picker. */
   private moveTo(to: string): void {
     if (!this.moveTarget) return;
     this.emit('ok-move', { from: this.moveTarget.id, to });
-    this.closeMovePicker();
+    this.moveOpen = false;
   }
 
   // Selector de carpeta destino: reutiliza el árbol aplanado (`flatFolders`, ya usado por el
   // <select> móvil) y descarta las de solo lectura -- el mismo filtro que `onFolderDrop`.
   private renderMovePicker(flat: { f: OkFmFolder; d: number }[]): unknown {
-    if (!this.moveTarget) return '';
     return html`<ion-popover
-      .isOpen=${true}
       .event=${this.moveEv}
       dismiss-on-select="true"
-      @didDismiss=${() => this.closeMovePicker()}
+      .isOpen=${this.moveOpen}
+      @didDismiss=${() => this.onMovePickerDismissed()}
     >
       <ion-content>
         <ion-list lines="none" aria-label=${this.t.move}>
           ${flat
-            .filter(({ f }) => !f.readOnly)
+            .filter(({ f }) => this.moveTarget && !f.readOnly)
             .map(
               ({ f, d }) => html`<ion-item
                 button
