@@ -181,10 +181,11 @@ describe('showcase Hub — pestaña «Plan» de un módulo de pago', () => {
     expect(hubPanel, moved('el panel del Hub ya no remapea el estado')).toContain('displayStatus');
     // outfitkit#188: hub#2094 added a second way into the free-tier remap (`includedByPlan`, the
     // module comes with the hub plan). What this demo depends on is that being on the free tier
-    // still remaps to `free`, so the check pins `onFreeTier` INSIDE the condition and the return,
-    // not the exact shape of the whole expression.
+    // ALONE still remaps to `free`: `onFreeTier.value` must be a non-negated operand of an
+    // `||` chain (any order, any siblings), never `!onFreeTier` nor `onFreeTier && …`, which
+    // would send a free-tier hub back to «Sin plan» while this regex still found the word.
     expect(hubPanel, 'hub ModulePlanPanel.vue no longer remaps none/trialing on the free tier to free').toMatch(
-      /if \(\(s === 'none' \|\| s === 'trialing'\) && [^\n]*\bonFreeTier\b[^\n]*\) return 'free';/,
+      /if \(\(s === 'none' \|\| s === 'trialing'\) && \(?(?:!?[\w.]+ \|\| )*onFreeTier\.value(?: \|\| !?[\w.]+)*\)?\) return 'free';/,
     );
     expect(hubPanel).not.toContain('t(`modulePlan.status.${s}`)');
     expect(freeTier, moved('module.json → billing.tiers[] sin tier gratuito')).toBeDefined();
