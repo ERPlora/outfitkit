@@ -95,39 +95,75 @@ export interface OkFmPolicy {
 }
 
 export interface OkFmLabels {
-  /** Botón primario de subida. */
+  /** Primary upload button. */
   upload: string;
-  /** Botón de importar. */
+  /** Import button. */
   import: string;
-  /** Placeholder del buscador. */
+  /** Search box placeholder. */
   search: string;
-  /** Eyebrow del árbol de carpetas. */
+  /** Eyebrow of the folder tree. */
   folders: string;
-  /** Eyebrow del medidor de espacio. */
+  /** Eyebrow of the storage meter. */
   space: string;
-  /** Estado vacío (sin archivos). */
+  /** Empty state (no files). */
   empty: string;
-  /** Acción de fila: descargar. */
+  /** Row action: download. */
   download: string;
-  /** Acción de fila: eliminar. */
+  /** Row action: delete. */
   delete: string;
-  /** Acción de fila: abrir. */
+  /** Row action: open. */
   open: string;
-  /** Acción de fila: mover a otra carpeta (sin arrastrar — #96). */
+  /** Row action: move to another folder (without dragging — #96). */
   move: string;
-  /** Botón de nueva carpeta. */
+  /** New folder button. */
   newFolder: string;
-  /** Acción de renombrar (ficheros y carpetas). */
+  /** Rename action (files and folders). */
   rename: string;
-  /** Renombrar la carpeta en la que se está. */
+  /** Rename the current folder. */
   renameFolder: string;
-  /** Borrar la carpeta en la que se está (con su contenido). */
+  /** Delete the current folder (with its contents). */
   deleteFolder: string;
-  /** Caption del medidor cuando no hay cuota dura. */
+  /** Meter caption when there is no hard quota. */
   noLimit: string;
+  /** aria-label of the breadcrumb navigation. */
+  path: string;
+  /** aria-label of the view toggle group. */
+  view: string;
+  /** aria-label and title of the list-view button. */
+  listView: string;
+  /** aria-label and title of the grid-view button. */
+  gridView: string;
+  /** aria-label of a collapsed folder caret. */
+  expand: string;
+  /** aria-label of an expanded folder caret. */
+  collapse: string;
 }
 
 const DEFAULT_LABELS: OkFmLabels = {
+  upload: 'Upload file',
+  import: 'Import',
+  search: 'Search files…',
+  folders: 'Folders',
+  space: 'Storage',
+  empty: 'No files',
+  download: 'Download',
+  delete: 'Delete',
+  open: 'Open',
+  move: 'Move to…',
+  newFolder: 'New folder',
+  rename: 'Rename',
+  renameFolder: 'Rename folder',
+  deleteFolder: 'Delete folder',
+  noLimit: 'No limit',
+  path: 'Path',
+  view: 'View',
+  listView: 'List view',
+  gridView: 'Grid view',
+  expand: 'Expand',
+  collapse: 'Collapse',
+};
+
+const ES_LABELS: OkFmLabels = {
   upload: 'Subir archivo',
   import: 'Importar',
   search: 'Buscar archivos…',
@@ -143,6 +179,12 @@ const DEFAULT_LABELS: OkFmLabels = {
   renameFolder: 'Renombrar carpeta',
   deleteFolder: 'Eliminar carpeta',
   noLimit: 'Sin límite',
+  path: 'Ruta',
+  view: 'Vista',
+  listView: 'Vista lista',
+  gridView: 'Vista cuadrícula',
+  expand: 'Expandir',
+  collapse: 'Contraer',
 };
 
 export class OkFileManager extends LitElement {
@@ -815,12 +857,27 @@ export class OkFileManager extends LitElement {
   }
   /** Muestra esqueletos de carga en lugar del contenido. */
   @property({ type: Boolean }) loading = false;
-  /** Textos i18n (merge sobre los defaults en español). */
+  /** Human-readable text overrides (i18n). English is the source; Spanish is picked when the
+   * document language is `es*`, merged with explicit `.labels` overrides. */
   @property({ attribute: false }) labels: Partial<OkFmLabels> = {};
 
-  // Textos efectivos.
+  private readonly onLocaleChanged = (): void => this.requestUpdate();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined') window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
+  }
+
+  disconnectedCallback(): void {
+    if (typeof window !== 'undefined') window.removeEventListener('erplora:locale-changed', this.onLocaleChanged);
+    super.disconnectedCallback();
+  }
+
+  // i18n: document language ← explicit `.labels` overrides
   private get t(): OkFmLabels {
-    return { ...DEFAULT_LABELS, ...this.labels };
+    const lang =
+      typeof document === 'undefined' ? 'en' : document.documentElement.lang.toLowerCase();
+    return { ...(lang.startsWith('es') ? ES_LABELS : DEFAULT_LABELS), ...this.labels };
   }
 
   // #184 — name the searchbar's inner input after its visible hint.
@@ -1155,7 +1212,7 @@ export class OkFileManager extends LitElement {
           class=${`caret ok-tap ${hasChildren ? '' : 'leaf'} ${expanded ? 'open' : ''}`.trim()}
           tabindex=${hasChildren ? '0' : '-1'}
           aria-hidden=${hasChildren ? 'false' : 'true'}
-          aria-label=${expanded ? 'Colapsar' : 'Expandir'}
+          aria-label=${expanded ? this.t.collapse : this.t.expand}
           @click=${(e: Event) => {
             e.stopPropagation();
             this.toggle(folder);
@@ -1223,7 +1280,7 @@ export class OkFileManager extends LitElement {
   private renderToolbar(): unknown {
     const crumbs = this.path;
     return html`<div class="toolbar">
-      <nav class="crumbs" aria-label="Ruta">
+      <nav class="crumbs" aria-label=${this.t.path}>
         ${this.title ? html`<span class="fm-title">${this.title}</span>` : ''}
         ${crumbs.map((c, i) => {
           const isLast = i === crumbs.length - 1;
@@ -1252,13 +1309,13 @@ export class OkFileManager extends LitElement {
           </div>`
         : ''}
 
-      <div class="view-toggle" role="group" aria-label="Vista">
+      <div class="view-toggle" role="group" aria-label=${this.t.view}>
         <button
           type="button"
           class="view-btn"
           aria-pressed=${this.view === 'list'}
-          aria-label="Vista lista"
-          title="Lista"
+          aria-label=${this.t.listView}
+          title=${this.t.listView}
           @click=${() => this.changeView('list')}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1268,8 +1325,8 @@ export class OkFileManager extends LitElement {
           type="button"
           class="view-btn"
           aria-pressed=${this.view === 'grid'}
-          aria-label="Vista cuadrícula"
-          title="Cuadrícula"
+          aria-label=${this.t.gridView}
+          title=${this.t.gridView}
           @click=${() => this.changeView('grid')}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -80,7 +80,8 @@ describe('ok-file-manager — the search box is named after its hint (#184)', ()
   it('names the inner input with the default hint', async () => {
     defineSearchbar();
     const el = await mount();
-    expect(searchInputName(el)).toBe('Buscar archivos…');
+    // #190 — the default is English when the document is not Spanish (happy-dom has no lang).
+    expect(searchInputName(el)).toBe('Search files…');
   });
 
   it('follows a change of the hint', async () => {
