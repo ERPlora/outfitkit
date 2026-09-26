@@ -34,7 +34,10 @@ const title = (el: OkCalendar) => root(el).querySelector('.title')?.textContent?
 async function press(el: OkCalendar, from: string, key: string): Promise<void> {
   const btn = dayButton(el, from);
   expect(btn, `no day button for ${from}`).toBeTruthy();
-  btn!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
+  const ev = new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true });
+  btn!.dispatchEvent(ev);
+  // A handled key must not also scroll the page (arrows / PageUp / Home…).
+  expect(ev.defaultPrevented, `${key} was not prevented`).toBe(true);
   await el.updateComplete;
   await el.updateComplete;
 }
@@ -158,6 +161,14 @@ describe('ok-calendar picker — days are real buttons, selectable and keyboard-
     expect(el.value).toBe('2026-10-20');
     expect(dayButton(el, '2026-10-20')!.getAttribute('aria-pressed')).toBe('true');
     expect(dayButton(el, '2026-10-20')!.tabIndex).toBe(0);
+  });
+
+  it('after moving with the keyboard, clicking another day moves the tab stop to it', async () => {
+    const el = await mount({ locale: 'es', picker: '' }, { value: '2026-10-15' });
+    await press(el, '2026-10-15', 'ArrowRight');
+    dayButton(el, '2026-10-20')!.click();
+    await el.updateComplete;
+    expect(dayButtons(el).filter((b) => b.tabIndex === 0).map((b) => b.dataset.date)).toEqual(['2026-10-20']);
   });
 
   it('arrow keys move the focus by a day and by a week', async () => {
