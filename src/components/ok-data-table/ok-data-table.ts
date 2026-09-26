@@ -910,9 +910,13 @@ export class OkDataTable extends LitElement {
   /** outfitkit#195 — Escape closes the open side panel. Listened ON THE HOST (not the shadow
    *  root) so it catches keydown bubbling both from slotted form inputs (light DOM, e.g. the
    *  `create`/`edit` form) and from rows inside the shadow root while focus is anywhere in the
-   *  table. Other keys, or the panel already closed, are left untouched (no stopPropagation). */
+   *  table. Other keys, or the panel already closed, are left untouched (no stopPropagation).
+   *  An Escape a widget inside the form already used (`defaultPrevented`: ok-combo / ok-tag-input
+   *  closing their dropdown) closes only that widget, never the panel on top of it; and when the
+   *  table does close the panel it marks the key as used the same way. */
   private readonly onKeydown = (e: KeyboardEvent): void => {
-    if (e.key !== 'Escape' || this.panel === 'none') return;
+    if (e.key !== 'Escape' || e.defaultPrevented || this.panel === 'none') return;
+    e.preventDefault();
     e.stopPropagation();
     this.closePanel('escape');
   };

@@ -23,6 +23,7 @@ vi.mock('../../base/icons.js', () => ({
 }));
 
 import './ok-data-table.js';
+import '../ok-combo/ok-combo.js';
 
 type Table = HTMLElement & {
   rows: Array<Record<string, unknown>>;
@@ -62,7 +63,9 @@ async function openEdit(t: Table): Promise<void> {
 }
 
 function escape(target: EventTarget): void {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
+  target.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true, cancelable: true }),
+  );
 }
 
 describe('ok-data-table: closing the side panel tells the module (#195)', () => {
@@ -125,9 +128,11 @@ describe('ok-data-table: closing the side panel tells the module (#195)', () => 
     let reached = false;
     const spy = () => (reached = true);
     document.addEventListener('keydown', spy);
-    escape(input);
+    const ev = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true, cancelable: true });
+    input.dispatchEvent(ev);
     document.removeEventListener('keydown', spy);
     expect(reached).toBe(false);
+    expect(ev.defaultPrevented, 'the table did not mark the Escape it used as handled').toBe(true);
   });
 
   it('another key does not close the panel', async () => {
@@ -136,6 +141,41 @@ describe('ok-data-table: closing the side panel tells the module (#195)', () => 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
     await t.updateComplete;
     expect(drawer(t)).toBeTruthy();
+    expect(events).toEqual([]);
+  });
+
+  it('Escape already used by a widget inside the form (defaultPrevented) does not close the panel', async () => {
+    // Widgets that close their own dropdown on Escape (ok-combo, ok-tag-input) mark the key as
+    // handled with preventDefault(); the panel must not close on top of that (the draft would go).
+    const { t, events, input } = await mount();
+    await openEdit(t);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') e.preventDefault();
+    });
+    escape(input);
+    await t.updateComplete;
+    expect(drawer(t), 'the panel closed on an Escape a widget inside the form had already used').toBeTruthy();
+    expect(events).toEqual([]);
+  });
+
+  it('Escape closing an open ok-combo dropdown inside the form keeps the panel open (taxes, combos)', async () => {
+    const { t, events } = await mount();
+    const combo = document.createElement('ok-combo') as HTMLElement & { options: unknown[]; hasAttribute: (n: string) => boolean };
+    combo.options = [{ value: 'ES', label: 'España' }, { value: 'PT', label: 'Portugal' }];
+    combo.slot = 'create';
+    t.appendChild(combo);
+    await openEdit(t);
+    await (combo as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+    const field = combo.shadowRoot?.querySelector('ion-input') as HTMLElement;
+    expect(field, 'no ion-input inside ok-combo').toBeTruthy();
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true, cancelable: true }));
+    await (combo as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+    expect(combo.hasAttribute('data-open'), 'the combo dropdown did not open').toBe(true);
+    escape(field);
+    await (combo as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+    await t.updateComplete;
+    expect(combo.hasAttribute('data-open'), 'Escape did not close the combo dropdown').toBe(false);
+    expect(drawer(t), 'Escape closed the whole panel instead of only the combo dropdown').toBeTruthy();
     expect(events).toEqual([]);
   });
 
