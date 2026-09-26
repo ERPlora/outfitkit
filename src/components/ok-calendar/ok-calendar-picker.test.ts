@@ -84,8 +84,11 @@ describe('ok-calendar — first day of the week follows the locale (outfitkit#19
   });
 
   it('without Intl week info (older engines) the region table still gives Sunday / Saturday', async () => {
-    const proto = Intl.Locale.prototype as unknown as Record<string, unknown>;
-    vi.spyOn(proto as { getWeekInfo: () => unknown }, 'getWeekInfo').mockReturnValue(undefined);
+    // Hide BOTH accessors (V8 still ships the legacy `weekInfo` getter next to `getWeekInfo()`).
+    const proto = Intl.Locale.prototype as unknown as { getWeekInfo: () => unknown; weekInfo: unknown };
+    vi.spyOn(proto, 'getWeekInfo').mockReturnValue(undefined);
+    if (Object.getOwnPropertyDescriptor(proto, 'weekInfo')?.get) vi.spyOn(proto, 'weekInfo', 'get').mockReturnValue(undefined);
+    expect(new Intl.Locale('en-US').getWeekInfo?.() ?? (new Intl.Locale('en-US') as unknown as { weekInfo?: unknown }).weekInfo).toBeUndefined();
     const us = await mount({ locale: 'en-US', picker: '' }, { value: '2026-10-15' });
     expect(weekdays(us)[0]).toBe('Sun');
     const eg = await mount({ locale: 'ar-EG', picker: '' }, { value: '2026-10-15' });
