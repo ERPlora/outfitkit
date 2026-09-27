@@ -672,7 +672,8 @@ export class OkDataTable extends LitElement {
     /* #122 - Header of the actions column while the buttons are folded into the menu. "ACCIONES"
        measures 62.83px and the folded track is 44px: painted, it spills out of its own cell and
        over "Estado" - the very thing the issue is about. The column keeps its name for assistive
-       tech and paints nothing. */
+       tech and paints nothing. #211 - Same while expanded when the buttons leave no room for the
+       label (one icon: 32-44px), instead of painting "ACCI…". */
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
       clip-path: inset(50%); white-space: nowrap; border: 0; }
     /* Las acciones de fila son icon-only y de tamaño small en escritorio. En tablet/móvil se
@@ -898,6 +899,9 @@ export class OkDataTable extends LitElement {
   @state() private actionsTrackPx = 0;
   // #122 — ¿acciones de fila plegadas en el menú «⋮»? Lo decide `decideRowActionsFit` midiendo.
   @state() private rowActionsCollapsed = false;
+  // #211 - Does the "Actions" header label fit its column? One icon-only button leaves 32-44px for
+  // a 63px "ACCIONES", which then reads "ACCI…". Measured in `measureActionsLabel`.
+  @state() private actionsLabelFits = true;
   /** Ancho de contenedor con el que se tomó la decisión de plegado vigente (`-1` = ninguna). */
   private fitDecidedAtWidth = -1;
   // Menú «⋮» de UNA fila: un solo ion-popover para toda la tabla, con la fila en curso.
@@ -994,6 +998,25 @@ export class OkDataTable extends LitElement {
     if (width > 0 && width !== this.actionsTrackPx) this.actionsTrackPx = width;
   }
 
+  /** #211 - Does the header label fit the actions column, or would it be painted truncated?
+   *
+   * The label's `scrollWidth` is its natural width both painted and `.sr-only` (it never wraps),
+   * and the cell's width is the track the buttons pinned in px: hiding or showing the label
+   * changes neither, so the next measurement agrees with this one and nothing loops. Any change
+   * of that track is a state change, so it re-renders and lands here through `updated`. */
+  private measureActionsLabel(): void {
+    const cell = this.renderRoot?.querySelector?.('.ghead .gcell.actions-col') as HTMLElement | null;
+    const label = cell?.querySelector('span');
+    if (!cell || !label) return;
+    const need = Math.ceil(label.scrollWidth);
+    // 0 = not laid out yet (hidden tab, cards view): keep the current decision and measure again.
+    if (need <= 0 || cell.clientWidth <= 0) return;
+    const cs = getComputedStyle(cell);
+    const room = cell.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    const fits = need <= room;
+    if (this.actionsLabelFits !== fits) this.actionsLabelFits = fits;
+  }
+
   /** #122 — Decide si los botones de acción de la fila caben o se pliegan en el menú «⋮».
    *  El criterio y la garantía de que no oscila viven en `decideRowActionsFit`. */
   private measureRowActionsFit(): void {
@@ -1049,6 +1072,7 @@ export class OkDataTable extends LitElement {
       this.fitDecidedAtWidth = -1;
     }
     this.measureActionsTrack();
+    this.measureActionsLabel();
     this.measureRowActionsFit();
     if (changed.has('panel')) this.syncSheetInsets();
     syncSearchbarInputName(this.shadowRoot, () => this.effSearchPlaceholder);
@@ -2422,9 +2446,7 @@ export class OkDataTable extends LitElement {
             })}
             ${this.actions.length
               ? html`<div class="gcell gh right actions-col" role="columnheader">
-                  ${this.rowActionsCollapsed
-                    ? html`<span class="sr-only">${this.t.actions}</span>`
-                    : html`<span>${this.t.actions}</span>`}
+                  <span class=${this.rowActionsCollapsed || !this.actionsLabelFits ? 'sr-only' : ''}>${this.t.actions}</span>
                 </div>`
               : nothing}
           </div>
