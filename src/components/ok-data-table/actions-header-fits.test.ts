@@ -129,6 +129,12 @@ describe('ok-data-table: the row-actions header is never painted truncated (#211
     expect(header(table).querySelector('.sr-only')).toBeNull();
   });
 
+  it('a label one pixel too wide is not painted (it would read "ACCIONE…")', async () => {
+    const table = await mount(2);
+    await lay(table, LABEL_PX + 15);
+    expect(header(table).querySelector('.sr-only')).not.toBeNull();
+  });
+
   it('when the column widens again the label comes back', async () => {
     const table = await mount(2);
     await lay(table, 60);
