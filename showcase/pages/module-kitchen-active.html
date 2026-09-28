@@ -16,8 +16,9 @@
 
     <style>
       .kitchen-active-page { display: flex; flex-direction: column; gap: 0.75rem; min-height: 100%; }
-      .kitchen-order-form { display: grid; grid-template-columns: minmax(11rem, 0.7fr) minmax(14rem, 1fr) auto; gap: 0.75rem; align-items: end; }
-      @media (max-width: 720px) { .kitchen-order-form { grid-template-columns: 1fr; } }
+      /* As the module (kitchen#122): the quick add lives in the table's create panel, a column with the button at the end. */
+      .kitchen-order-form { display: flex; flex-direction: column; gap: 0.7rem; }
+      .kitchen-order-form ion-button { align-self: flex-end; }
     </style>
   </head>
   <body>
@@ -50,40 +51,29 @@
         return String(text).normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
       }
 
-      function badge(text, color) {
-        const element = document.createElement('ion-badge');
-        element.textContent = text;
-        element.color = color;
-        return element;
-      }
-
       defineHubPage({
         active: '/m/kitchen/active',
         title: 'Comandas',
         body: `
           <div class="kitchen-active-page">
-            <form id="kitchen-order-form" class="kitchen-order-form">
-              <ion-select id="kitchen-order-type" mode="md" fill="outline" label="Tipo" label-placement="floating" value="dine_in">
-                <ion-select-option value="dine_in">En sala</ion-select-option>
-                <ion-select-option value="takeaway">Para llevar</ion-select-option>
-                <ion-select-option value="delivery">A domicilio</ion-select-option>
-              </ion-select>
-              <ion-input id="kitchen-order-notes" mode="md" fill="outline" label="Notas" label-placement="floating"></ion-input>
-              <ion-button type="submit" size="small">
-                <ion-icon slot="start" name="add-outline"></ion-icon>
-                Nueva comanda
-              </ion-button>
-            </form>
-            <ok-data-table id="kitchen-active-table"></ok-data-table>
+            <ok-data-table id="kitchen-active-table">
+              <form id="kitchen-order-form" slot="create" class="kitchen-order-form">
+                <ion-select id="kitchen-order-type" mode="md" fill="outline" label="Tipo" label-placement="stacked" value="dine_in">
+                  <ion-select-option value="dine_in">En sala</ion-select-option>
+                  <ion-select-option value="takeaway">Para llevar</ion-select-option>
+                  <ion-select-option value="delivery">A domicilio</ion-select-option>
+                </ion-select>
+                <ion-input id="kitchen-order-notes" mode="md" fill="outline" label="Notas" label-placement="stacked" placeholder="(opcional)"></ion-input>
+                <ion-button type="submit">Crear comanda</ion-button>
+              </form>
+            </ok-data-table>
           </div>
-          <ion-toast id="kitchen-active-toast" duration="1800" position="bottom"></ion-toast>
         `,
         setup(doc) {
           const table = doc.getElementById('kitchen-active-table');
           const form = doc.getElementById('kitchen-order-form');
           const typeInput = doc.getElementById('kitchen-order-type');
           const notesInput = doc.getElementById('kitchen-order-notes');
-          const toast = doc.getElementById('kitchen-active-toast');
 
           table.columns = [
             { key: 'order_number', header: 'Comanda', sortable: true, filterable: true, filterType: 'text' },
@@ -104,7 +94,8 @@
                 { value: 'rush', label: 'Urgente' },
                 { value: 'vip', label: 'VIP' },
               ],
-              render: (row) => badge(PRIORITY_LABELS[row.priority] || row.priority, row.priority === 'rush' ? 'danger' : row.priority === 'vip' ? 'warning' : 'medium'),
+              // Plain catalogue text, as the module (kitchen#108): no badge.
+              format: (row) => PRIORITY_LABELS[row.priority] || row.priority,
             },
             {
               key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
@@ -115,7 +106,7 @@
                 { value: 'served', label: 'Servida' },
                 { value: 'cancelled', label: 'Cancelada' },
               ],
-              render: (row) => badge(STATUS_LABELS[row.status] || row.status, row.status === 'ready' ? 'success' : row.status === 'cancelled' ? 'danger' : row.status === 'preparing' ? 'warning' : 'medium'),
+              format: (row) => STATUS_LABELS[row.status] || row.status,
             },
             { key: 'total', header: 'Total', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => Number(row.total).toFixed(2) },
           ];
@@ -127,6 +118,9 @@
             { id: 'cancel', label: 'Cancelar', icon: 'close-circle-outline', color: 'danger' },
           ];
           table.serverSide = true;
+          // kitchen#128: «Nueva comanda» in the table bar opens the create panel; its submit says «Crear comanda».
+          table.addable = true;
+          table.labels = { add: 'Nueva comanda', newRecord: 'Nueva comanda' };
           table.views = true;
           table.cardTitle = (row) => String(row.order_number || '—');
           table.cardIcon = () => 'restaurant-outline';
@@ -191,12 +185,11 @@
               notes,
               created_at: new Date().toISOString(),
             }, ...orders];
+            // Like the module: notes cleared, the type kept for the next ticket, the panel closed over the new row.
             notesInput.value = '';
+            table.close();
             state.page = 0;
             queryPage();
-            toast.message = 'Comanda creada.';
-            toast.color = 'success';
-            toast.isOpen = true;
           });
 
           table.addEventListener('rowAction', (event) => {
@@ -217,7 +210,6 @@
           table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
           table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
           table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
-          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
 
           queryPage();
         },
