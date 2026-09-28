@@ -188,6 +188,26 @@ describe('ok-data-table — "could not load" is not "empty" (ERPlora/pm#530)', (
     expect(touch.some((b) => /\.load-error ion-button \{[^}]*min-height: 44px;/.test(b))).toBe(true);
   });
 
+  it('the error block reads as an error and keeps the place of the rows (fill mode, open panel)', async () => {
+    const table = await mount({ error: REASON });
+    table.setAttribute('fill', '');
+    await settle(table);
+    const block = errorBlock(table) as HTMLElement;
+    // Fill mode: it stretches between toolbar and footer, like the empty state, instead of sticking to the top.
+    expect(getComputedStyle(block).flexGrow).toBe('1');
+    // Red icon and a heading in text colour, not the muted grey of «empty».
+    expect(getComputedStyle(block.querySelector('.empty-ic') as HTMLElement).color).toBe('#c5000f');
+    const title = block.querySelector('.load-error-title') as HTMLElement;
+    expect(getComputedStyle(title).color).not.toBe(getComputedStyle(block).color);
+    expect(getComputedStyle(title).fontWeight).toBe('600');
+    // Desktop with the create panel open: the block takes the rows' cell next to the panel.
+    (table as unknown as { open: (mode: string) => void }).open('create');
+    await settle(table);
+    expect(root(table).querySelector('.card')?.classList.contains('has-panel')).toBe(true);
+    const placed = getComputedStyle(errorBlock(table) as HTMLElement);
+    expect([placed.gridColumn, placed.gridRow]).toEqual(['1', '2']);
+  });
+
   it('the Retry button carries a test hook derived from `testid`', async () => {
     const table = await mount({ testid: 'customers', error: REASON });
     expect(retryButton(table)?.getAttribute('data-testid')).toBe('customers-retry');
