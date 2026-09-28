@@ -22,7 +22,10 @@
       .kitchen-stations-page > ion-card { flex: none; }
       .kitchen-station-create { display: flex; flex-direction: column; gap: 0.7rem; }
       .kitchen-station-create ion-button { align-self: flex-end; }
-      .kitchen-station-panel-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; align-items: end; }
+      /* As the module's .form: the fields wrap and grow, the buttons keep their width and stay together. */
+      .kitchen-station-panel-form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; }
+      .kitchen-station-panel-form ion-input, .kitchen-station-panel-form ion-select { flex: 1 1 11rem; min-width: 9rem; }
+      .kitchen-stations-saved { margin: 0; color: #2b8a3e; font-weight: 600; }
       [hidden] { display: none !important; }
     </style>
   </head>
@@ -35,9 +38,25 @@
         { "id": "st1", "name": "Bar", "name_es": "Barra", "color": "#F97316", "icon": "flame", "printer_name": "COCINA-1", "is_active": 1, "pending_count": 3 }
       ];
 
+      // Productos y categorías canónicos de erp-kitchen-orders-stations.test.ts: el enrutado los elige
+      // por nombre de las listas públicas de inventory (kitchen#45), nadie teclea un ID.
+      const PRODUCT_FIXTURE = [
+        { "id": "p-1", "name": "Alitas de pollo" },
+        { "id": "p-2", "name": "Arroz a banda" }
+      ];
+      const CATEGORY_FIXTURE = [
+        { "id": "cat-1", "name": "Refrescos" },
+        { "id": "cat-2", "name": "Café" }
+      ];
+
       let stations = STATION_FIXTURE.map((row) => ({ ...row }));
       let editingId = '';
       const state = { page: 0, pageSize: 50, sort: 'name_es', dir: 'asc', search: '', filters: {} };
+
+      /** The station in the hub's language, the base name when untranslated — as the module's stationName(). */
+      function stationName(row) {
+        return String(row.name_es || row.name || '—');
+      }
 
       function recordQuery(name, params = {}) {
         document.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name, params } }));
@@ -71,12 +90,14 @@
               <ion-card-content>
                 <form id="kitchen-routing-form" class="kitchen-station-panel-form">
                   <ion-select id="kitchen-routing-station" mode="md" fill="outline" label="Estación" label-placement="floating"></ion-select>
-                  <ion-input id="kitchen-routing-product" mode="md" fill="outline" label="ID de producto" label-placement="floating" placeholder="Opcional"></ion-input>
-                  <ion-input id="kitchen-routing-category" mode="md" fill="outline" label="ID de categoría" label-placement="floating" placeholder="Opcional"></ion-input>
+                  <ion-select id="kitchen-routing-product" mode="md" fill="outline" interface="popover" label="Producto" label-placement="floating" placeholder="(opcional)"></ion-select>
+                  <ion-select id="kitchen-routing-category" mode="md" fill="outline" interface="popover" label="Categoría" label-placement="floating" placeholder="(opcional)"></ion-select>
                   <ion-button type="submit" size="small">Guardar enrutado</ion-button>
                 </form>
               </ion-card-content>
             </ion-card>
+
+            <p id="kitchen-stations-saved" class="kitchen-stations-saved" hidden></p>
 
             <ok-data-table id="kitchen-stations-table" fill>
               <form id="kitchen-station-create" slot="create" class="kitchen-station-create">
@@ -86,7 +107,6 @@
               </form>
             </ok-data-table>
           </div>
-          <ion-toast id="kitchen-stations-toast" duration="1800" position="bottom"></ion-toast>
         `,
         setup(doc) {
           const table = doc.getElementById('kitchen-stations-table');
@@ -105,10 +125,11 @@
           const routingStation = doc.getElementById('kitchen-routing-station');
           const routingProduct = doc.getElementById('kitchen-routing-product');
           const routingCategory = doc.getElementById('kitchen-routing-category');
-          const toast = doc.getElementById('kitchen-stations-toast');
+          const routingSubmit = routingForm.querySelector('ion-button[type="submit"]');
+          const saved = doc.getElementById('kitchen-stations-saved');
 
           table.columns = [
-            { key: 'name_es', header: 'Estación', sortable: true, filterable: true, filterType: 'text', format: (row) => String(row.name_es || row.name || '—') },
+            { key: 'name_es', header: 'Estación', sortable: true, filterable: true, filterType: 'text', format: (row) => stationName(row) },
             { key: 'printer_name', header: 'Impresora', sortable: true, filterable: true, filterType: 'text', format: (row) => row.printer_name || '—' },
             { key: 'pending_count', header: 'En curso', align: 'right', format: (row) => String(row.pending_count || 0) },
             {
@@ -127,8 +148,9 @@
           table.addable = true;
           table.labels = { add: 'Añadir estación' };
           table.views = true;
-          table.cardTitle = (row) => String(row.name_es || row.name || '—');
+          table.cardTitle = (row) => stationName(row);
           table.cardIcon = () => 'flame-outline';
+          table.rowClickable = true;
           table.searchable = true;
           table.searchPlaceholder = 'Buscar estación…';
           table.emptyMessage = 'Sin estaciones.';
@@ -136,10 +158,30 @@
           table.sort = 'name_es';
           table.sortDir = 'asc';
 
+          function optionsHtml(rows, label) {
+            return rows.map((row) => `<ion-select-option value="${row.id}">${label(row)}</ion-select-option>`).join('');
+          }
+
+          recordQuery('inventory.products.list', { limit: 500 });
+          recordQuery('inventory.categories.list', { limit: 500 });
+          routingProduct.innerHTML = optionsHtml(PRODUCT_FIXTURE, (row) => row.name);
+          routingCategory.innerHTML = optionsHtml(CATEGORY_FIXTURE, (row) => row.name);
+
+          // As the module: nothing to route until a station and a product or a category are chosen.
+          function syncRoutingSubmit() {
+            routingSubmit.disabled = !routingStation.value || (!routingProduct.value && !routingCategory.value);
+          }
+
+          function showSaved(message) {
+            saved.textContent = message;
+            saved.hidden = !message;
+          }
+
           function refreshRoutingOptions() {
             const selected = String(routingStation.value || '');
-            routingStation.innerHTML = stations.map((station) => `<ion-select-option value="${station.id}">${station.name}</ion-select-option>`).join('');
+            routingStation.innerHTML = optionsHtml(stations, stationName);
             routingStation.value = stations.some((station) => station.id === selected) ? selected : '';
+            syncRoutingSubmit();
           }
 
           function queryPage() {
@@ -176,12 +218,13 @@
 
           function openEdit(station) {
             editingId = station.id;
-            editTitle.textContent = `Editar estación · ${station.name}`;
+            editTitle.textContent = `Editar estación · ${stationName(station)}`;
             editName.value = station.name;
             editColor.value = station.color || '';
             editPrinter.value = station.printer_name || '';
             editActive.checked = Boolean(Number(station.is_active));
             editPanel.hidden = false;
+            showSaved('');
           }
 
           createForm.addEventListener('submit', (event) => {
@@ -189,6 +232,7 @@
             const name = String(createName.value || '').trim();
             if (!name) return;
             const printerName = String(createPrinter.value || '').trim();
+            showSaved('');
             recordCommand('kitchen.stations.create', { name, printer_name: printerName });
             stations = [...stations, {
               id: `preview-station-${stations.length + 1}`,
@@ -218,6 +262,7 @@
             recordCommand('kitchen.stations.update', payload);
             stations = stations.map((station) => station.id === editingId ? { ...station, ...payload, id: station.id } : station);
             closeEdit();
+            showSaved('Estación actualizada');
             queryPage();
           });
           editCancel.addEventListener('click', closeEdit);
@@ -231,10 +276,12 @@
             recordCommand('kitchen.stations.set_routing', { station_id: stationId, product_id: productId, category_id: categoryId });
             routingProduct.value = '';
             routingCategory.value = '';
-            toast.message = 'Enrutado guardado.';
-            toast.color = 'success';
-            toast.isOpen = true;
+            syncRoutingSubmit();
+            showSaved('Enrutado guardado');
           });
+          for (const select of [routingStation, routingProduct, routingCategory]) {
+            select.addEventListener('ionChange', syncRoutingSubmit);
+          }
 
           table.addEventListener('rowAction', (event) => {
             const row = event.detail?.row;
@@ -242,20 +289,27 @@
             if (event.detail.actionId === 'edit') return openEdit(row);
             if (event.detail.actionId === 'route') {
               routingStation.value = row.id;
+              syncRoutingSubmit();
+              showSaved('');
               return;
             }
             if (event.detail.actionId !== 'delete') return;
+            showSaved('');
             recordCommand('kitchen.stations.delete', { station_id: row.id });
             stations = stations.filter((station) => station.id !== row.id);
             if (editingId === row.id) closeEdit();
             queryPage();
+          });
+          // As the module: the whole row is a door to its edit panel, not only the pencil.
+          table.addEventListener('rowClick', (event) => {
+            const row = event.detail?.row;
+            if (row) openEdit(row);
           });
           table.addEventListener('pageChange', (event) => { state.page = Number(event.detail) || 0; queryPage(); });
           table.addEventListener('pageSizeChange', (event) => { state.pageSize = Number(event.detail) || 50; state.page = 0; queryPage(); });
           table.addEventListener('sortChange', (event) => { state.sort = event.detail.sort; state.dir = event.detail.dir; queryPage(); });
           table.addEventListener('searchChange', (event) => { state.search = String(event.detail || ''); state.page = 0; queryPage(); });
           table.addEventListener('filterChange', (event) => { state.filters[event.detail.col] = event.detail.value; state.page = 0; queryPage(); });
-          toast.addEventListener('didDismiss', () => { toast.isOpen = false; });
 
           queryPage();
         },
