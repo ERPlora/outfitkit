@@ -4,6 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { define } from '../../base/define.js';
 import { ionTone } from '../../base/ion-tone.js';
 import { syncSearchbarInputName } from '../../base/searchbar-name.js';
+import { searchbarSingleClear } from '../../base/searchbar-single-clear.js';
 import { iconArchiveOutline, iconArrowRedoOutline, iconArrowUndoOutline, iconChevronBack, iconCreateOutline, iconDocumentAttachOutline, iconTrashOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-icon / ion-searchbar / ion-avatar / ion-badge NATIVOS (los
 // registra el HOST). Para los estados vacíos REUSA <ok-empty-state> del catálogo. OutfitKit
@@ -118,6 +119,7 @@ const ES_LABELS: OkMailLabels = {
 
 export class OkMail extends LitElement {
   static styles = css`
+    ${searchbarSingleClear}
     :host {
       /* Tokens overridables (estilo Ionic): default = cadena --ok-* → --ion-* → hex. */
       --background: var(--ok-surface, var(--ion-background-color, #ffffff));

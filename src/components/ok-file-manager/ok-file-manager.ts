@@ -7,6 +7,7 @@ import { ionTone } from '../../base/ion-tone.js';
 import { iconChevronForwardOutline, iconFolderOpenOutline, okIcon } from '../../base/icons.js';
 import { tapTarget } from '../../base/tap-target.js';
 import { syncSearchbarInputName } from '../../base/searchbar-name.js';
+import { searchbarSingleClear } from '../../base/searchbar-single-clear.js';
 
 // ok-file-manager — widget de gestor de archivos AUTOCONTENIDO y BACKEND-AGNÓSTICO.
 // Solo RENDERIZA (árbol de carpetas + meter de espacio + breadcrumb + toolbar con búsqueda,
@@ -198,7 +199,7 @@ const ES_LABELS: OkFmLabels = {
 };
 
 export class OkFileManager extends LitElement {
-  static styles = [tapTarget, css`
+  static styles = [tapTarget, searchbarSingleClear, css`
     :host {
       /* Tokens propios estilo Ionic: cadena --ok-* → --ion-* → hex. */
       --bg: var(--ok-surface, var(--ion-background-color, #ffffff));
