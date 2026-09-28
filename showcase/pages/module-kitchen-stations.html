@@ -16,7 +16,10 @@
 
     <style>
       .kitchen-stations-page { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0.75rem; }
-      .kitchen-stations-page > ok-data-table { flex: 1 1 auto; min-height: 0; }
+      /* The floor keeps rows in view on a short screen, where the cards eat the height: the page scrolls. */
+      .kitchen-stations-page > ok-data-table { flex: 1 1 auto; min-height: 20rem; }
+      /* ion-card is overflow: hidden, so as a shrinkable flex item it gets clipped: keep its height. */
+      .kitchen-stations-page > ion-card { flex: none; }
       .kitchen-station-create { display: flex; flex-direction: column; gap: 0.7rem; }
       .kitchen-station-create ion-button { align-self: flex-end; }
       .kitchen-station-panel-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; align-items: end; }
