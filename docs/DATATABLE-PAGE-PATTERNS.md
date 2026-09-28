@@ -152,6 +152,11 @@ No hace falta otro componente de tabla ni una variante por producto.
 4. 🔴 **Loading explícito de la tabla.** `loading` existe **por acción de fila** (spinner en el
    botón), no para la tabla entera: el Hub sigue poniendo spinners fuera y los módulos cambiando
    `emptyMessage` a «Cargando…». Un estado opcional evitaría mostrar un vacío durante la carga.
+5. ✅ **Error de carga ≠ lista vacía — CERRADO (pm#530).** Con el hub caído, la tabla decía
+   «Sin clientes.» y «0 registros» debajo del aviso del módulo. Ahora `error` (el motivo, p. ej.
+   `ListController.error`) pinta «No se han podido cargar los datos», el motivo y «Reintentar»
+   (evento `retry` → `ctrl.load()`), sin filas, sin «Sin …» y sin contador. Lo ancla
+   `src/components/ok-data-table/load-error.test.ts`.
 
 Lo que queda abierto (el 2 a medias, el 3 y el 4 enteros) es API **aditiva**, y quien lo escriba
 decide y lo documenta — la fórmula «requiere una decisión humana» que llevaba aquí quedó derogada

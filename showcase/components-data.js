@@ -161,7 +161,9 @@ dt.filterValues = { estado: 'Pendiente' };         // abre la tabla YA filtrada
 dt.addEventListener('filterChange', (e) => {       // { col, value }
   ctrl.setFilter(e.detail.col, e.detail.value);    // el módulo re-consulta al runtime
   dt.filterValues = { ...ctrl.state.filters };     // objeto NUEVO = vuelve a sembrar
-});`,
+});
+dt.error = ctrl.error;                             // pm#530 — carga fallida ≠ lista vacía: motivo + «Reintentar»
+dt.addEventListener('retry', () => ctrl.load());   // el botón «Reintentar» vuelve a pedir la página`,
     api: [
       { kind: 'prop', name: '.columns', type: 'DataTableColumn[]', detail: '{key, header, format?, align?, sortable?, filterable?, filterType?, options?, render?, hidden?, width?, pinned?}' },
       { kind: 'prop', name: '.rows', type: 'object[]', detail: 'Filas a mostrar' },
@@ -180,6 +182,8 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: 'testid', type: 'string', detail: 'Espacio de nombres de los `data-testid` del cromo, para que QA lo conduzca sin depender del idioma ni de la posición. `testid="products-table"` produce `products-table-add`, `-primary-action`, `-search`, `-csv-import` (en el `<input type=file>`, que es lo que rellena `setInputFiles`) y `-csv-export`, `-row-<id>` por fila (lista Y tarjetas), `-row-<id>-<actionId>` por acción de fila —el MISMO nombre cuando las acciones se pliegan en el menú «⋮», que además trae `-row-<id>-menu`—, `-page-prev`/`-page-next` en escritorio y `-load-more` en móvil. El prefijo lo da el host a propósito: un nombre fijo dentro haría que dos tablas de la misma pantalla compartieran gancho. SIN prefijo la tabla no pinta ninguno. #143' },
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
       { kind: 'event', name: 'rowAction · menuAction', type: '{actionId, row?}', detail: 'Acción de fila · ítem del menú «⋮»' },
+      { kind: 'prop', name: 'error', type: 'string', detail: 'Motivo por el que NO se pudieron cargar las filas (p. ej. `ListController.error` del SDK). Con texto, la tabla pinta un estado de ERROR —«No se han podido cargar los datos», el motivo y un botón «Reintentar»— en lugar de las filas, del «Sin …» y del contador «N registros»: una carga fallida no es una lista vacía (pm#530). Vacío o en blanco = sin error. Textos por `.labels` (`loadError`, `retry`)' },
+      { kind: 'event', name: 'retry', type: '{}', detail: 'Se pulsó «Reintentar» en el estado de error: el dueño de la consulta vuelve a cargar (`ctrl.load()`). El botón lleva `<testid>-retry`' },
       { kind: 'event', name: 'rowClick', type: '{row}', detail: 'Fila pulsada (solo con rowClickable)' },
       { kind: 'event', name: 'panelClose', type: "{panel: 'filters'|'create'|'edit', reason: 'close-button'|'backdrop'|'escape'|'toggle'|'apply'|'api'}", detail: 'El panel lateral pasó de abierto a cerrado: X, fondo, Escape (con el foco en cualquier sitio de la tabla o del formulario), «Añadir» que lo repliega, «Aplicar» filtros o close() del módulo. `panel` es el que estaba abierto. Un módulo que rellena la edición tras un await lo escucha para descartar la carga pendiente (sube su editSeq). Cambiar de edit a create con «Añadir» NO es cierre y no lo emite. Un Escape que ya usó un widget del formulario (defaultPrevented: ok-combo/ok-tag-input cerrando su desplegable) cierra solo ese widget, no el panel. #195' },
       { kind: 'event', name: 'csvImport · csvExport', type: '{headers, rows, count} · {rows, count}', detail: 'CSV leído · CSV descargado (también salen como `import`/`export`). La cifra de filas es SIEMPRE `count`: en csvImport `rows` es la LISTA parseada (una fila por objeto) y en csvExport es un número — no la pintes como cifra en los dos (#139)' },
