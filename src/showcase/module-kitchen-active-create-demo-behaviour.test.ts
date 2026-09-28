@@ -174,7 +174,8 @@ describe('showcase kitchen Comandas — a new order is created from the table pa
     const type = field(form, 'ion-select');
     const notes = field(form, 'ion-input');
     const before = table.rows.length;
-    // From another page: the module reloads the list, and the new order shows on the first one.
+    // From another page: the demo goes back to the first one, where the new order sorts first. The
+    // module still reloads the page it was on (ctrl.load()), so this is ahead of it until kitchen#133.
     table.dispatchEvent(new CustomEvent('pageChange', { detail: 1 }));
     expect(table.rows).toEqual([]);
     type.value = 'takeaway';
