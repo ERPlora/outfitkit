@@ -133,8 +133,8 @@ describe('ok-data-table fill: on a phone the list grows with the page (outfitkit
 
   it('phone, only out-of-flow elements after it (inline ion-modal, hidden notice): still the last thing on the page', async () => {
     viewport(390);
-    const t = await mountInModulePage([block('position:absolute; top:0;', 'ion-modal'), block('display:none;')]);
-    expect(t.hasAttribute('content-after'), 'an inline ion-modal / hidden block is taken for content after the table').toBe(false);
+    const t = await mountInModulePage([block('position:absolute; top:0;', 'ion-modal'), block('position:fixed; top:0;', 'div'), block('display:none;')]);
+    expect(t.hasAttribute('content-after'), 'an inline ion-modal / fixed overlay / hidden block is taken for content after the table').toBe(false);
     expect(getComputedStyle(t).height).toBe('100%');
   });
 
@@ -204,6 +204,33 @@ describe('ok-data-table fill: on a phone the list grows with the page (outfitkit
     other.append(block('height:40px;', 'h3'));
     await settle(t);
     expect(t.hasAttribute('content-after'), 'content added after the table on its new page is not noticed').toBe(true);
+  });
+
+  // The phone rules switch at the same width as the cards and «Load more» (MOBILE_BREAKPOINT,
+  // `max-width: 640px`, inclusive): 640 is a phone, 641 already a desk. A threshold that drifts
+  // either way either boxes the cards in again on a phone or un-fills a tablet table.
+  it('the phone rules start exactly at the cards breakpoint: 640 px is a phone, 641 px a desk', async () => {
+    viewport(640);
+    const phone = await mountInModulePage();
+    expect(getComputedStyle(part(phone, '.cards-grid')).overflow, 'at 640 px the cards are boxed in again').toBe('visible');
+    expect(getComputedStyle(part(phone, '.card')).flexShrink).toBe('0');
+    document.body.replaceChildren();
+    viewport(641);
+    const desk = await mountInModulePage();
+    const scroll = part(desk, '.scroll');
+    expect(getComputedStyle(scroll).overflow, 'at 641 px the table lost its fill scroll').toBe('auto');
+    expect(getComputedStyle(scroll).flexShrink, 'at 641 px the phone rules still apply').toBe('1');
+    expect(getComputedStyle(part(desk, '.card')).flexShrink).toBe('1');
+  });
+
+  it('a table without fill is never marked content-after, even after a resize', async () => {
+    viewport(390);
+    const t = await mountInModulePage([block('height:40px;', 'h3')]);
+    t.fill = false;
+    await settle(t);
+    window.dispatchEvent(new Event('resize'));
+    await settle(t);
+    expect(t.hasAttribute('content-after'), 'content-after is read-only state of a fill table').toBe(false);
   });
 
   it('desk: fill keeps the toolbar and footer fixed and scrolls only the rows, content after it or not', async () => {
