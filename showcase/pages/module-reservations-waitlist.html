@@ -92,7 +92,7 @@
                 <ion-input id="waitlist-date" mode="md" fill="outline" label="Fecha" label-placement="floating" type="date" required></ion-input>
                 <ion-input id="waitlist-time" mode="md" fill="outline" label="Hora" label-placement="floating" type="time" required></ion-input>
                 <ion-input id="waitlist-party" mode="md" fill="outline" label="Pax" label-placement="floating" type="number" min="1" max="100" value="2" required></ion-input>
-                <ion-button id="waitlist-save" type="submit">Añadir</ion-button>
+                <ion-button id="waitlist-save" type="submit">Añadir a la lista de espera</ion-button>
               </form>
             </ok-data-table>
           </div>
@@ -154,6 +154,7 @@
           table.serverSide = true;
           table.fill = true;
           table.addable = true;
+          table.labels = { add: 'Añadir cliente' };
           table.views = true;
           table.cardTitle = (row) => String(row.guest_name ?? '—');
           table.cardIcon = () => 'hourglass-outline';

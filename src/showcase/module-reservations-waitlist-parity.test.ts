@@ -142,4 +142,35 @@ describe('showcase module-reservations-waitlist — paridad con el módulo real'
     expect(page).toContain("emitWaitlistEvent('reservations.waitlist.deleted'");
     expect(page).not.toMatch(/<ok-(?:kpi|stat|kanban|calendar)\b/);
   });
+  it('names the toolbar add button and the create submit apart, as the module does (outfitkit#227)', () => {
+    // reservations#75: with the create panel open the toolbar and the submit both said «Añadir». The
+    // module now names the toolbar through `.labels.add` and the submit with its own key; the demo
+    // reads the same words from locales/es.json.
+    const page = pageSource();
+    const es = JSON.parse(
+      readFileSync(new URL('../../../modules-workspace/modules/reservations/locales/es.json', import.meta.url), 'utf8'),
+    ) as { ui: Record<string, string> };
+    const addKey = component.match(/\.labels=\$\{\{ add: t\('ui\.(\w+)'\) \}\}/)![1];
+    const createForm = component.match(/<form slot="create"[\s\S]*?<\/form>/)![0];
+    // The module shows «Guardando…» while saving; the resting label is the last key before </ion-button>.
+    const submitKey = createForm.match(/<ion-button\b[^>]*\btype="submit"[^>]*>[\s\S]*?t\('ui\.(\w+)'\)\}<\/ion-button>/)![1];
+    const addLabel = es.ui[addKey];
+    const submitLabel = es.ui[submitKey];
+    expect(addLabel).toBeTruthy();
+    expect(submitLabel).toBeTruthy();
+    expect(addLabel).not.toBe(submitLabel);
+
+    // One single assignment: a later `labels = …` or `labels.add = …` would bring «Añadir» back.
+    expect(page.match(/\btable\.labels\b/g) ?? []).toHaveLength(1);
+    const assigned = page.match(/\btable\.labels = \{ add: '([^']*)' \};/);
+    expect(assigned, 'the demo must name its add button through table.labels.add').not.toBeNull();
+    expect(assigned![1]).toBe(addLabel);
+    expect(page).toContain('table.addable = true;');
+
+    const demoCreateForm = page.match(/<form id="waitlist-create-form" slot="create"[\s\S]*?<\/form>/)![0];
+    const submits = [...demoCreateForm.matchAll(/<ion-button\b[^>]*\btype="submit"[^>]*>([^<]*)<\/ion-button>/g)].map(
+      (match) => match[1],
+    );
+    expect(submits).toEqual([submitLabel]);
+  });
 });

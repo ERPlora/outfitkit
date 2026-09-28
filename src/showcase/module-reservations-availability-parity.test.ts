@@ -78,4 +78,46 @@ describe('showcase reservations availability — paridad con los dos CRUD reales
     expect(page).toContain('"start_time": "13:00:00"');
     expect(page).toContain('"date": "2026-12-25"');
   });
+  it('names each toolbar add button and each create submit apart, as the module does (outfitkit#227)', () => {
+    // reservations#75: both toolbars said «Añadir», so a screen reader could not tell them apart. The
+    // module now names each toolbar through `.labels.add` and each submit with its own key; the demo
+    // reads the same words from locales/es.json.
+    const page = pageSource();
+    const es = JSON.parse(readFileSync(new URL('locales/es.json', moduleUrl), 'utf8')) as {
+      ui: Record<string, string>;
+    };
+    const tables = [
+      { moduleId: 'slots', demoVar: 'slotsTable', demoForm: 'reservations-slot-form' },
+      { moduleId: 'blocked', demoVar: 'blockedTable', demoForm: 'reservations-blocked-form' },
+    ];
+    const seen: string[] = [];
+    for (const { moduleId, demoVar, demoForm } of tables) {
+      const moduleTable = component.match(
+        new RegExp(`<ok-data-table id="${moduleId}"[\\s\\S]*?<\\/ok-data-table>`),
+      )![0];
+      const addKey = moduleTable.match(/\.labels=\$\{\{ add: t\('ui\.(\w+)'\) \}\}/)![1];
+      const createForm = moduleTable.match(/<form slot="create"[\s\S]*?<\/form>/)![0];
+      const submitKey = createForm.match(/<ion-button\b[^>]*\btype="submit"[^>]*>[\s\S]*?t\('ui\.(\w+)'\)\}<\/ion-button>/)![1];
+      const addLabel = es.ui[addKey];
+      const submitLabel = es.ui[submitKey];
+      expect(addLabel, `${moduleId}: add key ${addKey}`).toBeTruthy();
+      expect(submitLabel, `${moduleId}: submit key ${submitKey}`).toBeTruthy();
+      expect(addLabel).not.toBe(submitLabel);
+      seen.push(addLabel, submitLabel);
+
+      // One single assignment: a later `labels = LABELS` or `labels.add = …` would bring «Añadir» back.
+      expect(page.match(new RegExp(`\\b${demoVar}\\.labels\\b`, 'g')) ?? [], `${demoVar}.labels`).toHaveLength(1);
+      const assigned = page.match(new RegExp(`\\b${demoVar}\\.labels = \\{ \\.\\.\\.LABELS, add: '([^']*)' \\};`));
+      expect(assigned, `${demoVar} must name its add button through labels.add`).not.toBeNull();
+      expect(assigned![1]).toBe(addLabel);
+
+      const demoCreateForm = page.match(new RegExp(`<form id="${demoForm}" slot="create"[\\s\\S]*?<\\/form>`))![0];
+      const submits = [...demoCreateForm.matchAll(/<ion-button\b[^>]*\btype="submit"[^>]*>([^<]*)<\/ion-button>/g)].map(
+        (match) => match[1],
+      );
+      expect(submits).toEqual([submitLabel]);
+    }
+    // Four different words on the page: no two buttons share a name.
+    expect(new Set(seen).size).toBe(4);
+  });
 });

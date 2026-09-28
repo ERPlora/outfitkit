@@ -65,7 +65,7 @@
                 <ion-input id="slot-start" mode="md" type="time" fill="outline" label="Inicio" label-placement="floating"></ion-input>
                 <ion-input id="slot-end" mode="md" type="time" fill="outline" label="Fin" label-placement="floating"></ion-input>
                 <ion-input id="slot-max" mode="md" type="number" value="10" min="1" fill="outline" label="Máximo de reservas" label-placement="floating"></ion-input>
-                <ion-button type="submit" size="small">Añadir franja</ion-button>
+                <ion-button type="submit" size="small">Crear franja</ion-button>
               </form>
             </ok-data-table>
 
@@ -99,7 +99,7 @@
           slotsTable.pageSize = 50;
           slotsTable.sort = 'id';
           slotsTable.sortDir = 'asc';
-          slotsTable.labels = LABELS;
+          slotsTable.labels = { ...LABELS, add: 'Añadir franja' };
           slotsTable.actions = removeAction;
           slotsTable.columns = [
             {
@@ -121,7 +121,7 @@
           blockedTable.pageSize = 50;
           blockedTable.sort = 'id';
           blockedTable.sortDir = 'asc';
-          blockedTable.labels = LABELS;
+          blockedTable.labels = { ...LABELS, add: 'Añadir fecha bloqueada' };
           blockedTable.actions = removeAction;
           blockedTable.columns = [
             { key: 'date', header: 'Fecha', sortable: true, filterable: true, filterType: 'daterange' },
