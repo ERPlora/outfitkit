@@ -173,6 +173,27 @@ describe('ok-data-table: row actions stay in their column when a row hides one (
     expect(listBoxes(table)[1].querySelector('[data-slot-for="refund"]')?.textContent?.trim()).toBe('Refund 1.250,00 €');
   });
 
+  it('an action hidden on EVERY row gets no column: a column of gaps would only push the others apart', async () => {
+    // hub#2014's "My apps" with no update pending anywhere: "Update" is hidden on every row, and a
+    // gap there would leave a hole between "Open" and "Uninstall" on each of them (and widen the
+    // track, folding it into "..." sooner) for an action nobody can take on this page.
+    const table = await mount({
+      rows: [
+        { id: 'paid', status: 'paid' },
+        { id: 'voided', status: 'voided' },
+      ],
+    });
+    expect(listBoxes(table).map(layout)).toEqual([
+      ['view', 'refund'],
+      ['view', 'slot:refund'],
+    ]);
+
+    // New rows where one does show it: its column comes back, on every row.
+    table.rows = ROWS;
+    await table.updateComplete;
+    expect(listBoxes(table).map(layout)[1]).toEqual(['view', 'slot:mark-paid', 'refund']);
+  });
+
   it('collapsed list ("..." menu, #122/#213): no gaps — each row shows one 44px button and they line up', async () => {
     const table = await mount();
     await collapse(table);

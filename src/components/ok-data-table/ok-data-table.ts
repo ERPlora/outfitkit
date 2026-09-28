@@ -117,7 +117,8 @@ export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
   loading?: (row: Record<string, unknown>) => boolean;
   /** (optional, per row) When it returns `true` for a row, the action is NOT rendered on that row:
    *  not in the list, not on the card, not in the "..." menu. The list leaves an invisible gap of
-   *  its width, so the other actions stay in their column on every row (#240). Use it for an action that does not
+   *  its width, so the other actions stay in their column on every row (#240); one hidden on every
+   *  row leaves no gap. Use it for an action that does not
    *  apply to the row ("Update" with no new version), and `disabled` for one that applies but
    *  cannot be taken right now — a greyed-out button reads as "something is blocked" (hub#2014). */
   hidden?: (row: Record<string, unknown>) => boolean;
@@ -1873,7 +1874,10 @@ export class OkDataTable extends LitElement {
     // #217 - A new rows assignment is fresh content: every cell starts folded again.
     if (changed.has('rows') && this.unfoldedCells.size) this.unfoldedCells = new Set();
     // #240 - The gap labels were borrowed from these rows/actions.
-    if (changed.has('rows') || changed.has('actions')) this.gapLabels.clear();
+    if (changed.has('rows') || changed.has('actions')) {
+      this.gapLabels.clear();
+      this.slotActionsCache = null;
+    }
     // #106 — A new `filterValues` object is the consumer stating the visible filter state; it
     // reseeds the mirror. An in-place mutation does not reach here (Lit compares by identity) and
     // must not: while the consumer keeps the same object, the user's own picks own the control.
@@ -2124,6 +2128,14 @@ export class OkDataTable extends LitElement {
     return text;
   }
 
+  /** #240 - The actions that get a column in the list: those at least one row shows. One hidden
+   *  on EVERY row gets none - a column of gaps would only push the others apart and widen the
+   *  track ("Update" in hub#2014's apps list with no update pending anywhere). */
+  private slotActionsCache: DataTableAction[] | null = null;
+  private slotActions(): DataTableAction[] {
+    return (this.slotActionsCache ??= this.actions.filter((a) => this.rows.some((r) => a.hidden?.(r) !== true)));
+  }
+
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
     // #143 — The row identity goes at the end of the hook, NEVER its position: the order changes
@@ -2159,7 +2171,7 @@ export class OkDataTable extends LitElement {
     // stand-in of the same button (same width), so the ones that stay do not slide over into
     // its place and each icon lands in the same spot on every row (Shopify, Stripe, Odoo). Not
     // in the cards (no column to line up) nor when folded (one 44px button per row, #122/#213).
-    const slots = collapsible && !this.rowActionsCollapsed ? this.actions : actions;
+    const slots = collapsible && !this.rowActionsCollapsed ? this.slotActions() : actions;
     return html`
       <div class="actions">
         ${slots.map(
