@@ -2093,9 +2093,11 @@ export class OkDataTable extends LitElement {
 
   /** #213 — Are THESE row actions folded into the "..." menu? Only when the list view folds (#122)
    *  AND there is more than one: an overflow menu groups several actions, it never replaces a
-   *  single one (Polaris, MUI DataGrid) — it would take the same width and cost one more tap. */
+   *  single one (Polaris, MUI DataGrid) — it would take the same width and cost one more tap.
+   *  Except a single TEXT-only action (no icon): its button is wider than the "..." one, and left
+   *  out it spills over the data columns (measured at 390px), so folding it does free width. */
   private rowActionsFolded(actions: DataTableAction[]): boolean {
-    return this.rowActionsCollapsed && actions.length > 1;
+    return this.rowActionsCollapsed && (actions.length > 1 || (actions.length === 1 && !actions[0].icon));
   }
 
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {

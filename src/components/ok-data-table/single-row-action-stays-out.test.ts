@@ -3,7 +3,7 @@
 // ERPlora/outfitkit#213 — "on a phone, a table with a single button per row hides it in a '...' menu".
 //
 // When the row buttons do not fit (#122) the list view folds them into a per-row "..." menu. With
-// ONE action that is all cost and no gain: the "..." button is as wide as the action's own icon
+// ONE icon action that is all cost and no gain: the "..." button is as wide as the action's own icon
 // button (measured in Chromium at 390px: both sit in the same 60px pinned track), so nothing is
 // freed, and "Install" goes from one tap to two. Shopify Polaris, MUI DataGrid, Material and the
 // Apple HIG agree: an overflow menu GROUPS several actions, it never replaces a single one.
@@ -71,7 +71,7 @@ const byTestId = (table: Table, id: string): Element[] => [
   ...(table.shadowRoot?.querySelectorAll(`[data-testid="${id}"]`) ?? []),
 ];
 
-describe('ok-data-table: a single row action is never folded into the "..." menu (#213)', () => {
+describe('ok-data-table: a single icon row action is never folded into the "..." menu (#213)', () => {
   beforeEach(() => {
     document.body.replaceChildren();
     document.documentElement.lang = 'en';
@@ -121,6 +121,34 @@ describe('ok-data-table: a single row action is never folded into the "..." menu
     const [b] = rowButtons(table, 1);
     expect(b.querySelector('ion-spinner'), 'loading shows the spinner').not.toBeNull();
     expect(b.hasAttribute('disabled')).toBe(true);
+  });
+
+  // Only an ICON action is as wide as the "..." button. A text-only action (hub's blueprint catalogue:
+  // "Use template", no icon) is wider than the 60px pinned track: measured in Chromium at 390px, left
+  // out it was painted on top of the Price/Version columns. Folding it is what frees that width.
+  it('a single TEXT-only action (no icon) still folds: its own button would spill over the data', async () => {
+    const table = await mount([{ id: 'use', label: 'Use template', color: 'primary' }]);
+    await collapse(table);
+
+    for (const [index, key] of ['a', 'b'].entries()) {
+      expect(rowButtons(table, index).map((btn) => btn.getAttribute('data-testid')), `row ${key}`).toEqual([
+        `apps-row-${key}-menu`,
+      ]);
+    }
+    // And the menu item carries the action's hook, as with several folded actions.
+    rowButtons(table, 1)[0].dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    await table.updateComplete;
+    const hooks = byTestId(table, 'apps-row-b-use');
+    expect(hooks, 'exactly one element carries the hook').toHaveLength(1);
+    expect(hooks[0].tagName.toLowerCase(), 'and it is the menu item').toBe('ion-item');
+  });
+
+  it('with the table NOT folded, a single text-only action is its own button, as before', async () => {
+    const table = await mount([{ id: 'use', label: 'Use template', color: 'primary' }]);
+
+    const [button] = rowButtons(table, 1);
+    expect(button.getAttribute('data-testid')).toBe('apps-row-b-use');
+    expect(button.textContent?.trim()).toBe('Use template');
   });
 
   it('decides per row: a row left with one visible action shows it, a row with two folds them', async () => {

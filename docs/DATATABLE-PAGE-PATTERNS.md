@@ -141,8 +141,9 @@ No hace falta otro componente de tabla ni una variante por producto.
    fila**, `disabled`/`loading` por fila y **visibilidad por fila** (`hidden(row)`, hub#2014: la
    acción que no aplica a esa fila no se pinta, ni en lista, ni en tarjeta, ni en el «⋮»), y cuando
    no caben se **pliegan** solas en el menú «⋮» (decidido MIDIENDO el hueco, no por un breakpoint
-   fijo). Solo se pliegan si la fila tiene **más de una**: una acción sola se queda con su botón,
-   porque el «⋮» ocuparía lo mismo y costaría un toque más (#213, como Polaris y MUI DataGrid). Sigue sin cubrirse lo que SaaS resuelve con su columna propia: URL/POST, confirmación y
+   fijo). Solo se pliegan si la fila tiene **más de una**: una acción sola **con icono** se queda con su
+   botón, porque el «⋮» ocuparía lo mismo y costaría un toque más (#213, como Polaris y MUI DataGrid);
+   una sola acción **solo de texto** sí se pliega, porque su botón no cabe en la pista y taparía los datos. Sigue sin cubrirse lo que SaaS resuelve con su columna propia: URL/POST, confirmación y
    acciones hijas.
    Regla: `hidden` para lo que **no aplica** a la fila («Actualizar» sin versión nueva);
    `disabled` para lo que aplica pero ahora no se puede. Un botón gris se lee como «algo está
