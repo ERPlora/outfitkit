@@ -460,6 +460,23 @@ export class OkDataTable extends LitElement {
        fill hay que estirarlo para que ocupe el hueco entre toolbar y pager y centre su contenido
        (icono + mensaje) en vertical; si no, queda pegado arriba con el pager a media altura. */
     :host([fill]) .empty { flex: 1 1 auto; min-height: 0; }
+    /* #218 — On a phone (MOBILE_BREAKPOINT, where the table turns into cards and «Load more») the
+       module paints other blocks above the table, and rows boxed in between toolbar and footer got
+       what was left: a 315px card in a 32-155px window, never readable whole. Phone lists scroll
+       WITH the page (Shopify, Square, Odoo): the card is as tall as its content, the rows are not a
+       scroller of their own and the shell's ion-content scrolls.
+       The host box stays as it was, so the blocks ABOVE keep their size (growing it squeezed an
+       ion-segment or ion-card to 0px), and the cards run past it into the page scroll. Only when
+       something in flow comes AFTER the table ([content-after], see syncContentAfter) does the box
+       grow, pushing that content down instead of painting over it. !important because every
+       module ships .page > ok-data-table { flex: 1 1 auto; min-height: 0 }, and only an important
+       declaration from inside the shadow wins over the page's own rule. */
+    @media (max-width: 640px) {
+      :host([fill]) .card { flex: 1 0 auto; }
+      :host([fill]) .scroll, :host([fill]) .cards-grid { flex: 0 0 auto; }
+      :host([fill]) .cards-grid { overflow: visible; }
+      :host([fill][content-after]) { height: auto; flex-shrink: 0 !important; }
+    }
 
     /* ── Topbar / cabecera (relieve) ─────────────────────────────────────────────────────── */
     .bar { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
@@ -949,6 +966,8 @@ export class OkDataTable extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this.onKeydown);
+    // #218 — Moved to another page: watch the new parent (the first render starts it in `updated`).
+    if (this.hasUpdated) this.observeSiblings();
     if (typeof window !== 'undefined') {
       window.addEventListener('erplora:locale-changed', this.onLocaleChanged);
       // #67 — al cambiar el ancho, la tabla puede pasar a caber (o dejar de caber).
@@ -1046,7 +1065,45 @@ export class OkDataTable extends LitElement {
     // outfitkit#197 — rotating the phone (or any resize) while the sheet is open re-measures both
     // offsets; with the sheet closed the sync only clears them.
     this.syncSheetInsets();
+    this.syncContentAfter();
   };
+
+  // #218 — Watches the table's parent: whether something in flow comes AFTER the table decides how
+  // a `fill` table grows on a phone (see the `content-after` rule in the styles). Only while `fill`.
+  private siblingsObserver?: MutationObserver;
+
+  /** #218 — Marks the host `content-after` while an element in flow follows it in its parent (a
+   *  heading and a second table, a notice). Out of flow does not count: an inline `ion-modal`
+   *  (absolute until it reparents), a hidden block. Written only when it changes. */
+  private syncContentAfter(): void {
+    let after = false;
+    if (this.fill && typeof getComputedStyle === 'function') {
+      for (let el = this.nextElementSibling; el; el = el.nextElementSibling) {
+        const cs = getComputedStyle(el);
+        if (cs.display !== 'none' && cs.position !== 'absolute' && cs.position !== 'fixed') {
+          after = true;
+          break;
+        }
+      }
+    }
+    if (this.hasAttribute('content-after') !== after) this.toggleAttribute('content-after', after);
+  }
+
+  /** #218 — (Re)starts watching the parent: children added/removed and a sibling shown or hidden
+   *  (`hidden`/`style`/`class` on a direct child). Deeper mutations are ignored, and so are the
+   *  table's own (the sheet insets write its `style` on every resize). */
+  private observeSiblings(): void {
+    this.siblingsObserver?.disconnect();
+    this.siblingsObserver = undefined;
+    const parent = this.parentNode;
+    if (this.fill && parent && typeof MutationObserver !== 'undefined') {
+      this.siblingsObserver = new MutationObserver((records) => {
+        if (records.some((r) => r.target === parent || (r.target !== this && r.target.parentNode === parent))) this.syncContentAfter();
+      });
+      this.siblingsObserver.observe(parent, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
+    }
+    this.syncContentAfter();
+  }
 
   // #67 — Observador del hueco de la tabla. Medir solo al renderizar NO basta: dentro de
   // `ion-content` el contenedor no tiene ancho hasta que Ionic hidrata, bastante después, y esa
@@ -1072,6 +1129,7 @@ export class OkDataTable extends LitElement {
   }
 
   protected updated(changed: Map<PropertyKey, unknown>): void {
+    if (changed.has('fill')) this.observeSiblings();
     this.observeXOverflow();
     this.measureXOverflow();
     // #122 — Cambiar las columnas o las acciones cambia lo que la tabla necesita: la decisión de
@@ -1147,6 +1205,8 @@ export class OkDataTable extends LitElement {
     }
     this.xObserver?.disconnect();
     this.xObserver = undefined;
+    this.siblingsObserver?.disconnect();
+    this.siblingsObserver = undefined;
     this.sheetObserver?.disconnect();
     this.sheetObserver = undefined;
     this.sheetContent = null;
