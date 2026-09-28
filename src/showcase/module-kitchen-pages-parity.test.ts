@@ -304,13 +304,14 @@ describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
     expect(submitLabel).toBeTruthy();
     expect(addLabel).not.toBe(submitLabel);
 
-    const labelsMatch = page.match(/table\.labels = \{ add: '([^']*)' \};/);
-    expect(labelsMatch, 'the demo must name its add button through table.labels.add').not.toBeNull();
-    expect(labelsMatch![1]).toBe(addLabel);
+    const labelsAssignments = [...page.matchAll(/table\.labels = \{ add: '([^']*)' \};/g)].map((match) => match[1]);
+    expect(labelsAssignments, 'the demo must name its add button through table.labels.add').not.toEqual([]);
+    expect(page.match(/table\.labels\s*=/g)).toHaveLength(1);
+    expect(labelsAssignments).toEqual([addLabel]);
     expect(page).toContain('table.addable = true;');
 
     const demoCreateForm = page.match(/<form id="kitchen-station-create" slot="create"[\s\S]*?<\/form>/)![0];
-    const submits = [...demoCreateForm.matchAll(/<ion-button type="submit">([^<]*)<\/ion-button>/g)].map(
+    const submits = [...demoCreateForm.matchAll(/<ion-button\b[^>]*\btype="submit"[^>]*>([^<]*)<\/ion-button>/g)].map(
       (match) => match[1],
     );
     expect(submits).toEqual([submitLabel]);
