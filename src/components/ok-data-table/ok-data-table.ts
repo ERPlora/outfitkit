@@ -7,6 +7,7 @@ import { define } from '../../base/define.js';
 import { shadowAnchorEvent } from '../../base/anchor.js';
 import { ionTone } from '../../base/ion-tone.js';
 import { syncSearchbarInputName } from '../../base/searchbar-name.js';
+import { searchbarSingleClear } from '../../base/searchbar-single-clear.js';
 import { CSV_BOM, decodeCsvBuffer } from './csv-encoding.js';
 import { iconCalendarOutline, iconChevronBack, iconChevronDownOutline, iconChevronForward, iconChevronUpOutline, iconClose, iconEllipsisVertical, iconFileTrayOutline, iconSwapVerticalOutline, okIcon } from '../../base/icons.js';
 // Internamente usa ion-button / ion-checkbox / ion-icon NATIVOS (los registra el host). OutfitKit
@@ -378,6 +379,7 @@ const ES_LABELS: OkDataTableLabels = {
 
 export class OkDataTable extends LitElement {
   static styles = css`
+    ${searchbarSingleClear}
     :host {
       /* Vars overridable (estilo Ionic), default = cadena --ok-* → --ion-* → hex */
       --background: var(--ok-surface, var(--ion-card-background, var(--ion-background-color, #ffffff)));
