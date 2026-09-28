@@ -9,7 +9,8 @@
 // (hub#1984). App stores and Shopify's app list show "Update" only when there is an update.
 //
 // `hidden(row)` drops the action from THAT row everywhere it can be reached: the list view, the
-// cards and the collapsed "..." menu. A row left with nothing to do gets no "..." button, and the
+// cards and the collapsed "..." menu (the list leaves an invisible, inert gap in its place so the
+// other buttons keep their column, outfitkit#240). A row left with nothing to do gets no "..." button, and the
 // pinned actions track is sized by the WIDEST row, not by whichever row happens to be first.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -92,11 +93,13 @@ describe('ok-data-table: a row action can be HIDDEN per row, not just disabled (
     const table = await mount();
     const [first, second] = [...(table.shadowRoot?.querySelectorAll('.grow-data .gcell.actions-col') ?? [])];
 
-    expect(testIds(first, 'ion-button'), 'row without a new version must not carry "update"').toEqual([
+    // outfitkit#240 - The list keeps an invisible, inert stand-in where the action is hidden (so
+    // the others stay in their column); it is not the action: no testid, no name, no click.
+    expect(testIds(first, 'ion-button:not(.action-gap)'), 'row without a new version must not carry "update"').toEqual([
       'apps-row-a-open',
       'apps-row-a-uninstall',
     ]);
-    expect(testIds(second, 'ion-button'), 'row with a new version must keep "update" in its place').toEqual([
+    expect(testIds(second, 'ion-button:not(.action-gap)'), 'row with a new version must keep "update" in its place').toEqual([
       'apps-row-b-open',
       'apps-row-b-update',
       'apps-row-b-uninstall',
@@ -179,6 +182,41 @@ describe('ok-data-table: a row action can be HIDDEN per row, not just disabled (
         (table as unknown as { actionsTrackPx: number }).actionsTrackPx,
         'the track was sized by row 1 (2 buttons) and would clip row 2 (3 buttons)',
       ).toBe(3 * BUTTON_PX);
+    });
+
+    it('is sized by the widest row when a per-row label makes a later row wider (#110)', async () => {
+      // outfitkit#240 - A hidden action now leaves a gap of its width, so every row carries the
+      // same slots; what still makes one row wider than another is a label computed per row. An
+      // icon button is BUTTON_PX wide and a text one grows with its text.
+      const proto = window.Element.prototype as unknown as Record<string, unknown>;
+      const original = Object.getOwnPropertyDescriptor(proto, 'scrollWidth');
+      Object.defineProperty(proto, 'scrollWidth', {
+        configurable: true,
+        get(this: Element) {
+          if (!this.classList?.contains('actions')) return 0;
+          return [...this.querySelectorAll('ion-button')].reduce(
+            (w, b) => w + BUTTON_PX + (b.querySelector('ion-icon') ? 0 : (b.textContent ?? '').trim().length * 8),
+            0,
+          );
+        },
+      });
+      restore = () => {
+        if (original) Object.defineProperty(proto, 'scrollWidth', original);
+        else delete proto.scrollWidth;
+      };
+
+      const table = await mount({
+        actions: [
+          ...ACTIONS,
+          { id: 'notes', label: (row: Row) => (row.update ? `Release notes ${row.update}` : 'Notes') },
+        ],
+      });
+      await table.updateComplete;
+
+      expect(
+        (table as unknown as { actionsTrackPx: number }).actionsTrackPx,
+        'the track was sized by row 1 ("Notes") and would clip row 2 ("Release notes 2.0.0")',
+      ).toBe(3 * BUTTON_PX + BUTTON_PX + 'Release notes 2.0.0'.length * 8);
     });
   });
 });
