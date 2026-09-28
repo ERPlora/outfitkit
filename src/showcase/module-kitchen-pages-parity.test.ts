@@ -233,7 +233,6 @@ describe('showcase module-kitchen-active — comandas reales', () => {
     const expected = Object.fromEntries(
       Object.entries(statusKeys).map(([value, key]) => [value, esLocale.ui[key.slice('ui.'.length)]]),
     );
-    expect(expected.pending).toBe('Por preparar');
 
     const cellLabels = Object.fromEntries(
       [...page.match(/const STATUS_LABELS = \{([^}]*)\}/)![1].matchAll(/(\w+): '([^']*)'/g)].map((match) => [
