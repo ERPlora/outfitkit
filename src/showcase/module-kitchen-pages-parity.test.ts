@@ -26,6 +26,11 @@ const components = {
   ),
 };
 
+const enumsSource = readFileSync(new URL('ui/lib/enums.ts', moduleBase), 'utf8');
+const esLocale = JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as {
+  ui: Record<string, string>;
+};
+
 const stationComponentTest = readFileSync(
   new URL('ui/components/erp-kitchen-orders-stations/erp-kitchen-orders-stations.test.ts', moduleBase),
   'utf8',
@@ -212,6 +217,37 @@ describe('showcase module-kitchen-active — comandas reales', () => {
     expect(page).toContain("cardIcon = () => 'restaurant-outline'");
     expect(page).toContain("sort = 'created_at'");
     expect(page).toContain("sortDir = 'desc'");
+  });
+
+  it('names every status exactly as the module does, in the cell and in the filter (outfitkit#219)', () => {
+    // kitchen#112 renamed «Pendiente» to «Por preparar»; the demo kept the old word. The module's
+    // single source is `STATUS_KEY` in ui/lib/enums.ts (cell AND filter read it) resolved through
+    // locales/es.json, so the demo is compared against that, state by state.
+    const page = pageSource('active');
+    const statusKeys = Object.fromEntries(
+      [...enumsSource.match(/export const STATUS_KEY[^{]*\{([^}]*)\}/)![1].matchAll(/(\w+): '(ui\.\w+)'/g)].map(
+        (match) => [match[1], match[2]],
+      ),
+    );
+    expect(Object.keys(statusKeys)).toEqual(['pending', 'preparing', 'ready', 'served', 'cancelled']);
+    const expected = Object.fromEntries(
+      Object.entries(statusKeys).map(([value, key]) => [value, esLocale.ui[key.slice('ui.'.length)]]),
+    );
+
+    const cellLabels = Object.fromEntries(
+      [...page.match(/const STATUS_LABELS = \{([^}]*)\}/)![1].matchAll(/(\w+): '([^']*)'/g)].map((match) => [
+        match[1],
+        match[2],
+      ]),
+    );
+    expect(cellLabels).toEqual(expected);
+    expect(page).toContain('badge(STATUS_LABELS[row.status] || row.status');
+
+    const statusColumn = page.match(/key: 'status',[\s\S]*?options: \[([\s\S]*?)\],/)![1];
+    const filterLabels = Object.fromEntries(
+      [...statusColumn.matchAll(/\{ value: '(\w+)', label: '([^']*)' \}/g)].map((match) => [match[1], match[2]]),
+    );
+    expect(filterLabels).toEqual(expected);
   });
 
   it('mantiene el alta Ionic fuera de la tabla y conecta las órdenes del módulo', () => {

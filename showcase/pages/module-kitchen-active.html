@@ -33,7 +33,7 @@
 
       const TYPE_LABELS = { dine_in: 'En sala', takeaway: 'Para llevar', delivery: 'A domicilio' };
       const PRIORITY_LABELS = { normal: 'Normal', rush: 'Urgente', vip: 'VIP' };
-      const STATUS_LABELS = { pending: 'Pendiente', preparing: 'En preparación', ready: 'Lista', served: 'Servida', cancelled: 'Cancelada' };
+      const STATUS_LABELS = { pending: 'Por preparar', preparing: 'En preparación', ready: 'Lista', served: 'Servida', cancelled: 'Cancelada' };
       let orders = ORDER_FIXTURE.map((row) => ({ ...row }));
       const state = { page: 0, pageSize: 50, sort: 'created_at', dir: 'desc', search: '', filters: {} };
 
@@ -104,7 +104,7 @@
             {
               key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
               options: [
-                { value: 'pending', label: 'Pendiente' },
+                { value: 'pending', label: 'Por preparar' },
                 { value: 'preparing', label: 'En preparación' },
                 { value: 'ready', label: 'Lista' },
                 { value: 'served', label: 'Servida' },
