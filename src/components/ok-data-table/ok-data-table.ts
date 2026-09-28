@@ -2256,6 +2256,15 @@ export class OkDataTable extends LitElement {
     // desktop it is the end of the CURRENT page. Reading `served` on desktop froze it at page 1's
     // end, so page 2 of 14 said «11–10».
     const rangeTo = this.isMobile && !this.serverSide ? Math.min(served, count) : Math.min((current + 1) * ps, count);
+    // hub#2365 — The pager's «from». A phone counts from row 1 whatever it holds: in client mode the
+    // accumulated window; in server mode the parent may APPEND (the module SDK's list controller
+    // does), so `rows` can be pages 0..current. What is on screen ends at `rangeTo`, so it starts
+    // `rows.length` before it — a parent that still replaces keeps the range of its lone page.
+    const rangeFrom = !this.isMobile
+      ? current * ps + 1
+      : this.serverSide
+        ? Math.max(1, rangeTo - this.rows.length + 1)
+        : 1;
     const loadMore = (): void => {
       if (this.serverSide) this.emit('pageChange', current + 1);
       else this.mobileShown = Math.min((this.mobileShown || ps) + ps, count);
@@ -2398,7 +2407,7 @@ export class OkDataTable extends LitElement {
                   <span>
                     ${pages > 1
                       ? html`${this.t.showing
-                          .replace('{from}', String(this.isMobile && !this.serverSide ? 1 : current * ps + 1))
+                          .replace('{from}', String(rangeFrom))
                           .replace('{to}', String(rangeTo))} `
                       : nothing}
                     <span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}

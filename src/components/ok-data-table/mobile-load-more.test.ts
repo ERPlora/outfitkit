@@ -231,6 +231,53 @@ describe('ok-data-table: en móvil el pie es «Cargar más», no el pager numera
     expect(loadMore(table), 'ofrece cargar más cuando el servidor ya no tiene nada').toBeNull();
   });
 
+  // hub#2365 — The module SDK's list controller now APPENDS the next page on a phone: `rows` holds
+  // pages 0..page. The footer counted from the start of the CURRENT page («Showing 11–20 of 25»
+  // over 20 rows); it counts what is on screen, and a parent that still replaces keeps «11–20».
+  it('server: a parent that appends is counted from the first row (hub#2365)', async () => {
+    viewport(true);
+    const table = await mount({ serverSide: true, rows: rowsOf(20), total: 25, page: 1 });
+    expect(dataRows(table)).toBe(20);
+    expect(pagerCount(table), 'the footer counts from the start of the last page, not from row 1').toContain('Showing 1–20 of 25 records');
+
+    table.rows = rowsOf(25);
+    table.page = 2;
+    await table.updateComplete;
+    expect(pagerCount(table)).toContain('Showing 1–25 of 25 records');
+  });
+
+  it('server: a parent that still replaces keeps the range of that page', async () => {
+    viewport(true);
+    const table = await mount({ serverSide: true, rows: rowsOf(10), total: 25, page: 1 });
+    expect(pagerCount(table), 'a lone page 2 is not rows 1–20').toContain('Showing 11–20 of 25 records');
+  });
+
+  it('server: the last page of a replacing parent is counted up to the total', async () => {
+    viewport(true);
+    const table = await mount({ serverSide: true, rows: rowsOf(5), total: 25, page: 2 });
+    expect(pagerCount(table)).toContain('Showing 21–25 of 25 records');
+  });
+
+  it('client: a desktop on page 2 turned into a phone counts from row 1', async () => {
+    let onChange: ((e: { matches: boolean }) => void) | undefined;
+    (window as unknown as { matchMedia: unknown }).matchMedia = (q: string) => ({
+      media: q, matches: false, onchange: null,
+      addListener: () => {}, removeListener: () => {},
+      addEventListener: (_t: string, l: (e: { matches: boolean }) => void) => { onChange = l; },
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    });
+    const table = await mount();
+    const second = [...(table.shadowRoot?.querySelectorAll('.pager .nav .pnum') ?? [])].find((b) => b.textContent?.trim() === '2') as HTMLElement | undefined;
+    second?.click();
+    await table.updateComplete;
+    expect(pagerCount(table)).toContain('Showing 11–20 of 25 records');
+
+    onChange?.({ matches: true });
+    await table.updateComplete;
+    expect(pagerCount(table), 'the phone footer kept the desktop page start').toContain('Showing 1–10 of 25 records');
+  });
+
   // ── i18n ─────────────────────────────────────────────────────────────────────────────────
   it('la etiqueta se traduce (en / es)', async () => {
     viewport(true);
