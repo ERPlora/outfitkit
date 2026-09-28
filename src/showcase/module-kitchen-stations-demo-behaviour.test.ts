@@ -104,6 +104,10 @@ describe('showcase module-kitchen-stations — behaves like the module (outfitki
 
     expect(panel.hidden).toBe(false);
     expect(el('#kitchen-station-edit-title').textContent?.trim()).toBe(`${es.editStationTitle} · Barra`);
+
+    // The station opened is the one clicked, not whichever comes first in the list.
+    table.dispatchEvent(new CustomEvent('rowClick', { detail: { row: { id: 'st2', name: 'Kitchen', name_es: '' } } }));
+    expect(el('#kitchen-station-edit-title').textContent?.trim()).toBe(`${es.editStationTitle} · Kitchen`);
   });
 
   it('names the station the same everywhere: list, card, routing picker and edit title', () => {
@@ -190,6 +194,22 @@ describe('showcase module-kitchen-stations — behaves like the module (outfitki
     expect(el('#kitchen-stations-saved').textContent?.trim()).toBe(es.routingSaved);
   });
 
+  it('«Route» on a row completes a routing whose product was already chosen, as the module sets routeStationId', () => {
+    expect(component).toMatch(/actionId === 'route'\) \{\s*this\.routeStationId = station\.id;/);
+
+    const { el } = mountDemo();
+    const save = el('#kitchen-routing-form ion-button[type="submit"]');
+    choose(el('#kitchen-routing-product'), 'p-1');
+    expect(save.disabled).toBe(true);
+
+    el<Table>('#kitchen-stations-table').dispatchEvent(
+      new CustomEvent('rowAction', { detail: { actionId: 'route', row: { id: 'st1', name: 'Bar', name_es: 'Barra' } } }),
+    );
+
+    expect(el('#kitchen-routing-station').value).toBe('st1');
+    expect(save.disabled, 'station from the row + product already chosen = something to route').toBe(false);
+  });
+
   it('saving a station edit says so on the page, as the module does, and a new action clears it', () => {
     expect(component).toContain("this.formMsg = erplora().t(CATALOG, 'ui.stationUpdated');");
 
@@ -225,6 +245,35 @@ describe('showcase module-kitchen-stations — behaves like the module (outfitki
       listeners.abort();
       listeners = new AbortController();
     }
+  });
+
+  it('creating a station clears the previous «saved» message, as the module createStation resets formMsg', () => {
+    expect(component).toMatch(/private async createStation[\s\S]{0,400}?this\.formMsg = '';/);
+
+    const { el, commands } = mountDemo();
+    choose(el('#kitchen-routing-station'), 'st1');
+    choose(el('#kitchen-routing-category'), 'cat-1');
+    submit(el('#kitchen-routing-form'));
+    expect(el('#kitchen-stations-saved').hidden).toBe(false);
+
+    // ok-data-table is not registered in this harness: its drawer close() is the component's business.
+    Object.assign(el('#kitchen-stations-table'), { close: () => undefined });
+    el('#kitchen-station-name').value = 'Plancha';
+    submit(el('#kitchen-station-create'));
+
+    expect(commands.map((c) => c.name)).toContain('kitchen.stations.create');
+    expect(el('#kitchen-stations-saved').hidden, 'create keeps a stale message').toBe(true);
+  });
+
+  it('the «saved» message is painted like the module .ok line', () => {
+    const moduleCss = component.match(/static styles = css`([\s\S]*?)`;/)![1];
+    const demoCss = page.match(/<style>([\s\S]*?)<\/style>/)![1];
+    expect(component).toContain('<p class="ok" data-testid="kitchen-stations-saved">');
+
+    const { el } = mountDemo();
+    expect(el('#kitchen-stations-saved').tagName).toBe('P');
+    expect(el('#kitchen-stations-saved').classList.contains('kitchen-stations-saved')).toBe(true);
+    expect(declarations(demoCss, '.kitchen-stations-saved')).toEqual(declarations(moduleCss, '.ok'));
   });
 
   it('«Guardar» and «Cancelar» sit together: the panel forms wrap like the module .form, not a grid', () => {
