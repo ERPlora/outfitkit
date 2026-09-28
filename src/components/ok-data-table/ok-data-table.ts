@@ -281,6 +281,10 @@ export interface OkDataTableLabels {
   noMatches: string;
   /** #171 — Button under `noMatches` that clears the search and filters. */
   showAll: string;
+  /** pm#530 — Heading of the error state: the rows could not be loaded (≠ `empty`). */
+  loadError: string;
+  /** pm#530 — Button of the error state; emits `retry`. */
+  retry: string;
 }
 
 /** Defaults en INGLÉS. Variables con token `{n}`/`{label}`/`{from}`/`{to}`. */
@@ -324,6 +328,8 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   loadMore: 'Load more',
   noMatches: 'No results match your search or filters',
   showAll: 'Show all',
+  loadError: "Couldn't load the data",
+  retry: 'Retry',
 };
 
 const ES_LABELS: OkDataTableLabels = {
@@ -366,6 +372,8 @@ const ES_LABELS: OkDataTableLabels = {
   loadMore: 'Cargar más',
   noMatches: 'Ningún resultado coincide con la búsqueda o los filtros',
   showAll: 'Mostrar todo',
+  loadError: 'No se han podido cargar los datos',
+  retry: 'Reintentar',
 };
 
 export class OkDataTable extends LitElement {
@@ -424,7 +432,7 @@ export class OkDataTable extends LitElement {
     @media (min-width: 834px) {
       .card.has-panel { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto minmax(0, 1fr) auto; }
       .card.has-panel > .bar { grid-column: 1; grid-row: 1; }
-      .card.has-panel > .scroll, .card.has-panel > .cards-grid, .card.has-panel > .empty { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; }
+      .card.has-panel > .scroll, .card.has-panel > .cards-grid, .card.has-panel > .empty, .card.has-panel > .load-error { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; }
       .card.has-panel > .pager { grid-column: 1; grid-row: 3; }
       .card.has-panel > .drawer { position: static; grid-column: 2; grid-row: 1 / -1; width: auto; max-width: none; height: auto; min-height: 0; animation: none; }
       .card.has-panel > .tk-scrim { display: none; }
@@ -459,7 +467,7 @@ export class OkDataTable extends LitElement {
     /* Sin filas, renderTable/renderCards devuelven SOLO el bloque .empty (sin .scroll). En modo
        fill hay que estirarlo para que ocupe el hueco entre toolbar y pager y centre su contenido
        (icono + mensaje) en vertical; si no, queda pegado arriba con el pager a media altura. */
-    :host([fill]) .empty { flex: 1 1 auto; min-height: 0; }
+    :host([fill]) .empty, :host([fill]) .load-error { flex: 1 1 auto; min-height: 0; }
     /* #218 — On a phone (MOBILE_BREAKPOINT, where the table turns into cards and «Load more») the
        module paints other blocks above the table, and rows boxed in between toolbar and footer got
        what was left: a 315px card in a 32-155px window, never readable whole. Phone lists scroll
@@ -682,7 +690,12 @@ export class OkDataTable extends LitElement {
 
     /* ── Estado vacío ────────────────────────────────────────────────────────────────────── */
     .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
-    .empty .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
+    /* pm#530 — Error state: same frame as the empty state, but its heading reads as text, not muted. */
+    .load-error { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
+    .load-error .load-error-title { color: var(--color); font-weight: 600; }
+    .load-error .empty-ic { color: var(--ok-danger, var(--ion-color-danger, #c5000f)); }
+    .load-error ion-button { margin-top: 0.25rem; }
+    .empty .empty-ic, .load-error .empty-ic { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 999px; background: var(--header-background); font-size: 26px; }
 
     .actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
     /* #121 - The buttons NEVER shrink. Their track is pinned to the width measured here
@@ -704,6 +717,7 @@ export class OkDataTable extends LitElement {
       .toolbtn { width: 44px; height: 44px; }
       .add-btn { min-height: 44px; }
       .pager .nav ion-button { min-width: 44px; min-height: 44px; margin: 0; }
+      .load-error ion-button { min-height: 44px; --padding-start: 1rem; --padding-end: 1rem; }
     }
     /* Spinner de acción en curso (loading): contenido dentro del ion-button small (Ionic lo fija
      * a 28px en el :host, por eso width/height y no font-size). Cubre tabla y tarjetas: los
@@ -751,6 +765,11 @@ export class OkDataTable extends LitElement {
    *  `serverSide` the consumer owns the query and words `empty-message` itself). Falls back to
    *  `this.t.noMatches`. */
   @property({ attribute: 'no-matches-message' }) noMatchesMessage?: string;
+  /** pm#530 — Why the rows could not be loaded (e.g. the SDK's `ListController.error`). While it
+   *  holds text the table shows an error state instead of rows, «empty» or a record count, and a
+   *  «Retry» button that emits `retry` so the owner of the query loads it again. Empty/blank = no
+   *  error. */
+  @property({ type: String }) error?: string;
   /** Placeholder del buscador. Si no se pasa, deriva de `this.t.search` (inglés por defecto). */
   @property({ attribute: 'search-placeholder' }) searchPlaceholder?: string;
   /** (NUEVO, additivo) Textos humanos del data-table para i18n (parcial). Lo no pasado cae al
@@ -1231,6 +1250,11 @@ export class OkDataTable extends LitElement {
   /** Mensaje efectivo de estado vacío (prop explícita → label i18n → default inglés). */
   private get effEmptyMessage(): string {
     return this.emptyMessage ?? this.t.empty;
+  }
+  /** pm#530 — The last load failed: rows, «empty» and counts would all be claims about data the
+   *  table does not have. */
+  private get loadFailed(): boolean {
+    return !!this.error?.trim();
   }
   /** #171 — Effective "no matches" message (explicit prop → i18n label → English default). */
   private get effNoMatchesMessage(): string {
@@ -2253,7 +2277,7 @@ export class OkDataTable extends LitElement {
               <div class="bar">
                 <div class="bar-main">
                   ${this.title
-                    ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2><span class="title-count">${count}</span></div>`
+                    ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2>${this.loadFailed ? nothing : html`<span class="title-count">${count}</span>`}</div>`
                     : nothing}
                   ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : nothing}
                   ${this.inlineFilters ? this.renderInlineFilters() : nothing}
@@ -2347,9 +2371,11 @@ export class OkDataTable extends LitElement {
             `
           : nothing}
 
-        ${this.viewMode === 'cards' && this.cardViewEnabled ? this.renderCards(visible) : this.renderTable(visible)}
+        ${this.loadFailed
+          ? this.errorState()
+          : this.viewMode === 'cards' && this.cardViewEnabled ? this.renderCards(visible) : this.renderTable(visible)}
 
-        ${pages > 1 || this.effPageSizes.length
+        ${!this.loadFailed && (pages > 1 || this.effPageSizes.length)
           ? html`
               <div class="pager">
                 <div class="left">
@@ -2505,6 +2531,19 @@ export class OkDataTable extends LitElement {
         ${noMatches
           ? html`<ion-button fill="clear" size="small" data-role="no-matches-reset" data-testid=${this.tid('show-all')} @click=${() => this.resetSearchAndFilters()}>${this.t.showAll}</ion-button>`
           : nothing}
+      </div>
+    `;
+  }
+
+  /** pm#530 — The load failed. Not the empty state: «No customers» over a hub that did not answer
+   *  made people believe their data was gone. Says so, gives the reason and offers to retry. */
+  private errorState(): unknown {
+    return html`
+      <div class="load-error" role="alert" data-role="load-error">
+        <span class="empty-ic"><ion-icon .icon=${okIcon('alert-circle-outline')}></ion-icon></span>
+        <strong class="load-error-title">${this.t.loadError}</strong>
+        <span class="load-error-reason">${this.error}</span>
+        <ion-button size="small" data-role="load-error-retry" data-testid=${this.tid('retry')} @click=${() => this.emit('retry', {})}>${this.t.retry}</ion-button>
       </div>
     `;
   }
