@@ -258,6 +258,20 @@ describe('ok-data-table: en móvil el pie es «Cargar más», no el pager numera
     expect(pagerCount(table)).toContain('Showing 21–25 of 25 records');
   });
 
+  it('server: a page that came back with no rows keeps the range of that page, never «11–10»', async () => {
+    viewport(true);
+    const first = await mount({ serverSide: true, rows: [], total: 25, page: 0 });
+    expect(pagerCount(first)).toContain('Showing 1–10 of 25 records');
+    const second = await mount({ serverSide: true, rows: [], total: 25, page: 1 });
+    expect(pagerCount(second)).toContain('Showing 11–20 of 25 records');
+  });
+
+  it('server: a parent that hands over more rows than the pages asked never counts below row 1', async () => {
+    viewport(true);
+    const table = await mount({ serverSide: true, rows: rowsOf(15), total: 25, page: 0 });
+    expect(pagerCount(table)).toContain('Showing 1–10 of 25 records');
+  });
+
   it('client: a desktop on page 2 turned into a phone counts from row 1', async () => {
     let onChange: ((e: { matches: boolean }) => void) | undefined;
     (window as unknown as { matchMedia: unknown }).matchMedia = (q: string) => ({

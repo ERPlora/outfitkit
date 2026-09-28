@@ -2259,11 +2259,14 @@ export class OkDataTable extends LitElement {
     // hub#2365 — The pager's «from». A phone counts from row 1 whatever it holds: in client mode the
     // accumulated window; in server mode the parent may APPEND (the module SDK's list controller
     // does), so `rows` can be pages 0..current. What is on screen ends at `rangeTo`, so it starts
-    // `rows.length` before it — a parent that still replaces keeps the range of its lone page.
+    // `rows.length` before it — a parent that still replaces keeps the range of its lone page. A
+    // page that came back empty says nothing about what is on screen: it keeps that page's range.
     const rangeFrom = !this.isMobile
       ? current * ps + 1
       : this.serverSide
-        ? Math.max(1, rangeTo - this.rows.length + 1)
+        ? this.rows.length
+          ? Math.max(1, rangeTo - this.rows.length + 1)
+          : current * ps + 1
         : 1;
     const loadMore = (): void => {
       if (this.serverSide) this.emit('pageChange', current + 1);
