@@ -56,9 +56,11 @@ export function shrinkableCards(source: string): string[] {
     const cls = /^\.([\w-]+)$/.exec(selector)?.[1];
     if (!cls || !fillsHeightAsColumn(body)) continue;
     if (!hasDirectCard(source, new RegExp(`<[a-z][\\w-]*[^>]*class=["'][^"']*\\b${cls}\\b[^"']*["'][^>]*>`))) continue;
-    const pinned = all.some(
-      (r) => new RegExp(`\\.${cls}\\s*>?\\s*ion-card\\b`).test(r.selector) && keepsHeight(r.body),
-    );
+    // The last card rule that sets `flex`/`flex-shrink` wins the cascade.
+    const last = all
+      .filter((r) => new RegExp(`\\.${cls}\\s*>?\\s*ion-card\\b`).test(r.selector) && /flex(?:-shrink)?\s*:/.test(r.body))
+      .pop();
+    const pinned = !!last && keepsHeight(last.body);
     if (!pinned) offenders.push(`.${cls}`);
   }
   return offenders;
@@ -78,7 +80,7 @@ export function vanishingTables(source: string): string[] {
     if (!hasDirectCard(source, new RegExp(`<[a-z][\\w-]*[^>]*class=["'][^"']*\\b${cls}\\b[^"']*["'][^>]*>`))) continue;
     const table = all.filter((r) => new RegExp(`\\.${cls}\\s*>?\\s*ok-data-table\\b`).test(r.selector));
     const floor = table.map((r) => /min-height:\s*([^;]+)/.exec(r.body)?.[1].trim()).filter(Boolean).pop();
-    if (table.length && (!floor || /^0(?:px|rem)?$/.test(floor))) offenders.push(`.${cls}`);
+    if (table.length && (!floor || parseFloat(floor) === 0)) offenders.push(`.${cls}`);
   }
   return offenders;
 }
@@ -96,6 +98,10 @@ describe('showcase: cards beside a filling data table keep their natural height'
     expect(shrinkableCards(page('.demo-page > ion-card { flex: 1 1 auto; margin: 0; }'))).toEqual(['.demo-page']);
     expect(shrinkableCards(page('.demo-page > ion-card { flex: none; }'))).toEqual([]);
     expect(shrinkableCards(page('.demo-page > ion-card { flex-shrink: 0; }'))).toEqual([]);
+    // The cascade decides: a later rule that lets the card shrink again undoes the pin…
+    expect(shrinkableCards(page('.demo-page > ion-card { flex: none; } .demo-page > ion-card { flex: 1 1 auto; }'))).toEqual(['.demo-page']);
+    // …and a later rule that does not touch flex keeps it.
+    expect(shrinkableCards(page('.demo-page > ion-card { flex: none; } .demo-page > ion-card { margin: 0; }'))).toEqual([]);
     expect(shrinkableCards('<style>.x { display: flex; flex-direction: column; }</style><div class="x"><ion-card></ion-card></div>')).toEqual([]);
     // A card nested in a scrolling child is not a flex item of the page (api-docs-hub.html).
     expect(shrinkableCards(`<style>.y { height: 100%; display: flex; flex-direction: column; }</style>
@@ -111,6 +117,10 @@ describe('showcase: cards beside a filling data table keep their natural height'
     <div class="demo-page"><ion-card></ion-card><ok-data-table fill></ok-data-table></div>`;
     expect(vanishingTables(page('flex: 1 1 auto; min-height: 0;'))).toEqual(['.demo-page']);
     expect(vanishingTables(page('flex: 1 1 auto;'))).toEqual(['.demo-page']);
+    // Zero is zero in any unit, and `!important` does not make it a floor.
+    for (const zero of ['0%', '0em', '0vh', '0.0rem', '0 !important']) {
+      expect(vanishingTables(page(`flex: 1 1 auto; min-height: ${zero};`)), zero).toEqual(['.demo-page']);
+    }
     expect(vanishingTables(page('flex: 1 1 auto; min-height: 20rem;'))).toEqual([]);
   });
 
