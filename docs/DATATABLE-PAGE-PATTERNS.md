@@ -101,6 +101,12 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
   `data-testid` de todo su cromo: alta, buscador, import/export CSV, filas, acciones de fila y
   paginador. Sin prefijo no pinta ninguno. Un control reutilizable no puede llevar nombre fijo: dos
   tablas en la misma pantalla darían el mismo gancho y `getByTestId` elegiría una al azar.
+- **Nombre del botón de alta** (outfitkit#216) — no es una prop nueva: `.labels` es **por tabla**
+  y se funde sobre los textos del idioma, así que `.labels=${{ add: t('ui.addSlot') }}` cambia solo
+  el botón de alta (texto y nombre accesible) y deja el resto del cromo como estaba. Sin él dice
+  «Añadir»/«Add»; con dos tablas en la misma pantalla (Reservas › Disponibilidad) hay que nombrar
+  las dos, o un lector de pantalla oye dos «Añadir» iguales. Lo ancla
+  `src/components/ok-data-table/add-button-label.test.ts`.
 
 No hace falta otro componente de tabla ni una variante por producto.
 
