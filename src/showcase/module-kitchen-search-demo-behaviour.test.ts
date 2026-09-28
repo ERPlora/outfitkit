@@ -75,6 +75,9 @@ function fixtureRows(pagePath: string, name: string): Row[] {
 
 const stripAccents = (value: string): string => value.normalize('NFD').replace(/\p{M}/gu, '');
 const fold = (value: string): string => stripAccents(value).toLocaleLowerCase('es');
+// The engine matches «contains» (`contains_ci`), not «starts with» or «equals»: a piece from the
+// MIDDLE of a value («0718-10» in «20260718-1042», «ogida In» in «Recogida Inés») must find it too.
+const middle = (value: string): string => value.slice(1, -1).trim();
 
 function search(table: Table, term: string): string[] {
   table.dispatchEvent(new CustomEvent('searchChange', { detail: term }));
@@ -99,7 +102,8 @@ describe.each(demos)('showcase kitchen $name — the search box is the module on
     // Every value of every fixture field is tried as a search term: a value the module searches must
     // find exactly the rows that hold it there, and anything else (status, action, type, raw ids…)
     // must find nothing that a searched column does not also hold.
-    const terms = [...new Set(fixture.flatMap((row) => Object.values(row).map(String)).filter((value) => value.trim()))];
+    const values = fixture.flatMap((row) => Object.values(row).map(String));
+    const terms = [...new Set([...values, ...values.map(middle)].filter((value) => value.trim().length >= 2))];
     expect(terms.length).toBeGreaterThan(fixture.length);
 
     const table = mountDemo(demo.page, demo.tableId);
@@ -133,10 +137,12 @@ describe.each(demos)('showcase kitchen $name — the search box is the module on
     const table = mountDemo(demo.page, demo.tableId);
     for (const column of manifest.queries[demo.query].list!.search!) {
       for (const row of fixture.filter((candidate) => String(candidate[column] ?? '').trim())) {
-        const value = stripAccents(String(row[column])).toLocaleUpperCase('es');
-        table.dispatchEvent(new CustomEvent('filterChange', { detail: { col: column, value } }));
-        expect(table.rows.map((shown) => shown.id), `filtering ${column} by «${value}»`).toContain(row.id);
-        table.dispatchEvent(new CustomEvent('filterChange', { detail: { col: column, value: '' } }));
+        for (const piece of [String(row[column]), middle(String(row[column]))].filter((text) => text.length >= 2)) {
+          const value = stripAccents(piece).toLocaleUpperCase('es');
+          table.dispatchEvent(new CustomEvent('filterChange', { detail: { col: column, value } }));
+          expect(table.rows.map((shown) => shown.id), `filtering ${column} by «${value}»`).toContain(row.id);
+          table.dispatchEvent(new CustomEvent('filterChange', { detail: { col: column, value: '' } }));
+        }
       }
     }
   });
