@@ -565,8 +565,8 @@ export class OkDataTable extends LitElement {
       background: var(--header-background); padding-top: 0.55rem; padding-bottom: 0.55rem; }
     .gcell { display: flex; align-items: center; min-width: 0; }
     .gcell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* #217 - A touch screen has no hover to show the cell's title, so the first tap on a clipped
-       cell unfolds it in place (see onCellTap). Only that cell wraps; the rest of the row keeps
+    /* #217 - A touch screen has no hover to show the cell's title, so in a table whose rows open
+       nothing a tap on a clipped cell unfolds it in place (see onCellTap). Only that cell wraps; the rest of the row keeps
        its one line. The grid track does not move: its minimum is the column's fixed floor. */
     .gcell > span.unfolded { white-space: normal; overflow-wrap: anywhere; }
     .gcell.right { justify-content: flex-end; text-align: right; }
@@ -1567,15 +1567,14 @@ export class OkDataTable extends LitElement {
     this.lastPointerType = e.pointerType;
   };
 
-  /** #217 - A touch screen has no hover, so the `title` never shows there. The FIRST tap on a
-   *  clipped cell unfolds it and stays with the cell (the record does not open); once unfolded it
-   *  no longer intercepts, so the next tap opens the record as always. A cell that fits, and any
-   *  mouse click, go straight through to the row. */
+  /** #217 - A touch screen has no hover, so the `title` never shows there. A row that opens a
+   *  record keeps opening it on the first tap (the record shows the full text; swallowing the tap
+   *  would make "open" a two-tap gesture on some rows only). In a table whose rows open nothing, a
+   *  tap on a clipped cell unfolds it in place. A cell that fits, and a mouse click, change nothing. */
   private onCellTap(e: MouseEvent, id: string): void {
-    if (this.lastPointerType !== 'touch' || this.unfoldedCells.has(id)) return;
+    if (this.rowClickable || this.lastPointerType !== 'touch') return;
     const span = e.currentTarget as HTMLElement;
     if (span.scrollWidth <= span.clientWidth) return;
-    e.stopPropagation();
     this.unfoldedCells = new Set(this.unfoldedCells).add(id);
   }
 

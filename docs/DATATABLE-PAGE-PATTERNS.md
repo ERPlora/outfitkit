@@ -110,10 +110,11 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
 - **Texto completo de una celda recortada** (outfitkit#217) — no es una prop: la celda de texto de
   la vista lista (sin `render` propio) sigue recortándose a una línea con «…», y lleva su texto
   completo —el mismo que pinta, ya pasado por `format`— como `title` nativo, como MUI DataGrid o
-  `ellipsis.showTitle` de Ant Design; la cabecera de columna, también. En táctil no hay `title`: el
-  primer toque sobre una celda recortada la despliega en su sitio (solo esa celda) y no abre el
-  registro; el siguiente toque lo abre como siempre. Una celda que cabe, o un clic de ratón, abren
-  el registro al primer toque. Una asignación nueva de `rows` vuelve a plegarlas. Una columna con
+  `ellipsis.showTitle` de Ant Design; la cabecera de columna, también. En táctil no hay `title`: si
+  la fila abre un registro (`row-clickable`), el primer toque lo abre como siempre, recortada o no
+  (la ficha enseña el texto entero; es lo que hacen Square, Shopify u Odoo); si la fila no abre
+  nada, un toque sobre una celda recortada la despliega en su sitio (solo esa celda). Una asignación
+  nueva de `rows` vuelve a plegarlas. Una columna con
   `render` propio decide ella. Lo ancla `src/components/ok-data-table/truncated-cell-full-text.test.ts`.
 
 No hace falta otro componente de tabla ni una variante por producto.

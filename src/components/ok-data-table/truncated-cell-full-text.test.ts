@@ -6,9 +6,9 @@
 // the span carried nothing else: in Combos every row read «Se consume en el local (…» and the
 // mouse revealed nothing. The fix follows the grids everybody knows (MUI DataGrid, Ant Design's
 // `ellipsis.showTitle`, and our own ok-heatmap): the text cell carries its full text as a native
-// `title`. A touch screen has no hover, so there the FIRST tap on a clipped cell unfolds it in
-// place and the next one opens the record as always. The clip itself stays: the row keeps one
-// line until somebody asks for more.
+// `title`. A touch screen has no hover: a row that opens a record opens it on the first tap (the
+// record shows the full text), and in a table whose rows open nothing a tap on a clipped cell
+// unfolds it in place. The clip itself stays: the row keeps one line until somebody asks for more.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../base/icons.js', () => ({
@@ -149,9 +149,22 @@ describe('ok-data-table: a clipped cell can be read in full (#217)', () => {
   });
 
   describe('touch (no hover, so no title)', () => {
-    it('the first tap on a clipped cell unfolds it in place and does not open the record', async () => {
+    // A row that opens a record keeps opening it on the FIRST tap, clipped or not: that is what
+    // every touch list does (Square, Shopify, Odoo), and the record shows the full text. Swallowing
+    // the tap to unfold the cell would turn "open" into a two-tap gesture on some rows only.
+    it('in a table whose rows open a record, the first tap on a clipped cell opens it', async () => {
       const table = await mount({ rowClickable: true });
       const seen = rowClicks(table);
+      const span = cellSpan(table, '1', 1);
+      clip(span, true);
+      tap(span, 'touch');
+      await table.updateComplete;
+      expect(cellSpan(table, '1', 1).classList.contains('unfolded')).toBe(false);
+      expect(seen.map((r) => r.id)).toEqual(['1']);
+    });
+
+    it('in a table whose rows open nothing, the first tap on a clipped cell unfolds it in place', async () => {
+      const table = await mount({ rowClickable: false });
       const span = cellSpan(table, '1', 1);
       clip(span, true);
       tap(span, 'touch');
@@ -159,60 +172,48 @@ describe('ok-data-table: a clipped cell can be read in full (#217)', () => {
       const unfolded = cellSpan(table, '1', 1);
       expect(unfolded.classList.contains('unfolded')).toBe(true);
       expect(getComputedStyle(unfolded).whiteSpace).toBe('normal');
-      expect(seen).toHaveLength(0);
-    });
-
-    it('once unfolded, the next tap opens the record as always', async () => {
-      const table = await mount({ rowClickable: true });
-      const seen = rowClicks(table);
-      const span = cellSpan(table, '1', 1);
-      clip(span, true);
-      tap(span, 'touch');
-      await table.updateComplete;
-      tap(cellSpan(table, '1', 1), 'touch');
-      expect(seen.map((r) => r.id)).toEqual(['1']);
     });
 
     it('only the tapped cell unfolds, not its neighbours nor the same column in other rows', async () => {
-      const table = await mount({ rowClickable: true });
-      const span = cellSpan(table, '1', 1);
-      clip(span, true);
-      tap(span, 'touch');
-      await table.updateComplete;
-      expect(cellSpan(table, '1', 0).classList.contains('unfolded')).toBe(false);
-      expect(cellSpan(table, '2', 1).classList.contains('unfolded')).toBe(false);
-    });
-
-    it('a tap on a cell that fits opens the record straight away', async () => {
-      const table = await mount({ rowClickable: true });
-      const seen = rowClicks(table);
-      const span = cellSpan(table, '2', 1);
-      clip(span, false);
-      tap(span, 'touch');
-      await table.updateComplete;
-      expect(cellSpan(table, '2', 1).classList.contains('unfolded')).toBe(false);
-      expect(seen.map((r) => r.id)).toEqual(['2']);
-    });
-
-    it('also unfolds in a table whose rows do not open anything', async () => {
       const table = await mount({ rowClickable: false });
       const span = cellSpan(table, '1', 1);
       clip(span, true);
       tap(span, 'touch');
       await table.updateComplete;
       expect(cellSpan(table, '1', 1).classList.contains('unfolded')).toBe(true);
+      expect(cellSpan(table, '1', 0).classList.contains('unfolded')).toBe(false);
+      expect(cellSpan(table, '2', 1).classList.contains('unfolded')).toBe(false);
+    });
+
+    it('a tap on a cell that fits does not unfold it', async () => {
+      const table = await mount({ rowClickable: false });
+      const span = cellSpan(table, '2', 1);
+      clip(span, false);
+      tap(span, 'touch');
+      await table.updateComplete;
+      expect(cellSpan(table, '2', 1).classList.contains('unfolded')).toBe(false);
     });
 
     it('new rows start folded again', async () => {
-      const table = await mount({ rowClickable: true });
+      const table = await mount({ rowClickable: false });
       const span = cellSpan(table, '1', 1);
       clip(span, true);
       tap(span, 'touch');
       await table.updateComplete;
+      expect(cellSpan(table, '1', 1).classList.contains('unfolded')).toBe(true);
       table.rows = [...ROWS];
       await table.updateComplete;
       expect(cellSpan(table, '1', 1).classList.contains('unfolded')).toBe(false);
     });
+  });
+
+  it('with a mouse a click on a clipped cell does not unfold it: the desktop has the title', async () => {
+    const table = await mount({ rowClickable: false });
+    const span = cellSpan(table, '1', 1);
+    clip(span, true);
+    tap(span, 'mouse');
+    await table.updateComplete;
+    expect(cellSpan(table, '1', 1).classList.contains('unfolded')).toBe(false);
   });
 
   it('with a mouse a click keeps opening the record: the desktop has the title', async () => {
