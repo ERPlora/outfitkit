@@ -79,7 +79,7 @@
               <form id="kitchen-station-create" slot="create" class="kitchen-station-create">
                 <ion-input id="kitchen-station-name" mode="md" fill="outline" label="Nombre" label-placement="floating" placeholder="p. ej. Plancha" required></ion-input>
                 <ion-input id="kitchen-station-printer" mode="md" fill="outline" label="Impresora" label-placement="floating" placeholder="Opcional"></ion-input>
-                <ion-button type="submit">Añadir</ion-button>
+                <ion-button type="submit">Crear estación</ion-button>
               </form>
             </ok-data-table>
           </div>
@@ -122,6 +122,7 @@
           table.serverSide = true;
           table.fill = true;
           table.addable = true;
+          table.labels = { add: 'Añadir estación' };
           table.views = true;
           table.cardTitle = (row) => String(row.name_es || row.name || '—');
           table.cardIcon = () => 'flame-outline';
