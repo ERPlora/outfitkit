@@ -248,7 +248,7 @@ describe('showcase module-kitchen-active — comandas reales', () => {
       ]),
     );
     expect(cellLabels).toEqual(expected);
-    expect(page).toContain('badge(STATUS_LABELS[row.status] || row.status');
+    expect(page).toContain('format: (row) => STATUS_LABELS[row.status] || row.status');
 
     const statusColumn = page.match(/key: 'status',[\s\S]*?options: \[([\s\S]*?)\],/)![1];
     const filterLabels = Object.fromEntries(
@@ -257,13 +257,15 @@ describe('showcase module-kitchen-active — comandas reales', () => {
     expect(filterLabels).toEqual(expected);
   });
 
-  it('mantiene el alta Ionic fuera de la tabla y conecta las órdenes del módulo', () => {
+  it('crea la comanda desde el panel de la tabla y conecta las órdenes del módulo (outfitkit#233)', () => {
+    // kitchen#128 moved the quick add into the table's create panel; the panel itself (fields,
+    // words, what a submit does) is run in module-kitchen-active-create-demo-behaviour.test.ts.
     const page = pageSource('active');
-    expect(page).toContain('<form id="kitchen-order-form"');
-    expect(page.indexOf('<form id="kitchen-order-form"')).toBeLessThan(
-      page.indexOf('<ok-data-table id="kitchen-active-table"'),
+    expect(components.active).toContain('<form slot="create"');
+    expect(page).toContain(
+      '<ok-data-table id="kitchen-active-table">\n              <form id="kitchen-order-form" slot="create"',
     );
-    expect(page).not.toContain('slot="create"');
+    expect(page.match(/<form\b/g)).toHaveLength(1);
     for (const field of ['kitchen-order-type', 'kitchen-order-notes']) {
       expect(page).toContain(`id="${field}"`);
     }
