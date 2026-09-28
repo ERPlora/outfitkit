@@ -15,17 +15,19 @@
     <script type="module" src="../../dist/outfitkit.js"></script>
 
     <style>
-      .kitchen-stations-page { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0.75rem; }
-      /* The floor keeps rows in view on a short screen, where the cards eat the height: the page scrolls. */
+      .kitchen-stations-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+      /* The floor keeps rows in view on a short screen, where the panels eat the height: the page scrolls. */
       .kitchen-stations-page > ok-data-table { flex: 1 1 auto; min-height: 20rem; }
-      /* ion-card is overflow: hidden, so as a shrinkable flex item it gets clipped: keep its height. */
-      .kitchen-stations-page > ion-card { flex: none; }
+      /* The module's section.panel: a bordered box with no overflow: hidden (unlike ion-card), so it
+         keeps its natural height and does not narrow the form. */
+      .kitchen-station-panel { border: 1px solid var(--ion-border-color,#e7e2d6); border-radius: var(--ok-radius-sm, 10px); padding: 0.75rem 1rem; margin: 0 0 1rem; background: var(--ok-surface-2, var(--ion-color-step-50, rgba(var(--ion-text-color-rgb, 24, 24, 27), 0.04))); }
+      .kitchen-station-panel h3 { margin: 0.25rem 0 0.5rem; font-size: 1rem; }
       .kitchen-station-create { display: flex; flex-direction: column; gap: 0.7rem; }
       .kitchen-station-create ion-button { align-self: flex-end; }
       /* As the module's .form: the fields wrap and grow, the buttons keep their width and stay together. */
       .kitchen-station-panel-form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; }
       .kitchen-station-panel-form ion-input, .kitchen-station-panel-form ion-select { flex: 1 1 11rem; min-width: 9rem; }
-      .kitchen-stations-saved { margin: 0; color: #2b8a3e; font-weight: 600; }
+      .kitchen-stations-saved { color: #2b8a3e; font-weight: 600; }
       [hidden] { display: none !important; }
     </style>
   </head>
@@ -71,31 +73,27 @@
         title: 'Estaciones',
         body: `
           <div class="kitchen-stations-page">
-            <ion-card id="kitchen-station-edit" hidden>
-              <ion-card-header><ion-card-title id="kitchen-station-edit-title">Editar estación</ion-card-title></ion-card-header>
-              <ion-card-content>
-                <form id="kitchen-station-edit-form" class="kitchen-station-panel-form">
-                  <ion-input id="kitchen-station-edit-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
-                  <ion-input id="kitchen-station-edit-color" mode="md" fill="outline" label="Color" label-placement="floating" placeholder="#F97316"></ion-input>
-                  <ion-input id="kitchen-station-edit-printer" mode="md" fill="outline" label="Impresora" label-placement="floating"></ion-input>
-                  <ion-toggle id="kitchen-station-edit-active">Activa</ion-toggle>
-                  <ion-button type="submit" size="small">Guardar</ion-button>
-                  <ion-button id="kitchen-station-edit-cancel" type="button" size="small" fill="outline">Cancelar</ion-button>
-                </form>
-              </ion-card-content>
-            </ion-card>
+            <section id="kitchen-station-edit" class="kitchen-station-panel" hidden>
+              <h3 id="kitchen-station-edit-title">Editar estación</h3>
+              <form id="kitchen-station-edit-form" class="kitchen-station-panel-form">
+                <ion-input id="kitchen-station-edit-name" mode="md" fill="outline" label="Nombre" label-placement="floating"></ion-input>
+                <ion-input id="kitchen-station-edit-color" mode="md" fill="outline" label="Color" label-placement="floating" placeholder="#F97316"></ion-input>
+                <ion-input id="kitchen-station-edit-printer" mode="md" fill="outline" label="Impresora" label-placement="floating"></ion-input>
+                <ion-toggle id="kitchen-station-edit-active">Activa</ion-toggle>
+                <ion-button type="submit" size="small">Guardar</ion-button>
+                <ion-button id="kitchen-station-edit-cancel" type="button" size="small" fill="outline">Cancelar</ion-button>
+              </form>
+            </section>
 
-            <ion-card>
-              <ion-card-header><ion-card-title>Enrutado producto/categoría → estación</ion-card-title></ion-card-header>
-              <ion-card-content>
-                <form id="kitchen-routing-form" class="kitchen-station-panel-form">
-                  <ion-select id="kitchen-routing-station" mode="md" fill="outline" label="Estación" label-placement="floating"></ion-select>
-                  <ion-select id="kitchen-routing-product" mode="md" fill="outline" interface="popover" label="Producto" label-placement="floating" placeholder="(opcional)"></ion-select>
-                  <ion-select id="kitchen-routing-category" mode="md" fill="outline" interface="popover" label="Categoría" label-placement="floating" placeholder="(opcional)"></ion-select>
-                  <ion-button type="submit" size="small">Guardar enrutado</ion-button>
-                </form>
-              </ion-card-content>
-            </ion-card>
+            <section class="kitchen-station-panel">
+              <h3>Enrutado producto/categoría → estación</h3>
+              <form id="kitchen-routing-form" class="kitchen-station-panel-form">
+                <ion-select id="kitchen-routing-station" mode="md" fill="outline" label="Estación" label-placement="floating"></ion-select>
+                <ion-select id="kitchen-routing-product" mode="md" fill="outline" interface="popover" label="Producto" label-placement="floating" placeholder="(opcional)"></ion-select>
+                <ion-select id="kitchen-routing-category" mode="md" fill="outline" interface="popover" label="Categoría" label-placement="floating" placeholder="(opcional)"></ion-select>
+                <ion-button type="submit" size="small">Guardar enrutado</ion-button>
+              </form>
+            </section>
 
             <p id="kitchen-stations-saved" class="kitchen-stations-saved" hidden></p>
 

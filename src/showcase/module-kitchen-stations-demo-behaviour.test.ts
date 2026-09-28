@@ -245,4 +245,29 @@ describe('showcase module-kitchen-stations — behaves like the module (outfitki
     // The buttons keep their own width: nothing makes them grow onto a line of their own.
     expect(demoCss).not.toMatch(/panel-form[^{]*ion-button[^{]*\{[^}]*flex/);
   });
+
+  it('the edit and routing panels are the module section.panel, not an ion-card that narrows the form', () => {
+    // An ion-card adds its own margin and padding: on an ios phone that pushed «Cancelar» alone
+    // onto the next line, where the module keeps it beside «Guardar».
+    expect(component).toContain('<section class="panel" data-testid="kitchen-stations-edit-panel">');
+    expect(component).toContain("<h3>${t('ui.routingTitle')}</h3>");
+    expect(component).not.toContain('<ion-card');
+    const moduleCss = component.match(/static styles = css`([\s\S]*?)`;/)![1];
+    const demoCss = page.match(/<style>([\s\S]*?)<\/style>/)![1];
+
+    const { el } = mountDemo();
+    expect(document.querySelectorAll('ion-card')).toHaveLength(0);
+    for (const [panelSelector, title] of [
+      ['#kitchen-station-edit', 'Editar estación'],
+      ['.kitchen-station-panel:has(#kitchen-routing-form)', es.routingTitle],
+    ]) {
+      const panel = el(panelSelector);
+      expect(panel?.tagName, panelSelector).toBe('SECTION');
+      expect(panel.firstElementChild?.tagName).toBe('H3');
+      expect(panel.firstElementChild?.textContent?.trim()).toBe(title);
+      expect(panel.classList.contains('kitchen-station-panel')).toBe(true);
+    }
+    expect(declarations(demoCss, '.kitchen-station-panel')).toEqual(declarations(moduleCss, '.panel'));
+    expect(declarations(demoCss, '.kitchen-station-panel h3')).toEqual(declarations(moduleCss, 'h3'));
+  });
 });
