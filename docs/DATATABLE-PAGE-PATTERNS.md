@@ -116,6 +116,18 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
   nada, un toque sobre una celda recortada la despliega en su sitio (solo esa celda). Una asignación
   nueva de `rows` vuelve a plegarlas. Una columna con
   `render` propio decide ella. Lo ancla `src/components/ok-data-table/truncated-cell-full-text.test.ts`.
+- **`fill` en el móvil** (outfitkit#218) — no es una prop nueva: por debajo de 640 px (donde la
+  tabla ya pasa a tarjetas y «Cargar más») `fill` deja de encajonar las filas entre la barra y el
+  pie. Las tarjetas miden lo que su contenido y la lista baja con el scroll de la página, como en
+  Shopify, Square u Odoo; en escritorio `fill` sigue igual (barra y pie fijos, scroll solo en las
+  filas). Si la tabla es lo último de la página, su caja no cambia y las tarjetas siguen por debajo
+  (así los bloques de ENCIMA —un `ion-segment`, una `ion-card`— no se aplastan); si detrás viene
+  algo en flujo (un título y otra tabla, un aviso), la tabla crece y lo empuja. La tabla lo detecta
+  sola y lo refleja en el atributo `content-after` (de solo lectura; no lo pongas a mano); un
+  `ion-modal` inline o un bloque oculto no cuentan. Lo que no cubre: un bloque que se deje encoger
+  (con `overflow` distinto de `visible`) encima de una tabla que además tenga contenido detrás;
+  ningún módulo lo hace hoy y, si alguno lo hiciera, ese bloque lleva `flex-shrink: 0`. Lo ancla
+  `src/components/ok-data-table/fill-mobile-grows.test.ts`.
 
 No hace falta otro componente de tabla ni una variante por producto.
 
