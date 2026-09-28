@@ -565,6 +565,10 @@ export class OkDataTable extends LitElement {
       background: var(--header-background); padding-top: 0.55rem; padding-bottom: 0.55rem; }
     .gcell { display: flex; align-items: center; min-width: 0; }
     .gcell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* #217 - A touch screen has no hover to show the cell's title, so in a table whose rows open
+       nothing a tap on a clipped cell unfolds it in place (see onCellTap). Only that cell wraps; the rest of the row keeps
+       its one line. The grid track does not move: its minimum is the column's fixed floor. */
+    .gcell > span.unfolded { white-space: normal; overflow-wrap: anywhere; }
     .gcell.right { justify-content: flex-end; text-align: right; }
     .gcell.center { justify-content: center; text-align: center; }
     /* #67 - PINNED ACTIONS COLUMN. When the grid overflows (since #120 only when not even the
@@ -902,6 +906,10 @@ export class OkDataTable extends LitElement {
   // #211 - Does the "Actions" header label fit its column? One icon-only button leaves 32-44px for
   // a 63px "ACCIONES", which then reads "ACCI…". Measured in `measureActionsLabel`.
   @state() private actionsLabelFits = true;
+  // #217 - Cells unfolded by a tap on a touch screen, as `rowKey + U+241F + column key`.
+  @state() private unfoldedCells = new Set<string>();
+  // #217 - The kind of pointer behind the last press, so a cell tap can tell touch from mouse.
+  private lastPointerType = '';
   /** Ancho de contenedor con el que se tomó la decisión de plegado vigente (`-1` = ninguna). */
   private fitDecidedAtWidth = -1;
   // Menú «⋮» de UNA fila: un solo ion-popover para toda la tabla, con la fila en curso.
@@ -1540,6 +1548,36 @@ export class OkDataTable extends LitElement {
     return result;
   }
 
+  /** #217 - The text cell of the list view. It keeps its one-line clip, and the full text rides
+   *  along as the native `title` (hover, like MUI DataGrid, Ant Design's `ellipsis.showTitle` and
+   *  ok-heatmap). Screen readers already get the whole text: the clip is only paint. */
+  private textCell(col: DataTableColumn, row: Record<string, unknown>, rowKey: string): unknown {
+    // String(): a module's `format` is bundled without a typecheck and may hand back a non-string.
+    const text = String(this.cell(col, row) ?? '');
+    const id = `${rowKey}\u241F${col.key}`;
+    return html`<span
+      class=${this.unfoldedCells.has(id) ? 'unfolded' : nothing}
+      title=${text === '' ? nothing : text}
+      @pointerdown=${this.notePointer}
+      @click=${(e: MouseEvent) => this.onCellTap(e, id)}
+    >${text}</span>`;
+  }
+
+  private readonly notePointer = (e: PointerEvent): void => {
+    this.lastPointerType = e.pointerType;
+  };
+
+  /** #217 - A touch screen has no hover, so the `title` never shows there. A row that opens a
+   *  record keeps opening it on the first tap (the record shows the full text; swallowing the tap
+   *  would make "open" a two-tap gesture on some rows only). In a table whose rows open nothing, a
+   *  tap on a clipped cell unfolds it in place. A cell that fits, and a mouse click, change nothing. */
+  private onCellTap(e: MouseEvent, id: string): void {
+    if (this.rowClickable || this.lastPointerType !== 'touch') return;
+    const span = e.currentTarget as HTMLElement;
+    if (span.scrollWidth <= span.clientWidth) return;
+    this.unfoldedCells = new Set(this.unfoldedCells).add(id);
+  }
+
   private cell(col: DataTableColumn, row: Record<string, unknown>): string {
     if (col.format) return col.format(row);
     const v = row[col.key];
@@ -1738,6 +1776,8 @@ export class OkDataTable extends LitElement {
     // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
     // tabla ancha antes de las tarjetas.
     this.applyInitialView();
+    // #217 - A new rows assignment is fresh content: every cell starts folded again.
+    if (changed.has('rows') && this.unfoldedCells.size) this.unfoldedCells = new Set();
     // #106 — A new `filterValues` object is the consumer stating the visible filter state; it
     // reseeds the mirror. An in-place mutation does not reach here (Lit compares by identity) and
     // must not: while the consumer keeps the same object, the user's own picks own the control.
@@ -2437,7 +2477,7 @@ export class OkDataTable extends LitElement {
                   role="columnheader"
                   @click=${() => this.onHeaderClick(c)}
                 >
-                  <span>${c.header}</span>
+                  <span title=${c.header || nothing}>${c.header}</span>
                   ${sortable
                     ? html`<span class=${`caret${active ? ' on' : ''}`}><ion-icon .icon=${okIcon(caretIcon)}></ion-icon></span>`
                     : nothing}
@@ -2472,7 +2512,7 @@ export class OkDataTable extends LitElement {
                     ? html`<span class="selcb" @click=${(e: Event) => e.stopPropagation()}><ion-checkbox .checked=${selected} aria-label=${this.t.selectRow} @ionChange=${() => this.toggleRow(key)}></ion-checkbox></span>`
                     : nothing}
                   ${cols.map(
-                    (c) => html`<div class=${`gcell ${alignCls(c.align)}${c.pinned === 'end' ? ' actions-col' : ''}`} role="cell">${c.render ? c.render(row) : html`<span>${this.cell(c, row)}</span>`}</div>`,
+                    (c) => html`<div class=${`gcell ${alignCls(c.align)}${c.pinned === 'end' ? ' actions-col' : ''}`} role="cell">${c.render ? c.render(row) : this.textCell(c, row, key)}</div>`,
                   )}
                   ${this.actions.length
                     ? html`<div class="gcell right actions-col" role="cell" @click=${(e: Event) => e.stopPropagation()}>${this.actionButtons(row, true)}</div>`
