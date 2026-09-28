@@ -57,9 +57,14 @@ function cssTextOf(styles: CSSResultGroup | undefined): string {
 
 type Rule = { selectors: string[]; body: string };
 
-/** Style rules (also those nested in `@media`) with their selector list split. */
+/**
+ * Top-level style rules with their selector list split. A rule nested in `@media`/`@supports` may
+ * never apply on screen (`@media print`), so those blocks are dropped before matching.
+ */
 function rulesOf(cssText: string): Rule[] {
-  const text = cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+  const text = cssText
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/@[^{};]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
   const rules: Rule[] = [];
   for (const m of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const prelude = m[1].trim();
@@ -147,6 +152,10 @@ describe('the detector itself (positive controls)', () => {
   });
   it('rejects a selector that does not reach the input Ionic renders', () => {
     expect(workingHideRules(`ion-searchbar > input${NATIVE_CANCEL} { display: none; }`, 'ios')).toHaveLength(0);
+  });
+  it('rejects a rule nested in an at-rule, which may never apply on screen', () => {
+    expect(workingHideRules(`@media print { ${input}${NATIVE_CANCEL} { display: none; } }`, 'ios')).toHaveLength(0);
+    expect(workingHideRules(`@supports (x: y) { ${input}${NATIVE_CANCEL} { display: none; } }`, 'md')).toHaveLength(0);
   });
   it('accepts a Chromium-valid rule on the searchbar input', () => {
     expect(workingHideRules(`${input}${NATIVE_CANCEL} { display: none; }`, 'ios')).toHaveLength(1);
