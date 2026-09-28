@@ -111,6 +111,7 @@ describe('ok-data-table: row actions stay in their column when a row hides one (
 
     expect(iconGap.tagName).toBe('ION-BUTTON');
     expect(iconGap.getAttribute('size')).toBe('small');
+    expect(iconGap.getAttribute('fill'), 'a solid button pads differently from a clear one').toBe('clear');
     expect(iconGap.querySelector('ion-icon[slot="icon-only"]')).not.toBeNull();
     expect(textGap.tagName).toBe('ION-BUTTON');
     expect(textGap.textContent?.trim()).toBe('Refund');
@@ -162,6 +163,14 @@ describe('ok-data-table: row actions stay in their column when a row hides one (
     expect(layout(voided)).toEqual(['view', 'slot:refund']);
     // The gap borrows the label of a row that does show the action, so it keeps a real width.
     expect(voided.querySelector('[data-slot-for="refund"]')?.textContent?.trim()).toBe('Refund 10 €');
+
+    // New rows, new labels: the borrowed text follows them instead of the first list it saw.
+    table.rows = [
+      { id: 'issued', status: 'issued', refund: { amount: '1.250,00 €' } },
+      { id: 'voided', status: 'voided' },
+    ];
+    await table.updateComplete;
+    expect(listBoxes(table)[1].querySelector('[data-slot-for="refund"]')?.textContent?.trim()).toBe('Refund 1.250,00 €');
   });
 
   it('collapsed list ("..." menu, #122/#213): no gaps — each row shows one 44px button and they line up', async () => {

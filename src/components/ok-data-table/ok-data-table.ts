@@ -116,7 +116,8 @@ export interface DataTableAction extends Omit<DataTableMenuAction, 'label'> {
    *  (una acción en curso no debe ser re-clicable). */
   loading?: (row: Record<string, unknown>) => boolean;
   /** (optional, per row) When it returns `true` for a row, the action is NOT rendered on that row:
-   *  not in the list, not on the card, not in the "..." menu. Use it for an action that does not
+   *  not in the list, not on the card, not in the "..." menu. The list leaves an invisible gap of
+   *  its width, so the other actions stay in their column on every row (#240). Use it for an action that does not
    *  apply to the row ("Update" with no new version), and `disabled` for one that applies but
    *  cannot be taken right now — a greyed-out button reads as "something is blocked" (hub#2014). */
   hidden?: (row: Record<string, unknown>) => boolean;
