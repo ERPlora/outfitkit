@@ -9,7 +9,8 @@
 // (hub#1984). App stores and Shopify's app list show "Update" only when there is an update.
 //
 // `hidden(row)` drops the action from THAT row everywhere it can be reached: the list view, the
-// cards and the collapsed "..." menu. A row left with nothing to do gets no "..." button, and the
+// cards and the collapsed "..." menu (the list leaves an invisible, inert gap in its place so the
+// other buttons keep their column, outfitkit#240). A row left with nothing to do gets no "..." button, and the
 // pinned actions track is sized by the WIDEST row, not by whichever row happens to be first.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -92,11 +93,13 @@ describe('ok-data-table: a row action can be HIDDEN per row, not just disabled (
     const table = await mount();
     const [first, second] = [...(table.shadowRoot?.querySelectorAll('.grow-data .gcell.actions-col') ?? [])];
 
-    expect(testIds(first, 'ion-button'), 'row without a new version must not carry "update"').toEqual([
+    // outfitkit#240 - The list keeps an invisible, inert stand-in where the action is hidden (so
+    // the others stay in their column); it is not the action: no testid, no name, no click.
+    expect(testIds(first, 'ion-button:not(.action-gap)'), 'row without a new version must not carry "update"').toEqual([
       'apps-row-a-open',
       'apps-row-a-uninstall',
     ]);
-    expect(testIds(second, 'ion-button'), 'row with a new version must keep "update" in its place').toEqual([
+    expect(testIds(second, 'ion-button:not(.action-gap)'), 'row with a new version must keep "update" in its place').toEqual([
       'apps-row-b-open',
       'apps-row-b-update',
       'apps-row-b-uninstall',

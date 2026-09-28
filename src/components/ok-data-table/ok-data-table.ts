@@ -705,6 +705,10 @@ export class OkDataTable extends LitElement {
        measurement, which would shrink the track again. flex: 0 0 auto is what makes the
        measurement a property of the CONTENT instead of a property of the current layout. */
     .actions ion-button { flex: 0 0 auto; }
+    /* #240 - Stand-in of a row action hidden on this row: it keeps the button's width (so the
+       others stay in their column) and paints nothing; aria-hidden + inert keep it out of the
+       accessibility tree, the tab order and the click path. */
+    .actions .action-gap { visibility: hidden; }
     /* #122 - Header of the actions column while the buttons are folded into the menu. "ACCIONES"
        measures 62.83px and the folded track is 44px: painted, it spills out of its own cell and
        over "Estado" - the very thing the issue is about. The column keeps its name for assistive
@@ -1867,6 +1871,8 @@ export class OkDataTable extends LitElement {
     this.applyInitialView();
     // #217 - A new rows assignment is fresh content: every cell starts folded again.
     if (changed.has('rows') && this.unfoldedCells.size) this.unfoldedCells = new Set();
+    // #240 - The gap labels were borrowed from these rows/actions.
+    if (changed.has('rows') || changed.has('actions')) this.gapLabels.clear();
     // #106 — A new `filterValues` object is the consumer stating the visible filter state; it
     // reseeds the mirror. An in-place mutation does not reach here (Lit compares by identity) and
     // must not: while the consumer keeps the same object, the user's own picks own the control.
@@ -2102,6 +2108,21 @@ export class OkDataTable extends LitElement {
     return this.rowActionsCollapsed && (actions.length > 1 || (actions.length === 1 && !actions[0].icon));
   }
 
+  /** #240 - Text of the invisible stand-in of a hidden TEXT-only action, so it is as wide as the
+   *  button. A per-row label is NOT asked for the row that hides it (it may read a field that row
+   *  lacks): it is borrowed from the first row that shows the action, once per rows/actions. */
+  private gapLabels = new Map<DataTableAction, string>();
+  private gapLabel(a: DataTableAction): string {
+    if (typeof a.label !== 'function') return a.label;
+    let text = this.gapLabels.get(a);
+    if (text === undefined) {
+      const shown = this.rows.find((r) => a.hidden?.(r) !== true);
+      text = shown ? (a.label as (row: Record<string, unknown>) => string)(shown) : '';
+      this.gapLabels.set(a, text);
+    }
+    return text;
+  }
+
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
     // #143 — The row identity goes at the end of the hook, NEVER its position: the order changes
@@ -2133,10 +2154,22 @@ export class OkDataTable extends LitElement {
         </div>
       `;
     }
+    // #240 - In the list every action keeps its column: a hidden one leaves an invisible
+    // stand-in of the same button (same width), so the ones that stay do not slide over into
+    // its place and each icon lands in the same spot on every row (Shopify, Stripe, Odoo). Not
+    // in the cards (no column to line up) nor when folded (one 44px button per row, #122/#213).
+    const slots = collapsible && !this.rowActionsCollapsed ? this.actions : actions;
     return html`
       <div class="actions">
-        ${actions.map(
+        ${slots.map(
           (a) => {
+            if (a.hidden?.(row) === true) {
+              return html`
+              <ion-button class="action-gap" size="small" fill="clear" data-slot-for=${a.id} aria-hidden="true" inert>
+                ${a.icon ? html`<ion-icon slot="icon-only" .icon=${okIcon(a.icon)}></ion-icon>` : this.gapLabel(a)}
+              </ion-button>
+            `;
+            }
             // Acción en curso → spinner y no re-clicable; deshabilitada → botón inerte.
             const loading = a.loading?.(row) === true;
             const disabled = loading || a.disabled?.(row) === true;
