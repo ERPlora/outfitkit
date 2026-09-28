@@ -143,7 +143,11 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
     }
     expect(page).toContain("sort = 'created_at'");
     expect(page).toContain("sortDir = 'desc'");
-    expect(page).toContain("searchPlaceholder = 'Buscar acción, comanda o notas…'");
+    // The box text comes from the module catalogue, not a literal: kitchen#117 dropped «acción» from
+    // it and a literal kept this green while the demo diverged (outfitkit#215). What the box FINDS
+    // is held in module-kitchen-search-demo-behaviour.test.ts.
+    expect(components.history).toContain(".searchPlaceholder=${t('ui.searchLogs')}");
+    expect(page).toContain(`searchPlaceholder = '${esLocale.ui.searchLogs}'`);
     expect(page).toContain("cardIcon = () => 'restaurant-outline'");
     expect(manifest.queries['kitchen.logs.list'].list).toMatchObject({
       page_size: 50,
@@ -217,6 +221,9 @@ describe('showcase module-kitchen-active — comandas reales', () => {
     expect(page).toContain("cardIcon = () => 'restaurant-outline'");
     expect(page).toContain("sort = 'created_at'");
     expect(page).toContain("sortDir = 'desc'");
+    // kitchen#114: the box searches order number and destination; the status is a filter (outfitkit#215).
+    expect(components.active).toContain(".searchPlaceholder=${t('ui.searchOrders')}");
+    expect(page).toContain(`searchPlaceholder = '${esLocale.ui.searchOrders}'`);
   });
 
   it('names every status exactly as the module does, in the cell and in the filter (outfitkit#219)', () => {

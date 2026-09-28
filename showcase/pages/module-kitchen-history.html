@@ -31,7 +31,7 @@
       // No hay seed de actividad: estas filas de preview respetan exactamente logs_list.sql.
       const LOG_FIXTURE = [
         { "id": "log-1", "order_id": "order-1042", "order_number": "1042", "action": "received", "station_id": "st1", "notes": "Mesa 4 · ronda 1", "created_at": "2026-07-18T20:12:00Z" },
-        { "id": "log-2", "order_id": "order-1041", "order_number": "1041", "action": "bumped", "station_id": "st1", "notes": "Lista para servir", "created_at": "2026-07-18T20:09:00Z" },
+        { "id": "log-2", "order_id": "order-1041", "order_number": "1041", "action": "bumped", "station_id": "st1", "notes": "Lista para el salón", "created_at": "2026-07-18T20:09:00Z" },
         { "id": "log-3", "order_id": "order-1040", "order_number": "1040", "action": "served", "station_id": "st2", "notes": "Barra", "created_at": "2026-07-18T20:04:00Z" }
       ];
 
@@ -47,6 +47,11 @@
         item_bumped: 'Línea lista', item_recalled: 'Línea recuperada',
         served: 'Servida', recalled: 'Recuperada', cancelled: 'Cancelada',
       };
+
+      // Like the list engine (hub#2096): the search ignores case and accents.
+      function fold(text) {
+        return String(text).normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
+      }
 
       function badge(text, color) {
         const element = document.createElement('ion-badge');
@@ -90,7 +95,7 @@
           table.cardTitle = (row) => `#${String(row.order_number || row.order_id || '—')}`;
           table.cardIcon = () => 'restaurant-outline';
           table.searchable = true;
-          table.searchPlaceholder = 'Buscar acción, comanda o notas…';
+          table.searchPlaceholder = 'Buscar comanda o notas…';
           table.emptyMessage = 'Sin actividad reciente en cocina.';
           table.pageSize = 50;
           table.sort = 'created_at';
@@ -98,14 +103,15 @@
 
           function queryPage() {
             recordQuery('kitchen.logs.list', { ...state });
-            const term = state.search.trim().toLocaleLowerCase('es');
+            const term = fold(state.search.trim());
             const filtered = logs
               .filter((row) => {
-                if (term && !`${row.action} ${row.order_number} ${row.order_id} ${row.notes}`.toLocaleLowerCase('es').includes(term)) return false;
+                // kitchen.logs.list searches order_number and notes only; the action is picked in its filter.
+                if (term && !fold(`${row.order_number}\n${row.notes}`).includes(term)) return false;
                 return Object.entries(state.filters).every(([key, value]) => {
                   if (value == null || value === '') return true;
                   if (typeof value === 'object') return true;
-                  return key === 'action' ? String(row[key]) === String(value) : String(row[key] || '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
+                  return key === 'action' ? String(row[key]) === String(value) : fold(row[key] || '').includes(fold(value));
                 });
               })
               .sort((left, right) => {
