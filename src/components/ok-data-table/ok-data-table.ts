@@ -1790,10 +1790,13 @@ export class OkDataTable extends LitElement {
   /** #122 — Las mismas acciones de la fila, como lista. Respeta `disabled`/`loading` por fila: una
    *  acción que no se puede pulsar en su botón tampoco se puede pulsar aquí. */
   private renderRowMenu(): unknown {
-    const row = this.rowMenuRow;
-    if (!this.actions.length || !row) return nothing;
+    const kept = this.rowMenuRow;
+    if (!this.actions.length || !kept) return nothing;
+    // #213 — The popover outlives its row object (see #143 below): read the row's CURRENT data by
+    // its key, or a row that dropped to one action would keep its hooks on this stale menu too.
+    const key = this.keyOf(kept);
+    const row = (key && this.rows.find((r) => this.keyOf(r) === key)) || kept;
     const actions = this.visibleActions(row);
-    const key = this.keyOf(row);
     return html`
       <ion-popover
         class="row-menu"
@@ -1815,7 +1818,7 @@ export class OkDataTable extends LitElement {
                      would pick one at random. -->
                 <ion-item
                   button
-                  data-testid=${this.rowActionsCollapsed ? this.tid(`row-${key}-${a.id}`) : nothing}
+                  data-testid=${this.rowActionsFolded(actions) ? this.tid(`row-${key}-${a.id}`) : nothing}
                   ?disabled=${disabled}
                   aria-disabled=${disabled ? 'true' : nothing}
                   .detail=${false}
@@ -2088,19 +2091,30 @@ export class OkDataTable extends LitElement {
     return this.actions.filter((a) => a.hidden?.(row) !== true);
   }
 
+  /** #213 — Are THESE row actions folded into the "..." menu? Only when the list view folds (#122)
+   *  AND there is more than one: an overflow menu groups several actions, it never replaces a
+   *  single one (Polaris, MUI DataGrid) — it would take the same width and cost one more tap.
+   *  Except a single TEXT-only action (no icon): its button is wider than the "..." one, and left
+   *  out it spills over the data columns (measured at 390px), so folding it does free width. */
+  private rowActionsFolded(actions: DataTableAction[]): boolean {
+    return this.rowActionsCollapsed && (actions.length > 1 || (actions.length === 1 && !actions[0].icon));
+  }
+
   private actionButtons(row: Record<string, unknown>, collapsible = false): unknown {
     if (!this.actions.length) return nothing;
     // #143 — The row identity goes at the end of the hook, NEVER its position: the order changes
     // with every filter and the spec would silently start asserting on another row.
     const key = this.keyOf(row);
     const actions = this.visibleActions(row);
-    // #122 — No caben: un solo botón de 44px que abre las acciones en un menú, como hacen Odoo,
-    // Shopify, Business Central o Salesforce en pantallas estrechas. Baja el mínimo de la tabla
-    // de 796px a 652px, que es lo que quita la columna fijada de encima del «Estado».
+    // #122 — They do not fit: one 44px button that opens the actions in a menu, as Odoo, Shopify,
+    // Business Central or Salesforce do on narrow screens. It lowers the table's minimum from
+    // 796px to 652px, which is what takes the pinned column off the "Estado".
     if (collapsible && this.rowActionsCollapsed) {
       // hub#2014 — Nothing left to do on this row: a "..." that opens an empty menu is noise.
       if (!actions.length) return html`<div class="actions"></div>`;
-      return html`
+      // #213 — One action stays out as its own button (below): folding it frees no width and
+      // turns one tap into two.
+      if (this.rowActionsFolded(actions)) return html`
         <div class="actions">
           <ion-button
             size="small"

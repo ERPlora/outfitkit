@@ -140,7 +140,9 @@ describe('ok-data-table: a row action can be HIDDEN per row, not just disabled (
     await collapse(table);
 
     expect(table.shadowRoot?.querySelector('[data-testid="apps-row-a-menu"]'), 'row a has nothing to do').toBeNull();
-    expect(table.shadowRoot?.querySelector('[data-testid="apps-row-b-menu"]'), 'row b still has "update"').not.toBeNull();
+    expect(table.shadowRoot?.querySelector('[data-testid="apps-row-a-update"]'), 'nor a direct button').toBeNull();
+    // outfitkit#213 — row b's single action stays out as its own button instead of a "..." of one.
+    expect(table.shadowRoot?.querySelector('[data-testid="apps-row-b-update"]'), 'row b still has "update"').not.toBeNull();
   });
 
   it('an action without `hidden` is rendered on every row (backwards compatible)', async () => {
