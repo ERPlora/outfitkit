@@ -117,6 +117,7 @@ const COMPONENTS = [
       dt.pageSizes = [5, 10, 25, 50];
       dt.views = ['table', 'cards'];
       dt.addable = true; // #75/#76/#113 — botón «Añadir» rotulado en los dos viewports (36px en escritorio, ≥ 44px táctiles en móvil); el panel empuja en escritorio y es hoja completa en móvil
+      dt.labels = { add: 'Nuevo pedido' }; // #216 — the create button says WHAT it adds (and that is its accessible name); without it, «Añadir»/«Add»
       dt.actions = [
         { id: 'view', label: 'Ver', icon: 'eye-outline' },
         { id: 'edit', label: 'Editar', icon: 'create-outline' },
@@ -142,6 +143,7 @@ dt.rowClickable = true;           // la fila entera abre el registro → evento 
 dt.views = ['table', 'cards'];
 dt.pageSizes = [5, 10, 25, 50];   // selector de filas/pág. en la toolbar
 dt.addable = true;                // botón «Añadir» rotulado que abre el slot create (panel: empuja en escritorio, hoja completa en móvil)
+dt.labels = { add: 'Nuevo pedido' }; // #216 — nombra el botón de alta (y su nombre accesible); dos tablas en una pantalla, dos nombres
 dt.actions = [
   { id: 'edit', label: 'Editar', icon: 'create-outline' },                        // sin color → gris (medium)
   { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },      // se pinta desde el token --ok-danger / --ion-color-danger (#162)
@@ -173,6 +175,7 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
       { kind: 'prop', name: 'title · selectable · .rowKey', type: 'string · bool · fn|string', detail: 'Título, selección, clave estable' },
       { kind: 'prop', name: 'rowClickable', type: 'bool', detail: 'La fila —y la tarjeta en vista «cards»— abre el registro (emite rowClick; teclado Enter/Espacio). Opt-in' },
       { kind: 'prop', name: 'addable', type: 'bool', detail: 'Botón de alta que abre el slot `create`: en ≥834px el panel EMPUJA la tabla (dos columnas); por debajo es hoja a pantalla completa. Es un botón «Añadir» rotulado y relleno en los DOS viewports (#113): 36px alineado con la barra en escritorio, ≥44px táctiles en móvil' },
+      { kind: 'prop', name: '.labels', type: 'Partial<OkDataTableLabels>', detail: 'Textos del cromo POR TABLA, fundidos sobre los del idioma del documento (es → español, resto → inglés): lo que no pases queda como está. `add` nombra el botón de alta —texto y nombre accesible— con lo que crea («Añadir franja», «Bloquear fecha»): sin él dice «Añadir»/«Add», y dos tablas en la misma pantalla dan dos botones iguales para un lector de pantalla (#216). El módulo pasa su cadena ya traducida. Otras claves: search, empty, filters, newRecord (título del panel), editRecord…' },
       { kind: 'prop', name: '.primaryAction', type: '{label, icon?}', detail: 'Botón destacado de la topbar, rotulado y relleno también en escritorio (#113); emite primaryAction' },
       { kind: 'prop', name: 'testid', type: 'string', detail: 'Espacio de nombres de los `data-testid` del cromo, para que QA lo conduzca sin depender del idioma ni de la posición. `testid="products-table"` produce `products-table-add`, `-primary-action`, `-search`, `-csv-import` (en el `<input type=file>`, que es lo que rellena `setInputFiles`) y `-csv-export`, `-row-<id>` por fila (lista Y tarjetas), `-row-<id>-<actionId>` por acción de fila —el MISMO nombre cuando las acciones se pliegan en el menú «⋮», que además trae `-row-<id>-menu`—, `-page-prev`/`-page-next` en escritorio y `-load-more` en móvil. El prefijo lo da el host a propósito: un nombre fijo dentro haría que dos tablas de la misma pantalla compartieran gancho. SIN prefijo la tabla no pinta ninguno. #143' },
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
