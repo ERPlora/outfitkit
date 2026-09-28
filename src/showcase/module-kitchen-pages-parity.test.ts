@@ -322,4 +322,34 @@ describe('showcase module-kitchen-stations — CRUD y enrutado reales', () => {
       expect(page).toContain(`recordCommand('${command}'`);
     }
   });
+
+  it('names the toolbar add button and the create submit apart, as the module does (outfitkit#222)', () => {
+    // kitchen#121: with the create panel open there were two buttons called «Añadir» — the toolbar
+    // one that opens the panel and the one that submits it. The module now names them through
+    // `.labels.add` and its own submit key; the demo reads the same words from locales/es.json.
+    const page = pageSource('stations');
+    const es = JSON.parse(readFileSync(new URL('locales/es.json', moduleBase), 'utf8')) as {
+      ui: Record<string, string>;
+    };
+    const addKey = components.stations.match(/\.labels=\$\{\{ add: t\('ui\.(\w+)'\) \}\}/)![1];
+    const createForm = components.stations.match(/<form slot="create"[\s\S]*?<\/form>/)![0];
+    const submitKey = createForm.match(/type="submit"[^>]*>[^<]*t\('ui\.(\w+)'\)\}<\/ion-button>/)![1];
+    const addLabel = es.ui[addKey];
+    const submitLabel = es.ui[submitKey];
+    expect(addLabel).toBeTruthy();
+    expect(submitLabel).toBeTruthy();
+    expect(addLabel).not.toBe(submitLabel);
+
+    const labelsAssignments = [...page.matchAll(/table\.labels = \{ add: '([^']*)' \};/g)].map((match) => match[1]);
+    expect(labelsAssignments, 'the demo must name its add button through table.labels.add').not.toEqual([]);
+    expect(page.match(/table\.labels\s*=/g)).toHaveLength(1);
+    expect(labelsAssignments).toEqual([addLabel]);
+    expect(page).toContain('table.addable = true;');
+
+    const demoCreateForm = page.match(/<form id="kitchen-station-create" slot="create"[\s\S]*?<\/form>/)![0];
+    const submits = [...demoCreateForm.matchAll(/<ion-button\b[^>]*\btype="submit"[^>]*>([^<]*)<\/ion-button>/g)].map(
+      (match) => match[1],
+    );
+    expect(submits).toEqual([submitLabel]);
+  });
 });
