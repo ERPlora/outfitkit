@@ -269,5 +269,10 @@ describe('showcase module-kitchen-stations — behaves like the module (outfitki
     }
     expect(declarations(demoCss, '.kitchen-station-panel')).toEqual(declarations(moduleCss, '.panel'));
     expect(declarations(demoCss, '.kitchen-station-panel h3')).toEqual(declarations(moduleCss, 'h3'));
+    // The panels never shrink, so on a short phone the table is what gives: without a floor it is
+    // squashed to no visible row (outfitkit#226). Compared as a length, not as a string.
+    const floor = declarations(demoCss, '.kitchen-stations-page > ok-data-table')['min-height'];
+    expect(parseFloat(floor), `table floor ${floor}`).toBeGreaterThanOrEqual(15);
+    expect(floor).toMatch(/^\d+(?:\.\d+)?rem$/);
   });
 });
