@@ -12,6 +12,8 @@ name: Publish Package
 #      before:init de .release-it.json), commitea `chore: release vX.Y.Z`, taggea y
 #      pushea.  (.release-it.json tiene npm.publish=false → NO publica aquí.)
 #   2. `npm publish --access public` publica vía OIDC (Trusted Publishing, sin token).
+#   3. Avisa a ERPlora/hub (`repository_dispatch: outfitkit-published`, hub#2321): el hub
+#      prueba sus pantallas contra la versión recién publicada en ese momento.
 # El push de vuelta lo hace GITHUB_TOKEN → NO re-dispara este workflow (sin bucle);
 # el guard `if` es defensa extra por si algún día se usa un PAT.
 #
@@ -86,3 +88,27 @@ jobs:
       # La versión recién bumpeada nunca está publicada → publica siempre.
       - name: Publish to npm (OIDC, sin token)
         run: npm publish --access public
+
+      # hub#2321 — the hub's image installs `@latest` on every build, so a release that moves a
+      # pixel of its screens reaches customers with no hub commit. This notice makes the hub's
+      # `test-web.yml` test develop against THIS version now, instead of at its next web push or
+      # its 03:08 cron. `GH_PAT` is an org secret: it reaches this repo because it is public (the
+      # `parity` job of ci.yml already clones the private hub with it). The package is already on
+      # npm at this point, so a failed notice cannot undo the release — it turns the run red and
+      # prints the command to resend it by hand. Contract: src/publish-workflow.test.ts.
+      - name: Notify ERPlora/hub (hub#2321)
+        env:
+          HUB_DISPATCH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          PAYLOAD=$(printf '{"event_type":"outfitkit-published","client_payload":{"version":"%s"}}' "$VERSION")
+          RESEND="printf '%s' '$PAYLOAD' | gh api repos/ERPlora/hub/dispatches --method POST --input -"
+          if [ -z "${HUB_DISPATCH_TOKEN}" ]; then
+            echo "::error::hub_dispatch_token_missing — secrets.GH_PAT arrived empty: ERPlora/hub was NOT told about ${VERSION}. Resend: ${RESEND}"
+            exit 1
+          fi
+          if ! printf '%s' "$PAYLOAD" | GH_TOKEN="$HUB_DISPATCH_TOKEN" gh api repos/ERPlora/hub/dispatches --method POST --input -; then
+            echo "::error::hub_dispatch_failed — ERPlora/hub refused the outfitkit-published notice for ${VERSION}. Resend: ${RESEND}"
+            exit 1
+          fi
+          echo "ERPlora/hub notified: outfitkit-published ${VERSION}"
