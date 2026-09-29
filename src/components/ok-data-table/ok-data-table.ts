@@ -228,9 +228,10 @@ export interface OkDataTableLabels {
   rowsPerPage: string;
   /** Sufijo del selector compacto de tamaño de página (p.ej. "10 / pág."). */
   perPageShort: string;
-  /** Aria del botón de vista lista. */
+  /** Accessible name of the list-view button (announced as pressed while it is on, #247). With
+   *  two tables on one screen, pass one per table («View periods as list»). */
   viewList: string;
-  /** Aria del botón de vista tarjetas. */
+  /** Accessible name of the cards-view button (announced as pressed while it is on, #247). */
   viewCards: string;
   /** Aria del selector de columnas. */
   columnsVisible: string;
@@ -2211,8 +2212,11 @@ export class OkDataTable extends LitElement {
     `;
   }
 
-  // Botón de barra icon-only (filtros / alta / conmutador de vista). `on` = estado activo.
-  // `badge` opcional → contador (p.ej. nº de filtros activos), look del Hub.
+  // Icon-only bar button (filters / create / view switch). `on` = active look.
+  // Optional `badge` → counter (e.g. number of active filters), Hub look.
+  // #247 - `toggle` makes it a toggle button: `on` is also announced as `aria-pressed`, so a screen
+  // reader hears which view is on instead of it living only in the fill. Ionic 8 copies
+  // `aria-pressed` to its inner <button> and watches it, so every later switch reaches the AX tree.
   private toolButton(
     icon: string,
     on: boolean,
@@ -2220,9 +2224,10 @@ export class OkDataTable extends LitElement {
     label: string,
     badge?: number,
     testid: string | typeof nothing = nothing,
+    toggle = false,
   ): unknown {
     return html`
-      <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} data-testid=${testid} title=${label} aria-label=${label} @click=${onClick}>
+      <ion-button class="toolbtn" size="small" fill=${on ? 'solid' : 'outline'} data-testid=${testid} title=${label} aria-label=${label} aria-pressed=${toggle ? String(on) : nothing} @click=${onClick}>
         <ion-icon slot="icon-only" .icon=${okIcon(icon)}></ion-icon>
         ${badge && badge > 0 ? html`<span class="badge">${badge}</span>` : nothing}
       </ion-button>
@@ -2387,8 +2392,8 @@ export class OkDataTable extends LitElement {
                     ${this.viewToggle
                       ? html`
                           <span class="viewseg">
-                            ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), this.t.viewList)}
-                            ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), this.t.viewCards)}
+                            ${this.toolButton('list-outline', this.viewMode === 'table', () => this.setViewMode('table'), this.t.viewList, undefined, nothing, true)}
+                            ${this.toolButton('grid-outline', this.viewMode === 'cards', () => this.setViewMode('cards'), this.t.viewCards, undefined, nothing, true)}
                           </span>
                         `
                       : nothing}
