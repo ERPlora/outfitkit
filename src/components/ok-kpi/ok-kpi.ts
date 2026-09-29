@@ -11,6 +11,9 @@ type OkKpiTrend = 'up' | 'down' | 'flat';
 /** Smallest size the figure shrinks to before it is cut with an ellipsis (outfitkit#246). */
 const MIN_VALUE_REM = 1;
 
+/** Room left when the size is scaled: glyph widths are not exactly linear in it on every engine. */
+const FIT_SPARE_PX = 0.5;
+
 /** Root font size in px: what 1rem is on this page. */
 function rootPx(): number {
   const n = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -156,13 +159,17 @@ export class OkKpi extends LitElement {
     if (!el) return;
     el.style.removeProperty('font-size');
     el.removeAttribute('title');
-    const available = el.clientWidth;
-    const natural = el.scrollWidth;
+    // Fractional widths: clientWidth/scrollWidth round to whole px, so a text 0.25px wider than
+    // its box reads as "fits" and the ellipsis eats the last glyph (the «€» at 1114px).
+    const available = el.getBoundingClientRect().width;
+    const text = document.createRange();
+    text.selectNodeContents(el);
+    const natural = text.getBoundingClientRect().width;
     if (available <= 0 || natural <= available) return;
     const fullPx = parseFloat(getComputedStyle(el).fontSize);
     if (!Number.isFinite(fullPx) || fullPx <= 0) return;
     const minPx = MIN_VALUE_REM * rootPx();
-    const fitPx = Math.floor(((fullPx * available) / natural) * 10) / 10;
+    const fitPx = Math.floor(((fullPx * (available - FIT_SPARE_PX)) / natural) * 10) / 10;
     el.style.fontSize = `${Math.max(minPx, fitPx)}px`;
     if (fitPx < minPx) el.title = this.value ?? '';
   }

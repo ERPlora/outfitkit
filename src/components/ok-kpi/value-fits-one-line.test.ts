@@ -12,7 +12,8 @@
 //   - measures again when the card is resized or the figure changes.
 //
 // happy-dom has no layout: the figure's widths are modelled like Chromium paints them - its
-// natural width scales linearly with its font size - and the ResizeObserver is captured by hand.
+// natural width scales linearly with its font size, boxes and text have fractional widths, and
+// clientWidth/scrollWidth round them to whole pixels - and the ResizeObserver is captured by hand.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../base/icons.js', () => ({
@@ -60,13 +61,29 @@ function fontPx(el: HTMLElement): number {
   return inline ? parseFloat(inline) : MAX_PX;
 }
 
-/** Give the figure a box `avail` px wide and a text that needs `naturalAtMax` px at 1.75rem. */
+/** Text width (fractional) each laid-out figure needs at 1.75rem, read by the Range stub. */
+const naturalAtMaxOf = new Map<Node, number>();
+
+/** Width the figure's text paints at its current font size (fractional, like a Range rect). */
+function painted(el: HTMLElement): number {
+  return ((naturalAtMaxOf.get(el) ?? 0) * fontPx(el)) / MAX_PX;
+}
+
+const rect = (width: number): DOMRect => ({ x: 0, y: 0, top: 0, left: 0, right: width, bottom: 20, width, height: 20, toJSON: () => ({}) }) as DOMRect;
+
+/**
+ * Give the figure a box `avail` px wide and a text that needs `naturalAtMax` px at 1.75rem.
+ * Both may be fractional: the rects keep the fraction, clientWidth/scrollWidth round it as
+ * Chromium does (scrollWidth is never under clientWidth).
+ */
 function lay(kpi: OkKpi, avail: number, naturalAtMax: number): void {
   const el = valueEl(kpi);
-  Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => avail });
+  naturalAtMaxOf.set(el, naturalAtMax);
+  el.getBoundingClientRect = () => rect(avail);
+  Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => Math.round(avail) });
   Object.defineProperty(el, 'scrollWidth', {
     configurable: true,
-    get: () => Math.ceil((naturalAtMax * fontPx(el)) / MAX_PX),
+    get: () => Math.max(Math.round(avail), Math.round(painted(el))),
   });
 }
 
@@ -81,12 +98,17 @@ async function mount(value: string): Promise<OkKpi> {
 
 beforeEach(() => {
   observers = [];
+  naturalAtMaxOf.clear();
+  vi.spyOn(Range.prototype, 'getBoundingClientRect').mockImplementation(function (this: Range) {
+    return rect(painted(this.startContainer as HTMLElement));
+  });
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
   document.body.innerHTML = '';
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   delete (document as { fonts?: unknown }).fonts;
 });
 
@@ -116,6 +138,50 @@ describe('ok-kpi: the figure is read on one line and fits its card (#246)', () =
     expect(el.scrollWidth).toBeLessThanOrEqual(151);
     expect(px).toBeGreaterThan((MAX_PX * 151) / 175 - 1);
     expect(el.title).toBe('');
+  });
+
+  // Found in review at 1114px (desktop): the card gives the figure 158.5px, clientWidth reports
+  // 159, and the size fitted to 159 painted 158.75px - the ellipsis ate the «€» with no tooltip.
+  it('fits a card that is a fraction of a pixel narrower than it reports (1114px desktop)', async () => {
+    const kpi = await mount('18.405,00 €');
+    lay(kpi, 158.5, 162.83);
+    resize(kpi);
+    const el = valueEl(kpi);
+    expect(fontPx(el)).toBeLessThan(MAX_PX);
+    expect(painted(el)).toBeLessThanOrEqual(158.5);
+    expect(el.title).toBe('');
+  });
+
+  it('leaves half a pixel spare when it scales (glyph widths are not exactly linear on every engine)', async () => {
+    const kpi = await mount('18.405,00 €');
+    lay(kpi, 158.5, 162.83);
+    resize(kpi);
+    expect(painted(valueEl(kpi))).toBeLessThanOrEqual(158.5 - 0.5);
+  });
+
+  it('shrinks a figure that overflows its card by less than a pixel', async () => {
+    const kpi = await mount('18.405,00 €');
+    lay(kpi, 158.5, 158.75); // clientWidth and scrollWidth both say 159: "fits"
+    resize(kpi);
+    const el = valueEl(kpi);
+    expect(fontPx(el)).toBeLessThan(MAX_PX);
+    expect(painted(el)).toBeLessThanOrEqual(158.5);
+  });
+
+  it('fits by the text\'s own width, not the whole pixels scrollWidth rounds it down to', async () => {
+    const kpi = await mount('18.405,00 €');
+    lay(kpi, 151, 175.45); // scrollWidth says 175
+    resize(kpi);
+    expect(painted(valueEl(kpi))).toBeLessThanOrEqual(151);
+  });
+
+  it('shrinks a figure a hair wider than its card even when both round to the same whole pixel', async () => {
+    const kpi = await mount('18.405,00 €');
+    lay(kpi, 158.4, 158.45); // clientWidth and scrollWidth both say 158
+    resize(kpi);
+    const el = valueEl(kpi);
+    expect(fontPx(el)).toBeLessThan(MAX_PX);
+    expect(painted(el)).toBeLessThanOrEqual(158.4);
   });
 
   it('does not go under 1rem: below the floor it cuts with an ellipsis and keeps the figure as tooltip', async () => {
