@@ -9,7 +9,7 @@ import { define } from '../../base/define.js';
 //   • prop `.items`        → BarListItem[] (label, value, color?)
 //   • prop `max`           → tope de la escala (def: máximo de los valores)
 //   • prop `value-format`  → 'number' | 'compact' | 'currency' | 'percent' (def 'number')
-//   • prop `locale`        → locale para Intl (def navegador)
+//   • prop `locale`        → Intl locale (default: <html lang>, then the browser)
 //   • prop `currency`      → divisa ISO si value-format='currency' (def 'EUR')
 // El color por ítem acepta una variante semántica (brand/leaf/warn/info/danger) o un color CSS
 // literal; si no se da, usa la variante 'brand' (token --bar-brand).
@@ -57,18 +57,24 @@ export class OkBarList extends LitElement {
       --value-width: 60px;
     }
 
+    /* The columns live on the list and every row takes them as a subgrid: the value column fits
+       the widest figure (--value-width is its floor), and all tracks keep the same width so the
+       bars stay comparable between rows (outfitkit#243: «18.420,50 €» spilled over a 60px column). */
     .bars {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: var(--label-width) minmax(0, 1fr) minmax(var(--value-width), max-content);
+      column-gap: 10px;
+      row-gap: 8px;
       width: 100%;
       box-sizing: border-box;
     }
 
     .row {
       display: grid;
+      grid-column: 1 / -1;
       grid-template-columns: var(--label-width) 1fr var(--value-width);
-      gap: 10px;
+      grid-template-columns: subgrid;
+      column-gap: 10px;
       align-items: center;
       font-size: 0.75rem;
     }
@@ -107,7 +113,7 @@ export class OkBarList extends LitElement {
 
     /* En móvil estrecho compactamos la columna de etiqueta. */
     @media (max-width: 420px) {
-      .row {
+      .bars {
         --label-width: 80px;
         --value-width: 52px;
       }
@@ -129,7 +135,7 @@ export class OkBarList extends LitElement {
   /** Formato de presentación del valor. */
   @property({ attribute: 'value-format' }) valueFormat: BarListValueFormat = 'number';
 
-  /** Locale para Intl.NumberFormat (def: navegador). */
+  /** Intl.NumberFormat locale (default: the page `<html lang>`, then the browser). */
   @property() locale = '';
 
   /** Divisa ISO 4217 cuando value-format='currency'. */
@@ -149,18 +155,18 @@ export class OkBarList extends LitElement {
     return color; // color CSS literal
   }
 
-  // Formatea el valor según value-format usando Intl nativo.
+  // Formats the value per value-format with native Intl. Without a `locale` prop it follows the
+  // page language (<html lang>, the hub UI language), then the browser.
   private formatValue(value: number): string {
-    const locale = this.locale || undefined;
+    const pageLang = typeof document === 'undefined' ? '' : document.documentElement.lang;
+    const locale = this.locale || pageLang || undefined;
     switch (this.valueFormat) {
       case 'compact':
         return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
       case 'currency':
-        return new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: this.currency,
-          maximumFractionDigits: 0,
-        }).format(value);
+        // Money keeps the minor unit of its currency (EUR 2, JPY 0, KWD 3): a 0.40 € discrepancy
+        // must not read «−0 €» (outfitkit#243).
+        return new Intl.NumberFormat(locale, { style: 'currency', currency: this.currency }).format(value);
       case 'percent':
         return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(value);
       case 'number':
