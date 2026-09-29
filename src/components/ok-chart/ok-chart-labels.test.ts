@@ -143,6 +143,25 @@ describe('ok-chart — text keeps its shape', () => {
     });
   });
 
+  it('reserves room for the endpoint label in real px, outside the stretched svg', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const width = this.classList.contains('value-label') ? 40 : 0;
+      return { width, height: 12, x: 0, y: 0, top: 0, left: 0, right: width, bottom: 12 } as DOMRect;
+    });
+    const el = await chartWith({
+      type: 'line',
+      endpoint: true,
+      endpointLabel: '64 %',
+      series: [{ data: [10, 64] }],
+    });
+    const canvas = el.shadowRoot!.querySelector<HTMLElement>('.canvas')!;
+    expect(canvas.style.marginRight).toBe('46px'); // 40 px label + 6 px from the dot
+    const d = el.shadowRoot!.querySelector('path[fill="none"]')!.getAttribute('d')!;
+    expect(Number(d.split('L')[1].split(',')[0])).toBeCloseTo(588, 1); // no viewBox room left
+  });
+
   it('keeps the line labels at the ends of the line (first starts, last ends)', async () => {
     const el = await chartWith({ type: 'line', labels: ['a', 'b', 'c'], series: [{ data: [1, 2, 3] }] });
     const labels = xLabels(el);

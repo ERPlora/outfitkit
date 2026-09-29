@@ -26,6 +26,8 @@ import { define } from '../../base/define.js';
 
 /** Minimum gap, in px, between two neighbouring category labels. */
 const LABEL_GAP_PX = 8;
+/** Gap, in px, between the endpoint dot and its value label. */
+const ENDPOINT_GAP_PX = 6;
 
 /**
  * Smallest step (show one label out of `step`) so that the widest label plus a
@@ -151,7 +153,7 @@ export class OkChart extends LitElement {
 
     .value-label {
       position: absolute;
-      margin-left: 6px;
+      margin-left: 6px; /* ENDPOINT_GAP_PX */
       transform: translateY(-50%);
       white-space: nowrap;
       line-height: 1;
@@ -218,6 +220,9 @@ export class OkChart extends LitElement {
   /** Show one category label out of `labelStep` (the rest do not fit). */
   @state() private labelStep = 1;
 
+  /** Px reserved right of the plot for the endpoint label (measured, not stretched). */
+  @state() private endpointRoom = 0;
+
   private resizeObserver?: ResizeObserver;
 
   connectedCallback(): void {
@@ -247,6 +252,10 @@ export class OkChart extends LitElement {
     const slotPx = (rowPx * this.xSlot(labels.length)) / this.vbWidth;
     const step = xLabelStep(labels.length, slotPx, widest, LABEL_GAP_PX);
     if (step !== this.labelStep) this.labelStep = step;
+
+    const endpoint = this.renderRoot.querySelector<HTMLElement>('.value-label');
+    const room = endpoint ? Math.ceil(endpoint.getBoundingClientRect().width) + ENDPOINT_GAP_PX : 0;
+    if (room !== this.endpointRoom) this.endpointRoom = room;
   }
 
   // ---- Canvas geometry (viewBox 600 x height, preserveAspectRatio none) ----
@@ -259,7 +268,7 @@ export class OkChart extends LitElement {
   private get pad() {
     return {
       left: this.axis.length ? 0 : 12,
-      right: this.endpoint ? 56 : 12,
+      right: 12,
       top: 12,
       bottom: this.labels.length ? 22 : 12,
     };
@@ -510,7 +519,7 @@ export class OkChart extends LitElement {
       <div class="chart">
         <div class="frame">
           ${this.renderValueAxis()}
-          <div class="canvas">
+          <div class="canvas" style=${this.endpointRoom ? `margin-right:${this.endpointRoom}px` : ''}>
             <svg
               viewBox=${`0 0 ${this.vbWidth} ${this.vbHeight}`}
               style=${`height:${this.height}px`}
