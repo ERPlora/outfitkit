@@ -1,18 +1,31 @@
 import { LitElement, html, css } from 'lit';
+import type { PropertyValues } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import { iconRemove, iconTrendingDown, iconTrendingUp, okIcon } from '../../base/icons.js';
 
-// ok-kpi — tarjeta KPI para dashboards: label (muted) + value (grande) + delta con color y flecha.
-// Slot default opcional (p.ej. una sparkline) bajo el valor.
+// ok-kpi — dashboard KPI card: label (muted) + value (large) + delta with colour and arrow.
+// Optional default slot (e.g. a sparkline) under the value.
 type OkKpiTrend = 'up' | 'down' | 'flat';
+
+/** Smallest size the figure shrinks to before it is cut with an ellipsis (outfitkit#246). */
+const MIN_VALUE_REM = 1;
+
+/** Room left when the size is scaled: glyph widths are not exactly linear in it on every engine. */
+const FIT_SPARE_PX = 0.5;
+
+/** Root font size in px: what 1rem is on this page. */
+function rootPx(): number {
+  const n = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Number.isFinite(n) && n > 0 ? n : 16;
+}
 
 export class OkKpi extends LitElement {
   static styles = css`
     :host {
       display: block;
       width: 100%;
-      /* Tokens propios estilo Ionic (overridables): --ok-* → --ion-* → hex. */
+      /* Own Ionic-style tokens (overridable): --ok-* → --ion-* → hex. */
       --background: var(--ok-card-background, var(--ion-card-background, var(--ion-background-color, #ffffff)));
       --color: var(--ok-text-color, var(--ion-text-color, #1f2933));
       --label-color: var(--ok-color-medium, var(--ion-color-medium, #92949c));
@@ -20,7 +33,7 @@ export class OkKpi extends LitElement {
       --border-radius: var(--ok-radius, 12px);
       --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
       --padding: 1rem 1.125rem;
-      /* Colores de tendencia. */
+      /* Trend colours. */
       --trend-up-color: var(--ok-color-success, var(--ion-color-success, #2dd36f));
       --trend-down-color: var(--ok-color-danger, var(--ion-color-danger, #eb445a));
       --trend-flat-color: var(--ok-color-medium, var(--ion-color-medium, #92949c));
@@ -40,7 +53,7 @@ export class OkKpi extends LitElement {
       gap: 0.375rem;
     }
 
-    /* Fila superior: label + icono opcional. */
+    /* Top row: label + optional icon. */
     .top {
       display: flex;
       align-items: center;
@@ -63,14 +76,20 @@ export class OkKpi extends LitElement {
       flex: 0 0 auto;
     }
 
+    /* The figure is read on ONE line (outfitkit#246): it never wraps (Ionic's inherited
+       overflow-wrap would split «18.405,00 €» at any character); fit() shrinks it to its width,
+       and only below MIN_VALUE_REM is it cut with an ellipsis (full figure in the tooltip). */
     .value {
       margin: 0;
       font-size: 1.75rem;
       font-weight: 700;
       line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* Delta: flecha + texto, coloreado según tendencia. */
+    /* Delta: arrow + text, coloured by trend. */
     .delta {
       display: inline-flex;
       align-items: center;
@@ -96,22 +115,66 @@ export class OkKpi extends LitElement {
     }
   `;
 
-  /** Etiqueta (muted, uppercase). */
+  /** Label (muted, uppercase). */
   @property() label?: string;
 
-  /** Valor principal (grande, bold). */
+  /** Main value (large, bold), always on one line: it shrinks to fit its card. */
   @property() value?: string;
 
-  /** Variación, p.ej. '+12%'. */
+  /** Change, e.g. '+12%'. */
   @property() delta?: string;
 
-  /** Tendencia: 'up' | 'down' | 'flat'. Controla color y flecha del delta. */
+  /** Trend: 'up' | 'down' | 'flat'. Sets the colour and arrow of the delta. */
   @property() trend: OkKpiTrend = 'flat';
 
-  /** Nombre de un ion-icon opcional mostrado junto al label. */
+  /** Optional ion-icon name shown next to the label. */
   @property() icon?: string;
 
-  /** Devuelve el icono de flecha según la tendencia (SVG horneado, ver base/icons.ts). */
+  private resizeObserver?: ResizeObserver;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.resizeObserver = new ResizeObserver(() => this.fit());
+    this.resizeObserver.observe(this);
+    // A web font that arrives after the first measure changes the text width, not the box.
+    document.fonts?.ready.then(() => this.fit());
+  }
+
+  disconnectedCallback(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
+    super.disconnectedCallback();
+  }
+
+  protected updated(changed: PropertyValues<this>): void {
+    if (changed.has('value')) this.fit();
+  }
+
+  /**
+   * Scale the figure down to its box: measured once at full size, the text width is linear in
+   * the font size, so the size that fits is full * available / natural. Never below the floor.
+   */
+  private fit(): void {
+    const el = this.renderRoot.querySelector<HTMLElement>('.value');
+    if (!el) return;
+    el.style.removeProperty('font-size');
+    el.removeAttribute('title');
+    // Fractional widths: clientWidth/scrollWidth round to whole px, so a text 0.25px wider than
+    // its box reads as "fits" and the ellipsis eats the last glyph (the «€» at 1114px).
+    const available = el.getBoundingClientRect().width;
+    const text = document.createRange();
+    text.selectNodeContents(el);
+    const natural = text.getBoundingClientRect().width;
+    if (available <= 0 || natural <= available) return;
+    const fullPx = parseFloat(getComputedStyle(el).fontSize);
+    if (!Number.isFinite(fullPx) || fullPx <= 0) return;
+    const minPx = MIN_VALUE_REM * rootPx();
+    const fitPx = Math.floor(((fullPx * (available - FIT_SPARE_PX)) / natural) * 10) / 10;
+    el.style.fontSize = `${Math.max(minPx, fitPx)}px`;
+    if (fitPx < minPx) el.title = this.value ?? '';
+  }
+
+  /** Arrow icon for the trend (baked SVG, see base/icons.ts). */
   private trendIcon(): string {
     if (this.trend === 'up') return iconTrendingUp;
     if (this.trend === 'down') return iconTrendingDown;
