@@ -32,6 +32,18 @@ export interface BarListItem {
 
 const SEMANTIC: ReadonlySet<string> = new Set(['brand', 'leaf', 'warn', 'info', 'danger']);
 
+// The page language (<html lang>) as an Intl locale. The component also runs on pages it does not
+// control: a tag Intl cannot read (`es_ES`) throws a RangeError, so it falls back to the browser.
+function pageLocale(): string | undefined {
+  const lang = typeof document === 'undefined' ? '' : document.documentElement.lang;
+  if (!lang) return undefined;
+  try {
+    return Intl.getCanonicalLocales(lang)[0];
+  } catch {
+    return undefined;
+  }
+}
+
 export class OkBarList extends LitElement {
   static styles = css`
     :host {
@@ -158,8 +170,7 @@ export class OkBarList extends LitElement {
   // Formats the value per value-format with native Intl. Without a `locale` prop it follows the
   // page language (<html lang>, the hub UI language), then the browser.
   private formatValue(value: number): string {
-    const pageLang = typeof document === 'undefined' ? '' : document.documentElement.lang;
-    const locale = this.locale || pageLang || undefined;
+    const locale = this.locale || pageLocale();
     switch (this.valueFormat) {
       case 'compact':
         return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(value);

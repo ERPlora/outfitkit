@@ -82,6 +82,15 @@ describe('ok-bar-list — money keeps the decimals of its currency (outfitkit#24
     expect(values(en)).toEqual(['-€0.40']);
   });
 
+  it('a page language Intl cannot read (`es_ES`) falls back to the browser instead of breaking the list', async () => {
+    // OutfitKit also runs on pages it does not control: `Intl` throws a RangeError on `es_ES`, and
+    // a throw while rendering leaves the list without a single figure.
+    document.documentElement.lang = 'es_ES';
+    const el = await mount({ valueFormat: 'currency', currency: 'EUR' }, [{ label: 'S-1', value: -0.4 }]);
+    expect(values(el)).toHaveLength(1);
+    expect(values(el)[0]).toMatch(/^-(0[.,]40 €|€0\.40)$/);
+  });
+
   it('an explicit `locale` wins over the language of the page', async () => {
     document.documentElement.lang = 'es';
     const el = await mount({ valueFormat: 'currency', currency: 'EUR', locale: 'en-US' }, [
