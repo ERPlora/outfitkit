@@ -250,7 +250,10 @@ export class OkChart extends LitElement {
     const rowPx = row?.getBoundingClientRect().width ?? 0;
     const widest = Math.max(0, ...labels.map((l) => l.getBoundingClientRect().width));
     const slotPx = (rowPx * this.xSlot(labels.length)) / this.vbWidth;
-    const step = xLabelStep(labels.length, slotPx, widest, LABEL_GAP_PX);
+    // A line aligns its first and last labels inwards, so each edge pair needs
+    // one and a half labels of room (two when there are only two labels).
+    const edge = this.type === 'bar' ? 1 : labels.length === 2 ? 2 : 1.5;
+    const step = xLabelStep(labels.length, slotPx, widest * edge, LABEL_GAP_PX);
     if (step !== this.labelStep) this.labelStep = step;
 
     const endpoint = this.renderRoot.querySelector<HTMLElement>('.value-label');

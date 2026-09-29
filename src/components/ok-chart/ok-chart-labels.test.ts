@@ -162,6 +162,46 @@ describe('ok-chart — text keeps its shape', () => {
     expect(Number(d.split('L')[1].split(',')[0])).toBeCloseTo(588, 1); // no viewBox room left
   });
 
+  it('puts the category row just below the plot, not over it', async () => {
+    const el = await chartWith({ type: 'bar', height: 200, labels: WEEK, series: [{ data: SALES }] });
+    const top = parseFloat(el.shadowRoot!.querySelector<HTMLElement>('.x-axis')!.style.top);
+    const plotBottom = Number(el.shadowRoot!.querySelector('.grid line:last-of-type')!.getAttribute('y1'));
+    expect(top).toBeGreaterThan(plotBottom);
+    expect(top + 10).toBeLessThanOrEqual(200); // a 10 px label still inside the chart
+  });
+
+  it('starts the plot right after the value axis (the axis is its own column)', async () => {
+    const el = await chartWith({
+      type: 'line',
+      labels: ['a', 'b', 'c'],
+      axis: ['100', '0'],
+      series: [{ data: [1, 2, 3] }],
+    });
+    const d = el.shadowRoot!.querySelector('path[fill="none"]')!.getAttribute('d')!;
+    expect(Number(d.replace(/^M\s*/, '').split(',')[0])).toBeCloseTo(0, 1);
+    expect(labelX(xLabels(el)[0])).toBeCloseTo(0, 1);
+  });
+
+  it('draws the endpoint label next to the last point of the line', async () => {
+    const el = await chartWith({
+      type: 'line',
+      endpoint: true,
+      endpointLabel: '64 %',
+      series: [{ data: [10, 64, 30] }],
+    });
+    const d = el.shadowRoot!.querySelector('path[fill="none"]')!.getAttribute('d')!;
+    const [lastX, lastY] = d.split('L').pop()!.trim().split(',').map(Number);
+    const label = el.shadowRoot!.querySelector<HTMLElement>('.value-label')!;
+    expect((parseFloat(label.style.left) / 100) * VB_WIDTH).toBeCloseTo(lastX, 1);
+    expect(parseFloat(label.style.top)).toBeCloseTo(lastY, 1);
+  });
+
+  it('draws no endpoint label on a bar chart (it has no endpoint dot)', async () => {
+    const el = await chartWith({ type: 'bar', endpoint: true, series: [{ data: [1, 2] }] });
+    expect(el.shadowRoot!.querySelector('.value-label')).toBeNull();
+    expect(el.shadowRoot!.querySelector('circle')).toBeNull();
+  });
+
   it('keeps the line labels at the ends of the line (first starts, last ends)', async () => {
     const el = await chartWith({ type: 'line', labels: ['a', 'b', 'c'], series: [{ data: [1, 2, 3] }] });
     const labels = xLabels(el);
@@ -229,6 +269,52 @@ describe('ok-chart — labels that do not fit are skipped evenly', () => {
     fakeLayout(300, 38);
     const el = await chartWith({ type: 'bar', labels: WEEK, series: [{ data: SALES }] });
     expect(visible(el)).toHaveLength(4);
+  });
+
+  it('measures the WIDEST label, not the first one', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const wide = this.textContent?.trim() === '29 Sep';
+      const width = this.classList.contains('x-axis')
+        ? 300
+        : this.classList.contains('x-label')
+          ? wide ? 42 : 20
+          : 0;
+      return { width, height: 12, x: 0, y: 0, top: 0, left: 0, right: width, bottom: 12 } as DOMRect;
+    });
+    const el = await chartWith({ type: 'bar', labels: WEEK, series: [{ data: SALES }] });
+    expect(visible(el)).toHaveLength(4);
+  });
+
+  it('lets a bar label use its whole slot (bars have no edge-aligned labels)', async () => {
+    // 400 px row, 7 bars → ~55 px per bar ≥ 42 + 8: all fit, no edge allowance.
+    fakeLayout(400, 42);
+    const el = await chartWith({ type: 'bar', labels: WEEK, series: [{ data: SALES }] });
+    expect(visible(el)).toEqual(WEEK);
+  });
+
+  it('shows every line label when they fit their point spacing', async () => {
+    // 330 px row, 7 points on a 576/600 plot → ~53 px apart; a 28 px label needs
+    // 28 × 1.5 + 8 = 50 px next to an edge label (the 45 px BAR slot would skip).
+    fakeLayout(330, 28);
+    const el = await chartWith({ type: 'line', labels: WEEK, series: [{ data: SALES }] });
+    expect(visible(el)).toEqual(WEEK);
+  });
+
+  it('skips line labels when an edge label would touch its neighbour', async () => {
+    // The first label starts at its point and the last one ends at it, so each
+    // edge pair needs 1.5 labels + gap: 42 × 1.5 + 8 = 71 px > 53 px → skip.
+    fakeLayout(330, 42);
+    const el = await chartWith({ type: 'line', labels: WEEK, series: [{ data: SALES }] });
+    expect(visible(el)).toEqual(['23 Sep', '25 Sep', '27 Sep', '29 Sep']);
+  });
+
+  it('keeps only the last label of a two-point line when both do not fit', async () => {
+    // Two labels aligned inwards need 2 × 42 + 8 = 92 px; the row gives ~86.
+    fakeLayout(90, 42);
+    const el = await chartWith({ type: 'line', labels: ['Mon', 'Tue'], series: [{ data: [1, 2] }] });
+    expect(visible(el)).toEqual(['Tue']);
   });
 
   it('re-fits the labels when the card is resized', async () => {
