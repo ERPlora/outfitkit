@@ -115,6 +115,8 @@ describe('formatQuantity / formatPercent — non-money numbers in the document l
     expect(formatQuantity(1.5, 'en')).toBe('1.5');
     expect(formatQuantity(2, 'es')).toBe('2');
     expect(formatQuantity(0.125, 'es')).toBe('0,125');
+    // The row keeps quantities in 10⁶ fixed point (ADR-0147): all six decimals reach the paper.
+    expect(formatQuantity(1.234567, 'es')).toBe('1,234567');
   });
 
   it('percent: «5,2 %» / «21 %» in es, «5.2%» / «21%» in en', () => {
@@ -131,8 +133,9 @@ describe('formatQuantity / formatPercent — non-money numbers in the document l
 
   it('an unreadable locale (es_ES) does not throw', () => {
     expect(() => formatQuantity(1.5, 'es_ES')).not.toThrow();
-    expect(formatQuantity(1.5, 'es_ES')).toMatch(/^1[.,]5$/);
-    expect(formatPercent(21, 'es_ES')).toMatch(/^21\s?%$/);
+    // «es_ES» is retried as «es-ES»: the paper keeps the Spanish separators, not the browser's.
+    expect(formatQuantity(1.5, 'es_ES')).toBe('1,5');
+    expect(plain(formatPercent(21, 'es_ES'))).toBe('21 %');
   });
 
   it('what is not a finite number is painted «—», never «NaN» or «undefined»', () => {
