@@ -221,4 +221,78 @@ describe('ok-data-table: a client-side sort follows the value, not the painted t
     await table.updateComplete;
     expect(names(table)).toEqual(['Bea']);
   });
+  // Review of outfitkit#259: `format` does not only paint a value, it can print OTHER words than the
+  // field holds. Those columns must keep the order a person reads, as they did before #256.
+  it('keeps sorting a text column by what it prints when the field stores other words (cash movements)', async () => {
+    // cash_register «Concept»: the row stores «Sale <uuid>», the cell prints the document number.
+    const printed: Record<string, string> = { 'Sale 9f': 'Invoice F-0001', 'Sale 1a': 'Invoice F-0002', 'Sale 5c': 'Invoice F-0003' };
+    const rows: Row[] = [
+      { id: '1', description: 'Sale 1a' },
+      { id: '2', description: 'Sale 9f' },
+      { id: '3', description: 'Sale 5c' },
+    ];
+    const table = await mount(rows, [
+      { key: 'description', header: 'Concept', format: (r: Row) => printed[r.description as string] },
+    ]);
+    await sortBy(table, 'Concept');
+    expect(names(table)).toEqual(['Invoice F-0001', 'Invoice F-0002', 'Invoice F-0003']);
+  });
+
+  it('keeps sorting a status column by its label, not by the stored code', async () => {
+    const label: Record<string, string> = { pending: 'Abierta', closed: 'Cerrada' };
+    const rows: Row[] = [
+      { id: '1', status: 'pending' },
+      { id: '2', status: 'closed' },
+    ];
+    const table = await mount(rows, [
+      { key: 'status', header: 'Status', format: (r: Row) => label[r.status as string] },
+    ]);
+    await sortBy(table, 'Status');
+    expect(names(table)).toEqual(['Abierta', 'Cerrada']);
+  });
+
+  it('sorts an amount the hub hands over as a NUMERIC string by the number', async () => {
+    // The hub runtime decodes NUMERIC to a string («100.00») to keep its precision.
+    const rows: Row[] = [
+      { id: '1', name: 'Big', total: '100.00' },
+      { id: '2', name: 'Small', total: '9.50' },
+      { id: '3', name: 'Mid', total: '20.00' },
+      { id: '4', name: 'Refund', total: '-3.25' },
+    ];
+    const eur = (r: Row) => `${String(r.total).replace('.', ',')} €`;
+    const table = await mount(rows, [
+      { key: 'name', header: 'Name' },
+      { key: 'total', header: 'Total', format: eur },
+    ]);
+    await sortBy(table, 'Total');
+    expect(names(table)).toEqual(['Refund', 'Small', 'Mid', 'Big']);
+  });
+
+  it('leaves the order to the server in server mode: it asks, and keeps the rows as they came', async () => {
+    const rows: Row[] = [
+      { id: '1', name: 'Big', total: '100.00', note: 'b' },
+      { id: '2', name: 'Small', total: '9.50', note: 'a' },
+    ];
+    const table = document.createElement('ok-data-table') as unknown as Table & { serverSide: boolean; total: number };
+    table.serverSide = true;
+    table.rows = rows;
+    table.total = rows.length;
+    table.columns = [
+      { key: 'name', header: 'Name' },
+      { key: 'total', header: 'Total', sortable: true, format: (r: Row) => `${String(r.total)} €` },
+      { key: 'note', header: 'Note' },
+    ];
+    table.rowKey = 'id';
+    document.body.appendChild(table);
+    await table.updateComplete;
+    const asked: unknown[] = [];
+    table.addEventListener('sortChange', (e) => asked.push((e as CustomEvent).detail));
+    await sortBy(table, 'Total');
+    expect(asked).toEqual([{ sort: 'total', dir: 'asc' }]);
+    expect(names(table)).toEqual(['Big', 'Small']);
+    // A column the module did not mark sortable does not sort, not even in memory.
+    await sortBy(table, 'Note');
+    expect(asked).toHaveLength(1);
+    expect(names(table)).toEqual(['Big', 'Small']);
+  });
 });

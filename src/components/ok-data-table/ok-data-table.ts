@@ -56,10 +56,10 @@ export interface DataTableColumn {
   header: string;
   /** Formateador → string a mostrar. Si se omite, se usa row[key]. */
   format?: (row: Record<string, unknown>) => string;
-  /** The value a client-side sort and a date range filter compare, when it is not `row[key]`
-   *  (#256): e.g. a column whose `key` is a logical id, or a status sorted by rank. Without it the
-   *  table compares `row[key]` when that is a plain value (string, number, boolean, Date, null),
-   *  and falls back to the `format` text only when the field is missing or an object. */
+  /** The value a client-side sort and a date range filter compare (#256): e.g. a column whose
+   *  `key` is a logical id, or a status sorted by rank. Without it a column with `format` compares
+   *  `row[key]` when it is data (number, boolean, Date, ISO date/time or NUMERIC string, null last)
+   *  and the `format` text for anything else (words, codes, a missing field, an object). */
   sortValue?: (row: Record<string, unknown>) => unknown;
   /** Alineación del contenido de la celda. */
   align?: 'left' | 'right' | 'center';
@@ -384,6 +384,11 @@ const ES_LABELS: OkDataTableLabels = {
   loadError: 'No se han podido cargar los datos',
   retry: 'Reintentar',
 };
+
+/** #256 - A field that holds a number as text: the hub decodes NUMERIC (money) to «100.00». */
+const NUMERIC_TEXT = /^-?\d+(\.\d+)?$/;
+/** #256 - A field that holds an ISO date, datetime or time («2026-12-31», «09:30:00»). */
+const ISO_DATE_OR_TIME = /^(\d{4}-\d{2}-\d{2}|\d{2}:\d{2})/;
 
 export class OkDataTable extends LitElement {
   static styles = css`
@@ -1582,14 +1587,21 @@ export class OkDataTable extends LitElement {
   }
 
   /** #256 - What a client-side sort and a date range filter compare: `sortValue`, else the field
-   *  itself, so «15/01/2027» sorts after «31/12/2026» and «9,50 €» before «100,00 €» (AG Grid,
-   *  MUI DataGrid, TanStack Table). The `format` text only when the field is missing (a logical
-   *  key) or an object the text is drawn from. A null field sorts last in both directions. */
+   *  itself when it is DATA — a number, boolean, `Date`, ISO date/time or NUMERIC string («100.00»,
+   *  how the hub hands over money) — so «15/01/2027» sorts after «31/12/2026» and «9,50 €» before
+   *  «100,00 €» (AG Grid, MUI DataGrid, TanStack Table). Any other field (words, a status code, a
+   *  stored «Sale <uuid>» the cell prints as a document number), a missing field or an object keeps
+   *  sorting by the `format` text the person reads, as before #256. A null field sorts last. */
   private sortKey(col: DataTableColumn, row: Record<string, unknown>): unknown {
     if (col.sortValue) return col.sortValue(row);
     const value = row[col.key];
-    const drawn = value === undefined || (typeof value === 'object' && value !== null && !(value instanceof Date));
-    return drawn && col.format ? col.format(row) : value;
+    if (!col.format || value === null) return value;
+    if (typeof value === 'number' || typeof value === 'boolean' || value instanceof Date) return value;
+    if (typeof value === 'string') {
+      if (NUMERIC_TEXT.test(value)) return Number(value);
+      if (ISO_DATE_OR_TIME.test(value)) return value;
+    }
+    return col.format(row);
   }
 
   /** Valores distintos de una columna (para los chips del filtro multi-select). */
