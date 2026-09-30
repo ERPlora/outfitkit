@@ -58,11 +58,29 @@ afterEach(() => {
 // ── Layout guard (outfitkit#263) ────────────────────────────────────────────────
 // happy-dom does no layout, so the narrow-column contract is fixed on the component's
 // own stylesheet: parse it and resolve, for a panel `px` wide, the value the cascade
-// leaves on a selector — the LAST matching declaration wins (an `!important` one beats
-// any later normal one), and `@container` blocks only count when their condition holds
-// at that width. A condition this resolver cannot read fails the test instead of being
-// silently skipped.
-type Decl = { value: string; important: boolean };
+// leaves on an element — every rule whose selector ends on it counts (`.panel .range`,
+// `.range:first-child`; a pseudo-ELEMENT like `.range::after` styles something else),
+// `!important` first, then the higher specificity, then the later rule; `@container`
+// blocks only count when their condition holds at that width. A condition this resolver
+// cannot read fails the test instead of being silently skipped.
+type Decl = { value: string; important: boolean; specificity: number; order: number };
+
+// The last compound of `selector` targets `target` (pseudo-classes allowed, no pseudo-element).
+function targets(selector: string, target: string): boolean {
+  if (selector.includes('::')) return false;
+  const last = selector.split(/\s*[\s>+~]\s*/).pop() ?? '';
+  const bare = last.replace(/:(?!host\b)[\w-]+(\([^)]*\))?/g, '');
+  return bare === target;
+}
+
+// ids · classes/attributes/pseudo-classes · types, packed in one comparable number.
+function specificity(selector: string): number {
+  const ids = (selector.match(/#[\w-]+/g) ?? []).length;
+  const classes = (selector.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) ?? []).length;
+  const types = (selector.replace(/\([^)]*\)/g, '').match(/(^|[\s>+~])[a-z][\w-]*/gi) ?? [])
+    .length;
+  return ids * 10000 + classes * 100 + types;
+}
 
 function containerMatches(condition: string, px: number): boolean {
   const toPx = (n: string, unit: string): number => parseFloat(n) * (unit === 'rem' ? 16 : 1);
@@ -92,14 +110,24 @@ function stylesheet(): CSSStyleSheet {
 /** Value the cascade leaves on `selector`/`prop` for a panel `px` wide ('' = none). */
 function cssAt(selector: string, prop: string, px: number): string {
   let won: Decl | null = null;
+  let order = 0;
+  const beats = (a: Decl, b: Decl): boolean =>
+    a.important !== b.important
+      ? a.important
+      : a.specificity !== b.specificity
+        ? a.specificity > b.specificity
+        : a.order > b.order;
   const walk = (rules: CSSRuleList): void => {
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule) {
-        const selectors = rule.selectorText.split(',').map((x) => x.trim());
         const value = rule.style.getPropertyValue(prop).trim();
-        if (!selectors.includes(selector) || !value) continue;
+        if (!value) continue;
         const important = rule.style.getPropertyPriority(prop) === 'important';
-        if (!won || important || !won.important) won = { value, important };
+        for (const sel of rule.selectorText.split(',').map((x) => x.trim())) {
+          if (!targets(sel, selector)) continue;
+          const decl = { value, important, specificity: specificity(sel), order: order++ };
+          if (!won || beats(decl, won)) won = decl;
+        }
       } else if (rule.constructor.name === 'CSSContainerRule') {
         const r = rule as CSSRule & { conditionText: string; cssRules: CSSRuleList };
         if (containerMatches(r.conditionText, px)) walk(r.cssRules);
