@@ -9,13 +9,15 @@ import '../ok-chart/ok-chart.js';
 // Cloud (Django). Everything arrives precomputed by the server; the component never
 // computes business thresholds, it only paints:
 //   - ok-gauge ring with the current value + ok-chart area (0..100) with the history;
-//   - a status band colored by the RECEIVED `status` (the server decides) — colors are
-//     never recomputed from `current`; the only use of the received `.thresholds` is
-//     the gauge zone gradient;
+//   - a status band colored by the RECEIVED `status` (the server decides), drawn only
+//     when the server sends a message — colors are never recomputed from `current`;
+//     the only use of the received `.thresholds` is the gauge zone gradient;
 //   - `known === false` renders a not-measured state (icon + `unreadable-label`),
 //     NEVER a zero that would read as healthy green (ADR-0237 doctrine);
 //   - the displayed value clamps at 100 while the tooltip keeps the real value;
 //   - an optional upgrade CTA (link), rendered only when `upgrade.show` is true.
+// The layout follows the panel's OWN width (container query), not the viewport's: in a
+// narrow column the range chip drops below the name and the trend goes under the dial.
 // Presentational: no events.
 
 /** Health status computed by the server for the metric. */
@@ -62,6 +64,7 @@ export class OkResourceUsage extends LitElement {
       display: block;
       width: 100%;
       box-sizing: border-box;
+      container-type: inline-size;
 
       --ink: var(--ok-text-color, var(--ion-text-color, #1f2933));
       --ink-muted: var(--ok-color-medium, var(--ion-color-medium, #92949c));
@@ -79,11 +82,14 @@ export class OkResourceUsage extends LitElement {
 
     .head {
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
       justify-content: space-between;
-      gap: 0.5rem;
+      gap: 0.25rem 0.5rem;
     }
     .label {
+      min-width: 0;
+      overflow-wrap: anywhere;
       font-size: 0.6875rem;
       font-weight: 600;
       color: var(--ink-muted);
@@ -97,6 +103,7 @@ export class OkResourceUsage extends LitElement {
       border: 1px solid var(--line);
       border-radius: 999px;
       padding: 1px 8px;
+      white-space: nowrap;
     }
 
     .body {
@@ -151,6 +158,21 @@ export class OkResourceUsage extends LitElement {
     }
     a.upgrade:hover {
       text-decoration: underline;
+    }
+
+    /* Narrower than the 110px dial + gap + a trend as wide as the dial. */
+    @container (width < 15rem) {
+      .body {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .dial {
+        align-self: center;
+      }
+      .unreadable {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   `;
 
@@ -248,12 +270,14 @@ export class OkResourceUsage extends LitElement {
             </div>`
           : nothing}
       </div>
-      <div
-        class=${`status status--${m.status}`}
-        style=${`background:color-mix(in srgb, ${this.statusColor} 15%, transparent);color:${this.statusColor};`}
-      >
-        ${m.message ?? nothing}
-      </div>`;
+      ${m.message?.trim()
+        ? html`<div
+            class=${`status status--${m.status}`}
+            style=${`background:color-mix(in srgb, ${this.statusColor} 15%, transparent);color:${this.statusColor};`}
+          >
+            ${m.message}
+          </div>`
+        : nothing}`;
   }
 
   private renderUpgrade(): unknown {
