@@ -133,6 +133,33 @@ describe('showcase topbar title fits between the toolbar controls (outfitkit#254
     expect(shrink).toBe(0);
   });
 
+  // Only the select's text may go on phones: the select itself stays on screen and tappable. No rule
+  // that reaches the select element (or the end controls wrapping it), in any media, may hide it,
+  // make it invisible or squeeze it below the 44 px tap target.
+  it('never hides or squeezes the theme select itself', () => {
+    const reachesSelect = (s: string) => !s.includes('::part') && /ion-select|theme-select|topbar-end/.test(s);
+    const offending: string[] = [];
+    for (const b of blocks(CSS)) {
+      if (!b.selector.split(',').some(reachesSelect)) continue;
+      for (const decl of b.body.split(';')) {
+        const at = decl.indexOf(':');
+        if (at < 0) continue;
+        const prop = decl.slice(0, at).trim();
+        const value = decl.slice(at + 1).replace('!important', '').trim();
+        const px = parseFloat(value);
+        if (
+          (prop === 'display' && value === 'none') ||
+          (prop === 'visibility' && value !== 'visible') ||
+          (prop === 'opacity' && px === 0) ||
+          ((prop === 'width' || prop === 'max-width') && !Number.isNaN(px) && px < 44)
+        ) {
+          offending.push(`${b.media ?? 'all'} ${b.selector} { ${prop}: ${value} }`);
+        }
+      }
+    }
+    expect(offending).toEqual([]);
+  });
+
   it('collapses the theme select at the same 640 px border that hides the viewport segment', () => {
     expect(declared('ion-segment.viewport-seg', PHONE_MEDIA).get('display')).toBe('none');
     const phoneMedias = new Set(blocks(CSS).filter((b) => b.selector.includes('theme-select')).map((b) => b.media));
