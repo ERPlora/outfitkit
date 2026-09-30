@@ -134,6 +134,8 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
   fijado encima de la última columna; al volver a caber (se cierra el menú, se ocultan columnas)
   vuelve a lista. Una lista sin columna de acciones fijada solo se desplaza de lado, como siempre;
   la elección manual en el conmutador manda; `default-view="table"` es solo la vista de arranque.
+  Con el panel Nuevo/Filtros abierto (en ≥ 834 px empuja la lista 360 px sin cambiar el ancho del
+  host) no se juzga nada: la lista se queda como estaba y se vuelve a medir al cerrarlo.
   Sin `views` no cambia nada. Lo ancla
   `src/components/ok-data-table/cards-when-table-does-not-fit.test.ts`.
 - **Orden por el valor, no por el texto** (outfitkit#256) — en modo cliente, ordenar una columna con

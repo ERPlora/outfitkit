@@ -158,6 +158,8 @@ function isCards(table: Table): boolean {
 
 /** Width of one icon button in `mode: ios`, as painted in the row with its margins. */
 const BUTTON = 32;
+/** What the side panel takes from the list at >=834px (`.card.has-panel`, 360px column). */
+const PANEL = 360;
 /** What `getBoundingClientRect` reports for that button, and the inline margin on each side:
  *  Chromium paints the ios icon button 28px wide with 2px of `margin-inline` (the track is 32). */
 let buttonRect = BUTTON;
@@ -187,9 +189,15 @@ function playBackLayout(): void {
         prop === 'marginLeft' || prop === 'marginRight' ? `${buttonMargin}px` : Reflect.get(target, prop),
     });
   });
+  // The Nuevo/Filtros panel pushes the list 360px at >=834px (`.card.has-panel`): the scroller
+  // narrows, the host does not.
+  const scrollerWidth = (el: HTMLElement): number => {
+    const host = hostOf(el) as (Measured & { panel: string }) | null;
+    return host && host.panel !== 'none' ? hole - PANEL : hole;
+  };
   vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
     if (this.tagName === 'OK-DATA-TABLE') return hole;
-    if (this.classList?.contains('scroll')) return hole;
+    if (this.classList?.contains('scroll')) return scrollerWidth(this);
     return 0;
   });
   vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
@@ -198,7 +206,7 @@ function playBackLayout(): void {
       const collapsed = !!host?.rowActionsCollapsed;
       const buttons = collapsed ? BUTTON : EXPANDED_MIN - FOLDED_MIN + BUTTON;
       const stale = host?.actionsTrackPx ? host.actionsTrackPx - buttons : 0;
-      return Math.max((collapsed ? foldedMin : foldedMin + (EXPANDED_MIN - FOLDED_MIN)) + stale, hole);
+      return Math.max((collapsed ? foldedMin : foldedMin + (EXPANDED_MIN - FOLDED_MIN)) + stale, scrollerWidth(this));
     }
     return 0;
   });
@@ -386,6 +394,33 @@ describe('ok-data-table: a list that does not fit even folded shows cards (#267)
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('opening the Nuevo/Filtros panel (it pushes the list 360px) does not hand the list over, and closing it leaves the list', async () => {
+    // Measured in Chromium on the showcase invoices at 1440x900 (review of outfitkit#271): `open('create')`
+    // narrowed the scroller to 800px for a 936px grid, the list went to cards behind the form, and
+    // it STAYED in cards after closing - the host never grew, so nothing "gave it back". The panel
+    // is a moment of the person's work on a record, not a hole the list has to fit.
+    hole = 1000; // the seven columns fit folded (748px); next to the panel they get 640px
+    const table = await mount();
+    expect(isCards(table)).toBe(false);
+    (table as unknown as { open: (p: string) => void }).open('create');
+    await settle(table);
+    expect(isCards(table), 'the list next to the form must not turn into cards').toBe(false);
+    (table as unknown as { close: () => void }).close();
+    await settle(table);
+    expect(isCards(table), 'the list must still be the list once the form closes').toBe(false);
+  });
+
+  it('in cards, opening and closing the panel keeps the cards: the hole did not change', async () => {
+    const table = await mount();
+    expect(isCards(table)).toBe(true);
+    (table as unknown as { open: (p: string) => void }).open('filters');
+    await settle(table);
+    expect(isCards(table)).toBe(true);
+    (table as unknown as { close: () => void }).close();
+    await settle(table);
+    expect(isCards(table), 'a 720px hole still does not fit the list').toBe(true);
   });
 
   it('the list chosen by hand stays the list when the hole shrinks later', async () => {

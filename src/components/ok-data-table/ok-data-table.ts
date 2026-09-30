@@ -1170,6 +1170,12 @@ export class OkDataTable extends LitElement {
   /** #267 - Hands the list over to cards when it does not fit even folded, and back when the hole
    *  has room again. The criterion lives in `decideCardsForFit`. */
   private measureCardsFit(folded: CardsForFitInput['folded']): void {
+    // The Nuevo/Filtros panel pushes the list 360px at >= 834px (`.card.has-panel`) without
+    // resizing the host: judged next to the form, the list went to cards and stayed there once
+    // the form closed (the host never "grew" to give it back - review of #271). The panel is a
+    // moment of the person's work on a record, not a hole the list has to fit: nothing moves
+    // while it is open, and closing it re-renders and judges the list again.
+    if (this.panel !== 'none') return;
     const allowed = this.cardViewEnabled && !this.viewChosenByUser && !this.isMobile && this.defaultView !== 'cards';
     const next = decideCardsForFit({
       allowed,
