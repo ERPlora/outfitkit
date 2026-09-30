@@ -2179,9 +2179,9 @@ bar.series = [
     id: "ok-resource-usage",
     name: "ok-resource-usage",
     category: "graficos",
-    desc: "Panel de recurso 0-100 % (RAM/CPU/disco) compartido Hub↔Cloud. Componente TONTO: recibe TODO precalculado por el servidor (.metric con known/current/points/status/message) y solo pinta — gauge ring + histórico en área (eje fijo 0..100) + banda de estado coloreada por status + CTA de upgrade opcional. known=false ⇒ estado «no medido» (nunca un 0 verde); el valor mostrado se recorta a 100 con el real en el tooltip. Props: .metric, .thresholds, .upgrade, label, unit, range-label, unreadable-label. Sin eventos.",
+    desc: "Panel de recurso 0-100 % (RAM/CPU/disco) compartido Hub↔Cloud. Componente TONTO: recibe TODO precalculado por el servidor (.metric con known/current/points/status/message) y solo pinta — gauge ring + histórico en área (eje fijo 0..100) + banda de estado coloreada por status (solo si llega message: sin mensaje no hay franja) + CTA de upgrade opcional. Se adapta a SU ancho (container query): en una columna estrecha el rango baja bajo el nombre y el histórico va bajo el gauge. known=false ⇒ estado «no medido» (nunca un 0 verde); el valor mostrado se recorta a 100 con el real en el tooltip. Props: .metric, .thresholds, .upgrade, label, unit, range-label, unreadable-label. Sin eventos.",
     importPath: "@erplora/outfitkit/ok-resource-usage",
-    example: "<div style=\"display:flex;flex-direction:column;gap:2rem;max-width:520px\">\n  <ok-resource-usage id=\"ru-ok\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-crit\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-unknown\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n</div>",
+    example: "<div style=\"display:flex;flex-direction:column;gap:2rem;max-width:520px\">\n  <ok-resource-usage id=\"ru-ok\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-crit\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <ok-resource-usage id=\"ru-unknown\" label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  <div style=\"max-width:200px\">\n    <ok-resource-usage id=\"ru-narrow\" label=\"Conexiones\" range-label=\"Últimas 24 horas\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>\n  </div>\n</div>",
     setup: (root, ctx) => {
 const base = 1755200000;
 const points = (vals) => vals.map((v, i) => [base + i * 3600, v]);
@@ -2203,6 +2203,13 @@ crit.upgrade = { show: true, message: 'Ampliar plan', url: '#' };
 root.querySelector('#ru-unknown').metric = {
   known: false, current: null, points: [],
   status: 'unknown', message: null,
+};
+
+// Columna estrecha: el rango baja bajo el nombre y el histórico bajo el gauge.
+root.querySelector('#ru-narrow').metric = {
+  known: true, current: 12,
+  points: points([10, 14, 9, 12, 11, 12]),
+  status: 'ok', message: null,
 };
     },
     code: "const panel = document.querySelector('ok-resource-usage');\n// TODO precalculado por el servidor — el componente solo pinta:\npanel.metric = {\n  known: true,\n  current: 91,\n  points: [[1755200000, 84], [1755203600, 88], [1755207200, 91]],\n  status: 'critical',\n  message: 'La RAM lleva 2 h por encima del 80 %',\n};\npanel.thresholds = { warning: 70, critical: 80 };\npanel.upgrade = { show: true, message: 'Ampliar plan', url: '/plans' };\n// <ok-resource-usage label=\"RAM\" range-label=\"3d\" unreadable-label=\"No se ha podido leer\"></ok-resource-usage>",
