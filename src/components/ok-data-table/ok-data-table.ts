@@ -56,6 +56,11 @@ export interface DataTableColumn {
   header: string;
   /** Formateador → string a mostrar. Si se omite, se usa row[key]. */
   format?: (row: Record<string, unknown>) => string;
+  /** The value a client-side sort and a date range filter compare (#256): e.g. a column whose
+   *  `key` is a logical id, or a status sorted by rank. Without it a column with `format` compares
+   *  `row[key]` when it is data (number, boolean, Date, ISO date/time or NUMERIC string, null last)
+   *  and the `format` text for anything else (words, codes, a missing field, an object). */
+  sortValue?: (row: Record<string, unknown>) => unknown;
   /** Alineación del contenido de la celda. */
   align?: 'left' | 'right' | 'center';
   /** (server) La columna es ordenable: cabecera clicable que emite `sortChange`. */
@@ -379,6 +384,11 @@ const ES_LABELS: OkDataTableLabels = {
   loadError: 'No se han podido cargar los datos',
   retry: 'Reintentar',
 };
+
+/** #256 - A field that holds a number as text: the hub decodes NUMERIC (money) to «100.00». */
+const NUMERIC_TEXT = /^-?\d+(\.\d+)?$/;
+/** #256 - A field that holds an ISO date, datetime or time («2026-12-31», «09:30:00»). */
+const ISO_DATE_OR_TIME = /^(\d{4}-\d{2}-\d{2}|\d{2}:\d{2})/;
 
 export class OkDataTable extends LitElement {
   static styles = css`
@@ -1570,17 +1580,35 @@ export class OkDataTable extends LitElement {
     this.setServerFilter(key, alive(base.from) || alive(base.to) ? base : undefined);
   }
 
-  /** Valor crudo de una columna para ordenar/filtrar (usa format si lo hay, si no row[key]). */
-  private rawValue(col: DataTableColumn, row: Record<string, unknown>): unknown {
+  /** What a column shows, as the multi-select filter offers and matches it (`format` text if any). */
+  private shownValue(col: DataTableColumn, row: Record<string, unknown>): unknown {
     if (col.format) return col.format(row);
     return row[col.key];
+  }
+
+  /** #256 - What a client-side sort and a date range filter compare: `sortValue`, else the field
+   *  itself when it is DATA — a number, boolean, `Date`, ISO date/time or NUMERIC string («100.00»,
+   *  how the hub hands over money) — so «15/01/2027» sorts after «31/12/2026» and «9,50 €» before
+   *  «100,00 €» (AG Grid, MUI DataGrid, TanStack Table). Any other field (words, a status code, a
+   *  stored «Sale <uuid>» the cell prints as a document number), a missing field or an object keeps
+   *  sorting by the `format` text the person reads, as before #256. A null field sorts last. */
+  private sortKey(col: DataTableColumn, row: Record<string, unknown>): unknown {
+    if (col.sortValue) return col.sortValue(row);
+    const value = row[col.key];
+    if (!col.format || value === null) return value;
+    if (typeof value === 'number' || typeof value === 'boolean' || value instanceof Date) return value;
+    if (typeof value === 'string') {
+      if (NUMERIC_TEXT.test(value)) return Number(value);
+      if (ISO_DATE_OR_TIME.test(value)) return value;
+    }
+    return col.format(row);
   }
 
   /** Valores distintos de una columna (para los chips del filtro multi-select). */
   private distinctValues(col: DataTableColumn): string[] {
     const set = new Set<string>();
     for (const row of this.rows) {
-      const v = this.rawValue(col, row);
+      const v = this.shownValue(col, row);
       if (v != null && v !== '') set.add(String(v));
     }
     return [...set].sort((a, b) => a.localeCompare(b));
@@ -1607,10 +1635,10 @@ export class OkDataTable extends LitElement {
           const col = this.columns.find((c) => c.key === key);
           if (!col) return true;
           if (f.values && f.values.size > 0) {
-            return f.values.has(String(this.rawValue(col, row) ?? ''));
+            return f.values.has(String(this.shownValue(col, row) ?? ''));
           }
           if (f.from || f.to) {
-            const raw = this.rawValue(col, row);
+            const raw = this.sortKey(col, row);
             const t = raw == null ? NaN : new Date(raw as string).getTime();
             const from = f.from ? new Date(f.from).getTime() : -Infinity;
             const to = f.to ? new Date(f.to).getTime() + 86_400_000 - 1 : Infinity;
@@ -1627,8 +1655,8 @@ export class OkDataTable extends LitElement {
       if (col) {
         const dir = this.clientSortDir === 'asc' ? 1 : -1;
         result = [...result].sort((a, b) => {
-          const va = this.rawValue(col, a);
-          const vb = this.rawValue(col, b);
+          const va = this.sortKey(col, a);
+          const vb = this.sortKey(col, b);
           if (va == null) return 1;
           if (vb == null) return -1;
           if (va < vb) return -1 * dir;
