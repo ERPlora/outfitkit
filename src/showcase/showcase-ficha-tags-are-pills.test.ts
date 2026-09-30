@@ -76,10 +76,14 @@ const RULES = rules(CSS);
 /** The top level plus every @media, each evaluated as if its condition matched. */
 const CONTEXTS: (string | null)[] = [null, ...new Set(RULES.map((r) => r.media).filter((m): m is string => m !== null))];
 
-/** Does `selector` (a descendant chain of class selectors) match `.target` inside `ancestors`? */
+/**
+ * Does `selector` (a descendant chain of class selectors) match `.target` inside `ancestors`?
+ * A pseudo-class on the target (`.tag:first-child`, `.tag:not(:last-child)`) still reaches some of
+ * the pills, so it counts; a pseudo-element (`.tag::before`) does not style the pill itself.
+ */
 function reaches(selector: string, target: string, ancestors: Set<string>): boolean {
   const parts = selector.trim().split(' ');
-  if (parts.pop() !== `.${target}`) return false;
+  if (!new RegExp(`^\\.${target}(?::[\\w-]+(?:\\([^)]*\\))?)*$`).test(parts.pop() ?? '')) return false;
   return parts.every((p) => /^\.[\w-]+$/.test(p) && (ancestors.has(p.slice(1)) || p === '.tags'));
 }
 
@@ -98,7 +102,8 @@ function styleOf(target: string, ancestors: Set<string>, media: string | null): 
   return props;
 }
 
-const NO_PAINT = /^(none|transparent|initial|unset|inherit|revert)$/;
+// A pill painted with the page background is no pill: the ficha sits on --ok-bg.
+const NO_PAINT = /^(none|transparent|initial|unset|inherit|revert|var\(--(ok-bg|ion-background-color)\))$/;
 const where = (ancestors: Set<string>, media: string | null) => `${[...ancestors].join(' ')} @ ${media ?? 'top level'}`;
 
 describe('showcase ficha tags (outfitkit#257)', () => {
