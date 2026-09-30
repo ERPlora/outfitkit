@@ -1925,7 +1925,12 @@ video.addEventListener('ok-ended', () => …);`,
 
 // Como función, para pintar dinero dentro de otra plantilla (es lo que usan ok-receipt/ok-invoice):
 import { formatMinor } from '@erplora/outfitkit/ok-money';
-formatMinor(123456, { decimals: 2, locale: 'es', currency: '€' }); // '1.234,56 €'`,
+formatMinor(123456, { decimals: 2, locale: 'es', currency: '€' }); // '1.234,56 €'
+
+// Cantidades y porcentajes (no son dinero) con los mismos separadores (outfitkit#253):
+import { formatQuantity, formatPercent } from '@erplora/outfitkit/ok-money';
+formatQuantity(1.5, 'es'); // '1,5'   ·  formatQuantity(1.5, 'en') → '1.5'
+formatPercent(5.2, 'es');  // '5,2 %' ·  formatPercent(21, 'en')   → '21%'`,
     api: [
       { kind: 'prop', name: 'value', type: 'string | number', detail: 'ENTERO en unidad mínima (céntimos). Nunca se reescribe. Un no-entero pinta «—»' },
       { kind: 'prop', name: 'decimals', type: 'number', detail: 'Escala de la moneda: EUR 2 (def), JPY 0, KWD 3' },
@@ -1949,16 +1954,16 @@ formatMinor(123456, { decimals: 2, locale: 'es', currency: '€' }); // '1.234,5
           // Importes en CÉNTIMOS (enteros, ADR-0123): el componente los corta, nunca los divide.
           { name: 'Café con leche', qty: 2, unit_price: 150, total: 300 },
           { name: 'Tostada con tomate', qty: 1, unit_price: 220, total: 220, note: 'sin sal' },
-          { name: 'Zumo de naranja natural', qty: 1, unit_price: 280, total: 280 },
+          { name: 'Jamón ibérico (kg)', qty: 0.25, unit_price: 8000, total: 2000 },
           // #77 / ADR-0396 — un MENÚ: una línea con su precio cerrado y los componentes sangrados
           // debajo, sin importe (solo el suplemento); los suplementos de la línea, después.
           { name: 'Menú del día', qty: 1, unit_price: 1650, total: 1650,
             components: ['Gazpacho', 'Solomillo (+3,00)', 'Cerveza', 'Flan'], modifiers: ['Al punto'] },
         ],
-        subtotal: 2450,
-        taxes: [{ label: 'IVA 10%', base: 2450, amount: 245 }],
-        total: 2695,
-        payment: { method: 'Efectivo', paid: 3000, change: 305 },
+        subtotal: 4170,
+        taxes: [{ label: 'IVA 10 %', base: 4170, amount: 417 }],
+        total: 4587,
+        payment: { method: 'Efectivo', paid: 5000, change: 413 },
         currency: '€',
         decimals: 2,
         footer: '¡Gracias por su visita!\nwww.barpepe.example',
@@ -2010,20 +2015,20 @@ container.appendChild(el);
           // Importes en CÉNTIMOS (enteros, ADR-0123): el componente los corta, nunca los divide.
           { description: 'Licencia ERPlora — plan Pro (anual)', qty: 1, unit_price: 48000, tax_rate: 21, total: 48000 },
           { description: 'Módulo VeriFactu', qty: 1, unit_price: 12000, discount_percent: 10, tax_rate: 21, total: 10800 },
-          { description: 'Soporte prioritario (horas)', qty: 5, unit_price: 6000, tax_rate: 21, total: 30000 },
+          { description: 'Soporte prioritario (horas)', qty: 2.5, unit_price: 6000, tax_rate: 21, total: 15000 },
         ],
-        subtotal: 88800,
+        subtotal: 73800,
         discount_total: 1200,
-        taxes: [{ label: 'IVA 21%', rate: 21, base: 88800, amount: 18648 }],
-        tax_total: 18648,
-        total: 107448,
+        taxes: [{ label: 'IVA 21 %', rate: 21, base: 73800, amount: 15498 }],
+        tax_total: 15498,
+        total: 89298,
         currency: '€',
         decimals: 2,
         payment_method: 'Transferencia bancaria',
         payment_terms: 'IBAN ES12 3456 7890 1234 5678 9012 · Vencimiento a 30 días',
         notes: 'Gracias por confiar en ERPlora.',
         footer: 'ERPlora S.L. · Inscrita en el Registro Mercantil de Madrid, Tomo 0000, Folio 00, Hoja M-000000 · NIF B-12345678',
-        qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=F2026/0042&total=1074.48',
+        qr: 'https://prevalidacion.aeat.es/tikR/SmartRetail?nif=B12345678&num=F2026/0042&total=892.98',
         qr_heading: 'QR tributario:',
         qr_legend: 'VERI*FACTU',
         qr_note: 'CSV: A-7F3K9QX2M1',

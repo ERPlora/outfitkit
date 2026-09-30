@@ -71,6 +71,34 @@ export function formatMinor(value: unknown, opts: FormatMinorOptions): string {
   return opts.currency ? `${signed} ${opts.currency}` : signed;
 }
 
+/** A locale `Intl` can read. `<html lang>` is not ours to control: `es_ES` makes `Intl` throw a
+ *  RangeError, so the underscore form is retried as `es-ES` and anything else falls back to the
+ *  browser's language (`undefined`) — the paper still prints. */
+function readableLocale(locale: string): string | undefined {
+  for (const tag of [locale, locale.replace(/_/g, '-')]) {
+    try {
+      return Intl.getCanonicalLocales(tag)[0];
+    } catch {
+      // try the next form
+    }
+  }
+  return undefined;
+}
+
+/** outfitkit#253 — a quantity (not money: it may carry decimals) with the document's separators and
+ *  no padding zeros: 1.5 → «1,5» in `es`, «1.5» in `en`. Not a finite number → `NOT_AN_AMOUNT`. */
+export function formatQuantity(value: number, locale: string): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return NOT_AN_AMOUNT;
+  return new Intl.NumberFormat(readableLocale(locale), { maximumFractionDigits: 6 }).format(value);
+}
+
+/** outfitkit#253 — a percentage given in points (21 = 21 %) the way the language writes it: «5,2 %»
+ *  in `es`, «5.2%» in `en`, at most two decimals. Not a finite number → `NOT_AN_AMOUNT`. */
+export function formatPercent(value: number, locale: string): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return NOT_AN_AMOUNT;
+  return new Intl.NumberFormat(readableLocale(locale), { style: 'percent', maximumFractionDigits: 2 }).format(value / 100);
+}
+
 export class OkMoney extends LitElement {
   static styles = css`
     :host { display: inline; font-variant-numeric: tabular-nums; white-space: nowrap; }
