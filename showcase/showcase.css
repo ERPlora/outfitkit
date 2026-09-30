@@ -270,8 +270,20 @@ ion-searchbar.nav-search {
 }
 
 /* ── Topbar ───────────────────────────────────────────────────────────────── */
+/* In ios mode ion-title sits absolutely over the whole toolbar with a fixed 90px side padding,
+ * blind to the end controls, so on phones the title was painted over the theme select
+ * (outfitkit#254). Keep it in the toolbar flow: it takes only the gap between the menu button and
+ * the controls, and ion-title ellipsises it when it does not fit. */
+ion-toolbar #topbar-title {
+  position: relative;
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 8px;
+}
 .topbar-end { gap: 4px; align-items: center; }
 ion-segment.viewport-seg {
+  flex: none;
   width: auto;
   max-width: 160px;
   --background: var(--ok-surface-2);
@@ -286,10 +298,12 @@ ion-select.theme-select {
   --padding-start: 8px;
   font-size: 0.88rem;
 }
-/* En pantallas estrechas, esconde el segment de viewport (no aplica sin sitio). */
+/* On narrow screens drop the viewport segment (no room for it) and show only the theme select's
+ * palette icon, so the title keeps a readable gap. */
 @media (max-width: 640px) {
   ion-segment.viewport-seg { display: none; }
-  ion-select.theme-select { max-width: 110px; }
+  ion-select.theme-select { max-width: 110px; min-width: 44px; }
+  ion-select.theme-select::part(text) { display: none; }
 }
 
 /* ── Ficha de componente ──────────────────────────────────────────────────── */
