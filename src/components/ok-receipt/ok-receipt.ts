@@ -2,7 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import '../ok-qr/ok-qr.js';
-import { documentLocale, formatMinor } from '../ok-money/ok-money.js';
+import { documentLocale, formatMinor, formatQuantity } from '../ok-money/ok-money.js';
 
 // ok-receipt — Web Component PRESENTACIONAL y AISLADO del tiquet/recibo de venta (POS).
 //
@@ -306,7 +306,7 @@ export class OkReceipt extends LitElement {
           return html`<tr>
               <td class="line-name">
                 <div>${l.name}</div>
-                <div class="qty-price">${l.qty} × ${this.money(l.unit_price)}</div>
+                <div class="qty-price">${formatQuantity(l.qty, documentLocale())} × ${this.money(l.unit_price)}</div>
                 ${comps.map((c) => html`<div class="line-sub comp">${c}</div>`)}
                 ${mods.map((m) => html`<div class="line-sub mod">${m}</div>`)}
                 ${!hasSub && l.note ? html`<div class="line-note">${l.note}</div>` : nothing}

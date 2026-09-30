@@ -7,7 +7,7 @@
 // keeps the integer untouched; only the shadow text is formatted.
 import { beforeEach, describe, expect, it } from 'vitest';
 import './ok-money.js';
-import { formatMinor } from './ok-money.js';
+import { formatMinor, formatPercent, formatQuantity } from './ok-money.js';
 import type { OkMoney } from './ok-money.js';
 
 async function mount(attrs: Record<string, string>): Promise<OkMoney> {
@@ -102,5 +102,45 @@ describe('<ok-money> — el atributo guarda el entero; el texto es solo pintado'
     await mount({ value: '1' });
     const ctor = customElements.get('ok-money') as unknown as { styles: { cssText: string } };
     expect(String(ctor.styles.cssText)).toMatch(/font-variant-numeric:\s*tabular-nums/);
+  });
+});
+
+// outfitkit#253 — quantities and percentages are NOT money (they may carry decimals and arrive as
+// numbers), but a printed paper has to write them with the same separators as the money beside them.
+describe('formatQuantity / formatPercent — non-money numbers in the document language (#253)', () => {
+  const plain = (s: string) => s.replace(/\s/g, ' ');
+
+  it('quantity: «1,5» in es, «1.5» in en, whole numbers without padding zeros', () => {
+    expect(formatQuantity(1.5, 'es')).toBe('1,5');
+    expect(formatQuantity(1.5, 'en')).toBe('1.5');
+    expect(formatQuantity(2, 'es')).toBe('2');
+    expect(formatQuantity(0.125, 'es')).toBe('0,125');
+    // The row keeps quantities in 10⁶ fixed point (ADR-0147): all six decimals reach the paper.
+    expect(formatQuantity(1.234567, 'es')).toBe('1,234567');
+  });
+
+  it('percent: «5,2 %» / «21 %» in es, «5.2%» / «21%» in en', () => {
+    expect(plain(formatPercent(5.2, 'es'))).toBe('5,2 %');
+    expect(plain(formatPercent(21, 'es'))).toBe('21 %');
+    expect(formatPercent(5.2, 'en')).toBe('5.2%');
+    expect(formatPercent(21, 'en')).toBe('21%');
+  });
+
+  it('percent keeps the two decimals a tax rate can carry and no float noise (0.1 + 0.2)', () => {
+    expect(formatPercent(1.75, 'en')).toBe('1.75%');
+    expect(formatPercent(0.1 + 0.2, 'en')).toBe('0.3%');
+  });
+
+  it('an unreadable locale (es_ES) does not throw', () => {
+    expect(() => formatQuantity(1.5, 'es_ES')).not.toThrow();
+    // «es_ES» is retried as «es-ES»: the paper keeps the Spanish separators, not the browser's.
+    expect(formatQuantity(1.5, 'es_ES')).toBe('1,5');
+    expect(plain(formatPercent(21, 'es_ES'))).toBe('21 %');
+  });
+
+  it('what is not a finite number is painted «—», never «NaN» or «undefined»', () => {
+    expect(formatQuantity(Number.NaN, 'es')).toBe('—');
+    expect(formatQuantity(undefined as unknown as number, 'es')).toBe('—');
+    expect(formatPercent(Number.POSITIVE_INFINITY, 'es')).toBe('—');
   });
 });

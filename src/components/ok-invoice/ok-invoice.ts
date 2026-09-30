@@ -2,7 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { property } from 'lit/decorators.js';
 import { define } from '../../base/define.js';
 import '../ok-qr/ok-qr.js';
-import { documentLocale, formatMinor } from '../ok-money/ok-money.js';
+import { documentLocale, formatMinor, formatPercent, formatQuantity } from '../ok-money/ok-money.js';
 
 // ok-invoice — Web Component PRESENTACIONAL y AISLADO de la FACTURA A4 (documento fiscal completo).
 //
@@ -356,10 +356,10 @@ export class OkInvoice extends LitElement {
           ? lines.map(
               (l) => html`<tr>
                 <td class="desc">${l.description}</td>
-                <td class="num">${l.qty}</td>
+                <td class="num">${formatQuantity(l.qty, documentLocale())}</td>
                 <td class="num">${this.money(l.unit_price)}</td>
-                ${hasDisc ? html`<td class="num">${l.discount_percent ? `${l.discount_percent}%` : '—'}</td>` : nothing}
-                ${hasTax ? html`<td class="num">${l.tax_rate != null ? `${l.tax_rate}%` : '—'}</td>` : nothing}
+                ${hasDisc ? html`<td class="num">${l.discount_percent ? formatPercent(l.discount_percent, documentLocale()) : '—'}</td>` : nothing}
+                ${hasTax ? html`<td class="num">${l.tax_rate != null ? formatPercent(l.tax_rate, documentLocale()) : '—'}</td>` : nothing}
                 <td class="num">${this.money(l.total)}</td>
               </tr>`,
             )
