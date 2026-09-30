@@ -128,6 +128,14 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
   (con `overflow` distinto de `visible`) encima de una tabla que además tenga contenido detrás;
   ningún módulo lo hace hoy y, si alguno lo hiciera, ese bloque lleva `flex-shrink: 0`. Lo ancla
   `src/components/ok-data-table/fill-mobile-grows.test.ts`.
+- **Tarjetas cuando la lista no cabe** (outfitkit#267) — no es una prop nueva: si la tabla declara
+  `views` con tarjetas y su hueco (no la ventana: el menú lateral abierto lo estrecha) no le da
+  para las columnas ni con las acciones plegadas en «⋮», pasa a tarjetas en vez de dejar el «⋮»
+  fijado encima de la última columna; al volver a caber (se cierra el menú, se ocultan columnas)
+  vuelve a lista. Una lista sin columna de acciones fijada solo se desplaza de lado, como siempre;
+  la elección manual en el conmutador manda; `default-view="table"` es solo la vista de arranque.
+  Sin `views` no cambia nada. Lo ancla
+  `src/components/ok-data-table/cards-when-table-does-not-fit.test.ts`.
 - **Orden por el valor, no por el texto** (outfitkit#256) — en modo cliente, ordenar una columna con
   `format` y su filtro de rango de fechas comparan el **valor** de la fila (`row[key]`) cuando es un
   dato: número, booleano, `Date`, fecha/hora ISO o importe `NUMERIC` que el hub entrega como texto
