@@ -196,9 +196,29 @@ describe('ok-data-table: a client-side sort follows the value, not the painted t
     expect(names(table).sort()).toEqual(['Ana', 'Bea']);
   });
 
+  it('sorts a field that holds a Date object by the date', async () => {
+    const rows: Row[] = [
+      { id: '1', name: 'Later', at: new Date('2027-01-15T00:00:00Z') },
+      { id: '2', name: 'Sooner', at: new Date('2026-12-31T00:00:00Z') },
+    ];
+    const table = await mount(rows, [
+      { key: 'name', header: 'Name' },
+      { key: 'at', header: 'When', format: (r: Row) => dmy((r.at as Date).toISOString()) },
+    ]);
+    await sortBy(table, 'When');
+    expect(names(table)).toEqual(['Sooner', 'Later']);
+  });
+
   it('keeps offering the painted text as the choices of a multi-select filter', async () => {
     const table = await mount(SERIES, seriesColumns());
     const col = seriesColumns()[1];
     expect((table as unknown as Internals).distinctValues(col)).toContain('31/12/2026');
+  });
+
+  it('keeps matching a multi-select pick against the painted text', async () => {
+    const table = await mount(SERIES, seriesColumns());
+    (table as unknown as Internals).clientFilters = { start_date: { values: new Set(['31/12/2026']) } };
+    await table.updateComplete;
+    expect(names(table)).toEqual(['Bea']);
   });
 });
