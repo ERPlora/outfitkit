@@ -56,6 +56,11 @@ export interface DataTableColumn {
   header: string;
   /** Formateador → string a mostrar. Si se omite, se usa row[key]. */
   format?: (row: Record<string, unknown>) => string;
+  /** The value a client-side sort and a date range filter compare, when it is not `row[key]`
+   *  (#256): e.g. a column whose `key` is a logical id, or a status sorted by rank. Without it the
+   *  table compares `row[key]` when that is a plain value (string, number, boolean, Date, null),
+   *  and falls back to the `format` text only when the field is missing or an object. */
+  sortValue?: (row: Record<string, unknown>) => unknown;
   /** Alineación del contenido de la celda. */
   align?: 'left' | 'right' | 'center';
   /** (server) La columna es ordenable: cabecera clicable que emite `sortChange`. */
@@ -1570,17 +1575,28 @@ export class OkDataTable extends LitElement {
     this.setServerFilter(key, alive(base.from) || alive(base.to) ? base : undefined);
   }
 
-  /** Valor crudo de una columna para ordenar/filtrar (usa format si lo hay, si no row[key]). */
-  private rawValue(col: DataTableColumn, row: Record<string, unknown>): unknown {
+  /** What a column shows, as the multi-select filter offers and matches it (`format` text if any). */
+  private shownValue(col: DataTableColumn, row: Record<string, unknown>): unknown {
     if (col.format) return col.format(row);
     return row[col.key];
+  }
+
+  /** #256 - What a client-side sort and a date range filter compare: `sortValue`, else the field
+   *  itself, so «15/01/2027» sorts after «31/12/2026» and «9,50 €» before «100,00 €» (AG Grid,
+   *  MUI DataGrid, TanStack Table). The `format` text only when the field is missing (a logical
+   *  key) or an object the text is drawn from. A null field sorts last in both directions. */
+  private sortKey(col: DataTableColumn, row: Record<string, unknown>): unknown {
+    if (col.sortValue) return col.sortValue(row);
+    const value = row[col.key];
+    const drawn = value === undefined || (typeof value === 'object' && value !== null && !(value instanceof Date));
+    return drawn && col.format ? col.format(row) : value;
   }
 
   /** Valores distintos de una columna (para los chips del filtro multi-select). */
   private distinctValues(col: DataTableColumn): string[] {
     const set = new Set<string>();
     for (const row of this.rows) {
-      const v = this.rawValue(col, row);
+      const v = this.shownValue(col, row);
       if (v != null && v !== '') set.add(String(v));
     }
     return [...set].sort((a, b) => a.localeCompare(b));
@@ -1607,10 +1623,10 @@ export class OkDataTable extends LitElement {
           const col = this.columns.find((c) => c.key === key);
           if (!col) return true;
           if (f.values && f.values.size > 0) {
-            return f.values.has(String(this.rawValue(col, row) ?? ''));
+            return f.values.has(String(this.shownValue(col, row) ?? ''));
           }
           if (f.from || f.to) {
-            const raw = this.rawValue(col, row);
+            const raw = this.sortKey(col, row);
             const t = raw == null ? NaN : new Date(raw as string).getTime();
             const from = f.from ? new Date(f.from).getTime() : -Infinity;
             const to = f.to ? new Date(f.to).getTime() + 86_400_000 - 1 : Infinity;
@@ -1627,8 +1643,8 @@ export class OkDataTable extends LitElement {
       if (col) {
         const dir = this.clientSortDir === 'asc' ? 1 : -1;
         result = [...result].sort((a, b) => {
-          const va = this.rawValue(col, a);
-          const vb = this.rawValue(col, b);
+          const va = this.sortKey(col, a);
+          const vb = this.sortKey(col, b);
           if (va == null) return 1;
           if (vb == null) return -1;
           if (va < vb) return -1 * dir;

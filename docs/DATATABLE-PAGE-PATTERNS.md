@@ -128,6 +128,15 @@ Añadido **después** de esta auditoría, siempre como prop opcional:
   (con `overflow` distinto de `visible`) encima de una tabla que además tenga contenido detrás;
   ningún módulo lo hace hoy y, si alguno lo hiciera, ese bloque lleva `flex-shrink: 0`. Lo ancla
   `src/components/ok-data-table/fill-mobile-grows.test.ts`.
+- **Orden por el valor, no por el texto** (outfitkit#256) — en modo cliente, ordenar una columna y
+  su filtro de rango de fechas comparan el **valor** de la fila (`row[key]`), no el texto que pinta
+  `format`: una fecha «dd/mm/aaaa» ordena por la fecha, un importe «9,50 €» por el número, y una
+  fila con el campo a `null` («Sin fin») queda al final en los dos sentidos, como AG Grid, MUI
+  DataGrid o TanStack Table. Si la `key` es un id lógico que no está en la fila, o el orden es otro
+  (un estado por rango), la columna declara `sortValue: (row) => …`. Solo cuando no hay campo (o es
+  un objeto del que `format` saca el texto) se sigue ordenando por el texto. Los chips del filtro
+  multi-select siguen ofreciendo el texto pintado. En modo servidor no cambia nada: ordena el
+  servidor. Lo ancla `src/components/ok-data-table/sort-by-value.test.ts`.
 
 No hace falta otro componente de tabla ni una variante por producto.
 
