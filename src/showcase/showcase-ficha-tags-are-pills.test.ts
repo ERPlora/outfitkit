@@ -44,30 +44,37 @@ function tagRowAncestors(js: string): Set<string>[] {
   return out;
 }
 
-type Rule = { selector: string; body: string };
+type Rule = { media: string | null; selector: string; body: string };
 
-/** Top-level rules (outside any @media), in source order. */
+/** Every rule with the @media it sits in (null = top level), in source order. */
 function rules(css: string): Rule[] {
   const out: Rule[] = [];
+  let media: string | null = null;
   let depth = 0;
   const re = /([^{}]+)\{|\}/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(css))) {
     if (m[0] === '}') {
       depth = Math.max(0, depth - 1);
+      if (depth === 0) media = null;
       continue;
     }
     const head = m[1].trim();
     if (head.startsWith('@')) {
+      if (depth === 0) media = head;
       depth++;
       continue;
     }
     const close = css.indexOf('}', re.lastIndex);
-    if (depth === 0) out.push({ selector: head.replace(/\s+/g, ' '), body: css.slice(re.lastIndex, close) });
+    out.push({ media, selector: head.replace(/\s+/g, ' '), body: css.slice(re.lastIndex, close) });
     re.lastIndex = close + 1;
   }
   return out;
 }
+
+const RULES = rules(CSS);
+/** The top level plus every @media, each evaluated as if its condition matched. */
+const CONTEXTS: (string | null)[] = [null, ...new Set(RULES.map((r) => r.media).filter((m): m is string => m !== null))];
 
 /** Does `selector` (a descendant chain of class selectors) match `.target` inside `ancestors`? */
 function reaches(selector: string, target: string, ancestors: Set<string>): boolean {
@@ -76,19 +83,23 @@ function reaches(selector: string, target: string, ancestors: Set<string>): bool
   return parts.every((p) => /^\.[\w-]+$/.test(p) && (ancestors.has(p.slice(1)) || p === '.tags'));
 }
 
-/** Final declarations of the rules that reach `.target` inside `ancestors`. */
-function styleOf(target: string, ancestors: Set<string>): Map<string, string> {
+/** Final declarations reaching `.target` inside `ancestors` under `media` (the last one wins). */
+function styleOf(target: string, ancestors: Set<string>, media: string | null): Map<string, string> {
   const props = new Map<string, string>();
-  for (const r of rules(CSS)) {
+  for (const r of RULES) {
+    if (r.media !== null && r.media !== media) continue;
     if (!r.selector.split(',').some((s) => reaches(s, target, ancestors))) continue;
     for (const decl of r.body.split(';')) {
       const at = decl.indexOf(':');
       if (at < 0) continue;
-      props.set(decl.slice(0, at).trim(), decl.slice(at + 1).trim());
+      props.set(decl.slice(0, at).trim(), decl.slice(at + 1).replace('!important', '').trim());
     }
   }
   return props;
 }
+
+const NO_PAINT = /^(none|transparent|initial|unset|inherit|revert)$/;
+const where = (ancestors: Set<string>, media: string | null) => `${[...ancestors].join(' ')} @ ${media ?? 'top level'}`;
 
 describe('showcase ficha tags (outfitkit#257)', () => {
   const rows = tagRowAncestors(APP);
@@ -97,22 +108,41 @@ describe('showcase ficha tags (outfitkit#257)', () => {
     expect(rows.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('paints every tag of every ficha as a pill', () => {
+  it('paints every tag of every ficha as a pill, at every width', () => {
     for (const ancestors of rows) {
-      const tag = styleOf('tag', ancestors);
-      expect(tag.get('background') ?? tag.get('background-color'), [...ancestors].join(' ')).toBeTruthy();
-      expect(parseFloat(tag.get('padding') ?? '0')).toBeGreaterThan(0);
-      expect(parseFloat(tag.get('border-radius') ?? '0')).toBeGreaterThan(0);
+      for (const media of CONTEXTS) {
+        const tag = styleOf('tag', ancestors, media);
+        const paint = tag.get('background-color') ?? tag.get('background') ?? 'none';
+        expect(paint, where(ancestors, media)).not.toMatch(NO_PAINT);
+        expect(parseFloat(tag.get('padding') ?? '0'), where(ancestors, media)).toBeGreaterThan(0);
+        expect(parseFloat(tag.get('border-radius') ?? '0'), where(ancestors, media)).toBeGreaterThan(0);
+      }
     }
   });
 
-  it('keeps a gap between the pills', () => {
+  it('never hides the tags', () => {
     for (const ancestors of rows) {
-      const row = styleOf('tags', ancestors);
-      const tag = styleOf('tag', ancestors);
-      const gap = /flex|grid/.test(row.get('display') ?? '') ? parseFloat(row.get('gap') ?? '0') : 0;
-      const margin = parseFloat((tag.get('margin') ?? '0').split(/\s+/)[1] ?? '0');
-      expect(Math.max(gap, margin), [...ancestors].join(' ')).toBeGreaterThan(0);
+      for (const media of CONTEXTS) {
+        for (const target of ['tags', 'tag']) {
+          const style = styleOf(target, ancestors, media);
+          expect(style.get('display') ?? '', `${target} ${where(ancestors, media)}`).not.toBe('none');
+          expect(style.get('visibility') ?? '', `${target} ${where(ancestors, media)}`).not.toMatch(/hidden|collapse/);
+          expect(parseFloat(style.get('opacity') ?? '1'), `${target} ${where(ancestors, media)}`).toBeGreaterThan(0);
+          expect(parseFloat(style.get('font-size') ?? '1'), `${target} ${where(ancestors, media)}`).not.toBe(0);
+        }
+      }
+    }
+  });
+
+  it('keeps a gap between the pills, at every width', () => {
+    for (const ancestors of rows) {
+      for (const media of CONTEXTS) {
+        const row = styleOf('tags', ancestors, media);
+        const tag = styleOf('tag', ancestors, media);
+        const gap = /flex|grid/.test(row.get('display') ?? '') ? parseFloat(row.get('gap') ?? '0') : 0;
+        const margin = parseFloat((tag.get('margin') ?? '0').split(/\s+/)[1] ?? '0');
+        expect(Math.max(gap, margin), where(ancestors, media)).toBeGreaterThan(0);
+      }
     }
   });
 });
