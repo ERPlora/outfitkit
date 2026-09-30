@@ -75,18 +75,6 @@
 
 /* ── Galería de componentes (components.html) ─────────────────────────────── */
 .comp { margin: 0 0 1.25rem; scroll-margin-top: 16px; }
-.comp .tags { margin: 0 0 0.5rem; }
-.comp .tag {
-  display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--ok-primary);
-  background: var(--ok-surface-2);
-  border-radius: 6px;
-  padding: 0.15rem 0.5rem;
-  margin: 0 0.25rem 0 0;
-}
 .comp .desc { color: var(--ok-muted); margin: 0.25rem 0 1rem; font-size: 0.95rem; }
 
 /* Demo viva (recuadro punteado). */
@@ -308,6 +296,18 @@ ion-select.theme-select {
 
 /* ── Ficha de componente ──────────────────────────────────────────────────── */
 .comp-view .comp-head { margin-bottom: 1rem; }
+/* Tags above the title (tag name, surface, parity) as separate pills (outfitkit#257). */
+.comp-view .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.5rem; }
+.comp-view .tag {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ok-primary);
+  background: var(--ok-surface-2);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
 .comp-view .comp-head h1 {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(1.3rem, 3vw, 1.9rem);
