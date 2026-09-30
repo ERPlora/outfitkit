@@ -286,6 +286,11 @@ describe('ok-resource-usage', () => {
     it('stacks the not-measured notice so its text is not split word by word', () => {
       for (const px of [160, 239]) {
         expect(cssAt('.unreadable', 'flex-direction', px), `stacked at ${px}px`).toBe('column');
+        // Stacked, the icon and the text start on the left like the rest of the panel
+        // instead of inheriting the row's centering.
+        expect(cssAt('.unreadable', 'align-items', px), `left-aligned at ${px}px`).toBe(
+          'flex-start',
+        );
       }
       expect(cssAt('.unreadable', 'flex-direction', 240)).not.toBe('column');
     });
