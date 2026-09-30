@@ -209,6 +209,9 @@ export class OkInvoice extends LitElement {
     table.lines tbody td { padding: 2mm 2mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
     .num { text-align: right; white-space: nowrap; }
     .desc { width: 42%; }
+    /* «qty × price · disc. · tax» under the description: only the phone layout shows it. Painted
+       from an attribute so the cell's text stays the description alone. */
+    .desc::after { content: attr(data-meta); display: none; margin-top: .5mm; color: var(--muted); font-size: 11px; }
     /* Resumen de totales (derecha). */
     .summary { display: flex; justify-content: flex-end; margin-top: 4mm; }
     .summary table { border-collapse: collapse; min-width: 70mm; }
@@ -227,6 +230,24 @@ export class OkInvoice extends LitElement {
     .qr-note { font-size: 8px; max-width: 36mm; text-align: center; color: var(--muted); word-break: break-word; }
     .legal { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 9px; color: var(--muted); white-space: pre-line; text-align: center; }
     .empty { padding: 12mm; text-align: center; color: #999; font-style: italic; }
+
+    /* ── Phone (outfitkit#270) ────────────────────────────────────────────────────────────────
+       The six-column lines table needs ~340 px and a 375 px phone leaves ~300 px for the whole
+       sheet: the amount ran out of it. Below 32rem of ITS OWN width (a modal, a side panel) each
+       line becomes description + amount with «qty × price · disc. · tax» under the description,
+       like a mobile receipt (Square, Shopify). Screen only: the printed A4 keeps every column. */
+    @media screen {
+      :host { container-type: inline-size; container-name: ok-invoice; }
+      @container ok-invoice (max-width: 32rem) {
+        .sheet { padding: 16px 14px; }
+        .top { flex-wrap: wrap; gap: 1rem; }
+        .doc { min-width: 0; }
+        .col-detail { display: none; }
+        .desc { width: auto; }
+        .desc::after { display: block; }
+        .summary table { min-width: 0; width: 100%; }
+      }
+    }
 
     /* ── Papel ──────────────────────────────────────────────────────────────────────────────
        Una factura es un documento fiscal: acaba impresa, y en pantalla y en papel no se
@@ -344,10 +365,10 @@ export class OkInvoice extends LitElement {
       <thead>
         <tr>
           <th class="desc">${this.t.description}</th>
-          <th class="num">${this.t.qty}</th>
-          <th class="num">${this.t.price}</th>
-          ${hasDisc ? html`<th class="num">${this.t.discount}</th>` : nothing}
-          ${hasTax ? html`<th class="num">${this.t.tax}</th>` : nothing}
+          <th class="num col-detail">${this.t.qty}</th>
+          <th class="num col-detail">${this.t.price}</th>
+          ${hasDisc ? html`<th class="num col-detail">${this.t.discount}</th>` : nothing}
+          ${hasTax ? html`<th class="num col-detail">${this.t.tax}</th>` : nothing}
           <th class="num">${this.t.amount}</th>
         </tr>
       </thead>
@@ -355,17 +376,26 @@ export class OkInvoice extends LitElement {
         ${lines.length
           ? lines.map(
               (l) => html`<tr>
-                <td class="desc">${l.description}</td>
-                <td class="num">${formatQuantity(l.qty, documentLocale())}</td>
-                <td class="num">${this.money(l.unit_price)}</td>
-                ${hasDisc ? html`<td class="num">${l.discount_percent ? formatPercent(l.discount_percent, documentLocale()) : '—'}</td>` : nothing}
-                ${hasTax ? html`<td class="num">${l.tax_rate != null ? formatPercent(l.tax_rate, documentLocale()) : '—'}</td>` : nothing}
+                <td class="desc" data-meta=${this.lineMeta(l)}>${l.description}</td>
+                <td class="num col-detail">${formatQuantity(l.qty, documentLocale())}</td>
+                <td class="num col-detail">${this.money(l.unit_price)}</td>
+                ${hasDisc ? html`<td class="num col-detail">${l.discount_percent ? formatPercent(l.discount_percent, documentLocale()) : '—'}</td>` : nothing}
+                ${hasTax ? html`<td class="num col-detail">${l.tax_rate != null ? formatPercent(l.tax_rate, documentLocale()) : '—'}</td>` : nothing}
                 <td class="num">${this.money(l.total)}</td>
               </tr>`,
             )
           : html`<tr><td colspan="6" class="muted" style="text-align:center;padding:6mm">${this.t.noLines}</td></tr>`}
       </tbody>
     </table>`;
+  }
+
+  /** outfitkit#270 — the folded columns of a line, for the phone layout: only what the line has. */
+  private lineMeta(l: InvoiceLine): string {
+    const locale = documentLocale();
+    const parts = [`${formatQuantity(l.qty, locale)} × ${this.money(l.unit_price)}`];
+    if (l.discount_percent) parts.push(`${this.t.discount} ${formatPercent(l.discount_percent, locale)}`);
+    if (l.tax_rate != null) parts.push(`${this.t.tax} ${formatPercent(l.tax_rate, locale)}`);
+    return parts.join(' · ');
   }
 
   private renderSummary(inv: InvoiceData) {

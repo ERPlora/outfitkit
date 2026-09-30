@@ -2002,7 +2002,7 @@ container.appendChild(el);
     id: 'ok-invoice',
     name: 'ok-invoice',
     category: 'multimedia',
-    desc: 'Factura A4 (documento fiscal completo) presentacional: recibe un JSON (prop .invoice) y lo pinta como factura profesional — emisor+receptor con datos fiscales, líneas con descuento/impuesto, resumen de impuestos por tipo, totales, condiciones de pago, pie legal y QR opcional (reusa ok-qr). Hermano A4 de ok-receipt (tiquet 80mm). No habla con backend.',
+    desc: 'Factura A4 (documento fiscal completo) presentacional: recibe un JSON (prop .invoice) y lo pinta como factura profesional — emisor+receptor con datos fiscales, líneas con descuento/impuesto, resumen de impuestos por tipo, totales, condiciones de pago, pie legal y QR opcional (reusa ok-qr). Hermano A4 de ok-receipt (tiquet 80mm). En pantalla y por debajo de 32rem de SU ancho (móvil, modal, panel) cada línea pasa a descripción + importe con «cantidad × precio · dto. · impuesto» debajo; el papel impreso conserva todas las columnas. No habla con backend.',
     importPath: "@erplora/outfitkit/ok-invoice",
     example: '<ok-invoice id="inv" style="display:block;box-shadow:0 6px 24px rgba(0,0,0,.18)"></ok-invoice>',
     setup: (root) => {
