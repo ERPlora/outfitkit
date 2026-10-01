@@ -97,6 +97,13 @@ describe('showcase pages only import what the built bundles export (outfitkit#27
     expect(entries.get('outfitkit.js')).toBe('src/cdn.ts');
   });
 
+  it('counts run-time values only: a type-only export would still leave the page blank', () => {
+    const indexExports = exportsOf('src/index.ts');
+    expect(indexExports.has('OkDataTable')).toBe(true);
+    expect(indexExports.has('isCapable')).toBe(true);
+    expect(indexExports.has('DataTableColumn')).toBe(false);
+  });
+
   it('every named import exists in the source entry of its bundle', () => {
     const cache = new Map<string, Set<string>>();
     const missing = imports
