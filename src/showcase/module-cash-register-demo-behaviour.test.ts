@@ -153,6 +153,21 @@ describe('showcase module-cash-register — the session list is the module one',
     expect(fixtureRows().every((row) => row[list.default_sort])).toBe(true);
   });
 
+  it('names each column as the module does in Spanish and fills the opening date', () => {
+    const getter = component.slice(component.indexOf('get columns()'), component.indexOf('get rowActions()'));
+    const headers = [...getter.matchAll(/header: t\('ui\.(\w+)'\)/g)].map((match) => es[match[1]]);
+    expect(headers.every(Boolean), 'every module header must be in locales/es.json').toBe(true);
+    const table = mountDemo();
+    expect((table.columns as Array<Column & { header?: string }>).map((column) => column.header)).toEqual(headers);
+    // «Abierta el» carries the default order: a blank cell would hide it.
+    const openedAt = table.columns.find((column) => column.key === list.default_sort) as Column & { format?: (row: Row) => string };
+    for (const row of fixtureRows()) {
+      const shown = openedAt.format!(row);
+      expect(shown, `opening date of ${String(row.session_number)}`).toMatch(/\d/);
+      expect(shown).not.toBe(String(row[list.default_sort]));
+    }
+  });
+
   it('filters the difference by range, like the module', () => {
     const table = mountDemo();
     const fixture = fixtureRows().filter((row) => row.difference != null);
