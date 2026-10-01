@@ -39,7 +39,7 @@ describe('showcase module-cash-register — paridad con el dashboard real', () =
   it('mantiene las columnas, la lista server-side y las tres acciones reales', () => {
     const page = pageSource();
     for (const key of [
-      'session_number', 'status', 'opening_balance', 'expected_balance',
+      'session_number', 'opened_at', 'status', 'opening_balance', 'expected_balance',
       'closing_balance', 'difference',
     ]) {
       expect(component).toContain(`key: '${key}'`);
@@ -52,11 +52,12 @@ describe('showcase module-cash-register — paridad con el dashboard real', () =
     for (const property of [
       'serverSide = true', 'fill = true', 'views = true', 'cardTitle = (row) =>',
       "cardIcon = () => 'cash-outline'", 'searchable = true', 'pageSize = 50',
-      "sort = 'id'", "sortDir = 'asc'",
     ]) expect(page).toContain(property);
-    expect(manifest.queries['cash_register.sessions.list'].list).toMatchObject({
-      page_size: 50, default_sort: 'id', default_dir: 'asc',
-    });
+    // outfitkit#272: the order follows the module (cash_register#127: newest shift first), so it is
+    // read from its manifest instead of being copied here and going stale on the next change.
+    const list = manifest.queries['cash_register.sessions.list'].list!;
+    expect(list.page_size).toBe(50);
+    expect(page).toContain(`sort: '${list.default_sort}', dir: '${list.default_dir}'`);
   });
 
   it('reproduce apertura, cierre, movimiento y arqueo con campos Ionic', () => {
