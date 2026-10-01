@@ -33,9 +33,10 @@
 
       const SESSION_FIXTURE = [
         {
-          "id": "s-1",
-          "session_number": "S-260718-090000",
+          "id": "e4b1c7d2-6f3a-4c1e-9b8d-2a5f0c7e1d93",
+          "session_number": "S-260718-0001",
           "status": "open",
+          "opened_at": "2026-07-18T09:00:00+02:00",
           "register_id": "r-1",
           "opening_balance": 15000,
           "expected_balance": 42850,
@@ -43,9 +44,10 @@
           "difference": null
         },
         {
-          "id": "s-2",
-          "session_number": "S-260717-090000",
+          "id": "3a9d5e1f-8c2b-4d7a-a1e6-9f0b4c8d2e57",
+          "session_number": "S-260717-0001",
           "status": "closed",
+          "opened_at": "2026-07-17T09:00:00+02:00",
           "register_id": "r-1",
           "opening_balance": 15000,
           "expected_balance": 68420,
@@ -72,11 +74,21 @@
 
       let sessions = SESSION_FIXTURE.map((session) => ({ ...session }));
       let target = null;
-      const state = { page: 0, pageSize: 50, sort: 'id', dir: 'asc', search: '', filters: {} };
+      // cash_register#127: newest shift first, as the module asks its list.
+      const state = { page: 0, pageSize: 50, sort: 'opened_at', dir: 'desc', search: '', filters: {} };
 
       const money = (cents) => cents == null
         ? '—'
         : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+      // Same short date the module paints in «Abierta el» (day/month and time this year, the full
+      // date otherwise).
+      const openedAt = (value) => {
+        const date = new Date(String(value ?? ''));
+        if (!value || Number.isNaN(date.getTime())) return '';
+        return new Intl.DateTimeFormat('es', date.getFullYear() === new Date().getFullYear()
+          ? { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }
+          : { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+      };
       const toCents = (value) => Math.round((Number(String(value ?? '').replace(',', '.')) || 0) * 100);
 
       function badge(text, color) {
@@ -168,23 +180,22 @@
           table.cardTitle = (row) => String(row.session_number ?? '—');
           table.cardIcon = () => 'cash-outline';
           table.searchable = true;
-          table.searchPlaceholder = 'Buscar sesión o estado…';
+          table.searchPlaceholder = 'Buscar sesión…';
           table.pageSize = 50;
-          table.sort = 'id';
-          table.sortDir = 'asc';
           table.columnPicker = true;
           table.labels = LABELS;
           table.columns = [
-            { key: 'session_number', header: 'Sesión', sortable: true, filterable: true, filterType: 'text' },
+            { key: 'session_number', header: 'Sesión', sortable: true, filterable: true, filterType: 'text', width: 'minmax(7rem,1fr)' },
+            { key: 'opened_at', header: 'Abierta el', sortable: true, width: 'minmax(6.25rem,1fr)', format: (row) => openedAt(row.opened_at) },
             {
-              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select',
+              key: 'status', header: 'Estado', sortable: true, filterable: true, filterType: 'select', width: 'minmax(4.25rem,1fr)',
               options: [{ value: 'open', label: 'Abierta' }, { value: 'closed', label: 'Cerrada' }],
               render: (row) => badge(row.status === 'open' ? 'Abierta' : 'Cerrada', row.status === 'open' ? 'success' : 'medium'),
             },
             { key: 'opening_balance', header: 'Apertura', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.opening_balance) },
             { key: 'expected_balance', header: 'Esperado', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.expected_balance) },
-            { key: 'closing_balance', header: 'Contado', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.closing_balance) },
-            { key: 'difference', header: 'Diferencia', align: 'right', sortable: true, filterable: true, filterType: 'text', format: (row) => money(row.difference) },
+            { key: 'closing_balance', header: 'Contado', align: 'right', width: 'minmax(5rem,1fr)', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.closing_balance) },
+            { key: 'difference', header: 'Diferencia', align: 'right', width: 'minmax(5.75rem,1fr)', sortable: true, filterable: true, filterType: 'range', format: (row) => money(row.difference) },
           ];
           table.actions = [
             { id: 'movement', label: 'Movimiento', icon: 'swap-vertical-outline' },
@@ -265,10 +276,11 @@
             doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'cash_register.sessions.list', params: { ...state } } }));
             const search = state.search.trim().toLocaleLowerCase('es');
             let filtered = sessions.filter((session) => {
-              if (search && !`${session.session_number} ${session.status}`.toLocaleLowerCase('es').includes(search)) return false;
+              // The module searches ONLY the session number; the status is picked in its filter.
+              if (search && !String(session.session_number ?? '').toLocaleLowerCase('es').includes(search)) return false;
               return Object.entries(state.filters).every(([key, value]) => {
                 if (value == null || value === '' || (Array.isArray(value) && !value.length)) return true;
-                if (['opening_balance', 'expected_balance', 'closing_balance'].includes(key)) return matchesRange(session[key], value);
+                if (['opening_balance', 'expected_balance', 'closing_balance', 'difference'].includes(key)) return matchesRange(session[key], value);
                 if (Array.isArray(value)) return value.map(String).includes(String(session[key]));
                 return String(session[key] ?? '').toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'));
               });
@@ -293,11 +305,18 @@
             event.preventDefault();
             const payload = {
               register_id: openRegister.value || null,
-              session_number: `S-${Date.now()}`,
               opening_balance: toCents(openingBalance.value),
               opening_notes: doc.getElementById('cash-open-notes').value || '',
             };
-            sessions.unshift({ id: `s-${Date.now()}`, status: 'open', expected_balance: payload.opening_balance, closing_balance: null, difference: null, ...payload });
+            // cash_register#49: the number is the server's, S-YYMMDD-NNNN with a per-day counter.
+            const now = new Date();
+            const day = [now.getFullYear() % 100, now.getMonth() + 1, now.getDate()]
+              .map((part) => String(part).padStart(2, '0')).join('');
+            const counter = sessions.filter((session) => String(session.session_number).startsWith(`S-${day}-`)).length + 1;
+            sessions.unshift({
+              id: `s-${Date.now()}`, session_number: `S-${day}-${String(counter).padStart(4, '0')}`, status: 'open',
+              opened_at: now.toISOString(), expected_balance: payload.opening_balance, closing_balance: null, difference: null, ...payload,
+            });
             recordCommand('cash_register.session.open', payload, 'Sesión abierta');
             closePanels();
             queryPage();
