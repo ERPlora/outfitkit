@@ -5,6 +5,9 @@
 // Estado declarativo (registra <ok-store>; importa el singleton store al cargar)
 import './components/ok-store/ok-store.js';
 import './store/store.js';
+// Fullscreen helpers (a utility, not a component): a CDN page has no other way to reach them, and a
+// named import missing from this bundle leaves the whole page blank (outfitkit#274).
+export { isCapable, isActive, activeEl, request, exit, toggle, onChange } from './base/fullscreen.js';
 // Compuesto / datos
 import './components/ok-data-table/ok-data-table.js';
 import './components/ok-mail/ok-mail.js';
