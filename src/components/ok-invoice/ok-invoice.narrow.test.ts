@@ -120,6 +120,7 @@ const DATA: InvoiceData = {
   lines: [
     { description: 'Soporte prioritario (horas)', qty: 2.5, unit_price: 6000, discount_percent: 10, tax_rate: 21, total: 13500 },
     { description: 'Aceite de oliva 5 l', qty: 1, unit_price: 315, total: 315 },
+    { description: 'Curso exento', qty: 1, unit_price: 1000, tax_rate: 0, total: 1000 },
   ],
   subtotal: 13815,
   taxes: [{ label: 'IVA 21%', rate: 21, base: 13500, amount: 2835 }],
@@ -147,6 +148,22 @@ beforeEach(() => {
 describe('ok-invoice — on a phone the lines fit the sheet (#270)', () => {
   it('the host is a named inline-size container on screen', () => {
     expect(cssAt(':host', 'container-type', 375, 'screen')).toBe('inline-size');
+    expect(cssAt(':host', 'container-name', 375, 'screen')).toBe('ok-invoice');
+  });
+
+  it('every @container rule queries the host by that name (an unnamed or renamed one never folds)', () => {
+    const names: string[] = [];
+    const walk = (rules: CSSRuleList): void => {
+      for (const rule of Array.from(rules)) {
+        const r = rule as CSSRule & { conditionText?: string; cssRules?: CSSRuleList };
+        if (rule.constructor.name === 'CSSContainerRule') {
+          names.push(/^([\w-]+)\s*\(/.exec(r.conditionText ?? '')?.[1] ?? '');
+        } else if (r.cssRules) walk(r.cssRules);
+      }
+    };
+    walk(stylesheet().cssRules);
+    expect(names.length).toBeGreaterThan(0);
+    expect(names.every((n) => n === cssAt(':host', 'container-name', 375, 'screen'))).toBe(true);
   });
 
   it.each(PHONE)('at %i px on screen, qty/price/disc./tax columns fold away', (px) => {
@@ -172,6 +189,18 @@ describe('ok-invoice — on a phone the lines fit the sheet (#270)', () => {
     // Measured in Chromium without these two: the doc block stuck out 21 px at 375 and 76 px at 320.
     expect(cssAt('.top', 'flex-wrap', px, 'screen')).toBe('wrap');
     expect(cssAt('.doc', 'min-width', px, 'screen')).toBe('0');
+  });
+
+  it.each(PHONE)('at %i px on screen, the stacked «INVOICE» block reads from the left like the issuer', (px) => {
+    expect(cssAt('.doc', 'text-align', px, 'screen')).toBe('left');
+    expect(cssAt('.doc-grid', 'justify-content', px, 'screen')).toBe('start');
+    expect(cssAt('.doc-grid .k', 'text-align', px, 'screen')).toBe('left');
+    expect(cssAt('.doc-grid .v', 'text-align', px, 'screen')).toBe('left');
+  });
+
+  it.each(WIDE)('at %i px on screen, the «INVOICE» block stays on the right of the A4', (px) => {
+    expect(cssAt('.doc', 'text-align', px, 'screen')).toBe('right');
+    expect(cssAt('.doc-grid', 'justify-content', px, 'screen')).toBe('end');
   });
 
   it.each(PHONE)('at %i px on screen, the description takes the room the folded columns left', (px) => {
@@ -209,6 +238,8 @@ describe('ok-invoice — on a phone the lines fit the sheet (#270)', () => {
     expect(meta[0]).toBe('2,5 × 60,00 EUR · Dto. 10 % · IVA 21 %');
     // A line without discount or tax says only what it has.
     expect(meta[1]).toBe('1 × 3,15 EUR');
+    // An exempt line says so, as its tax column does («0 %», not «—»).
+    expect(meta[2]).toBe('1 × 10,00 EUR · IVA 0 %');
     // The cell's own text is still the description alone (what a reader, a copy or a test reads).
     expect(text(desc[0])).toBe('Soporte prioritario (horas)');
   });

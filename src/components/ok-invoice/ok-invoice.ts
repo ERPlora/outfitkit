@@ -241,7 +241,11 @@ export class OkInvoice extends LitElement {
       @container ok-invoice (max-width: 32rem) {
         .sheet { padding: 16px 14px; }
         .top { flex-wrap: wrap; gap: 1rem; }
-        .doc { min-width: 0; }
+        /* Stacked under the issuer, the «INVOICE» block reads from the left like it: right-aligned
+           text in a box that sits on the left looked centred by accident. */
+        .doc { min-width: 0; text-align: left; }
+        .doc-grid { justify-content: start; }
+        .doc-grid .k, .doc-grid .v { text-align: left; }
         .col-detail { display: none; }
         .desc { width: auto; }
         .desc::after { display: block; }
