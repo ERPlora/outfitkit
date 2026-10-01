@@ -89,7 +89,9 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
       expect(match, `${constant} debe quedar como JSON auditable`).not.toBeNull();
       expect(JSON.parse(match![1])).toEqual(fixture(file));
     }
-    expect(page).toContain('price: Math.round(Number(row.price) * 100)');
+    // The fixtures are inventory rows and their `price` is already INTEGER cents (ADR-0007): the
+    // real POS does not rescale them, so the demo must not either (outfitkit#274).
+    expect(page).not.toMatch(/row\.price\)?\s*\*\s*100/);
   });
 
   it('mantiene el canvas táctil: categorías, catálogo, carrito y cobro', () => {

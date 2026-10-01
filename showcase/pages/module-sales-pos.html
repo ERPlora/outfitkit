@@ -463,11 +463,8 @@
         {"id":"t2","ticket_number":"P-150812","created_at":"2026-06-14T15:08:12","cart_data":"{\"lines\":[]}"}
       ];
 
-      // Los fixtures históricos expresan euros, mientras el contrato POS vigente trabaja en céntimos.
-      const products = PRODUCT_FIXTURE.map((row) => ({
-        ...row,
-        price: Math.round(Number(row.price) * 100),
-      }));
+      // Inventory keeps `price` as INTEGER cents (ADR-0007), like the real POS: no rescaling (outfitkit#274).
+      const products = PRODUCT_FIXTURE;
       const settings = SETTINGS_FIXTURE[0];
       const productCategories = new Map(
         PRODUCT_CATEGORY_FIXTURE.map((row) => [row.product_id, row.category_id]),
@@ -796,10 +793,10 @@
               lines: cart.map((line) => ({
                 name: line.name,
                 qty: line.qty,
-                unit_price: line.price / 100,
-                total: line.price * line.qty / 100,
+                unit_price: line.price,
+                total: line.price * line.qty,
               })),
-              total: total() / 100,
+              total: total(),
               taxes: [],
               currency: settings.currency || '€',
               footer: 'Cuenta — no es una factura. El tiquet fiscal se entrega al cobrar.',
