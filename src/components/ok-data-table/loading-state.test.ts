@@ -150,7 +150,22 @@ describe('ok-data-table — "still loading" is not "empty" (ERPlora/outfitkit#26
     expect(loadingBlock(table)).toBeNull();
     expect(text(table)).toContain('Ana');
     expect(pagerText(table)).toMatch(/\b2 records\b/);
+    expect(root(table).querySelector('.title-count')?.textContent?.trim()).toBe('2');
     expect(card(table).getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('with no rows yet, a total left from an earlier answer does not page nor half-count', async () => {
+    // A parent that empties `rows` before asking again but keeps the old `total`: «Showing 1–10
+    // of» with no count after it, page buttons and «Load more» are all claims about rows the
+    // table does not have.
+    const table = await mount({ title: '', columnPicker: false, total: 50, loading: true });
+    expect(pagerText(table)).not.toMatch(/Showing/);
+    expect(root(table).querySelector('.nav')).toBeNull();
+    expect(root(table).querySelector('.pager select.psize')).not.toBeNull();
+    viewport(true);
+    const phone = await mount({ title: '', columnPicker: false, total: 50, loading: true });
+    expect(pagerText(phone)).not.toMatch(/Showing/);
+    expect(root(phone).querySelector('.load-more')).toBeNull();
   });
 
   it('a retry in flight shows the loading indicator, not the old error and its Retry button', async () => {
@@ -206,7 +221,10 @@ describe('ok-data-table — "still loading" is not "empty" (ERPlora/outfitkit#26
     table.setAttribute('fill', '');
     await settle(table);
     // Fill mode: it stretches between toolbar and footer, like the empty and error states.
-    expect(getComputedStyle(loadingBlock(table) as HTMLElement).flexGrow).toBe('1');
+    const frame = getComputedStyle(loadingBlock(table) as HTMLElement);
+    expect(frame.flexGrow).toBe('1');
+    // Same frame as the empty state: spinner over its text, centred both ways.
+    expect([frame.display, frame.flexDirection, frame.alignItems, frame.justifyContent]).toEqual(['flex', 'column', 'center', 'center']);
     // Desktop with the create panel open: the block takes the rows' cell next to the panel.
     (table as unknown as { open: (mode: string) => void }).open('create');
     await settle(table);

@@ -2663,7 +2663,7 @@ export class OkDataTable extends LitElement {
               <div class="pager">
                 <div class="left">
                   <span>
-                    ${pages > 1
+                    ${pages > 1 && !this.awaitingRows
                       ? html`${this.t.showing
                           .replace('{from}', String(rangeFrom))
                           .replace('{to}', String(rangeTo))} `
@@ -2681,10 +2681,10 @@ export class OkDataTable extends LitElement {
                     : nothing}
                 </div>
                 ${this.isMobile
-                  ? canLoadMore
+                  ? canLoadMore && !this.awaitingRows
                     ? html`<ion-button class="load-more" data-testid=${this.tid('load-more')} size="small" @click=${loadMore}>${this.t.loadMore}</ion-button>`
                     : nothing
-                  : pages > 1
+                  : pages > 1 && !this.awaitingRows
                   ? html`
                       <div class="nav">
                         <ion-button size="small" fill="clear" data-testid=${this.tid('page-prev')} ?disabled=${current === 0} @click=${() => goTo(current - 1)}><ion-icon slot="icon-only" .icon=${iconChevronBack}></ion-icon></ion-button>
