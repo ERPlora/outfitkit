@@ -23,6 +23,11 @@ const receiptComponent = readFileSync(
 const manifest = JSON.parse(
   readFileSync(new URL('../../../modules-workspace/modules/sales/module.json', import.meta.url), 'utf8'),
 ) as { navigation: Array<Record<string, unknown>> };
+// sales#476/#482: the manifest names its tabs in English (the source) and the hub shows the Spanish
+// translation from locales/es.json, which is what the demo has to say.
+const esNavigation = (JSON.parse(
+  readFileSync(new URL('../../../modules-workspace/modules/sales/locales/es.json', import.meta.url), 'utf8'),
+) as { navigation: Record<string, { label: string }> }).navigation;
 
 function fixture(name: string): unknown {
   return JSON.parse(
@@ -42,7 +47,10 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
   it('usa el shell Hub en iOS y no fuerza una tabla donde el POS real no la usa', () => {
     const page = pageSource();
 
-    expect(manifest.navigation[0]).toMatchObject({ id: 'pos', label: 'Vender', component: 'erp-pos' });
+    expect(manifest.navigation[0]).toMatchObject({ id: 'pos', component: 'erp-pos' });
+    const posLabel = esNavigation.pos?.label;
+    expect(posLabel, 'sales must translate its «pos» tab in locales/es.json').toBeTruthy();
+    expect(posLabel).not.toBe(manifest.navigation[0].label);
     // ADR-0146: the desktop layout was retired; erp-pos always renders the touch screen — and
     // nothing else. Since sales#107 it also forwards the chrome capability inwards (an attribute
     // does not cross a shadow root on its own), so the tag is no longer bare: match the ELEMENT,
@@ -52,7 +60,7 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
     expect(selector).toContain('chrome=${this.chrome}');
     expect(page).toContain("import { defineHubPage } from './_hub.js'");
     expect(page).toContain("active: '/m/sales/pos'");
-    expect(page).toContain("title: 'Vender'");
+    expect(page).toContain(`title: '${posLabel}'`);
     expect(page).toContain('<script src="./_ionic-config.js"></script>');
     expect(page.indexOf('./_ionic-config.js')).toBeLessThan(page.indexOf('@ionic/core'));
     // outfitkit#84 / ADR-0143 (amendment 2026-08-11): the shell stays in ios, but the three form controls

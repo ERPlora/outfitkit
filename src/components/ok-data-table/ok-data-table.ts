@@ -184,6 +184,55 @@ export function decideRowActionsFit(input: RowActionsFitInput): RowActionsFitDec
   return { collapsed, decidedAtWidth };
 }
 
+/** Input of `decideCardsForFit`. */
+export interface CardsForFitInput {
+  /** Cards are declared (`views`) and nothing else owns the view: no choice by hand, no phone
+   *  breakpoint, no `default-view="cards"`. */
+  allowed: boolean;
+  /** Width of the table's own box, in px (`0` = not laid out yet). */
+  hostWidth: number;
+  /** The list measured with its row actions FOLDED and the fold decision settled at this width;
+   *  `null` when the render on screen is not that (buttons out, a fold just re-judged, cards). */
+  folded: { containerWidth: number; contentWidth: number } | null;
+  /** The list is showing cards because it did not fit. */
+  fitCards: boolean;
+  /** Host width from which the list fits again (meaningful while `fitCards`). */
+  fitWidth: number;
+}
+
+/** Output of `decideCardsForFit`. */
+export interface CardsForFitDecision {
+  fitCards: boolean;
+  fitWidth: number;
+}
+
+/**
+ * #267 - The list does not fit its hole even with the row actions folded into "...": hand over
+ * to the cards, as the table already does below `MOBILE_BREAKPOINT` (#274).
+ *
+ * Measured in Chromium with the seven cash-session columns of cash_register: a 992px window with
+ * the side menu open leaves the table 720px for a 748px grid, and the pinned "..." sat on top of
+ * "-1,00 €" until the person scrolled sideways. The window alone cannot tell: the same 992px
+ * without the menu fits, and a narrower column set fits at 720px.
+ *
+ * PURE for the same reasons as `decideRowActionsFit` (happy-dom lays nothing out). It never
+ * oscillates: in cards the list cannot be measured, so the width it needs is remembered as the
+ * host width at the moment it overflowed plus the overflow, and the list only comes back once the
+ * host reaches it - where the same grid fits, so the next folded measurement keeps it a table.
+ */
+export function decideCardsForFit(input: CardsForFitInput): CardsForFitDecision {
+  const { allowed, hostWidth, folded, fitCards, fitWidth } = input;
+  const idle = { fitCards: false, fitWidth: 0 };
+  if (!allowed) return idle;
+  // No width, no measurement (Ionic not hydrated, hidden tab): keep what is on screen.
+  if (!(hostWidth > 0)) return { fitCards, fitWidth };
+  if (fitCards) return hostWidth >= fitWidth ? idle : { fitCards, fitWidth };
+  if (folded && folded.containerWidth > 0 && folded.contentWidth > folded.containerWidth) {
+    return { fitCards: true, fitWidth: hostWidth + folded.contentWidth - folded.containerWidth };
+  }
+  return idle;
+}
+
 /** Acción primaria de la topbar (botón destacado). Emite el evento `primaryAction`. */
 export interface DataTablePrimaryAction {
   /** Texto / aria-label del botón. */
@@ -967,6 +1016,14 @@ export class OkDataTable extends LitElement {
   private lastPointerType = '';
   /** Ancho de contenedor con el que se tomó la decisión de plegado vigente (`-1` = ninguna). */
   private fitDecidedAtWidth = -1;
+  // #267 - Showing cards because the list does not fit even folded (see `decideCardsForFit`).
+  @state() private fitCards = false;
+  /** #267 - Host width from which the list fits again, remembered while `fitCards`. */
+  private fitCardsWidth = 0;
+  /** #267 - What the list's width depends on (columns on screen, actions, selection): a parent
+   *  re-render hands over new arrays with the same content, and only a real change re-measures. */
+  private fitShape = '';
+  private hostObserver?: ResizeObserver;
   // Menú «⋮» de UNA fila: un solo ion-popover para toda la tabla, con la fila en curso.
   @state() private rowMenuOpen = false;
   private rowMenuEv?: Event;
@@ -1086,15 +1143,87 @@ export class OkDataTable extends LitElement {
    *  El criterio y la garantía de que no oscila viven en `decideRowActionsFit`. */
   private measureRowActionsFit(): void {
     const scroll = this.renderRoot?.querySelector?.('.scroll');
-    if (!scroll) return;
+    if (!scroll) {
+      this.measureCardsFit(null);
+      return;
+    }
+    const containerWidth = scroll.clientWidth;
+    const contentWidth = scroll.scrollWidth;
+    // #267 - What is on screen before deciding: folded, settled at this width, and no render
+    // pending that would change it (a state written earlier in this same pass).
+    const foldedOnScreen =
+      this.rowActionsCollapsed &&
+      this.fitDecidedAtWidth === containerWidth &&
+      !this.isUpdatePending &&
+      this.pinnedTrackIsHonest();
     const next = decideRowActionsFit({
-      containerWidth: scroll.clientWidth,
-      contentWidth: scroll.scrollWidth,
+      containerWidth,
+      contentWidth,
       collapsed: this.rowActionsCollapsed,
       decidedAtWidth: this.fitDecidedAtWidth,
     });
     this.fitDecidedAtWidth = next.decidedAtWidth;
     if (this.rowActionsCollapsed !== next.collapsed) this.rowActionsCollapsed = next.collapsed;
+    this.measureCardsFit(foldedOnScreen && next.collapsed ? { containerWidth, contentWidth } : null);
+  }
+
+  /** #267 - Hands the list over to cards when it does not fit even folded, and back when the hole
+   *  has room again. The criterion lives in `decideCardsForFit`. */
+  private measureCardsFit(folded: CardsForFitInput['folded']): void {
+    // The Nuevo/Filtros panel pushes the list 360px at >= 834px (`.card.has-panel`) without
+    // resizing the host: judged next to the form, the list went to cards and stayed there once
+    // the form closed (the host never "grew" to give it back - review of #271). The panel is a
+    // moment of the person's work on a record, not a hole the list has to fit: nothing moves
+    // while it is open, and closing it re-renders and judges the list again.
+    if (this.panel !== 'none') return;
+    const allowed = this.cardViewEnabled && !this.viewChosenByUser && !this.isMobile && this.defaultView !== 'cards';
+    const next = decideCardsForFit({
+      allowed,
+      hostWidth: this.clientWidth,
+      folded,
+      fitCards: this.fitCards,
+      fitWidth: this.fitCardsWidth,
+    });
+    this.fitCardsWidth = next.fitWidth;
+    if (next.fitCards === this.fitCards) return;
+    this.fitCards = next.fitCards;
+    if (next.fitCards) this.viewMode = 'cards';
+    // Given back by the hole, not by someone else owning the view: the list returns.
+    else if (allowed) this.viewMode = 'table';
+  }
+
+  /** #267 - Is there a column pinned over the data, and does its track hold what it shows?
+   *
+   * Without a pinned actions column an overflow only scrolls sideways and covers nothing: the list
+   * stays a list. With one, the measurement only counts once the track has been re-measured for
+   * the folded "...": `.actions` stretches to the track, so its `scrollWidth` never drops below a
+   * track still pinned to the unfolded buttons, and judging those frames kept the list in cards
+   * for good. The buttons themselves (`flex: 0 0 auto`) say the width they really need, margins
+   * included (ios paints the icon button 28px with 2px of `margin-inline` in a 32px track). */
+  private pinnedTrackIsHonest(): boolean {
+    const boxes = this.renderRoot?.querySelectorAll?.('.grow-data .gcell.actions-col .actions') ?? [];
+    if (!boxes.length) return false;
+    if (this.actionsTrackPx === 0) return true;
+    const outerWidth = (el: Element): number => {
+      const style = getComputedStyle(el);
+      const margins = (parseFloat(style.marginLeft) || 0) + (parseFloat(style.marginRight) || 0);
+      return el.getBoundingClientRect().width + margins;
+    };
+    // Folded, a row holds at most one button (the "..." or a lone action, #213): no gaps to add.
+    let natural = 0;
+    for (const box of boxes) {
+      for (const child of Array.from(box.children)) natural = Math.max(natural, outerWidth(child));
+    }
+    return natural >= this.actionsTrackPx - 1;
+  }
+
+  /** #267 - Columns on screen with their widths, the actions and selection: the list's width. */
+  private fitShapeOf(): string {
+    return JSON.stringify([
+      this.visibleColumns.map((c) => [c.key, c.width ?? '']),
+      this.actions.map((a) => [a.id, !!a.icon]),
+      this.selectable,
+    ]);
   }
 
   private readonly onWindowResize = (): void => {
@@ -1168,6 +1297,12 @@ export class OkDataTable extends LitElement {
 
   protected updated(changed: Map<PropertyKey, unknown>): void {
     if (changed.has('fill')) this.observeSiblings();
+    // #267 - In cards there is no list to observe: the host's own width says when it fits again
+    // (closing the side menu resizes the hole without any window `resize`).
+    if (!this.hostObserver && typeof ResizeObserver !== 'undefined') {
+      this.hostObserver = new ResizeObserver(() => this.measureRowActionsFit());
+      this.hostObserver.observe(this);
+    }
     this.observeXOverflow();
     this.measureXOverflow();
     // #122 — Cambiar las columnas o las acciones cambia lo que la tabla necesita: la decisión de
@@ -1243,6 +1378,8 @@ export class OkDataTable extends LitElement {
     }
     this.xObserver?.disconnect();
     this.xObserver = undefined;
+    this.hostObserver?.disconnect();
+    this.hostObserver = undefined;
     this.siblingsObserver?.disconnect();
     this.siblingsObserver = undefined;
     this.sheetObserver?.disconnect();
@@ -1899,6 +2036,19 @@ export class OkDataTable extends LitElement {
     // `willUpdate` y no `updated`: corre ANTES de renderizar, así que el cambio de vista entra en
     // ESTE render. Hacerlo en `updated` programaba un segundo ciclo y dejaba un frame con la
     // tabla ancha antes de las tarjetas.
+    // #267 - Different columns/actions need a new measurement, taken in the list; the same ones in
+    // a new array (a parent re-render) keep the cards the list already handed over to.
+    if (changed.has('columns') || changed.has('actions') || changed.has('columnChoice') || changed.has('selectable')) {
+      const shape = this.fitShapeOf();
+      if (shape !== this.fitShape) {
+        this.fitShape = shape;
+        if (this.fitCards) {
+          this.fitCards = false;
+          this.fitCardsWidth = 0;
+          if (!this.viewChosenByUser) this.viewMode = 'table';
+        }
+      }
+    }
     this.applyInitialView();
     // #217 - A new rows assignment is fresh content: every cell starts folded again.
     if (changed.has('rows') && this.unfoldedCells.size) this.unfoldedCells = new Set();
@@ -1957,6 +2107,9 @@ export class OkDataTable extends LitElement {
     if (this.isMobile && this.cardViewEnabled) {
       this.viewMode = 'cards';
     } else if (this.defaultView === 'cards' && this.cardViewEnabled) {
+      this.viewMode = 'cards';
+    } else if (this.fitCards && this.cardViewEnabled) {
+      // #267 - The list does not fit its hole even folded.
       this.viewMode = 'cards';
     } else if (this.defaultView === 'table') {
       this.viewMode = 'table';
