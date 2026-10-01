@@ -94,6 +94,29 @@ describe('showcase module-sales-pos — paridad con el TPV táctil real', () => 
     expect(page).not.toMatch(/row\.price\)?\s*\*\s*100/);
   });
 
+  it('labels the pre-bill with what the real POS takes from sales locales/es.json (outfitkit#274)', () => {
+    const mappers = readFileSync(
+      new URL('../../../modules-workspace/modules/sales/ui/lib/document-mappers.ts', import.meta.url),
+      'utf8',
+    );
+    const body = mappers.match(/export function receiptLabels\([\s\S]*?\n\}/)?.[0];
+    expect(body, 'sales must keep receiptLabels() in ui/lib/document-mappers.ts').toBeTruthy();
+    const esUi = (JSON.parse(
+      readFileSync(new URL('../../../modules-workspace/modules/sales/locales/es.json', import.meta.url), 'utf8'),
+    ) as { ui: Record<string, string> }).ui;
+    // A walk-in pre-bill: `customer` is the customer label, not the table one.
+    const expected = Object.fromEntries(
+      [...body!.matchAll(/(\w+): (?:doc\?\.customer_is_table \? t\('ui\.\w+'\) : )?t\('ui\.(\w+)'\)/g)].map(
+        ([, key, uiKey]) => [key, esUi[uiKey]],
+      ),
+    );
+    expect(Object.keys(expected)).toContain('item');
+
+    const declared = pageSource().match(/const RECEIPT_LABELS = (\{[\s\S]*?\n\s*\});/);
+    expect(declared, 'RECEIPT_LABELS must stay auditable JSON').not.toBeNull();
+    expect(JSON.parse(declared![1])).toEqual(expected);
+  });
+
   it('mantiene el canvas táctil: categorías, catálogo, carrito y cobro', () => {
     const page = pageSource();
 

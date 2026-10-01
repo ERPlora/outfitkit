@@ -20,7 +20,10 @@ const page = readFileSync(pagePath, 'utf8');
 type HubPage = { body: string; setup: (doc: Document) => void };
 type Row = { id: string; name: string; price: number };
 type ReceiptLine = { name: string; qty: number; unit_price: number; total: number };
-type Receipt = HTMLElement & { receipt?: { lines: ReceiptLine[]; total: number } };
+type Receipt = HTMLElement & {
+  receipt?: { lines: ReceiptLine[]; total: number };
+  labels?: Record<string, string>;
+};
 
 const HUB_IMPORT = "import { defineHubPage } from './_hub.js';";
 const KIT_IMPORT = "import { isCapable, toggle as toggleFullscreen } from '../../dist/outfitkit.js';";
@@ -80,6 +83,18 @@ describe('showcase sales POS — money is in cents, as in the real POS (outfitki
     expect(receipt?.lines).toEqual([expect.objectContaining({ name: 'Café solo', qty: 2, unit_price: 130, total: 260 })]);
     expect(receipt?.total).toBe(260);
   });
+
+  it('labels the pre-bill in Spanish, with the labels the page declares', () => {
+    const match = page.match(/const RECEIPT_LABELS = (\{[\s\S]*?\n\s*\});/);
+    expect(match, 'RECEIPT_LABELS must stay auditable JSON').not.toBeNull();
+    const declared = JSON.parse(match![1]) as Record<string, string>;
+    expect(declared.item).toBe('Concepto');
+
+    mountDemo();
+    document.querySelector<HTMLElement>('ion-card.pos-product')!.click();
+    document.getElementById('pos-prebill')!.click();
+    expect((document.getElementById('pos-prebill-receipt') as Receipt).labels).toEqual(declared);
+  });
 });
 
 describe('showcase sales POS — tiles keep their height on a phone (outfitkit#274)', () => {
@@ -98,5 +113,11 @@ describe('showcase sales POS — tiles keep their height on a phone (outfitkit#2
   it('leaves room under the last row for the cart button on narrow screens', () => {
     const narrow = css.slice(css.indexOf('@media (max-width: 820px)'));
     expect(rule(narrow, '#pos-product-grid')).toMatch(/padding-bottom:\s*5\.2rem/);
+  });
+
+  it('slides the open cart OVER the cart button, so the button never covers «Cobrar»', () => {
+    const narrow = css.slice(css.indexOf('@media (max-width: 820px)'));
+    const zIndex = (body: string): number => Number(body.match(/z-index:\s*(\d+)/)?.[1]);
+    expect(zIndex(rule(narrow, '.pos-cart'))).toBeGreaterThan(zIndex(rule(css, '.pos-cart-fab')));
   });
 });
