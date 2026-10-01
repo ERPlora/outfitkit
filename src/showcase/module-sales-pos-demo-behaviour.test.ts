@@ -81,3 +81,22 @@ describe('showcase sales POS — money is in cents, as in the real POS (outfitki
     expect(receipt?.total).toBe(260);
   });
 });
+
+describe('showcase sales POS — tiles keep their height on a phone (outfitkit#274)', () => {
+  // The tile is an ion-card with overflow:hidden, so its automatic minimum height is 0: in a grid
+  // shorter than its content the `auto` rows were shared out and every tile shrank to ~48px at
+  // 375x667 (thumbnail and price cut off). The real POS pins the tile height; the demo sizes each
+  // row to its tile so the grid scrolls instead, and keeps room for the cart FAB below the last row.
+  const css = page.match(/<style>([\s\S]*?)<\/style>/)![1];
+  const rule = (block: string, selector: string): string =>
+    block.match(new RegExp(`${selector.replace(/[#.]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+
+  it('sizes every product row to its tile instead of sharing out the grid height', () => {
+    expect(rule(css, '#pos-product-grid')).toMatch(/grid-auto-rows:\s*max-content/);
+  });
+
+  it('leaves room under the last row for the cart button on narrow screens', () => {
+    const narrow = css.slice(css.indexOf('@media (max-width: 820px)'));
+    expect(rule(narrow, '#pos-product-grid')).toMatch(/padding-bottom:\s*5\.2rem/);
+  });
+});

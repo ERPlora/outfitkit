@@ -96,6 +96,9 @@
       #pos-product-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+        /* The tile is overflow:hidden (automatic minimum height 0): an `auto` row would shrink it to
+           fit the grid. Each row takes its tile's height and the grid scrolls (outfitkit#274). */
+        grid-auto-rows: max-content;
         gap: 0.7rem;
         overflow: auto;
         align-content: start;
@@ -243,6 +246,11 @@
 
         .pos-body {
           grid-template-columns: minmax(0, 1fr);
+        }
+
+        /* As in the real POS: the cart FAB floats over the grid, so the list ends above it. */
+        #pos-product-grid {
+          padding-bottom: 5.2rem;
         }
 
         .pos-cart {
