@@ -127,7 +127,17 @@ const COMPONENTS = [
         { id: 'export', label: 'Exportar CSV', icon: 'download-outline' },
         { id: 'import', label: 'Importar CSV', icon: 'cloud-upload-outline' },
         { id: 'print', label: 'Imprimir', icon: 'print-outline' },
+        { id: 'reload', label: 'Recargar' }, // #268 — replays a first load: «Cargando…», no «0 registros»
       ];
+      dt.addEventListener('menuAction', (e) => {
+        if (e.detail.actionId !== 'reload') return;
+        dt.rows = [];
+        dt.loading = true;
+        setTimeout(() => {
+          dt.rows = ORDERS;
+          dt.loading = false;
+        }, 1500);
+      });
       dt.cardIcon = () => 'receipt-outline';
       dt.cardTitle = (r) => h`#${r.id} · ${r.customer}`;
       dt.renderCard = (r) => h`<div class="rrow"><span class="rk">Total</span><span class="rv">${total(r)}</span></div>
@@ -162,6 +172,7 @@ dt.addEventListener('filterChange', (e) => {       // { col, value }
   ctrl.setFilter(e.detail.col, e.detail.value);    // el módulo re-consulta al runtime
   dt.filterValues = { ...ctrl.state.filters };     // objeto NUEVO = vuelve a sembrar
 });
+dt.loading = ctrl.loading;                         // #268 — pidiendo la lista: «Cargando…», sin «0 registros» ni «Sin …»
 dt.error = ctrl.error;                             // pm#530 — carga fallida ≠ lista vacía: motivo + «Reintentar»
 dt.addEventListener('retry', () => ctrl.load());   // el botón «Reintentar» vuelve a pedir la página`,
     api: [
@@ -183,6 +194,7 @@ dt.addEventListener('retry', () => ctrl.load());   // el botón «Reintentar» v
       { kind: 'prop', name: '.cardTitle · .cardIcon · .renderCard', type: 'fn', detail: 'Render de la vista «cards»' },
       { kind: 'event', name: 'rowAction · menuAction', type: '{actionId, row?}', detail: 'Acción de fila · ítem del menú «⋮»' },
       { kind: 'prop', name: 'error', type: 'string', detail: 'Motivo por el que NO se pudieron cargar las filas (p. ej. `ListController.error` del SDK). Con texto, la tabla pinta un estado de ERROR —«No se han podido cargar los datos», el motivo y un botón «Reintentar»— en lugar de las filas, del «Sin …» y del contador «N registros»: una carga fallida no es una lista vacía (pm#530). Vacío o en blanco = sin error. Textos por `.labels` (`loadError`, `retry`)' },
+      { kind: 'prop', name: 'loading', type: 'bool', detail: 'La lista se está pidiendo (p. ej. `ListController.loading` del SDK). Sin filas que enseñar todavía, la tabla pinta un estado de CARGA —spinner y «Cargando…», anunciado como `role="status"`— en lugar del «Sin …» y del contador «N registros» (outfitkit#268); las filas que ya hay en pantalla (una recarga) se quedan con su recuento. Gana sobre `error`: un reintento en curso no es el fallo que reintenta. Mientras está activo, la tabla lleva `aria-busy="true"`. Texto por `.labels` (`loading`); gancho `<testid>-loading`' },
       { kind: 'event', name: 'retry', type: '{}', detail: 'Se pulsó «Reintentar» en el estado de error: el dueño de la consulta vuelve a cargar (`ctrl.load()`). El botón lleva `<testid>-retry`' },
       { kind: 'event', name: 'rowClick', type: '{row}', detail: 'Fila pulsada (solo con rowClickable)' },
       { kind: 'event', name: 'panelClose', type: "{panel: 'filters'|'create'|'edit', reason: 'close-button'|'backdrop'|'escape'|'toggle'|'apply'|'api'}", detail: 'El panel lateral pasó de abierto a cerrado: X, fondo, Escape (con el foco en cualquier sitio de la tabla o del formulario), «Añadir» que lo repliega, «Aplicar» filtros o close() del módulo. `panel` es el que estaba abierto. Un módulo que rellena la edición tras un await lo escucha para descartar la carga pendiente (sube su editSeq). Cambiar de edit a create con «Añadir» NO es cierre y no lo emite. Un Escape que ya usó un widget del formulario (defaultPrevented: ok-combo/ok-tag-input cerrando su desplegable) cierra solo ese widget, no el panel. #195' },

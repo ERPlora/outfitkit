@@ -343,6 +343,8 @@ export interface OkDataTableLabels {
   loadError: string;
   /** pm#530 — Button of the error state; emits `retry`. */
   retry: string;
+  /** #268 — Loading state: the rows are still being asked for (≠ `empty`). */
+  loading: string;
 }
 
 /** Defaults en INGLÉS. Variables con token `{n}`/`{label}`/`{from}`/`{to}`. */
@@ -388,6 +390,7 @@ const DEFAULT_LABELS: OkDataTableLabels = {
   showAll: 'Show all',
   loadError: "Couldn't load the data",
   retry: 'Retry',
+  loading: 'Loading…',
 };
 
 const ES_LABELS: OkDataTableLabels = {
@@ -432,6 +435,7 @@ const ES_LABELS: OkDataTableLabels = {
   showAll: 'Mostrar todo',
   loadError: 'No se han podido cargar los datos',
   retry: 'Reintentar',
+  loading: 'Cargando…',
 };
 
 /** #256 - A field that holds a number as text: the hub decodes NUMERIC (money) to «100.00». */
@@ -496,7 +500,7 @@ export class OkDataTable extends LitElement {
     @media (min-width: 834px) {
       .card.has-panel { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto minmax(0, 1fr) auto; }
       .card.has-panel > .bar { grid-column: 1; grid-row: 1; }
-      .card.has-panel > .scroll, .card.has-panel > .cards-grid, .card.has-panel > .empty, .card.has-panel > .load-error { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; }
+      .card.has-panel > .scroll, .card.has-panel > .cards-grid, .card.has-panel > .empty, .card.has-panel > .load-error, .card.has-panel > .loading-state { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; }
       .card.has-panel > .pager { grid-column: 1; grid-row: 3; }
       .card.has-panel > .drawer { position: static; grid-column: 2; grid-row: 1 / -1; width: auto; max-width: none; height: auto; min-height: 0; animation: none; }
       .card.has-panel > .tk-scrim { display: none; }
@@ -531,7 +535,7 @@ export class OkDataTable extends LitElement {
     /* Sin filas, renderTable/renderCards devuelven SOLO el bloque .empty (sin .scroll). En modo
        fill hay que estirarlo para que ocupe el hueco entre toolbar y pager y centre su contenido
        (icono + mensaje) en vertical; si no, queda pegado arriba con el pager a media altura. */
-    :host([fill]) .empty, :host([fill]) .load-error { flex: 1 1 auto; min-height: 0; }
+    :host([fill]) .empty, :host([fill]) .load-error, :host([fill]) .loading-state { flex: 1 1 auto; min-height: 0; }
     /* #218 — On a phone (MOBILE_BREAKPOINT, where the table turns into cards and «Load more») the
        module paints other blocks above the table, and rows boxed in between toolbar and footer got
        what was left: a 315px card in a 32-155px window, never readable whole. Phone lists scroll
@@ -756,6 +760,9 @@ export class OkDataTable extends LitElement {
     .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
     /* pm#530 — Error state: same frame as the empty state, but its heading reads as text, not muted. */
     .load-error { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
+    /* #268 — Loading state: same frame as the empty state, a spinner instead of the tray. */
+    .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 3.5rem 1rem; text-align: center; color: var(--color-muted); }
+    .loading-state ion-spinner { width: 28px; height: 28px; color: var(--ok-primary, var(--ion-color-primary, #3880ff)); }
     .load-error .load-error-title { color: var(--color); font-weight: 600; }
     .load-error .empty-ic { color: var(--ok-danger, var(--ion-color-danger, #c5000f)); }
     .load-error ion-button { margin-top: 0.25rem; }
@@ -838,6 +845,11 @@ export class OkDataTable extends LitElement {
    *  «Retry» button that emits `retry` so the owner of the query loads it again. Empty/blank = no
    *  error. */
   @property({ type: String }) error?: string;
+  /** #268 — The rows are being loaded (e.g. the SDK's `ListController.loading`). With no rows to
+   *  show yet, the table shows a loading indicator instead of «empty» and a record count; rows
+   *  already on screen (a reload) stay with their count. Wins over `error`: a retry in flight is
+   *  not the failure it is retrying. Marks the table `aria-busy` while set. */
+  @property({ type: Boolean }) loading = false;
   /** Placeholder del buscador. Si no se pasa, deriva de `this.t.search` (inglés por defecto). */
   @property({ attribute: 'search-placeholder' }) searchPlaceholder?: string;
   /** (NUEVO, additivo) Textos humanos del data-table para i18n (parcial). Lo no pasado cae al
@@ -1410,7 +1422,12 @@ export class OkDataTable extends LitElement {
   /** pm#530 — The last load failed: rows, «empty» and counts would all be claims about data the
    *  table does not have. */
   private get loadFailed(): boolean {
-    return !!this.error?.trim();
+    return !!this.error?.trim() && !this.awaitingRows;
+  }
+  /** #268 — A load is in flight and there is nothing current to show: no rows yet, or only the
+   *  failure being retried. Neither «empty» nor a count would be true yet. */
+  private get awaitingRows(): boolean {
+    return this.loading && (this.rows.length === 0 || !!this.error?.trim());
   }
   /** #171 — Effective "no matches" message (explicit prop → i18n label → English default). */
   private get effNoMatchesMessage(): string {
@@ -2531,13 +2548,13 @@ export class OkDataTable extends LitElement {
       !!this.primaryAction;
 
     return html`
-      <div class=${`card${this.panel !== 'none' ? ' has-panel' : ''}`}>
+      <div class=${`card${this.panel !== 'none' ? ' has-panel' : ''}`} aria-busy=${this.loading ? 'true' : nothing}>
         ${showTopbar
           ? html`
               <div class="bar">
                 <div class="bar-main">
                   ${this.title
-                    ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2>${this.loadFailed ? nothing : html`<span class="title-count">${count}</span>`}</div>`
+                    ? html`<div class="title-wrap"><h2 class="title">${this.title}</h2>${this.loadFailed || this.awaitingRows ? nothing : html`<span class="title-count">${count}</span>`}</div>`
                     : nothing}
                   ${this.hasSearch ? html`<div class="search">${searchbar}</div>` : nothing}
                   ${this.inlineFilters ? this.renderInlineFilters() : nothing}
@@ -2631,11 +2648,17 @@ export class OkDataTable extends LitElement {
             `
           : nothing}
 
-        ${this.loadFailed
+        ${this.awaitingRows
+          ? this.loadingState()
+          : this.loadFailed
           ? this.errorState()
           : this.viewMode === 'cards' && this.cardViewEnabled ? this.renderCards(visible) : this.renderTable(visible)}
 
-        ${!this.loadFailed && (pages > 1 || this.effPageSizes.length)
+        ${!this.loadFailed && (this.awaitingRows
+          ? // #268 — Nothing to count or page through yet: the footer only stays to hold its
+            // page-size selector (no toolbar), never as an empty strip.
+            !showTopbar && this.effPageSizes.length
+          : pages > 1 || this.effPageSizes.length)
           ? html`
               <div class="pager">
                 <div class="left">
@@ -2645,7 +2668,9 @@ export class OkDataTable extends LitElement {
                           .replace('{from}', String(rangeFrom))
                           .replace('{to}', String(rangeTo))} `
                       : nothing}
-                    <span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}
+                    ${this.awaitingRows
+                      ? nothing
+                      : html`<span class="strong">${count}</span> ${count === 1 ? this.t.recordSingular : this.t.recordPlural}`}
                   </span>
                   ${!showTopbar && this.effPageSizes.length
                     ? html`
@@ -2791,6 +2816,17 @@ export class OkDataTable extends LitElement {
         ${noMatches
           ? html`<ion-button fill="clear" size="small" data-role="no-matches-reset" data-testid=${this.tid('show-all')} @click=${() => this.resetSearchAndFilters()}>${this.t.showAll}</ion-button>`
           : nothing}
+      </div>
+    `;
+  }
+
+  /** #268 — The first rows are on their way. Not the empty state: «0 records» before the hub has
+   *  answered told people they had nothing. */
+  private loadingState(): unknown {
+    return html`
+      <div class="loading-state" role="status" data-role="loading" data-testid=${this.tid('loading')}>
+        <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+        <span>${this.t.loading}</span>
       </div>
     `;
   }
