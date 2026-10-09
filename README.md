@@ -22,7 +22,7 @@ que se retiró por redundante.
 
 Showcase en vivo: **https://erplora.github.io/outfitkit/**
 Convenciones de desarrollo: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) ·
-Backlog de componentes: [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
+Historia del plan de componentes (no es backlog; lo abierto vive en Issues): [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
 
 ---
 
@@ -485,7 +485,7 @@ Publicación a npm: [`docs/RELEASING.md`](docs/RELEASING.md) (Trusted Publishing
 
 - **Showcase (GitHub Pages):** https://erplora.github.io/outfitkit/
 - **Convenciones de desarrollo:** [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md)
-- **Backlog de componentes:** [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
+- **Historia del plan de componentes (no es backlog; lo abierto vive en Issues):** [`docs/PLAN-COMPONENTES.md`](docs/PLAN-COMPONENTES.md)
 - **Cómo contribuir:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Licencia
