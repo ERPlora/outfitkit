@@ -26,7 +26,7 @@ por fila y `testid`, todas aditivas (ver abajo).
 Lista que llena el área disponible, buscador, filtros de columna, orden, paginación, acciones por
 fila y formulario Ionic en el slot `create`.
 
-Referencias: `/m/inventory/products`, `/m/customers/customers`, `/m/tickets/tickets`.
+Referencias: `/m/inventory/products` y `/m/customers/customers`.
 
 Composición: `ion-*` para formulario/modal/confirmación + `ok-data-table` para el listado. No se
 crea un componente de página adicional.
@@ -57,8 +57,7 @@ patrón debe probar explícitamente selección, cambio de página, limpiar y ope
 La tabla abre una ficha, modal o panel y vuelve al listado conservando el contexto. El formulario
 completo no debe convertirse en columnas ni trasladarse al core.
 
-Referencias: `/m/customers/customers`, `/m/inventory/products`, `/m/appointments/appointments` y
-`/m/payment_gateways/gateways`.
+Referencias: `/m/customers/customers`, `/m/inventory/products` y `/m/appointments/appointments`.
 
 Composición: `rowAction` abre Ionic o cambia el estado de la mini-app; el panel estrecho de alta/edición
 rápida se abre con `open('create')` (cabecera «Nuevo») o `open('edit')` (cabecera «Editar»); al editar,
@@ -220,7 +219,7 @@ productos ya tienen adaptadores funcionales.
 ### Oleada 3 — reutilización masiva del patrón
 
 1. Módulos `/m/invoice/invoice`, `/m/sales/sales`, `/m/payments/list`.
-2. Módulos `/m/tasks/all`, `/m/tickets/list`, `/m/reservations/list`.
+2. Módulos `/m/tasks/all` y `/m/reservations/list`.
 3. SaaS `/dashboard/developer/modules/`, `/dashboard/developer/earnings/` y
    `/dashboard/developer/payouts/`.
 4. SaaS `/dashboard/users/` y `/dashboard/marketplace/`. (Aquí figuraba
