@@ -49,10 +49,6 @@ const PAGE_OVERRIDES = {
     file: 'pages/module-invoice-settings.html',
     parity: 'current',
   },
-  'module-invoice-series-list': {
-    file: 'pages/module-invoice-series-list.html',
-    parity: 'current',
-  },
   'module-inventory-products': {
     file: 'pages/module-inventory-products.html',
     parity: 'current',
@@ -86,10 +82,6 @@ const PAGE_OVERRIDES = {
   },
   'module-online-booking-settings': {
     file: 'pages/module-online-booking-settings.html',
-    parity: 'current',
-  },
-  'module-payment-gateways-gateways': {
-    file: 'pages/module-payment-gateways.html',
     parity: 'current',
   },
   'module-payments-list': {
@@ -177,14 +169,6 @@ const PAGE_OVERRIDES = {
   },
   'module-taxes-aliases': {
     file: 'pages/module-taxes-aliases.html',
-    parity: 'current',
-  },
-  'module-tickets-list': {
-    file: 'pages/module-tickets-list.html',
-    parity: 'current',
-  },
-  'module-tickets-sla': {
-    file: 'pages/module-tickets-sla.html',
     parity: 'current',
   },
   'module-verifactu-records': {

@@ -91,6 +91,37 @@ describe('showcase · páginas reales de whatsapp_inbox', () => {
     expect(page).not.toContain("cardIcon = 'chatbubbles-outline'");
   });
 
+  // whatsapp_inbox#291/#293: the module searches a phone as a NUMBER — both the search box (the
+  // `phone_match` column of `search`) and the Phone column filter (`:f_contact_phone`, applied in
+  // its SQL). A demo that compares text would not find «600 111 222» where the hub does.
+  it('searches the phone as a number, like the module (search box and Phone column filter)', () => {
+    const page = pageSource('module-whatsapp-inbox-inbox.html');
+    const sql = readFileSync(new URL('queries/conversations_list.sql', moduleRoot), 'utf8');
+
+    // The module's rule, read from its SQL: only phone characters, digits compared without the
+    // leading zeros, a part of the number also matches; applied to `:search` and `:f_contact_phone`.
+    expect(sql).toContain("~ '^[0-9 +()./-]+$'");
+    expect(sql).toContain("regexp_replace(COALESCE(:search, ''), '[^0-9]', '', 'g'), '0')");
+    expect(sql).toContain("regexp_replace(COALESCE(:f_contact_phone, ''), '[^0-9]', '', 'g'), '0')");
+    expect(sql).toContain('AS phone_match');
+
+    const block = /\/\/ phone-match:start([\s\S]*?)\/\/ phone-match:end/.exec(page)?.[1];
+    expect(block, 'the demo must carry the phone matcher between its phone-match markers').toBeTruthy();
+    const phoneMatches = new Function(`${block}; return phoneMatches;`)() as (phone: string, question: string) => boolean;
+
+    expect(phoneMatches('+34 612 030 405', '612 030 405')).toBe(true);
+    expect(phoneMatches('+34 612 030 405', '0034 612-030-405')).toBe(true);
+    expect(phoneMatches('+34 612 030 405', '+34612030405')).toBe(true);
+    expect(phoneMatches('+34 612 030 405', '030 4')).toBe(true);
+    expect(phoneMatches('+34 612 030 405', '600 111 222')).toBe(false);
+    expect(phoneMatches('+34 612 030 405', 'Marta 2')).toBe(false);
+    expect(phoneMatches('+34 612 030 405', '+')).toBe(false);
+    expect(phoneMatches('+34 612 030 405', '000')).toBe(false);
+
+    // Both doors use it: the search box and the Phone column filter.
+    expect(page.match(/phoneMatches\(row\.contact_phone,/g) ?? []).toHaveLength(2);
+  });
+
   /*
    * La guardia que deja esta incidencia (outfitkit#134).
    *
