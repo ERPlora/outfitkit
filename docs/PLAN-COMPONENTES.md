@@ -1,5 +1,7 @@
 # OutfitKit — Lista de construcción (giro 2026-06)
 
+> Documento histórico (giro 2026-06): no es backlog; lo abierto vive en Issues y el board.
+
 ## Enfoque (decidido)
 
 OutfitKit = **librería de Web Components que Ionic NO tiene**, construidos *con* primitivos de Ionic
