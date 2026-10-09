@@ -223,20 +223,6 @@ export const MODULE_PAGES = [
     "file": "pages/module-invoice-settings.html"
   },
   {
-    "id": "module-invoice-series-list",
-    "name": "Series",
-    "icon": "bookmark",
-    "surface": "modules",
-    "section": "Series de facturación",
-    "moduleId": "invoice_series",
-    "navId": "list",
-    "component": "erp-invoice-series-list",
-    "source": "modules-workspace/modules/invoice_series/ui/components/erp-invoice-series-list/erp-invoice-series-list.ts",
-    "route": "/m/invoice_series/list",
-    "parity": "current",
-    "file": "pages/module-invoice-series-list.html"
-  },
-  {
     "id": "module-kitchen-display",
     "name": "Pantalla",
     "icon": "tv",
@@ -331,20 +317,6 @@ export const MODULE_PAGES = [
     "route": "/m/online_booking/settings",
     "parity": "current",
     "file": "pages/module-online-booking-settings.html"
-  },
-  {
-    "id": "module-payment-gateways-gateways",
-    "name": "Pasarelas",
-    "icon": "card",
-    "surface": "modules",
-    "section": "Pasarelas de pago",
-    "moduleId": "payment_gateways",
-    "navId": "gateways",
-    "component": "erp-payment-gateways-gateways",
-    "source": "modules-workspace/modules/payment_gateways/ui/components/erp-payment-gateways-gateways/erp-payment-gateways-gateways.ts",
-    "route": "/m/payment_gateways/gateways",
-    "parity": "current",
-    "file": "pages/module-payment-gateways.html"
   },
   {
     "id": "module-payments-list",
@@ -717,34 +689,6 @@ export const MODULE_PAGES = [
     "route": "/m/taxes/aliases",
     "parity": "current",
     "file": "pages/module-taxes-aliases.html"
-  },
-  {
-    "id": "module-tickets-list",
-    "name": "Todos",
-    "icon": "headset-outline",
-    "surface": "modules",
-    "section": "Tickets",
-    "moduleId": "tickets",
-    "navId": "list",
-    "component": "erp-tickets-list",
-    "source": "modules-workspace/modules/tickets/ui/components/erp-tickets-list/erp-tickets-list.ts",
-    "route": "/m/tickets/list",
-    "parity": "current",
-    "file": "pages/module-tickets-list.html"
-  },
-  {
-    "id": "module-tickets-sla",
-    "name": "SLA",
-    "icon": "timer-outline",
-    "surface": "modules",
-    "section": "Tickets",
-    "moduleId": "tickets",
-    "navId": "sla",
-    "component": "erp-tickets-sla",
-    "source": "modules-workspace/modules/tickets/ui/components/erp-tickets-sla/erp-tickets-sla.ts",
-    "route": "/m/tickets/sla",
-    "parity": "current",
-    "file": "pages/module-tickets-sla.html"
   },
   {
     "id": "module-verifactu-records",

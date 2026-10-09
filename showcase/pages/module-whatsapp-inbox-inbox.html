@@ -111,20 +111,40 @@
             return (from == null || raw >= from) && (to == null || raw <= to);
           };
 
+          // whatsapp_inbox#291: a phone is searched as a NUMBER, as `queries/conversations_list.sql`
+          // does for the search box (`phone_match`) and the Phone column filter (`:f_contact_phone`):
+          // a question made only of phone characters compares its digits, without the leading zeros
+          // (`00` prefix, trunk `0`), with the phone's digits; a part of the number also matches.
+          // phone-match:start
+          const PHONE_QUESTION = /^[0-9 +()./-]+$/;
+          const phoneDigits = (value) => String(value ?? '').replace(/[^0-9]/g, '');
+          const phoneMatches = (phone, question) => {
+            const wanted = phoneDigits(question).replace(/^0+/, '');
+            return PHONE_QUESTION.test(question) && wanted !== '' && phoneDigits(phone).includes(wanted);
+          };
+          // phone-match:end
+
           function queryPage() {
             const state = { page, pageSize, sort, dir: sortDir, search, filters };
             doc.dispatchEvent(new CustomEvent('erplora:preview-query', { detail: { name: 'whatsapp_inbox.conversations.list', params: { ...state } } }));
             const term = search.trim().toLocaleLowerCase('es');
             const filtered = DEMO_CONVERSATIONS
               .filter((row) => {
-                if (term && !`${row.customer_id ?? ''} ${row.phone_number_id} ${row.contact_name} ${row.contact_phone}`.toLocaleLowerCase('es').includes(term)) return false;
+                if (term
+                  && !`${row.customer_id ?? ''} ${row.phone_number_id} ${row.contact_name} ${row.contact_phone}`.toLocaleLowerCase('es').includes(term)
+                  && !phoneMatches(row.contact_phone, term)) return false;
                 for (const [key, value] of Object.entries(filters)) {
                   if (value == null || value === '') continue;
                   if (key === 'status' && row.status !== value) return false;
                   if (key === 'unread_count' && !matchesRange(row.unread_count, value, true)) return false;
                   if (key === 'last_message_at' && !matchesRange(row.last_message_at, value)) return false;
                   if (key === 'contact_name' && !row.contact_name.toLocaleLowerCase('es').includes(String(value).toLocaleLowerCase('es'))) return false;
-                  if (key === 'contact_phone' && !row.contact_phone.includes(String(value))) return false;
+                  if (key === 'contact_phone') {
+                    const question = String(value);
+                    const byNumber = PHONE_QUESTION.test(question) && phoneDigits(question).replace(/^0+/, '') !== '';
+                    if (byNumber ? !phoneMatches(row.contact_phone, question)
+                      : !row.contact_phone.toLocaleLowerCase('es').includes(question.toLocaleLowerCase('es'))) return false;
+                  }
                 }
                 return true;
               })

@@ -29,8 +29,10 @@ const root = resolve(import.meta.dirname, '../..');
  *
  * It was 42 until outfitkit#177: `whatsapp_inbox` dropped its «Requests» screen
  * (whatsapp_inbox#207), and the demo that declared `whatsapp_inbox.requests.list` went with it.
+ * It was 41 until the `invoice_series`, `tickets` and `payment_gateways` modules were deleted
+ * (2026-10-09; numbering absorbed by `invoice`, ADR-0369): their four demos went with them.
  */
-const MAPPED_DEMOS = 41;
+const MAPPED_DEMOS = 37;
 
 const audit = auditShowcaseFilters({
   pagesDirectory: resolve(root, 'showcase/pages'),
