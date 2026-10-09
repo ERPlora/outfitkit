@@ -170,6 +170,8 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
     // saber para actualizar el espejo.
     // …y kitchen#75 (mismo día) añadió tres que SÍ mueven algo: volumen y tono del timbre
     // (kitchen#72) y la impresión del pase al bump (kitchen#70, nace apagada a propósito).
+    // kitchen#160 (kitchen#153) added `works_from_screen`: a kitchen that works only from the
+    // printed order no longer drags charged rounds onto the KDS. The shell form paints it too.
     expect(settingsSchema.required).toEqual([
       'show_timer',
       'warning_time_minutes',
@@ -179,6 +181,7 @@ describe('showcase module-kitchen-history — la auditoría real de la línea', 
       'sound_volume',
       'sound_tone',
       'auto_print_tickets',
+      'works_from_screen',
       'default_order_type',
     ]);
     expect(manifest.settings).toMatchObject({
