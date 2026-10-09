@@ -113,6 +113,57 @@ describe('a demo audited against the real module manifest', () => {
     expect(auditDemo({ page: 'module-taxes-categories.html', source, loadManifest: () => manifest })).toEqual([]);
   });
 
+  // whatsapp_inbox#293: the Phone column filter compares the number as DIGITS, so the module applies
+  // `:f_contact_phone` in its own SQL and leaves it out of `filters` (the engine would AND a text
+  // `contains`). The hub binds every `f_*` it receives, so that filter box works in the hub.
+  describe('a filter the query applies in its own SQL', () => {
+    const sqlManifest = {
+      queries: {
+        'whatsapp_inbox.conversations.list': {
+          sql: 'queries/conversations_list.sql',
+          list: { filters: { status: {} } },
+        },
+      },
+    };
+    const source = demoPage({
+      queries: `        recordQuery('whatsapp_inbox.conversations.list', { ...state });`,
+      columns: `        { key: 'contact_phone', filterable: true },
+        { key: 'status', filterable: true },`,
+    });
+    const audit = (sql: string | null) => auditDemo({
+      page: 'module-whatsapp-inbox-inbox.html',
+      source,
+      loadManifest: () => sqlManifest,
+      loadQuerySql: (moduleId: string, path: string) => (
+        moduleId === 'whatsapp_inbox' && path === 'queries/conversations_list.sql' ? sql : null
+      ),
+    }) as Finding[];
+
+    it('accepts the box when the SQL binds `:f_<column>`', () => {
+      expect(audit(`SELECT id FROM t WHERE hub_id = :hub_id
+  AND (COALESCE(:f_contact_phone, '') = '' OR contact_phone LIKE '%' || :f_contact_phone || '%')`)).toEqual([]);
+    });
+
+    it('does not accept a bind that only appears in a comment or a string', () => {
+      const findings = audit(`-- the Phone column filter is :f_contact_phone
+/* :f_contact_phone */
+SELECT ':f_contact_phone' AS note FROM t WHERE hub_id = :hub_id`);
+
+      expect(findings.map((finding) => finding.code)).toEqual(['filter_not_declared']);
+      expect(findings[0].detail).toContain('contact_phone');
+    });
+
+    it('does not accept a bind of a longer name that merely starts with the column', () => {
+      const findings = audit(`SELECT id FROM t WHERE hub_id = :hub_id AND COALESCE(:f_contact_phone_kind, '') = ''`);
+
+      expect(findings.map((finding) => finding.code)).toEqual(['filter_not_declared']);
+    });
+
+    it('still reports the box when the SQL file is not there', () => {
+      expect(audit(null).map((finding) => finding.code)).toEqual(['filter_not_declared']);
+    });
+  });
+
   it('reports a query the module no longer serves as a list', () => {
     const source = demoPage({
       queries: `        recordQuery('taxes.rules.get', { ...state });`,

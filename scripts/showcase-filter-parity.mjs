@@ -207,6 +207,49 @@ export function declaredListFilters(manifest, query) {
 }
 
 /**
+ * SQL with its comments and string literals blanked out, so only code is left to read binds from.
+ *
+ * A module documents its binds in comments (`-- :f_contact_phone serves the Phone column…`); a
+ * comment or a string that names a bind applies no filter, and reading it as one would let a lying
+ * filter box through.
+ */
+function sqlCode(sql) {
+  let code = '';
+  for (let i = 0; i < sql.length; i += 1) {
+    if (sql[i] === "'") {
+      const end = endOfString(sql, i);
+      code += ' '.repeat(end - i + 1);
+      i = end;
+    } else if (sql[i] === '-' && sql[i + 1] === '-') {
+      const end = sql.indexOf('\n', i);
+      const stop = end === -1 ? sql.length : end;
+      code += ' '.repeat(stop - i);
+      i = stop - 1;
+    } else if (sql[i] === '/' && sql[i + 1] === '*') {
+      const end = sql.indexOf('*/', i + 2);
+      const stop = end === -1 ? sql.length : end + 2;
+      code += ' '.repeat(stop - i);
+      i = stop - 1;
+    } else {
+      code += sql[i];
+    }
+  }
+  return code;
+}
+
+/**
+ * Whether the query's own SQL applies the column filter `f_<column>` (whatsapp_inbox#293).
+ *
+ * The hub hands every `f_*` parameter it receives to the base SQL as a bind (optional when it only
+ * appears inside a `COALESCE`), so a module may apply a column filter itself — the Phone filter of
+ * the WhatsApp inbox compares DIGITS, which the engine's text `contains` cannot do — and leave it
+ * out of `list.filters`. That box works in the hub and the demo may paint it.
+ */
+export function sqlAppliesFilter(sql, column) {
+  return new RegExp(`(^|[^:\\w]):f_${column}(?![\\w])`).test(sqlCode(sql));
+}
+
+/**
  * Audits ONE demo against the manifests of the modules it stands for.
  *
  * `loadManifest(moduleId)` returns `null` when that module checkout is not there. That is a finding
@@ -214,7 +257,7 @@ export function declaredListFilters(manifest, query) {
  * allow (outfitkit#66). It is asked per query, not once per page, because a page may pair each of
  * its tables with a different list.
  */
-export function auditDemo({ page, source, loadManifest }) {
+export function auditDemo({ page, source, loadManifest, loadQuerySql = () => null }) {
   const contract = readDemoFilterContract(source);
   const findings = contract.orphanFlags.map(() => ({
     page,
@@ -256,13 +299,16 @@ export function auditDemo({ page, source, loadManifest }) {
       continue;
     }
 
+    const sqlPath = manifest.queries[query].sql;
+    const sql = typeof sqlPath === 'string' ? loadQuerySql(moduleId, sqlPath) : null;
     for (const column of columns) {
       if (declared.includes(column)) continue;
+      if (sql !== null && sqlAppliesFilter(sql, column)) continue;
       findings.push({
         page,
         code: 'filter_not_declared',
-        detail: `the demo filters by '${column}' and ${query} does not declare it `
-          + `(it declares: ${declared.join(', ') || 'no filter at all'})`,
+        detail: `the demo filters by '${column}' and ${query} neither declares it nor applies `
+          + `\`:f_${column}\` in its SQL (it declares: ${declared.join(', ') || 'no filter at all'})`,
       });
     }
   }
@@ -310,6 +356,10 @@ export function auditShowcaseFilters({ pagesDirectory, modulesDirectory }) {
     }
     return manifests.get(moduleId);
   };
+  const loadQuerySql = (moduleId, sqlPath) => {
+    const path = resolve(modulesDirectory, moduleId, sqlPath);
+    return existsSync(path) ? readFileSync(path, 'utf8') : null;
+  };
 
   const findings = [];
   const mapped = [];
@@ -324,7 +374,7 @@ export function auditShowcaseFilters({ pagesDirectory, modulesDirectory }) {
       if (ambiguous.length || unattributed.length) unmapped.push(page);
       else mapped.push({ page, queries: [...new Set(attributions.map(({ query }) => query))].sort() });
     }
-    findings.push(...auditDemo({ page, source, loadManifest }));
+    findings.push(...auditDemo({ page, source, loadManifest, loadQuerySql }));
   }
   return { findings, mapped, unmapped };
 }
